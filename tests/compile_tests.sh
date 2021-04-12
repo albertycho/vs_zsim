@@ -14,5 +14,6 @@
 #g++ buffer_test.cpp -std=c++11 -o buffer_test
 #g++ buffer_test2.cpp -std=c++11 -o buffer_test_2
 
+echo "compile_tests.sh: rebuild tests"
 rm qp_test
 g++ qp_test.cpp zsim_nic_defines.cpp -std=c++11 -o qp_test
