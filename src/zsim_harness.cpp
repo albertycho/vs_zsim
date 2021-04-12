@@ -180,6 +180,9 @@ void sigHandler(int sig) {
             }
         }
 
+        kill(-NIC_proc_pid,SIGKILL);
+        usleep(100000);
+        kill(NIC_proc_pid, SIGKILL);
         info("Done sending kill signals");
     }
 }
@@ -521,6 +524,9 @@ int main(int argc, char *argv[]) {
             exit(42);
         }
     }
+
+    kill(-NIC_proc_pid, SIGKILL);
+
 
     uint32_t exitCode = 0;
     if (termStatus == OK) {
