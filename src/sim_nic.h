@@ -235,6 +235,8 @@ void run_NIC_proc(){
 		count++;
 	}
 
+	std::cout << "nic process about to exit!" << std::endl;
+
 	exit(0);
 
 }
