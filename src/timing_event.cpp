@@ -52,6 +52,7 @@ void TimingEvent::queue(uint64_t nextCycle) {
 }
 
 void TimingEvent::requeue(uint64_t nextCycle) {
+    std::cout << "ZSIM - in TimingEvent::requeue" << std::endl;
     assert(numParents == 0);
     assert(state == EV_RUNNING || state == EV_HELD);
     state = EV_QUEUED;
