@@ -29,6 +29,8 @@
 #include "contention_sim.h"
 #include "zsim.h"
 
+#include <iostream>
+
 /* TimingEvent */
 
 void TimingEvent::parentDone(uint64_t startCycle) {
@@ -43,6 +45,7 @@ void TimingEvent::parentDone(uint64_t startCycle) {
 }
 
 void TimingEvent::queue(uint64_t nextCycle) {
+    std::cout << "ZSIM - in TimingEvent::queue" << std::endl;
     assert(state == EV_NONE && numParents == 0);
     state = EV_QUEUED;
     zinfo->contentionSim->enqueueSynced(this, nextCycle);
