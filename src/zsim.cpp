@@ -1639,6 +1639,7 @@ int main(int argc, char *argv[]) {
         info("Running trace-driven simulation");
         while (!zinfo->terminationConditionMet && zinfo->traceDriver->executePhase()) {
             // info("Phase done");
+            std::cout << "zsim.cpp: call endofphaseaction" << std::endl;
             EndOfPhaseActions();
             zinfo->numPhases++;
             zinfo->globPhaseCycles += zinfo->phaseLength;
