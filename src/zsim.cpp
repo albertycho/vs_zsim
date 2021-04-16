@@ -1647,6 +1647,7 @@ int main(int argc, char *argv[]) {
         info("Finished trace-driven simulation");
         SimEnd();
     } else {
+        std::cout << "zsim.cpp: PIN_StartProgram" << std::endl;
         // Never returns
         PIN_StartProgram();
     }
