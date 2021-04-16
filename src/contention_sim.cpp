@@ -37,6 +37,8 @@
 #include "timing_event.h"
 #include "zsim.h"
 
+#include <iostream>
+
 //Set to 1 to produce a post-mortem analysis log
 #define POST_MORTEM 0
 //#define POST_MORTEM 1
@@ -294,6 +296,7 @@ void ContentionSim::simulatePhaseThread(uint32_t thid) {
 
     if (thDomains == 1) {
         DomainData& domain = domains[simThreads[thid].firstDomain];
+        std::cout << "ZSIM: proftime.start" << std::endl;
         domain.profTime.start();
         PrioQueue<TimingEvent, PQ_BLOCKS>& pq = domain.pq;
         while (pq.size() && pq.firstCycle() < limit) {
@@ -314,6 +317,7 @@ void ContentionSim::simulatePhaseThread(uint32_t thid) {
 #endif
         }
         domain.curCycle = limit;
+        std::cout << "ZSIM: proftime.end" << std::endl;
         domain.profTime.end();
 
 #if POST_MORTEM
