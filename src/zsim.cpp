@@ -480,6 +480,7 @@ VOID CheckForTermination() {
  * has not incremented, so it denotes the END of the current phase
  */
 VOID EndOfPhaseActions() {
+    std::cout << "EndOfPhaseAction called" << std::endl;
     zinfo->profSimTime->transition(PROF_WEAVE);
     if (zinfo->globalPauseFlag) {
         info("Simulation entering global pause");
