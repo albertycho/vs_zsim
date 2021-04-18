@@ -146,8 +146,9 @@ void ContentionSim::initStats(AggregateStat* parentStat) {
 }
 
 void ContentionSim::simulatePhase(uint64_t limit) {
+    std::cout << "contentionSim::simulatePhase" << std::endl;
     if (skipContention) return; //fastpath when there are no cores to simulate
-
+    std::cout << "No skipContention" << std::endl;
     this->limit = limit;
     assert(limit >= lastLimit);
 
