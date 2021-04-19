@@ -483,6 +483,7 @@ VOID EndOfPhaseActions() {
     std::cout << "EndOfPhaseAction called" << std::endl;
     zinfo->profSimTime->transition(PROF_WEAVE);
     if (zinfo->globalPauseFlag) {
+        std::cout << "globalpauseflag?" << std::endl;
         info("Simulation entering global pause");
         zinfo->profSimTime->transition(PROF_FF);
         while (zinfo->globalPauseFlag) usleep(20*1000);
@@ -492,6 +493,7 @@ VOID EndOfPhaseActions() {
 
     // Done before tick() to avoid deadlock in most cases when entering synced ffwd (can we still deadlock with sleeping threads?)
     if (unlikely(zinfo->globalSyncedFFProcs)) {
+        std::cout << "globalSyncedFFprocs?" << std::endl;
         info("Simulation paused due to synced fast-forwarding");
         zinfo->profSimTime->transition(PROF_FF);
         while (zinfo->globalSyncedFFProcs) usleep(20*1000);
