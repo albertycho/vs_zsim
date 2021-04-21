@@ -26,6 +26,7 @@
 #include "core_recorder.h"
 #include "timing_event.h"
 #include "zsim.h"
+#include <iostream>
 
 #define DEBUG_MSG(args...)
 //#define DEBUG_MSG(args...) info(args)
@@ -217,6 +218,7 @@ uint64_t CoreRecorder::cSimEnd(uint64_t curCycle) {
 }
 
 void CoreRecorder::reportEventSimulated(TimingCoreEvent* ev) {
+    std::count << "reportEventSimulated called" << std::endl;
     lastEventSimulatedStartCycle = ev->startCycle;
     lastEventSimulatedOrigStartCycle = ev->origStartCycle;
     if (unlikely(ev == prevRespEvent)) {
