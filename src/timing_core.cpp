@@ -122,9 +122,11 @@ void TimingCore::BblAndRecordFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInf
     while (core->curCycle > core->phaseEndCycle) {
         core->phaseEndCycle += zinfo->phaseLength;
         uint32_t cid = getCid(tid);
-        std::cout << "BblAndRecord: calling TakeBarrier" << std::endl;
+        //std::cout << "BblAndRecord: calling TakeBarrier" << std::endl;
+        info("BblAndRecord: calling TakeBarrier");
         uint32_t newCid = TakeBarrier(tid, cid);
-        std::cout << "BblAndRecord: returend from TakeBarrier" << std::endl;
+        //std::cout << "BblAndRecord: returend from TakeBarrier" << std::endl;
+        info("BblAndRecord: returned from TakeBarrier");
         if (newCid != cid) break; /*context-switch*/
     }
 }
