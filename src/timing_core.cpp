@@ -74,6 +74,7 @@ void TimingCore::join() {
 }
 
 void TimingCore::leave() {
+    std::cout << "timingcore::leave - calling notifyLeave" << std::endl;
     cRec.notifyLeave(curCycle);
 }
 
@@ -121,6 +122,7 @@ void TimingCore::BblAndRecordFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInf
     while (core->curCycle > core->phaseEndCycle) {
         core->phaseEndCycle += zinfo->phaseLength;
         uint32_t cid = getCid(tid);
+        std::cout << "BblAndRecord: calling TakeBarrier" << std::endl;
         uint32_t newCid = TakeBarrier(tid, cid);
         if (newCid != cid) break; /*context-switch*/
     }
