@@ -507,6 +507,7 @@ VOID EndOfPhaseActions() {
 
 
 uint32_t TakeBarrier(uint32_t tid, uint32_t cid) {
+    std::cout << "TakeBarrier" << std::endl;
     uint32_t newCid = zinfo->sched->sync(procIdx, tid, cid);
     clearCid(tid); //this is after the sync for a hack needed to make EndOfPhase reliable
     setCid(tid, newCid);
