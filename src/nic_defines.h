@@ -4,7 +4,8 @@
 #include <sstream>
 #include <stdlib.h>
 #include <string>
-
+#include "pad.h"
+#include <unistd.h>
 
 #ifndef _NIC_DEFINES_H_
 #define _NIC_DEFINES_H_
