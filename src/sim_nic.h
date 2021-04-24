@@ -41,6 +41,29 @@ void run_NIC_proc();
 
 //Issue where when functions are moved to .cpp file, compiler won't recognize them. May have to do with SConstruct
 
+//Functions for Queueing write events
+void cq_wr_event_enqueue(uint64_t q_cycle, cq_entry_t cqe, glob_nic_elements* nicInfo, uint64_t core_id)
+{
+	cq_wr_event* cq_wr_e = gm_calloc<cq_wr_event>();
+	cq_wr_e->cqe = cqe;
+	cq_wr_e->q_cycle = q_cycle;
+	cq_wr_e->next = NULL;
+
+	if (nicInfo->nic_elem[core_id].cq_wr_event_q == NULL)
+	{
+		nicInfo->nic_elem[core_id].cq_wr_event_q = cq_wr_e;
+	}
+	else
+	{
+		cq_wr_event* cq_wr_event_q_tail = CQ_WR_EV_Q;
+		while (cq_wr_event_q_tail->next != NULL)
+		{
+			cq_wr_event_q_tail = cq_wr_event_q_tail->next;
+		}
+		cq_wr_event_q_tail->next = cq_wr_e;
+	}
+}
+
 void init_nicInfo() {
 	sim_nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 }
