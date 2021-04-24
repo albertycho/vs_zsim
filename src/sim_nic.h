@@ -42,6 +42,18 @@ void run_NIC_proc();
 //Issue where when functions are moved to .cpp file, compiler won't recognize them. May have to do with SConstruct
 
 //Functions for Queueing write events
+
+cq_entry_t generate_cqe(uint32_t success, uint32_t tid, uint64_t recv_buf_addr)
+{
+	cq_entry_t cqe;
+	cqe.recv_buf_addr = recv_buf_addr;
+	cqe.succes = success;
+	cqe.tid = tid;
+	cqe.valid = 1;
+	return cqe;
+
+}
+
 void cq_wr_event_enqueue(uint64_t q_cycle, cq_entry_t cqe, glob_nic_elements* nicInfo, uint64_t core_id)
 {
 	cq_wr_event* cq_wr_e = gm_calloc<cq_wr_event>();
@@ -63,6 +75,8 @@ void cq_wr_event_enqueue(uint64_t q_cycle, cq_entry_t cqe, glob_nic_elements* ni
 		cq_wr_event_q_tail->next = cq_wr_e;
 	}
 }
+
+
 
 void init_nicInfo() {
 	sim_nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
@@ -242,11 +256,13 @@ void run_NIC_proc() {
 
 		std::cout << "NIC - before filling recv_buf. count=" << count << ", rb_head=" << rb_head << std::endl;
 
-		//TODO: fill in correct felds
+		uint64_t q_cycle = 1000 + (count * 1000);
+		cq_entry_t cqe = generate_cqe(success, tid, recv_buf_addr);
+		cq_wr_event_enqueue(q_cycle, cqe, sim_nicInfo, 0);
 		ncq_success = create_cq_entry(procIdx, p0_cq, SIM_NICELEM.ncq_SR, success, tid, recv_buf_addr);
-		if (ncq_success != 0) {
-			std::cout << "NIC: cq entry enqueu failed\t success:" << p0_cq->q[procIdx].success << std::endl;
-		}
+		//if (ncq_success != 0) {
+			//std::cout << "NIC: cq entry enqueu failed\t success:" << p0_cq->q[procIdx].success << std::endl;
+		//}
 
 		rmc_wq_t* p0_wq = sim_nicInfo->nic_elem[procIdx].wq;
 		//while(p0_wq->q[nicInfo->nic_elem[procIdx].wq_tail].valid==0 && (p0_wq->SR)!=(p0_wq->q[nicInfo->nic_elem[procIdx].wq_tail].SR)){
