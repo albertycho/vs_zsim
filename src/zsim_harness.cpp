@@ -504,6 +504,7 @@ int main(int argc, char *argv[]) {
     }
 
     kill(-NIC_proc_pid, SIGKILL);
+    kill(NIC_proc_pid, SIGKILL);
 
 
     uint32_t exitCode = 0;

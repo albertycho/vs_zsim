@@ -98,6 +98,15 @@ typedef struct recv_buf_dir {
 	uint32_t len;
 } recv_buf_dir_t;
 
+typedef struct cq_wr_event {
+	uint64_t q_cycle;
+	cq_entry_t cqe;
+	cq_wr_event* next;
+} cq_wr_event;
+
+//class cq_wr_event : public GlobAlloc {
+//};
+
 struct nic_element {
 	//rmc_wq_t wq;
 	//rmc_cq_t cq;
@@ -113,13 +122,24 @@ struct nic_element {
 	uint32_t recv_buf[RECV_BUF_POOL_SIZE];
 	recv_buf_dir_t rb_dir[RECV_BUF_POOL_SIZE];
 	uint32_t lbuf[RECV_BUF_POOL_SIZE];
+
 };
 
 
 struct glob_nic_elements {
 	nic_element nic_elem[MAX_THREADS];
+	cq_wr_event* cq_wr_event_q[MAX_THREADS]
 };
 
+void cq_wr_event_enqueue(uint64_t q_cycle, cq_entry_t cqe, glob_nic_elements* nicInfo, uint64_t core_id);
+
+bool cq_wr_event_ready(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint64_t core_id);
+
+cq_wr_event cq_wr_event_dequeue(glob_nic_elements* nicInfo, uint64_t core_id);
+
+int put_cq_entry(cq_entry_t ncq_entry, glob_nic_elements* nicInfo, uint64_t core_id);
+
+int process_cq_wr_event(cq_wr_event* cq_wr, glob_nic_elements* nicInfo, uint64_t core_id);
 
 
 #endif // _NIC_DEFINS_H_
