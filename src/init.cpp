@@ -1021,6 +1021,8 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 
 	//init nic_elements ptr
 	//glob_nic_elements* nicInfo= gm_calloc<glob_nic_elements>();
+
+    info("before gm_callocing glob_nic_elements")
 	nicInfo= gm_calloc<glob_nic_elements>();
 
 	for(uint64_t i=0;i<MAX_THREADS;i++){
@@ -1028,7 +1030,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 		nicInfo->nic_elem[i].cq=gm_calloc<rmc_cq_t>();
 	}
 
-
+    info("before setting nicInfo")
     gm_set_nic_ptr(nicInfo);
   
 	//TODO: remove test_tag after validation
