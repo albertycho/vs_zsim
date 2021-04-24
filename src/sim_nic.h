@@ -47,7 +47,7 @@ cq_entry_t generate_cqe(uint32_t success, uint32_t tid, uint64_t recv_buf_addr)
 {
 	cq_entry_t cqe;
 	cqe.recv_buf_addr = recv_buf_addr;
-	cqe.succes = success;
+	cqe.success = success;
 	cqe.tid = tid;
 	cqe.valid = 1;
 	return cqe;
