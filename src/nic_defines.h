@@ -133,6 +133,7 @@ struct glob_nic_elements {
 	nic_element nic_elem[MAX_NUM_CORES];
 	PAD();
 	uint64_t cq_wr_event_q[MAX_NUM_CORES];
+	PAD();
 };
 /*
 void cq_wr_event_enqueue(uint64_t q_cycle, cq_entry_t cqe, glob_nic_elements* nicInfo, uint64_t core_id);
