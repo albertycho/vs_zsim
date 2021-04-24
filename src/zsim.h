@@ -33,7 +33,7 @@
 #include "locks.h"
 #include "pad.h"
 
-#include "nic_defins.h"
+#include "nic_defines.h"
 
 
 
