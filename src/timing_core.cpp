@@ -102,7 +102,7 @@ void TimingCore::bblAndRecord(Address bblAddr, BblInfo* bblInfo) {
         info("wr_event_ready");
 
         cq_wr_event* cqwrev = cq_wr_event_dequeue(nicInfo, 0);
-        if (process_cq_wr_event(cqwerev, nicInfo, 0) != 0)
+        if (process_cq_wr_event(cqwrev, nicInfo, 0) != 0)
         {
             panic("cq_entry write failed");
         }
