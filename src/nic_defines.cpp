@@ -1,4 +1,5 @@
 #include "nic_defines.h"
+#include "log.h"
 
 void cq_wr_event_enqueue(uint64_t q_cycle, cq_entry_t cqe, glob_nic_elements* nicInfo, uint64_t core_id)
 {
@@ -32,7 +33,7 @@ bool cq_wr_event_ready(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint64_t 
 	return q_cycle <= cur_cycle;
 }
 
-cq_wr_event cq_wr_event_dequeue(glob_nic_elements* nicInfo, uint64_t core_id)
+cq_wr_event * cq_wr_event_dequeue(glob_nic_elements* nicInfo, uint64_t core_id)
 {
 	assert(nicInfo->cq_wr_event_q[core_id] != NULL);
 
