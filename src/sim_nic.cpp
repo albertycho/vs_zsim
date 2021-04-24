@@ -1,7 +1,7 @@
 #include "sim_nic.h"
 
 
-//glob_nic_elements* nicInfo;
+glob_nic_elements* nicInfo;
 
 void init_nicInfo(){
 	nicInfo= static_cast<glob_nic_elements*>(gm_get_nic_ptr());
