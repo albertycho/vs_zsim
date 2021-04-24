@@ -14,6 +14,9 @@
 #ifndef _SIM_NIC_H_
 #define _SIM_NIC_H_
 
+class SimNic
+
+
 
 extern glob_nic_elements* nicInfo;
 
