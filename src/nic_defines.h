@@ -121,19 +121,19 @@ struct nic_element {
 	bool cq_valid;
 	bool nwq_SR;
 	bool ncq_SR;
-	PAD();
 	uint32_t recv_buf[RECV_BUF_POOL_SIZE];
 	recv_buf_dir_t rb_dir[RECV_BUF_POOL_SIZE];
 	uint32_t lbuf[RECV_BUF_POOL_SIZE];
+	
+	cq_wr_event* cq_wr_event_q;
+	PAD();
 
 };
 
 
 struct glob_nic_elements {
 	nic_element nic_elem[MAX_NUM_CORES];
-	PAD();
-	uint64_t cq_wr_event_q[MAX_NUM_CORES];
-	PAD();
+	//cq_wr_event* cq_wr_event_q[MAX_NUM_CORES];
 };
 /*
 void cq_wr_event_enqueue(uint64_t q_cycle, cq_entry_t cqe, glob_nic_elements* nicInfo, uint64_t core_id);
