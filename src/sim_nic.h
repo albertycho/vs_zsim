@@ -16,7 +16,7 @@
 
 glob_nic_elements* sim_nicInfo;
 
-/*
+
 void init_nicInfo();
 int create_cq_event(uint32_t procIdx, bool SR, uint32_t success, uint32_t tid, uint64_t recv_buf_addr);
 
@@ -35,8 +35,8 @@ int free_recv_buf(uint32_t head, uint32_t procIdx);
 int free_recv_buf_addr(uint64_t buf_addr, uint32_t procIdx);
 
 void run_NIC_proc();
-*/
 
+/*
 void init_nicInfo() {
 	sim_nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 }
@@ -271,7 +271,7 @@ void run_NIC_proc() {
 	exit(0);
 
 }
-
+*/
 
 #endif // _SIM_NIC_H_
 
