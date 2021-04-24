@@ -115,8 +115,6 @@ static uint32_t cids[MAX_THREADS];
 // Per TID core pointers (TODO: phase out cid/tid state --- this is enough)
 Core* cores[MAX_THREADS];
 
-bool cq_valid[MAX_THREADS];
-bool wq_valid[MAX_THREADS];
 
 static void init_NIC_queue(){
 }

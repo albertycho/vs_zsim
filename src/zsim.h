@@ -295,8 +295,6 @@ struct GlobSimInfo {
     TraceDriver* traceDriver;
 };
 
-extern bool cq_valid[MAX_THREADS];
-extern bool wq_valid[MAX_THREADS];
 
 
 //Process-wide global variables, defined in zsim.cpp

@@ -16,6 +16,11 @@ void init_nicInfo(){
 	nicInfo= static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 }
 
+int create_cq_event(uint32_t procIdx, bool SR, uint32_t success, uint32_t tid, uint64_t recv_buf_addr) {
+
+	return 0;
+}
+
 int create_cq_entry(uint32_t procIdx, rmc_cq_t * cq, bool SR, uint32_t success, uint32_t tid, uint64_t recv_buf_addr){
 
 	
