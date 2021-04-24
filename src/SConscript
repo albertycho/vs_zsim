@@ -3,8 +3,8 @@
 import os
 Import("env")
 
-commonSrcs = ["config.cpp", "galloc.cpp", "log.cpp", "pin_cmd.cpp", "sim_nic.cpp"]
-harnessSrcs = ["zsim_harness.cpp", "debug_harness.cpp"]
+commonSrcs = ["config.cpp", "galloc.cpp", "log.cpp", "pin_cmd.cpp"]
+harnessSrcs = ["zsim_harness.cpp", "debug_harness.cpp", "sim_nic.cpp"]
 
 # By default, we compile all cpp files in libzsim.so. List the cpp files that
 # should be excluded below (one per line and in order, to ease merges)
