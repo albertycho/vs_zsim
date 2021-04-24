@@ -1,8 +1,5 @@
 #include "sim_nic.h"
-#include "zsim.h"
 
-
-extern glob_nic_elements* nicInfo;
 
 void init_nicInfo(){
 	nicInfo= static_cast<glob_nic_elements*>(gm_get_nic_ptr());
