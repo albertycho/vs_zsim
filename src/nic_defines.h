@@ -131,9 +131,9 @@ struct nic_element {
 
 struct glob_nic_elements {
 	nic_element nic_elem[MAX_NUM_CORES];
-	cq_wr_event* cq_wr_event_q[MAX_NUM_CORES];
+	//cq_wr_event* cq_wr_event_q[MAX_NUM_CORES];
 };
-
+/*
 void cq_wr_event_enqueue(uint64_t q_cycle, cq_entry_t cqe, glob_nic_elements* nicInfo, uint64_t core_id);
 
 bool cq_wr_event_ready(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint64_t core_id);
@@ -143,7 +143,7 @@ cq_wr_event * cq_wr_event_dequeue(glob_nic_elements* nicInfo, uint64_t core_id);
 int put_cq_entry(cq_entry_t ncq_entry, glob_nic_elements* nicInfo, uint64_t core_id);
 
 int process_cq_wr_event(cq_wr_event* cq_wr, glob_nic_elements* nicInfo, uint64_t core_id);
-
+*/
 
 #endif // _NIC_DEFINS_H_
 
