@@ -95,7 +95,7 @@ INT32 Usage() {
 
 GlobSimInfo* zinfo;
 
-//glob_nic_elements* nicInfo;
+glob_nic_elements* nicInfo;
 
 
 /* Per-process variables */
