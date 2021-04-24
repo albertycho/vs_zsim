@@ -145,6 +145,8 @@ int put_cq_entry(cq_entry_t ncq_entry, glob_nic_elements* nicInfo, uint64_t core
 int process_cq_wr_event(cq_wr_event* cq_wr, glob_nic_elements* nicInfo, uint64_t core_id);
 */
 
+
+
 #endif // _NIC_DEFINS_H_
 
 

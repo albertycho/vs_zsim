@@ -1539,15 +1539,11 @@ int main(int argc, char *argv[]) {
     bool masterProcess = false;
     if (procIdx == 0 && !gm_isready()) {  // process 0 can exec() without fork()ing first, so we must check gm_isready() to ensure we don't initialize twice
         masterProcess = true;
-        info("before calling sim_init");
         SimInit(KnobConfigFile.Value().c_str(), KnobOutputDir.Value().c_str(), KnobShmid.Value());
-        info("aftercalling sim_init");
     } else {
         while (!gm_isready()) usleep(1000);  // wait till proc idx 0 initializes everything
         zinfo = static_cast<GlobSimInfo*>(gm_get_glob_ptr());
-        info("before calling get_nic_ptr");
 		nicInfo= static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-        info("after calling get_nic_ptr");
     }
 
     //If assertion below fails, use this to print maps
