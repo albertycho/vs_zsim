@@ -12,7 +12,7 @@
 #ifndef _SIM_NIC_H_
 #define _SIM_NIC_H_
 
-#define SIM_SIM_NICELEM 		sim_nicInfo->nic_elem[procIdx]
+#define SIM_NICELEM 		sim_nicInfo->nic_elem[procIdx]
 
 glob_nic_elements* sim_nicInfo;
 
