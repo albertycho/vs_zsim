@@ -12,7 +12,7 @@
 #define _SIM_NIC_H_
 
 
-glob_nic_elements* nicInfo;
+
 
 void init_nicInfo();
 int create_cq_event(uint32_t procIdx, bool SR, uint32_t success, uint32_t tid, uint64_t recv_buf_addr);
