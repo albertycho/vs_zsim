@@ -6,8 +6,6 @@
 #include <string>
 
 #include "nic_defines.h"
-#include "zsim.h"
-
 
 
 
