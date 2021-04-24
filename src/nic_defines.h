@@ -9,6 +9,7 @@
 #ifndef _NIC_DEFINES_H_
 #define _NIC_DEFINES_H_
 
+#define MAX_NUM_CORES 64 //probably will support more
 
 #define MAX_NUM_WQ 8
 
@@ -127,8 +128,8 @@ struct nic_element {
 
 
 struct glob_nic_elements {
-	nic_element nic_elem[MAX_THREADS];
-	cq_wr_event* cq_wr_event_q[MAX_THREADS];
+	nic_element nic_elem[MAX_NUM_CORES];
+	cq_wr_event* cq_wr_event_q[MAX_NUM_CORES];
 };
 
 void cq_wr_event_enqueue(uint64_t q_cycle, cq_entry_t cqe, glob_nic_elements* nicInfo, uint64_t core_id);
