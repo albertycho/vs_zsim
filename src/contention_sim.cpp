@@ -146,7 +146,6 @@ void ContentionSim::initStats(AggregateStat* parentStat) {
 }
 
 void ContentionSim::simulatePhase(uint64_t limit) {
-    std::cout << "contentionSim::simulatePhase" << std::endl;
     if (skipContention) return; //fastpath when there are no cores to simulate
     this->limit = limit;
     assert(limit >= lastLimit);
@@ -296,7 +295,6 @@ void ContentionSim::simulatePhaseThread(uint32_t thid) {
 
     if (thDomains == 1) {
         DomainData& domain = domains[simThreads[thid].firstDomain];
-        std::cout << "ZSIM: proftime.start" << std::endl;
         domain.profTime.start();
         PrioQueue<TimingEvent, PQ_BLOCKS>& pq = domain.pq;
         while (pq.size() && pq.firstCycle() < limit) {
@@ -317,7 +315,6 @@ void ContentionSim::simulatePhaseThread(uint32_t thid) {
 #endif
         }
         domain.curCycle = limit;
-        std::cout << "ZSIM: proftime.end" << std::endl;
         domain.profTime.end();
 
 #if POST_MORTEM

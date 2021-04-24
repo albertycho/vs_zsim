@@ -219,7 +219,6 @@ uint64_t CoreRecorder::cSimEnd(uint64_t curCycle) {
 }
 
 void CoreRecorder::reportEventSimulated(TimingCoreEvent* ev) {
-    std::cout << "reportEventSimulated called" << std::endl;
     lastEventSimulatedStartCycle = ev->startCycle;
     lastEventSimulatedOrigStartCycle = ev->origStartCycle;
     if (unlikely(ev == prevRespEvent)) {

@@ -45,14 +45,12 @@ void TimingEvent::parentDone(uint64_t startCycle) {
 }
 
 void TimingEvent::queue(uint64_t nextCycle) {
-    std::cout << "ZSIM - in TimingEvent::queue" << std::endl;
     assert(state == EV_NONE && numParents == 0);
     state = EV_QUEUED;
     zinfo->contentionSim->enqueueSynced(this, nextCycle);
 }
 
 void TimingEvent::requeue(uint64_t nextCycle) {
-    std::cout << "ZSIM - in TimingEvent::requeue" << std::endl;
     assert(numParents == 0);
     assert(state == EV_RUNNING || state == EV_HELD);
     state = EV_QUEUED;

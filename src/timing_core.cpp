@@ -74,7 +74,6 @@ void TimingCore::join() {
 }
 
 void TimingCore::leave() {
-    std::cout << "timingcore::leave - calling notifyLeave" << std::endl;
     cRec.notifyLeave(curCycle);
 }
 

@@ -480,7 +480,6 @@ VOID CheckForTermination() {
  * has not incremented, so it denotes the END of the current phase
  */
 VOID EndOfPhaseActions() {
-    std::cout << "EndOfPhaseAction called" << std::endl;
     zinfo->profSimTime->transition(PROF_WEAVE);
     if (zinfo->globalPauseFlag) {
         info("Simulation entering global pause");
@@ -507,7 +506,6 @@ VOID EndOfPhaseActions() {
 
 
 uint32_t TakeBarrier(uint32_t tid, uint32_t cid) {
-    std::cout << "TakeBarrier" << std::endl;
     uint32_t newCid = zinfo->sched->sync(procIdx, tid, cid);
     clearCid(tid); //this is after the sync for a hack needed to make EndOfPhase reliable
     setCid(tid, newCid);
@@ -1641,7 +1639,6 @@ int main(int argc, char *argv[]) {
         info("Running trace-driven simulation");
         while (!zinfo->terminationConditionMet && zinfo->traceDriver->executePhase()) {
             // info("Phase done");
-            std::cout << "zsim.cpp: call endofphaseaction" << std::endl;
             EndOfPhaseActions();
             zinfo->numPhases++;
             zinfo->globPhaseCycles += zinfo->phaseLength;
@@ -1649,7 +1646,6 @@ int main(int argc, char *argv[]) {
         info("Finished trace-driven simulation");
         SimEnd();
     } else {
-        std::cout << "zsim.cpp: PIN_StartProgram" << std::endl;
         // Never returns
         PIN_StartProgram();
     }
