@@ -95,8 +95,18 @@ void TimingCore::bblAndRecord(Address bblAddr, BblInfo* bblInfo) {
     instrs += bblInfo->instrs;
     curCycle += bblInfo->instrs;
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-    dummy_function(curCycle);
-
+    
+    //TODO: find core number
+    if (cq_wr_event_ready(curCycle, nicInfo, 0))
+    {
+        info("wr_event_ready");
+        cq_wr_event* cqwrev = cq_wr_event_dequeue(nicInfo, 0);
+        if (process_cq_wr_event(cqwerev, nicInfo, 0) != 0)
+        {
+            panic("cq_entry write failed");
+        }
+    }
+    
     Address endBblAddr = bblAddr + bblInfo->bytes;
     for (Address fetchAddr = bblAddr; fetchAddr < endBblAddr; fetchAddr+=(1 << lineBits)) {
         uint64_t startCycle = curCycle;
