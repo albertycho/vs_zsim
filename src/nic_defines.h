@@ -131,6 +131,7 @@ struct nic_element {
 
 struct glob_nic_elements {
 	nic_element nic_elem[MAX_NUM_CORES];
+	PAD();
 	uint64_t cq_wr_event_q[MAX_NUM_CORES];
 };
 /*
