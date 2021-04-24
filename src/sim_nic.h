@@ -243,7 +243,7 @@ void run_NIC_proc() {
 		if (!sim_nicInfo->nic_elem[0].wq_valid) continue;
 		if (!sim_nicInfo->nic_elem[0].cq_valid) continue;
 
-		int ncq_success;
+		//int ncq_success;
 		rmc_cq_t* p0_cq = sim_nicInfo->nic_elem[0].cq;
 		uint32_t success = 0x7F;
 		uint32_t tid = 0xdd0 + count;
@@ -259,7 +259,7 @@ void run_NIC_proc() {
 		uint64_t q_cycle = 1000 + (count * 1000);
 		cq_entry_t cqe = generate_cqe(success, tid, recv_buf_addr);
 		cq_wr_event_enqueue(q_cycle, cqe, sim_nicInfo, 0);
-		ncq_success = create_cq_entry(procIdx, p0_cq, SIM_NICELEM.ncq_SR, success, tid, recv_buf_addr);
+		//ncq_success = create_cq_entry(procIdx, p0_cq, SIM_NICELEM.ncq_SR, success, tid, recv_buf_addr);
 		//if (ncq_success != 0) {
 			//std::cout << "NIC: cq entry enqueu failed\t success:" << p0_cq->q[procIdx].success << std::endl;
 		//}
