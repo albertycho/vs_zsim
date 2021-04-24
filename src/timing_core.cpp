@@ -94,7 +94,7 @@ void TimingCore::storeAndRecord(Address addr) {
 void TimingCore::bblAndRecord(Address bblAddr, BblInfo* bblInfo) {
     instrs += bblInfo->instrs;
     curCycle += bblInfo->instrs;
-
+    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
     dummy_function(curCycle);
 
     Address endBblAddr = bblAddr + bblInfo->bytes;
