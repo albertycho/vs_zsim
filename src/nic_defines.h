@@ -138,7 +138,7 @@ void cq_wr_event_enqueue(uint64_t q_cycle, cq_entry_t cqe, glob_nic_elements* ni
 
 bool cq_wr_event_ready(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint64_t core_id);
 
-cq_wr_event cq_wr_event_dequeue(glob_nic_elements* nicInfo, uint64_t core_id);
+cq_wr_event * cq_wr_event_dequeue(glob_nic_elements* nicInfo, uint64_t core_id);
 
 int put_cq_entry(cq_entry_t ncq_entry, glob_nic_elements* nicInfo, uint64_t core_id);
 
