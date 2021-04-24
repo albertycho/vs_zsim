@@ -37,6 +37,8 @@ int free_recv_buf_addr(uint64_t buf_addr, uint32_t procIdx);
 void run_NIC_proc();
 */
 
+//Issue where when functions are moved to .cpp file, compiler won't recognize them. May have to do with SConstruct
+
 void init_nicInfo() {
 	sim_nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 }
