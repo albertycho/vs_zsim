@@ -27,6 +27,8 @@
 #include "filter_cache.h"
 #include "zsim.h"
 
+#include "nic_functions.h"
+
 #define DEBUG_MSG(args...)
 //#define DEBUG_MSG(args...) info(args)
 
@@ -92,6 +94,8 @@ void TimingCore::storeAndRecord(Address addr) {
 void TimingCore::bblAndRecord(Address bblAddr, BblInfo* bblInfo) {
     instrs += bblInfo->instrs;
     curCycle += bblInfo->instrs;
+
+    dummy_function(curCycle);
 
     Address endBblAddr = bblAddr + bblInfo->bytes;
     for (Address fetchAddr = bblAddr; fetchAddr < endBblAddr; fetchAddr+=(1 << lineBits)) {

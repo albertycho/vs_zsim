@@ -44,6 +44,13 @@ cq_wr_event* cq_wr_event_dequeue(glob_nic_elements* nicInfo, uint64_t core_id)
 	return ret;
 }
 
+void dummy_function(uint64_t cur_cycle) {
+	if (cur_cycle % 5000 == 0)
+	{
+		std::cout << "dummyfunction";
+	}
+	
+}
 
 /*
 
