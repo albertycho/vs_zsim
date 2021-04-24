@@ -4,11 +4,73 @@
 #include <sstream>
 #include <stdlib.h>
 #include <string>
-#include "zsim.h"
+
 
 #ifndef _SIM_NIC_H_
 #define _SIM_NIC_H_
 
+typedef struct wq_entry {
+	//first double-word (8 bytes)
+	uint32_t op;        //up to 64 soNUMA ops
+	volatile bool SR;        //sense reverse bit
+	volatile bool valid;    //set with a new WQ entry, unset when entry completed. Required for pipelining async ops
+	uint64_t buf_addr;
+	uint32_t cid;
+	uint32_t nid;
+	//second double-word (8 bytes)
+	uint64_t offset;
+	uint64_t length;
+} wq_entry_t;
+
+typedef struct cq_entry {
+	volatile bool SR;     //sense reverse bit
+	volatile bool valid;
+	uint32_t success; /* Success bit/type */
+	//volatile unsigned int tid; /* Uses tid to specify incoming send id and qp */
+	uint32_t tid; /* Uses tid to specify incoming send id and qp */
+	//volatile uint64_t recv_buf_addr; /* Incoming recv buf block address (42 bits) */
+	uint64_t recv_buf_addr; /* Incoming recv buf block address (42 bits) */
+} cq_entry_t;
+
+typedef struct rmc_wq {
+	wq_entry_t q[MAX_NUM_WQ];
+	uint32_t head;
+	bool SR;    //sense reverse bit
+} rmc_wq_t;
+
+typedef struct rmc_cq {
+	cq_entry_t q[MAX_NUM_WQ];
+	uint32_t tail;
+	bool SR;    //sense reverse bit
+} rmc_cq_t;
+
+typedef struct recv_buf_dir {
+	bool in_use;
+	bool is_head;
+	uint32_t len;
+} recv_buf_dir_t;
+
+struct nic_element {
+	//rmc_wq_t wq;
+	//rmc_cq_t cq;
+	rmc_wq_t* wq;
+	rmc_cq_t* cq;
+	uint64_t wq_tail;
+	uint64_t cq_head;
+	bool wq_valid;
+	bool cq_valid;
+	bool nwq_SR;
+	bool ncq_SR;
+	PAD();
+	uint32_t recv_buf[RECV_BUF_POOL_SIZE];
+	recv_buf_dir_t rb_dir[RECV_BUF_POOL_SIZE];
+	uint32_t lbuf[RECV_BUF_POOL_SIZE];
+};
+
+
+struct glob_nic_elements {
+	nic_element nic_elem[MAX_THREADS];
+};
 
 glob_nic_elements* nicInfo;
 
