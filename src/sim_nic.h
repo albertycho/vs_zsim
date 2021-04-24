@@ -6,11 +6,13 @@
 #include <string>
 
 #include "nic_defines.h"
-#include "nic_functions.h"
+
 
 
 #ifndef _SIM_NIC_H_
 #define _SIM_NIC_H_
+
+#include "nic_functions.h"
 
 #define SIM_NICELEM 		sim_nicInfo->nic_elem[procIdx]
 
