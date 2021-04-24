@@ -42,7 +42,6 @@ class TimingCoreEvent : public TimingEvent {
         TimingCoreEvent(uint64_t _delay, uint64_t _origStartCycle, CoreRecorder* _cRec, int32_t domain = -1) : TimingEvent(0, _delay, domain), origStartCycle(_origStartCycle), cRec(_cRec) {}
 
         void simulate(uint64_t _startCycle) {
-            info("timingcoreEvent:simulate");
             startCycle = _startCycle;
             cRec->reportEventSimulated(this);
             done(startCycle);

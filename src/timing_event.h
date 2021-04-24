@@ -154,13 +154,11 @@ class TimingEvent {
         virtual void simulate(uint64_t startCycle) = 0;
 
         inline void run(uint64_t startCycle) {
-            info("timing_event.h - run");
             assert(this);
             assert_msg(state == EV_NONE || state == EV_QUEUED, "state %d expected %d (%s)", state, EV_QUEUED, typeid(*this).name());
             state = EV_RUNNING;
             assert_msg(startCycle >= minStartCycle, "startCycle %ld < minStartCycle %ld (%s), preDelay %d postDelay %d numChildren %d str %s",
                     startCycle, minStartCycle, typeid(*this).name(), preDelay, postDelay, numChildren, str().c_str());
-            info("timing_event.h - calling simulate");
             simulate(startCycle);
             // NOTE: This assertion is invalid now, because a call to done() may destroy the event.
             // However, since we check other transitions, this should not be a problem.
