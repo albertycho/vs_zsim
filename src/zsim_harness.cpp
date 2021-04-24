@@ -259,29 +259,7 @@ void Launch_nic_process(){
 
 	   std::cout<<"Launch_nic_process: we shouldn't see this"<<std::endl;
 
-		//glob_nic_elements* glob_nicInfo;
-		//glob_nicInfo= static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-
-		//int procIdx=0;
-		//int count=0;
-		//while(1){
-		//	if (count>5) break;
-		//	usleep(100);
-		//	if(!glob_nicInfo->nic_elem[0].wq_valid) continue;
-		//	if(!glob_nicInfo->nic_elem[0].cq_valid) continue;
-
-		//	if(glob_nicInfo->nic_elem[procIdx].wq_head > glob_nicInfo->nic_elem[procIdx].wq_tail){
-		//		uint64_t incoming_msg = (uint64_t) glob_nicInfo->nic_elem[procIdx].wq[glob_nicInfo->nic_elem[procIdx].wq_tail];
-		//		uint64_t out_msg = incoming_msg+0xaabb0000;
-		//		glob_nicInfo->nic_elem[procIdx].cq[glob_nicInfo->nic_elem[procIdx].cq_head] = out_msg;
-		//		glob_nicInfo->nic_elem[procIdx].wq_tail++;
-		//		glob_nicInfo->nic_elem[procIdx].cq_head++;
-		//		count++;
-		//	}
-		//}
-
-
-
+		
 		exit(0);
 
 	}
