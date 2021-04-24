@@ -33,7 +33,6 @@ int free_recv_buf_addr(uint64_t buf_addr, uint32_t procIdx);
 
 void run_NIC_proc() {
 
-
 	init_nicInfo();
 
 	int procIdx = 0;
