@@ -27,7 +27,7 @@
 #include "filter_cache.h"
 #include "zsim.h"
 
-#include "nic_functions.h"
+#include "core_to_nic_functions.h"
 
 #define DEBUG_MSG(args...)
 //#define DEBUG_MSG(args...) info(args)
