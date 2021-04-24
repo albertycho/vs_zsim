@@ -6,7 +6,7 @@
 #include <string>
 
 #include "nic_defines.h"
-
+#include "nic_functions.h"
 
 
 #ifndef _SIM_NIC_H_
