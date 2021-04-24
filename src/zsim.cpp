@@ -1543,7 +1543,9 @@ int main(int argc, char *argv[]) {
     } else {
         while (!gm_isready()) usleep(1000);  // wait till proc idx 0 initializes everything
         zinfo = static_cast<GlobSimInfo*>(gm_get_glob_ptr());
+        info("before calling get_nic_ptr");
 		nicInfo= static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+        info("after calling get_nic_ptr");
     }
 
     //If assertion below fails, use this to print maps
