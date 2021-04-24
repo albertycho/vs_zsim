@@ -40,6 +40,7 @@
 #define NWQ_Q_P(a)		nicInfo->nic_elem[a].wq
 #define NCQ_Q_P(a)		nicInfo->nic_elem[a].cq
 
+#define CQ_WR_EV_Q		nicInfo->nic_elem[core_id].cq_wr_event_q
 
 #define RMC_READ                1
 #define RMC_WRITE               2
@@ -134,6 +135,7 @@ struct nic_element {
 struct glob_nic_elements {
 	nic_element nic_elem[MAX_NUM_CORES];
 	//cq_wr_event* cq_wr_event_q[MAX_NUM_CORES];
+	//adding additional elements to this struct causes segfault at gm_calloc for unknown reason
 };
 /*
 void cq_wr_event_enqueue(uint64_t q_cycle, cq_entry_t cqe, glob_nic_elements* nicInfo, uint64_t core_id);
@@ -147,6 +149,37 @@ int put_cq_entry(cq_entry_t ncq_entry, glob_nic_elements* nicInfo, uint64_t core
 int process_cq_wr_event(cq_wr_event* cq_wr, glob_nic_elements* nicInfo, uint64_t core_id);
 */
 
+void cq_wr_event_enqueue(uint64_t q_cycle, cq_entry_t cqe, glob_nic_elements* nicInfo, uint64_t core_id)
+{
+	cq_wr_event* cq_wr_e = gm_calloc<cq_wr_event>();
+	cq_wr_e->cqe = cqe;
+	cq_wr_e->q_cycle = q_cycle;
+	cq_wr_e->next = NULL;
+
+	if (nicInfo->nic_elem[core_id].cq_wr_event_q == NULL)
+	{
+		nicInfo->nic_elem[core_id].cq_wr_event_q = cq_wr_e;
+	}
+	else
+	{
+		cq_wr_event* cq_wr_event_q_tail = CQ_WR_EV_Q;
+		while (cq_wr_event_q_tail->next != NULL)
+		{
+			cq_wr_event_q_tail = cq_wr_event_q_tail->next;
+		}
+		cq_wr_event_q_tail->next = cq_wr_e;
+	}
+}
+
+bool cq_wr_event_ready(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint64_t core_id)
+{
+	if (CQ_WR_EV_Q == NULL)
+	{
+		return false;
+	}
+	uint64_t q_cycle = CQ_WR_EV_Q->q_cycle;
+	return q_cycle <= cur_cycle;
+}
 
 
 #endif // _NIC_DEFINS_H_
