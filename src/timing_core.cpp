@@ -99,9 +99,11 @@ void TimingCore::bblAndRecord(Address bblAddr, BblInfo* bblInfo) {
     //TODO: find core number
     if (cq_wr_event_ready(curCycle, nicInfo, 0))
     {
-        info("wr_event_ready");
+        //info("wr_event_ready");
+        std::cout << "wr_event ready," << curCycle << std::endl;
 
         cq_wr_event* cqwrev = cq_wr_event_dequeue(nicInfo, 0);
+        std::cout << "wrevent_q_cycle:" << cqwrev->q_cycle << std::endl;
         if (process_cq_wr_event(cqwrev, nicInfo, 0) != 0)
         {
             panic("cq_entry write failed");
