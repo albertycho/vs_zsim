@@ -255,8 +255,8 @@ void run_NIC_proc() {
 		sim_nicInfo->nic_elem[0].recv_buf[rb_head] = 0xabc0 + count;
 
 		std::cout << "NIC - before filling recv_buf. count=" << count << ", rb_head=" << rb_head << std::endl;
-
-		uint64_t q_cycle = 1000 + (count * 1000);
+		
+		uint64_t q_cycle = 4000000 + (count * 1000000);
 		cq_entry_t cqe = generate_cqe(success, tid, recv_buf_addr);
 		cq_wr_event_enqueue(q_cycle, cqe, sim_nicInfo, 0);
 		//ncq_success = create_cq_entry(procIdx, p0_cq, SIM_NICELEM.ncq_SR, success, tid, recv_buf_addr);
