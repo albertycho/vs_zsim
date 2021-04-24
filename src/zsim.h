@@ -33,7 +33,7 @@
 #include "locks.h"
 #include "pad.h"
 
-#include "sim_nic.h"
+#include "nic_defins.h"
 
 
 
@@ -201,7 +201,7 @@ extern uint64_t procMask;
 
 extern GlobSimInfo* zinfo;
 
-//extern glob_nic_elements* nicInfo;
+extern glob_nic_elements* nicInfo;
 
 //Process-wide functions, defined in zsim.cpp
 uint32_t getCid(uint32_t tid);
