@@ -9,7 +9,7 @@
 
 // may cause linking issues (ambiguous definition)
 #include "zsim.h"
-
+#include "core.h"
 
 
 #ifndef _SIM_NIC_H_
@@ -239,7 +239,7 @@ void run_NIC_proc() {
 		if (!sim_nicInfo->nic_elem[0].cq_valid) continue;
 
 		//int ncq_success;
-		rmc_cq_t* p0_cq = sim_nicInfo->nic_elem[0].cq;
+		//rmc_cq_t* p0_cq = sim_nicInfo->nic_elem[0].cq;
 		uint32_t success = 0x7F;
 		uint32_t tid = 0xdd0 + count;
 		//uint64_t recv_buf_addr=0xee0 + count;
@@ -249,7 +249,8 @@ void run_NIC_proc() {
 		uint64_t recv_buf_addr = (uint64_t)(&(sim_nicInfo->nic_elem[0].recv_buf[rb_head]));
 		sim_nicInfo->nic_elem[0].recv_buf[rb_head] = 0xabc0 + count;
 		
-		core_cycle = nic_zinfo->globPhaseCycles;
+		//core_cycle = nic_zinfo->globPhaseCycles;
+		core_cycle = nic_zinfo->cores[0]->getCycles();
 		std::cout << std::dec << "globPhaseCycle read by NIC  :" << core_cycle << std::endl;
 		//uint64_t q_cycle = 10000000 + (count * 10000000);
 		uint64_t q_cycle = core_cycle+ (10000000);
