@@ -64,6 +64,24 @@ int process_cq_wr_event(cq_wr_event* cq_wr, glob_nic_elements* nicInfo, uint64_t
 	return 0;
 
 }
+int core_cq_wr_event_action(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint64_t core_id){
+//put all required action in one function to keep core.cpp files simpler
+	if (cq_wr_event_ready(cur_cycle, nicInfo, core_id))
+	{
+		//info("wr_event_ready");
+		std::cout << "wr_event ready," << cur_cycle << std::endl;
+
+		cq_wr_event* cqwrev = cq_wr_event_dequeue(nicInfo, core_id);
+		std::cout << "wrevent_q_cycle:" << cqwrev->q_cycle << std::endl;
+		if (process_cq_wr_event(cqwrev, nicInfo, core_id) != 0)
+		{
+			panic("cq_entry write failed");
+			return -1;
+		}
+	}
+	return 0;
+}
+
 
 void dummy_function(uint64_t cur_cycle) {
 	if (cur_cycle % 5000 == 0)
