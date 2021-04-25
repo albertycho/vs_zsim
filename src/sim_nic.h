@@ -250,9 +250,10 @@ void run_NIC_proc() {
 		sim_nicInfo->nic_elem[0].recv_buf[rb_head] = 0xabc0 + count;
 		
 		core_cycle = nic_zinfo->globPhaseCycles;
-		std::cout << std::dec << "NIC: core0 cycle:" << core_cycle << std::endl;
+		std::cout << std::dec << "globPhaseCycle read by NIC  :" << core_cycle << std::endl;
 		//uint64_t q_cycle = 10000000 + (count * 10000000);
 		uint64_t q_cycle = core_cycle+ (10000000);
+		std::cout << std::dec << "NIC will put cq_wr_event for:" << q_cycle<< std::endl;
 		cq_entry_t cqe = generate_cqe(success, tid, recv_buf_addr);
 		cq_wr_event_enqueue(q_cycle, cqe, sim_nicInfo, 0);
 		//ncq_success = create_cq_entry(procIdx, p0_cq, SIM_NICELEM.ncq_SR, success, tid, recv_buf_addr);
