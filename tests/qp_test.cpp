@@ -34,11 +34,12 @@ int main() {
 
 		//std::cout<<"APP - recv_completion.op="<<recv_completion.op<<std::endl;
 
-		//test_prints
-		std::cout<<"APP: recvd incoming msg. send_count: "<<send_count<<", recv_buf_addr:"<<recv_completion.recv_buf_addr<<", recv_buf_val:"<<*(uint32_t*)(recv_completion.recv_buf_addr)<<std::endl;
-
-
+		
+		
 		send_serviced++;
+		
+		//test_prints
+		std::cout << "APP: recvd incoming msg.             recv_count: " << send_serviced << ", recv_buf_addr:" << recv_completion.recv_buf_addr << ", recv_buf_val:" << *(uint32_t*)(recv_completion.recv_buf_addr) << std::endl;
 		uint32_t target_node = recv_completion.tid;
 
 		//calcualte lbuf_ptr address
