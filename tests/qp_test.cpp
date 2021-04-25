@@ -39,7 +39,7 @@ int main() {
 		send_serviced++;
 		
 		//test_prints
-		std::cout << "APP: recvd incoming msg.              recv_count:"<<std::dec << send_serviced << ", recv_buf_addr:" <<std::hex<< recv_completion.recv_buf_addr << ", recv_buf_val:" << *(uint32_t*)(recv_completion.recv_buf_addr) << std::endl;
+		std::cout << "APP: recvd incoming msg.              recv_count:"<<std::dec << send_serviced << ", rbuf_addr:" <<std::hex<< recv_completion.recv_buf_addr << ", rbuf_val:" << *(uint32_t*)(recv_completion.recv_buf_addr) << std::endl;
 		uint32_t target_node = recv_completion.tid;
 
 		//calcualte lbuf_ptr address
