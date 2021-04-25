@@ -233,7 +233,7 @@ void run_NIC_proc() {
 	uint32_t count = 0;
 	uint32_t recv_count = 0;
 	while (1) {
-		if (recv_count > 32) break;
+		if (recv_count > 31) break;
 		usleep(100);
 		if (!sim_nicInfo->nic_elem[0].wq_valid) continue;
 		if (!sim_nicInfo->nic_elem[0].cq_valid) continue;
