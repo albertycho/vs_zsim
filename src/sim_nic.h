@@ -250,7 +250,7 @@ void run_NIC_proc() {
 		sim_nicInfo->nic_elem[0].recv_buf[rb_head] = 0xabc0 + count;
 		
 		core_cycle = nic_zinfo->globPhaseCycles;
-		std::cout << "NIC: core0 cycle:" << core_cycle;
+		std::cout <<std::dec<< "NIC: core0 cycle:" << core_cycle;
 		//uint64_t q_cycle = 10000000 + (count * 10000000);
 		uint64_t q_cycle = core_cycle+ (count * 10000000);
 		cq_entry_t cqe = generate_cqe(success, tid, recv_buf_addr);
