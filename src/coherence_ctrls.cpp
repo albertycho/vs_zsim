@@ -85,7 +85,6 @@ uint64_t MESIBottomCC::processEviction(Address wbLineAddr, uint32_t lineId, bool
 }
 
 uint64_t MESIBottomCC::processAccess(Address lineAddr, uint32_t lineId, AccessType type, uint64_t cycle, uint32_t srcId, uint32_t flags) {
-    info("coherence_ctrls.cpp - processAccess");
     uint64_t respCycle = cycle;
     MESIState* state = &array[lineId];
     switch (type) {
