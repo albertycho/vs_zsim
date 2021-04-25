@@ -227,7 +227,7 @@ void run_NIC_proc() {
 	init_nicInfo();
 
 	GlobSimInfo * nic_zinfo= static_cast<GlobSimInfo*>(gm_get_glob_ptr());
-	uint64_t core_cycle = nic_zinfo->cores[0]->getCycles();
+	uint64_t core_cycle;
 
 	int procIdx = 0;
 	uint32_t count = 0;
@@ -249,7 +249,7 @@ void run_NIC_proc() {
 		uint64_t recv_buf_addr = (uint64_t)(&(sim_nicInfo->nic_elem[0].recv_buf[rb_head]));
 		sim_nicInfo->nic_elem[0].recv_buf[rb_head] = 0xabc0 + count;
 		
-		core_cycle = nic_zinfo->cores[0]->getCycles();
+		core_cycle = nic_zinfo->globPhaseCycles;
 		std::cout << "NIC: core0 cycle:" << core_cycle;
 		//uint64_t q_cycle = 10000000 + (count * 10000000);
 		uint64_t q_cycle = core_cycle+ (count * 10000000);
