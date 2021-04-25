@@ -6,6 +6,8 @@
 #include <string>
 
 #include "nic_defines.h"
+
+// may cause linking issues (ambiguous definition)
 #include "zsim.h"
 
 
@@ -224,6 +226,9 @@ void run_NIC_proc() {
 
 	init_nicInfo();
 
+	GlobSimInfo * nic_zinfo= static_cast<GlobSimInfo*>(gm_get_glob_ptr());
+	uint64_t core_cycle = nic_zinfo->cores[0]->getCycles();
+
 	int procIdx = 0;
 	uint32_t count = 0;
 	uint32_t recv_count = 0;
@@ -244,7 +249,10 @@ void run_NIC_proc() {
 		uint64_t recv_buf_addr = (uint64_t)(&(sim_nicInfo->nic_elem[0].recv_buf[rb_head]));
 		sim_nicInfo->nic_elem[0].recv_buf[rb_head] = 0xabc0 + count;
 		
-		uint64_t q_cycle = 10000000 + (count * 10000000);
+		core_cycle = nic_zinfo->cores[0]->getCycles();
+		std::cout << "NIC: core0 cycle:" << core_cycle;
+		//uint64_t q_cycle = 10000000 + (count * 10000000);
+		uint64_t q_cycle = core_cycle+ (count * 10000000);
 		cq_entry_t cqe = generate_cqe(success, tid, recv_buf_addr);
 		cq_wr_event_enqueue(q_cycle, cqe, sim_nicInfo, 0);
 		//ncq_success = create_cq_entry(procIdx, p0_cq, SIM_NICELEM.ncq_SR, success, tid, recv_buf_addr);
