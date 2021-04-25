@@ -98,19 +98,7 @@ void TimingCore::bblAndRecord(Address bblAddr, BblInfo* bblInfo) {
     
     //TODO: find core number
     core_cq_wr_event_action(curCycle, nicInfo, 0);
-  /*  if (cq_wr_event_ready(curCycle, nicInfo, 0))
-    {
-        //info("wr_event_ready");
-        std::cout << "wr_event ready," << curCycle << std::endl;
 
-        cq_wr_event* cqwrev = cq_wr_event_dequeue(nicInfo, 0);
-        std::cout << "wrevent_q_cycle:" << cqwrev->q_cycle << std::endl;
-        if (process_cq_wr_event(cqwrev, nicInfo, 0) != 0)
-        {
-            panic("cq_entry write failed");
-        }
-    }
-    */
     Address endBblAddr = bblAddr + bblInfo->bytes;
     for (Address fetchAddr = bblAddr; fetchAddr < endBblAddr; fetchAddr+=(1 << lineBits)) {
         uint64_t startCycle = curCycle;
