@@ -61,30 +61,3 @@ int main() {
 	std::cout<<"APP - terminating"<<std::endl;
     return 0;
 }
-//
-//	int count=0;
-//
-//	uint32_t wq_head = wq->head;
-//	uint32_t cq_tail = cq->tail;
-//	bool wq_SR = wq->SR;
-//	bool cq_SR = cq->SR;
-//
-//	bool cq_entry_SR = cq->q[0].SR;
-//
-//	std::cout<<"wq->head="<<wq_head<<", wq->SR="<<wq_SR<<", cq->SR="<<cq_SR<<", cq_entry_SR="<<cq_entry_SR<<std::endl;
-//
-//	wq->q[wq->head].op=0xcc;
-//	wq->q[wq->head].valid=true;
-//	wq->q[wq->head].SR=wq->SR;
-//
-//	while(cq->q[cq->tail].SR!=cq->SR)
-//	{
-//	}
-//
-//	unsigned int cq_tid=cq->q[cq->tail].tid;
-//
-//	std::cout<<"cq_tid returned "<<cq_tid<<std::endl;
-//
-//	register_buffer((void*) 0, (void*) 0xdead);
-//    return 0;
-//}
