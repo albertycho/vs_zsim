@@ -25,7 +25,7 @@ int main() {
 	uint64_t send_count=0;
 	uint64_t send_serviced=0;
 
-	while(send_count<32)
+	while(send_count<=32)
 	{
 		successStruct recv_completion;
 		do{
