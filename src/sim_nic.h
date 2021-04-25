@@ -290,7 +290,7 @@ void run_NIC_proc() {
 		if (cur_wq_entry.op == RMC_SEND)
 		{
 			recv_count++;
-			std::cout << "NIC: wq op is RMC_SEND - lbuf addr:" << std::hex << cur_wq_entry.buf_addr << ", lbuf_val:" << *((uint32_t*)(cur_wq_entry.buf_addr)) << ", recv_count:" << recv_count << std::endl;
+			std::cout << "NIC: recvd wq entry with op RMC_SEND. recv_count:" << recv_count << ", lbuf addr:" << std::hex << cur_wq_entry.buf_addr << ", lbuf_val:" << *((uint32_t*)(cur_wq_entry.buf_addr)) << std::endl;
 			//send cq_entry so APP can invalidate corresponding wq_entry
 			//ncq_success=1;
 			//while(ncq_success!=0){
