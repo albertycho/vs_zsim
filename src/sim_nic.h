@@ -10,6 +10,7 @@
 // may cause linking issues (ambiguous definition)
 #include "zsim.h"
 #include "core.h"
+#include "timing_core.h"
 
 
 #ifndef _SIM_NIC_H_
@@ -249,8 +250,9 @@ void run_NIC_proc() {
 		uint64_t recv_buf_addr = (uint64_t)(&(sim_nicInfo->nic_elem[0].recv_buf[rb_head]));
 		sim_nicInfo->nic_elem[0].recv_buf[rb_head] = 0xabc0 + count;
 		
-		core_cycle = nic_zinfo->globPhaseCycles;
+		//core_cycle = nic_zinfo->globPhaseCycles;
 		//core_cycle = nic_zinfo->cores[0]->getCycles();
+		core_cycle = static_cast<TimingCore*>(nic_zinfo->cores[0])->getCycles();
 		std::cout << std::dec << "globPhaseCycle read by NIC  :" << core_cycle << std::endl;
 		//uint64_t q_cycle = 10000000 + (count * 10000000);
 		uint64_t q_cycle = core_cycle+ (10000000);
