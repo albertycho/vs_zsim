@@ -10,8 +10,7 @@
 // may cause linking issues (ambiguous definition)
 #include "zsim.h"
 #include "core.h"
-//#include "timing_core.h"
-//#include "core_recorder.h"
+
 
 #ifndef _SIM_NIC_H_
 #define _SIM_NIC_H_
