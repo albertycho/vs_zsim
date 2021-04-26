@@ -258,6 +258,7 @@ void run_NIC_proc() {
 		std::cout << std::dec << "NIC will put cq_wr_event for:" << q_cycle<< std::endl;
 		cq_entry_t cqe = generate_cqe(success, tid, recv_buf_addr);
 		cq_wr_event_enqueue(q_cycle, cqe, sim_nicInfo, 0);
+		
 		//ncq_success = create_cq_entry(procIdx, p0_cq, SIM_NICELEM.ncq_SR, success, tid, recv_buf_addr);
 		//if (ncq_success != 0) {
 			//std::cout << "NIC: cq entry enqueu failed\t success:" << p0_cq->q[procIdx].success << std::endl;

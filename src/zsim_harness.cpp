@@ -283,12 +283,16 @@ void LaunchProcess(uint32_t procIdx) {
         int nargs = args.size()+1;
         const char* aptrs[nargs];
 
+        info("LaunchProcessCalled")
+
         trace(Harness, "Calling arguments:");
         for (unsigned int i = 0; i < args.size(); i++) {
             trace(Harness, " arg%d = %s", i, args[i].c_str());
             aptrs[i] = args[i].c_str();
+            std::cout << aptrs[i];
         }
         aptrs[nargs-1] = nullptr;
+        std::cout << endl;
 
         //Chdir to process dir if needed
         if (perProcessDir) {
