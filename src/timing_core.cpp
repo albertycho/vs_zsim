@@ -29,6 +29,8 @@
 
 #include "core_to_nic_functions.h"
 
+#include <thread>
+
 #define DEBUG_MSG(args...)
 //#define DEBUG_MSG(args...) info(args)
 
@@ -98,6 +100,7 @@ void TimingCore::bblAndRecord(Address bblAddr, BblInfo* bblInfo) {
     
     //TODO: find core number
     core_cq_wr_event_action(curCycle, nicInfo, 0);
+    std::this_thread::yield();
 
     Address endBblAddr = bblAddr + bblInfo->bytes;
     for (Address fetchAddr = bblAddr; fetchAddr < endBblAddr; fetchAddr+=(1 << lineBits)) {
