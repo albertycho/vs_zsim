@@ -117,7 +117,7 @@ wq_entry_t deq_wq_entry(uint64_t core_id, glob_nic_elements* nicInfo) {
 	return raw_wq_entry;
 }
 
-void process_wq_entry(wq_entry_t cur_wq_entry, unit64_t core_id, glob_nic_elements* nicInfo)
+void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elements* nicInfo)
 {
 	if (cur_wq_entry.op == RMC_RECV) {
 		//TODO:rewrite free_recv_buf_addr for core_nic_api
