@@ -1145,11 +1145,11 @@ VOID SimEnd() {
 
 VOID HandleNicMagicOp(THREADID tid, ADDRINT val, ADDRINT field) {
 
+    uint64_t core_id = getCid(tid);
 	switch(field){
 	case 0://WQ
 		//nicInfo->nic_elem[procIdx].wq_valid=true;
-		//*static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_elem[procIdx].wq.q[0]));
-		*static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(nicInfo->nic_elem[procIdx].wq);
+		*static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(nicInfo->nic_elem[core_id].wq);
 		NICELEM.wq->head=0;
 		NICELEM.wq->SR=1;
 		NICELEM.nwq_SR=1;
@@ -1169,16 +1169,16 @@ VOID HandleNicMagicOp(THREADID tid, ADDRINT val, ADDRINT field) {
 		}
 
 		NICELEM.cq_valid=true;
-		*static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(nicInfo->nic_elem[procIdx].cq);
+		*static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(nicInfo->nic_elem[core_id].cq);
 		break;
 	case 2: // lbuf
-		*static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_elem[procIdx].lbuf[0]));
+		*static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_elem[core_id].lbuf[0]));
 		break;
 	case 0xdead: //invalidate entries after test app terminates
-		nicInfo->nic_elem[procIdx].wq_tail=0;
-		nicInfo->nic_elem[procIdx].cq_head=0;
-		nicInfo->nic_elem[procIdx].wq_valid=false;
-		nicInfo->nic_elem[procIdx].cq_valid=false;
+		nicInfo->nic_elem[core_id].wq_tail=0;
+		nicInfo->nic_elem[core_id].cq_head=0;
+		nicInfo->nic_elem[core_id].wq_valid=false;
+		nicInfo->nic_elem[core_id].cq_valid=false;
 		NICELEM.wq->head=0;
 		NICELEM.cq->tail=0;
 		for(int i=0; i<100; i++){

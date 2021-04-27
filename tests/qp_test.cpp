@@ -34,8 +34,6 @@ int main() {
 
 		//std::cout<<"APP - recv_completion.op="<<recv_completion.op<<std::endl;
 
-		
-		
 		send_serviced++;
 		
 		//test_prints

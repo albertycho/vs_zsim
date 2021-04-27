@@ -15,17 +15,17 @@
 
 #define MAX_NUM_WQ 8
 
-#define NICELEM 		nicInfo->nic_elem[procIdx]
-#define NWQ_VAL 		nicInfo->nic_elem[procIdx].wq_valid
-#define NCQ_VAL 		nicInfo->nic_elem[procIdx].cq_valid
+#define NICELEM 		nicInfo->nic_elem[core_id]
+#define NWQ_VAL 		nicInfo->nic_elem[core_id].wq_valid
+#define NCQ_VAL 		nicInfo->nic_elem[core_id].cq_valid
 
-#define NWQ_HEAD 		nicInfo->nic_elem[procIdx].wq_head
-#define NWQ_TAIL 		nicInfo->nic_elem[procIdx].wq_tail
-#define NCQ_HEAD 		nicInfo->nic_elem[procIdx].cq_head
-#define NCQ_TAIL 		nicInfo->nic_elem[procIdx].cq_tail
+#define NWQ_HEAD 		nicInfo->nic_elem[core_id].wq_head
+#define NWQ_TAIL 		nicInfo->nic_elem[core_id].wq_tail
+#define NCQ_HEAD 		nicInfo->nic_elem[core_id].cq_head
+#define NCQ_TAIL 		nicInfo->nic_elem[core_id].cq_tail
 
-#define NWQ_Q 			nicInfo->nic_elem[procIdx].wq
-#define NCQ_Q 			nicInfo->nic_elem[procIdx].cq
+#define NWQ_Q 			nicInfo->nic_elem[core_id].wq
+#define NCQ_Q 			nicInfo->nic_elem[core_id].cq
 
 
 #define NICELEM_P(a) 	nicInfo->nic_elem[a]
