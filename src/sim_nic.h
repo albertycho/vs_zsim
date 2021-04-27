@@ -17,7 +17,7 @@
 
 //#include "nic_functions.h"
 
-#define SIM_NICELEM 		sim_nicInfo->nic_elem[procIdx]
+#define SIM_NICELEM 		sim_nicInfo->nic_elem[core_id]
 
 glob_nic_elements* sim_nicInfo;
 
