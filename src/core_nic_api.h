@@ -3,6 +3,8 @@
 
 
 
+/// RRPP functions
+
 bool cq_wr_event_ready(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint64_t core_id)
 {
 	if (CQ_WR_EV_Q == NULL)
@@ -83,6 +85,11 @@ int core_cq_wr_event_action(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint
 }
 
 
+
+
+
+/// RGP functions
+
 bool check_wq(uint64_t core_id, glob_nic_elements* nicInfo) {
 	wq_entry_t raw_wq_entry = NICELEM.wq->q[NICELEM.wq_tail];
 	//wq_entry_t raw_wq_entry = wq->q[SIM_NICELEM.wq_tail];
@@ -108,4 +115,19 @@ wq_entry_t deq_wq_entry(uint64_t core_id, glob_nic_elements* nicInfo) {
 	}
 
 	return raw_wq_entry;
+}
+
+void process_wq_entry(wq_entry_t cur_wq_entry, unit64_t core_id, glob_nic_elements* nicInfo)
+{
+	if (cur_wq_entry.op == RMC_RECV) {
+		//TODO:rewrite free_recv_buf_addr for core_nic_api
+		//free_recv_buf_addr(cur_wq_entry.buf_addr, core_id);
+		return;
+	}
+
+	if (cur_wq_entry.op == RMC_SEND)
+	{
+		// create a RRPP EQ entry? if model expects a remote response for this send
+		return;
+	}
 }

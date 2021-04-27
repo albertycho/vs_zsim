@@ -27,7 +27,7 @@
 #include "filter_cache.h"
 #include "zsim.h"
 
-#include "core_to_nic_functions.h"
+#include "core_nic_api.h"
 
 #include <thread>
 
