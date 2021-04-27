@@ -84,7 +84,6 @@ int core_cq_wr_event_action(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint
 
 
 bool check_wq(uint64_t core_id, glob_nic_elements* nicInfo) {
-	uint64_t procIdx = core_id;
 	wq_entry_t raw_wq_entry = NICELEM.wq->q[NICELEM.wq_tail];
 	//wq_entry_t raw_wq_entry = wq->q[SIM_NICELEM.wq_tail];
 	if ((raw_wq_entry.valid == 0) || (NICELEM.nwq_SR != (raw_wq_entry.SR))) {
@@ -94,7 +93,6 @@ bool check_wq(uint64_t core_id, glob_nic_elements* nicInfo) {
 }
 
 wq_entry_t deq_wq_entry(uint64_t core_id, glob_nic_elements* nicInfo) {
-	uint64_t procIdx = core_id;
 	wq_entry_t raw_wq_entry = NICELEM.wq->q[NICELEM.wq_tail];
 	
 	rmc_wq_t* wq = NICELEM.wq;
