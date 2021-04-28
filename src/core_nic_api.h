@@ -131,3 +131,16 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
 		return;
 	}
 }
+
+int nic_rgp_action(uint64_t core_id, glob_nic_elements* nicInfo)
+{
+	if (!check_wq(core_id, nicInfo))
+	{
+		//nothing in wq, return
+		return 0;
+	}
+	wq_entry_t cur_wq_entry = deq_wq_entry(core_id, nicInfo);
+	process_wq_entry(cur_wq_entry, core_id, nicInfo);
+
+	return 0;
+}
