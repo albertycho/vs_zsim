@@ -66,7 +66,8 @@ int process_cq_wr_event(cq_wr_event* cq_wr, glob_nic_elements* nicInfo, uint64_t
 	return 0;
 
 }
-int core_cq_wr_event_action(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint64_t core_id){
+//int core_cq_wr_event_action(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint64_t core_id){
+int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t core_id) {
 //put all required action in one function to keep core.cpp files simpler
 	if (cq_wr_event_ready(cur_cycle, nicInfo, core_id))
 	{
