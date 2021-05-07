@@ -148,6 +148,11 @@ wq_entry_t deq_wq_entry(uint64_t core_id, glob_nic_elements* nicInfo) {
     return raw_wq_entry;
 }
 
+void enq_rcp_eq_entry(uint64_t core_id, glob_nic_elements* nicInfo) {
+    //reference cq_wr_event_enqueue in sim_nic.h
+    //TODO write this function
+}
+
 void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elements* nicInfo)
 {
     if (cur_wq_entry.op == RMC_RECV) {
@@ -158,7 +163,8 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
 
     if (cur_wq_entry.op == RMC_SEND)
     {
-        // create a RRPP EQ entry? if model expects a remote response for this send
+        //TODO: create write this function
+        enq_rcp_eq_entry(core_id, nicInfo);
         return;
     }
 }
@@ -175,6 +181,7 @@ int nic_rgp_action(uint64_t core_id, glob_nic_elements* nicInfo)
 
     return 0;
 }
+
 
 
 static inline void clearCid(uint32_t tid) {

@@ -4,6 +4,8 @@
 
 
 /// RRPP functions
+/////////////////////
+
 
 bool cq_wr_event_ready(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint64_t core_id)
 {
@@ -15,7 +17,7 @@ bool cq_wr_event_ready(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint64_t 
 	return q_cycle <= cur_cycle;
 }
 
-cq_wr_event* cq_wr_event_dequeue(glob_nic_elements* nicInfo, uint64_t core_id)
+cq_wr_event* deq_cq_wr_event(glob_nic_elements* nicInfo, uint64_t core_id)
 {
 	assert(CQ_WR_EV_Q != NULL);
 
@@ -73,7 +75,7 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 	{
 		std::cout << std::dec << "wr_event ready @ cycle      :" << cur_cycle << std::endl;
 
-		cq_wr_event* cqwrev = cq_wr_event_dequeue(nicInfo, core_id);
+		cq_wr_event* cqwrev = deq_cq_wr_event(nicInfo, core_id);
 		//std::cout << "wrevent_q_cycle:" << cqwrev->q_cycle << std::endl;
 
 		if (process_cq_wr_event(cqwrev, nicInfo, core_id) != 0)
@@ -191,6 +193,37 @@ int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uin
 	return 0;
 }
 
+
+
+/// RCP functions
+/////////////////////
+
+bool check_rcp_eq(uint64_t cur_cycle, glob_nic_elements nicInfo, uint32_t core_id) {
+	//check rcp_eq head. similar to checking CEQ head
+	
+	//if rcp_eq head == NULL return false;
+	//if rcp_eq head -> q_cycle <= cur_cycle return true;
+
+	return false;
+}
+
+rcp_eq_entry_t deq_rcp_eq(glob_nic_elements nicInfo, uint32_t core_id) {
+	//similar to deq_cq_wr_event
+	rcp_eq_entry_t  ret;
+	return ret;
+}
+
+void process_rcp_eq_entry(rcp_eq_entry_t nrcp_eq_entry) {
+	//write response to local buffer
+	//create cq entry
+}
+
+void RCP_routine(uint64_t cur_cycle, glob_nic_elements nicInfo, uint32_t core_id) {
+	if (check_rcp_eq(cur_cycle, nicInfo, core_id)) {
+		rcp_eq_entry_t nrcp_eq_entry = deq_rcp_eq(nicInfo, core_id);
+		process_rcp_eq_entry(nrcp_eq_entry);
+	}
+}
 
 
 /// RGP functions

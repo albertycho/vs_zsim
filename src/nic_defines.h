@@ -113,6 +113,12 @@ typedef struct cq_wr_event {
 //class cq_wr_event : public GlobAlloc {
 //};
 
+typedef struct rcp_eq_entry {
+	uint64_t q_cycle;
+	uint64_t lbuf_addr;
+	uint64_t lbuf_data; //may not need
+} rcp_eq_entry_t;
+
 struct nic_element {
 	//rmc_wq_t wq;
 	//rmc_cq_t cq;

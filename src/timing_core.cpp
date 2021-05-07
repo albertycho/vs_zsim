@@ -103,6 +103,7 @@ void TimingCore::bblAndRecord(Address bblAddr, BblInfo* bblInfo) {
     //core_cq_wr_event_action(curCycle, nicInfo, 0);
     core_ceq_routine(curCycle, nicInfo, 0);
     RRPP_routine(curCycle, nicInfo, lg_p, 0);
+    RCP_routine(curCycle, nicInfo, 0);
 
     Address endBblAddr = bblAddr + bblInfo->bytes;
     for (Address fetchAddr = bblAddr; fetchAddr < endBblAddr; fetchAddr+=(1 << lineBits)) {
