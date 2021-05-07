@@ -209,8 +209,8 @@ void* gm_get_nic_ptr() {
 
 void gm_set_lg_ptr(void* ptr) {
     assert(GM);
-    assert(GM->nic_lgp == nullptr);
-    GM->nic_lgp = ptr;
+    assert(GM->lg_p == nullptr);
+    GM->lg_p = ptr;
 }
 
 void* gm_get_lg_ptr() {
