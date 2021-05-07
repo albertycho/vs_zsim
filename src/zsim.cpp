@@ -60,8 +60,6 @@
 #include "trace_driver.h"
 #include "virt/virt.h"
 
-#include "core_nic_api.h"
-
 //#include <signal.h> //can't include this, conflicts with PIN's
 
 /* Command-line switches (used to pass info from harness that cannot be passed through the config file, most config is file-based) */
@@ -120,6 +118,64 @@ Core* cores[MAX_THREADS];
 
 static void init_NIC_queue(){
 }
+
+// NIC RGP functions 
+
+bool check_wq(uint64_t core_id, glob_nic_elements* nicInfo) {
+    wq_entry_t raw_wq_entry = NICELEM.wq->q[NICELEM.wq_tail];
+    //wq_entry_t raw_wq_entry = wq->q[SIM_NICELEM.wq_tail];
+    if ((raw_wq_entry.valid == 0) || (NICELEM.nwq_SR != (raw_wq_entry.SR))) {
+        return false;
+    }
+    return true;
+}
+
+wq_entry_t deq_wq_entry(uint64_t core_id, glob_nic_elements* nicInfo) {
+    wq_entry_t raw_wq_entry = NICELEM.wq->q[NICELEM.wq_tail];
+
+    rmc_wq_t* wq = NICELEM.wq;
+
+    //FIXME: invalidating WQ at NIC for now. 
+    //must be updated s.t. app does this when getting cq entry
+    wq->q[NICELEM.wq_tail].valid = 0;
+    NICELEM.wq_tail = NICELEM.wq_tail + 1;
+    if (NICELEM.wq_tail >= MAX_NUM_WQ) {
+        NICELEM.wq_tail = 0;
+        NICELEM.nwq_SR = !(NICELEM.nwq_SR);
+        //std::cout<<"NIC - flip wq SR "<<std::endl;
+    }
+
+    return raw_wq_entry;
+}
+
+void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elements* nicInfo)
+{
+    if (cur_wq_entry.op == RMC_RECV) {
+        //TODO:rewrite free_recv_buf_addr for core_nic_api
+        //free_recv_buf_addr(cur_wq_entry.buf_addr, core_id);
+        return;
+    }
+
+    if (cur_wq_entry.op == RMC_SEND)
+    {
+        // create a RRPP EQ entry? if model expects a remote response for this send
+        return;
+    }
+}
+
+int nic_rgp_action(uint64_t core_id, glob_nic_elements* nicInfo)
+{
+    if (!check_wq(core_id, nicInfo))
+    {
+        //nothing in wq, return
+        return 0;
+    }
+    wq_entry_t cur_wq_entry = deq_wq_entry(core_id, nicInfo);
+    process_wq_entry(cur_wq_entry, core_id, nicInfo);
+
+    return 0;
+}
+
 
 static inline void clearCid(uint32_t tid) {
     assert(tid < MAX_THREADS);
@@ -1179,11 +1235,14 @@ VOID HandleNicMagicOp(THREADID tid, ADDRINT val, ADDRINT field) {
 
     case NOTIFY_WQ_WRITE://NOTIFY WQ WRITE from application
         
+        nic_rgp_action(core_id, nicInfo);
+        /*
         if(check_wq(core_id, nicInfo))
         {
           wq_entry_t cur_wq_entry = deq_wq_entry(core_id, nicInfo);
           process_wq_entry(cur_wq_entry, core_id, nicInfo);
         }
+        */
         break;
 	case 0xdead: //invalidate entries after test app terminates
 		nicInfo->nic_elem[core_id].wq_tail=0;

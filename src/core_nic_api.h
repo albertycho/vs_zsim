@@ -90,6 +90,8 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 
 
 /// RGP functions
+// acho: Moved to zsim.cpp due to linking issues. May want to figure out a more elegant way later
+/*
 
 bool check_wq(uint64_t core_id, glob_nic_elements* nicInfo) {
 	wq_entry_t raw_wq_entry = NICELEM.wq->q[NICELEM.wq_tail];
@@ -145,3 +147,5 @@ int nic_rgp_action(uint64_t core_id, glob_nic_elements* nicInfo)
 
 	return 0;
 }
+
+*/
