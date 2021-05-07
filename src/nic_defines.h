@@ -140,14 +140,15 @@ struct glob_nic_elements {
 	//adding additional elements to this struct causes segfault at gm_calloc for unknown reason
 };
 
-
-#endif // _NIC_DEFINS_H_
-
-
 struct load_generator {
 	int next_cycle;
 	int message; //may replace this to appropriate type
 };
+
+
+#endif // _NIC_DEFINS_H_
+
+
 
 /* don't know how to make a class accessible globally
 class load_generator {
