@@ -60,7 +60,7 @@
 #include "trace_driver.h"
 #include "virt/virt.h"
 
-#inclue "core_nic_api.h"
+#include "core_nic_api.h"
 
 //#include <signal.h> //can't include this, conflicts with PIN's
 
