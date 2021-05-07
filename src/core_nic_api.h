@@ -85,7 +85,110 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 	return 0;
 }
 
+//functions for interfacing load_generator
+bool check_load_gen(void* lg_p, int cur_cycle) {
+	int lg_next_cycle = ((load_generator*)lg_p)->next_cycle;
+	if (lg_next_cycle <= cur_cycle) {
+		return true;
+	}
+	return false;
+}
 
+int get_next_message(void* lg_p) {
+	int next_message = ((load_generator*)lg_p)->message;
+	((load_generator*)lg_p)->message = ((load_generator*)lg_p)->message + 1;
+	((load_generator*)lg_p)->next_cycle = ((load_generator*)lg_p)->next_cycle + 10000; 
+	//TODO: will do something more sophisticated for setting next_cycle offset 
+
+	return next_message;
+}
+
+uint64_t RRPP_allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t core_id) { // reusing(modifying) sim_nic.h function
+	uint32_t head = 0;
+	while (head < RECV_BUF_POOL_SIZE)
+	{
+		if (NICELEM.rb_dir[head].in_use == false)
+		{
+			bool fit = true;
+			for (uint32_t i = head; i < head + blen; i++)
+			{
+				if (i >= RECV_BUF_POOL_SIZE) {
+					return RECV_BUF_POOL_SIZE + 1;
+				}
+				if (NICELEM.rb_dir[i].in_use == true)
+				{
+					fit = false;
+					if (NICELEM.rb_dir[i].is_head)
+					{
+						head = i + NICELEM.rb_dir[i].len;
+					}
+					else//should not happen
+					{
+						std::cout << "ALLOCATE_RECV_BUF BROKEN - IS_HEAD ERROR" << std::endl;
+					}
+					break;
+				}
+
+			}
+			if (fit)
+			{
+				NICELEM.rb_dir[head].is_head = true;
+				NICELEM.rb_dir[head].len = blen;
+				for (uint32_t i = head; i < head + blen; i++)
+				{
+					NICELEM.rb_dir[i].in_use = true;
+				}
+				return head;
+			}
+		}
+		else
+		{
+			if (NICELEM.rb_dir[head].is_head)
+			{
+				head = head + NICELEM.rb_dir[head].len;
+			}
+			else//should not happen
+			{
+				std::cout << "ALLOCATE_RECV_BUF BROKEN - IS_HEAD ERROR" << std::endl;
+			}
+
+		}
+
+	}
+
+	uint32_t rb_head =  RECV_BUF_POOL_SIZE + 1;
+	uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[0].recv_buf[rb_head]));
+	return recv_buf_addr;
+}
+
+
+int inject_inbound_packet(int message, uint64_t recv_buf_addr) { //input is packet, so type may change with code update
+	//write to recv buffer
+	*((uint64_t*)recv_buf_addr) = message;
+	//update uarch state (call access)
+
+	//TODO: what to return? 
+	return 0;
+}
+
+int create_CEQ_entry(uint64_t recv_buf_addr, uint64_t cur_cycle, glob_nic_elements* nicInfo, uint32_t core_id) {
+	//TODO: create and enq CEQ entry - reuse functions from sim_nic.h
+
+	return 0;
+}
+
+int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id) {
+/*Wrapper for the whole RRPP routine*/
+	if (check_load_gen(lg_p)) {
+		int message = get_next_message(lg_p);
+		uint64_t recv_buf_addr = RRPP_allocate_recv_buf(1, nicInfo, core_id);
+		inject_inbound_packet(message, recv_buf_addr);
+		create_CEQ_entry(recv_buf_addr, cur_cycle, nicInfo, core_id);
+
+	}
+
+	return 0;
+}
 
 
 
