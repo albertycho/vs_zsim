@@ -179,7 +179,7 @@ int create_CEQ_entry(uint64_t recv_buf_addr, uint64_t cur_cycle, glob_nic_elemen
 
 int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id) {
 /*Wrapper for the whole RRPP routine*/
-	if (check_load_gen(lg_p)) {
+	if (check_load_gen(lg_p, cur_cycle)) {
 		int message = get_next_message(lg_p);
 		uint64_t recv_buf_addr = RRPP_allocate_recv_buf(1, nicInfo, core_id);
 		inject_inbound_packet(message, recv_buf_addr);
