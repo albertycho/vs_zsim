@@ -207,16 +207,16 @@ void* gm_get_nic_ptr() {
     return const_cast<void*>(GM->nic_regp);  // devolatilize
 }
 
-void gm_set_nic_ptr(void* ptr) {
+void gm_set_lg_ptr(void* ptr) {
     assert(GM);
     assert(GM->nic_lgp == nullptr);
     GM->nic_lgp = ptr;
 }
 
-void* gm_get_nic_ptr() {
+void* gm_get_lg_ptr() {
     assert(GM);
-    assert(GM->nic_lgp);
-    return const_cast<void*>(GM->lg_regp);  // devolatilize
+    assert(GM->lg_p);
+    return const_cast<void*>(GM->lg_p);  // devolatilize
 }
 
 void gm_stats() {
