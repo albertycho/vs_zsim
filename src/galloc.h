@@ -62,6 +62,9 @@ void* gm_get_secondary_ptr();
 void gm_set_nic_ptr(void* ptr);
 void* gm_get_nic_ptr();
 
+void gm_set_lg_ptr(void* ptr);
+void* gm_get_lg_ptr();
+
 void gm_stats();
 
 bool gm_isready();

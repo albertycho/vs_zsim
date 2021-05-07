@@ -1030,6 +1030,10 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 
 
     gm_set_nic_ptr(nicInfo);
+
+    void* lgp;
+    lgp = gm_calloc<load_generator>();
+    gm_set_lg_ptr(lgp);
   
 	//TODO: remove test_tag after validation
 

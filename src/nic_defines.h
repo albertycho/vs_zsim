@@ -144,3 +144,36 @@ struct glob_nic_elements {
 #endif // _NIC_DEFINS_H_
 
 
+struct load_generator {
+	int next_cycle;
+	int message; //may replace this to appropriate type
+};
+
+/* don't know how to make a class accessible globally
+class load_generator {
+public:
+	load_generator();
+	int get_next_cycle();
+	int get_message(); //may replace this to appropriate type
+	void tread();
+
+private:
+	int next_cycle;
+	int message;
+};
+
+load_generator::load_generator() {
+	next_cycle = 10000;
+	message = 0;
+}
+int load_generator::get_message() {
+	return message;
+}
+int load_generator::get_next_cycle() {
+	return next_cycle;
+}
+void load_generator::tread() {
+	next_cycle += 10000;
+	message += 1;
+}
+*/
