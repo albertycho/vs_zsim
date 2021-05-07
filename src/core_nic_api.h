@@ -104,6 +104,7 @@ int get_next_message(void* lg_p) {
 }
 
 uint64_t RRPP_allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t core_id) { // reusing(modifying) sim_nic.h function
+//TODO: go over this, find problems.. might be better to rewrite
 	uint32_t head = 0;
 	while (head < RECV_BUF_POOL_SIZE)
 	{
@@ -163,8 +164,8 @@ uint64_t RRPP_allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint3
 
 
 int inject_inbound_packet(int message, uint64_t recv_buf_addr) { //input is packet, so type may change with code update
-	//write to recv buffer
-	*((uint64_t*)recv_buf_addr) = message;
+	//write to recv buffer TODO: do this in a function?
+	//*((uint64_t*)recv_buf_addr) = message;
 	//update uarch state (call access)
 
 	//TODO: what to return? 
