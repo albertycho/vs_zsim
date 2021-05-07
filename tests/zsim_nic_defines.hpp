@@ -1,7 +1,7 @@
 #include <stdint.h>
 
 #define MAX_NUM_WQ 8
-
+#define NOTIFY_WQ_WRITE 0xA
 
 #define RMC_READ                1
 #define RMC_WRITE               2

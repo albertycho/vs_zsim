@@ -42,6 +42,8 @@
 
 #define CQ_WR_EV_Q		nicInfo->nic_elem[core_id].cq_wr_event_q
 
+#define NOTIFY_WQ_WRITE 0xA
+
 #define RMC_READ                1
 #define RMC_WRITE               2
 #define RMC_RMW                 3

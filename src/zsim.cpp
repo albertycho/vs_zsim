@@ -60,6 +60,8 @@
 #include "trace_driver.h"
 #include "virt/virt.h"
 
+#inclue "core_nic_api.h"
+
 //#include <signal.h> //can't include this, conflicts with PIN's
 
 /* Command-line switches (used to pass info from harness that cannot be passed through the config file, most config is file-based) */
@@ -1174,6 +1176,15 @@ VOID HandleNicMagicOp(THREADID tid, ADDRINT val, ADDRINT field) {
 	case 2: // lbuf
 		*static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_elem[core_id].lbuf[0]));
 		break;
+
+    case NOTIFY_WQ_WRITE://NOTIFY WQ WRITE from application
+        
+        if(check_wq(core_id, nicInfo))
+        {
+          wq_entry_t cur_wq_entry = deq_wq_entry(core_id, nicInfo);
+          process_wq_entry(cur_wq_entry, core_id, nicInfo);
+        }
+        break;
 	case 0xdead: //invalidate entries after test app terminates
 		nicInfo->nic_elem[core_id].wq_tail=0;
 		nicInfo->nic_elem[core_id].cq_head=0;
