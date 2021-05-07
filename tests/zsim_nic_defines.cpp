@@ -140,6 +140,8 @@ void create_wq_entry(uint32_t op, bool SR, uint32_t cid, uint32_t nid,
     anEntry.offset = offset;
     anEntry.length = length;
     *((wq_entry_t *)wq_entry_addr) = anEntry;
+	//NOTIFY zsim of wq write
+	register_buffer((void*)(NULL), (void*)NOTIFY_WQ_WRITE);
 
 }
 
