@@ -198,7 +198,7 @@ int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uin
 /// RCP functions
 /////////////////////
 
-bool check_rcp_eq(uint64_t cur_cycle, glob_nic_elements nicInfo, uint32_t core_id) {
+bool check_rcp_eq(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint32_t core_id) {
 	//check rcp_eq head. similar to checking CEQ head
 	
 	//if rcp_eq head == NULL return false;
@@ -207,7 +207,7 @@ bool check_rcp_eq(uint64_t cur_cycle, glob_nic_elements nicInfo, uint32_t core_i
 	return false;
 }
 
-rcp_eq_entry_t deq_rcp_eq(glob_nic_elements nicInfo, uint32_t core_id) {
+rcp_eq_entry_t deq_rcp_eq(glob_nic_elements* nicInfo, uint32_t core_id) {
 	//similar to deq_cq_wr_event
 	rcp_eq_entry_t  ret;
 	return ret;
@@ -218,7 +218,7 @@ void process_rcp_eq_entry(rcp_eq_entry_t nrcp_eq_entry) {
 	//create cq entry
 }
 
-void RCP_routine(uint64_t cur_cycle, glob_nic_elements nicInfo, uint32_t core_id) {
+void RCP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint32_t core_id) {
 	if (check_rcp_eq(cur_cycle, nicInfo, core_id)) {
 		rcp_eq_entry_t nrcp_eq_entry = deq_rcp_eq(nicInfo, core_id);
 		process_rcp_eq_entry(nrcp_eq_entry);
