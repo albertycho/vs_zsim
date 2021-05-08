@@ -207,21 +207,21 @@ bool check_rcp_eq(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint32_t core_
 	return false;
 }
 
-rcp_eq_entry_t deq_rcp_eq(glob_nic_elements* nicInfo, uint32_t core_id) {
+rcp_event deq_rcp_eq(glob_nic_elements* nicInfo, uint32_t core_id) {
 	//similar to deq_cq_wr_event
-	rcp_eq_entry_t  ret;
+	rcp_event ret;
 	return ret;
 }
 
-void process_rcp_eq_entry(rcp_eq_entry_t nrcp_eq_entry) {
+void process_rcp_event(rcp_event nrcp_event) {
 	//write response to local buffer
-	//create cq entry
+	//create cq entry (CEQ entry)
 }
 
 void RCP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint32_t core_id) {
 	if (check_rcp_eq(cur_cycle, nicInfo, core_id)) {
-		rcp_eq_entry_t nrcp_eq_entry = deq_rcp_eq(nicInfo, core_id);
-		process_rcp_eq_entry(nrcp_eq_entry);
+		rcp_event nrcp_event = deq_rcp_eq(nicInfo, core_id);
+		process_rcp_event(nrcp_event);
 	}
 }
 
