@@ -42,6 +42,8 @@
 
 #define CQ_WR_EV_Q		nicInfo->nic_elem[core_id].cq_wr_event_q
 
+#define RCP_EQ			nicInfo->nic_elem[core_id].rcp_eq
+
 #define NOTIFY_WQ_WRITE 0xA
 
 #define RMC_READ                1
@@ -113,11 +115,12 @@ typedef struct cq_wr_event {
 //class cq_wr_event : public GlobAlloc {
 //};
 
-typedef struct rcp_eq_entry {
+typedef struct rcp_event {
 	uint64_t q_cycle;
 	uint64_t lbuf_addr;
 	uint64_t lbuf_data; //may not need
-} rcp_eq_entry_t;
+	rcp_event* next;
+} rcp_event;
 
 struct nic_element {
 	//rmc_wq_t wq;
@@ -135,6 +138,7 @@ struct nic_element {
 	uint32_t lbuf[RECV_BUF_POOL_SIZE];
 	
 	cq_wr_event* cq_wr_event_q;
+	rcp_event* rcp_eq;
 	PAD();
 
 };

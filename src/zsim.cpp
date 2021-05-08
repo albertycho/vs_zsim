@@ -148,9 +148,27 @@ wq_entry_t deq_wq_entry(uint64_t core_id, glob_nic_elements* nicInfo) {
     return raw_wq_entry;
 }
 
-void enq_rcp_eq_entry(uint64_t core_id, glob_nic_elements* nicInfo) {
+void enq_rcp_event(uint64_t q_cycle, uint64_t lbuf_addr, uint64_t lbuf_data, glob_nic_elements* nicInfo, uint64_t core_id) {
     //reference cq_wr_event_enqueue in sim_nic.h
     //TODO write this function
+    
+    //nicInfo->nic_elem[core_id].rcp_eq
+    rcp_event* rcp_e = gm_calloc<rcp_event>();
+    rcp_e->lbuf_addr = lbuf_addr;
+    rcp_e->lbuf_data = lbuf_data;
+    rcp_e->q_cycle = q_cycle;
+    rcp_e->next = NULL;
+
+    if (RCP_EQ == NULL) {
+        RCP_EQ = rcp_e;
+    }
+    else {
+        rcp_event* rcp_eq_tail = RCP_EQ;
+        while (rcp_eq_tail->next != NULL) {
+            rcp_eq_tail = rcp_eq_tail->next;
+        }
+        rcp_eq_tail->next = rcp_e;
+    }
 }
 
 void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elements* nicInfo)
@@ -163,8 +181,13 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
 
     if (cur_wq_entry.op == RMC_SEND)
     {
+        //TODO - define this somewhere else? decide how to handle nw_roundtrip_delay
+        uint64_t nw_roundtrip_delay = 10000;
+        uint64_t q_cycle = cores[core_id]->getCycles() + nw_roundtrip_delay;
+        uint64_t lbuf_addr = cur_wq_entry.buf_addr;
+        uint64_t lbuf_data = *((uint64_t*)lbuf_addr);
         //TODO: create write this function
-        enq_rcp_eq_entry(core_id, nicInfo);
+        enq_rcp_event(q_cycle, lbuf_addr, lbuf_data, nicInfo, core_id);
         return;
     }
 }
