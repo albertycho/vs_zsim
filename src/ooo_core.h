@@ -156,7 +156,7 @@ class WindowStructure {
 
             //TODO: remove expeirment code
             info("curCycle:%ld", curCycle);
-            info("instrs:%ld", bblInfo->instrs);
+            
             if (curCycle >= 500) {
                 nicInfo->nic_elem[0].cq->q[0].valid = true;
             }
