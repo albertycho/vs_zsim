@@ -212,7 +212,7 @@ int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycl
 	//TODO: create and enq CEQ entry - reuse functions from sim_nic.h
 	uint64_t ceq_delay = 100;
 	uint32_t tid = 0;//TODO: handle tid better
-	cq_entry_t cqe = generaet_cqe(success, tid, recv_buf_addr);
+	cq_entry_t cqe = generate_cqe(success, tid, recv_buf_addr);
 	cq_event_enqueue(cur_cycle + ceq_delay, cqe, nicInfo, core_id);
 
 	return 0;
