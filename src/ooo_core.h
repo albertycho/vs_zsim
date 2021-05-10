@@ -154,6 +154,13 @@ class WindowStructure {
             curPos++;
             curCycle++;
 
+            //TODO: remove expeirment code
+            info("curCycle:%ld", curCycle);
+            info("instrs:%ld", bblInfo->instrs);
+            if (curCycle >= 500) {
+                nicInfo->nic_elem[0].cq->q[0].valid = true;
+            }
+
             if (curPos == H) {  // rebase
                 // info("[%ld] Rebasing, curCycle=%ld", curCycle/H, curCycle);
                 std::swap(curWin, nextWin);

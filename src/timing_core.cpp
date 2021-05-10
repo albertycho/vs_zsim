@@ -99,7 +99,7 @@ void TimingCore::bblAndRecord(Address bblAddr, BblInfo* bblInfo) {
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
     void* lg_p = static_cast<void*>(gm_get_lg_ptr());
     
-    //experiment code
+    //TODO: remove experiment code
     info("curCycle:%ld", curCycle);
     info("instrs:%ld", bblInfo->instrs);
     if (curCycle >= 500) {
