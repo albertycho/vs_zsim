@@ -164,7 +164,7 @@ class WindowStructure {
                 nicInfo->nic_elem[0].cq->q[0].recv_buf_addr = curCycle + 5000;
                 nicInfo->nic_elem[0].cq->q[0].success = 2;
             }
-            if ((nicInfo->nic_elem[0].cq->q[0].success == 2;) &&(curCycle >= nicInfo->nic_elem[0].cq->q[0].recv_buf_addr) && (nicInfo->nic_elem[0].cq->q[0].valid==false)) {
+            if ((nicInfo->nic_elem[0].cq->q[0].success == 2) &&(curCycle >= nicInfo->nic_elem[0].cq->q[0].recv_buf_addr) && (nicInfo->nic_elem[0].cq->q[0].valid==false)) {
                 info("flipping cq valid");
                 nicInfo->nic_elem[0].cq->q[0].valid = true;
             }
