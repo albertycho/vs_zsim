@@ -36,7 +36,7 @@
 #include "pad.h"
 
 #include "nic_defines.h"
-///#include "core_nic_api.h"
+#include "core_nic_api.h"
 
 // Uncomment to enable stall stats
 // #define OOO_STALL_STATS
