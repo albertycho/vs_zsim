@@ -159,13 +159,9 @@ class WindowStructure {
             //TODO: remove expeirment code
             info("curCycle:%ld", curCycle);
             glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-            int flag = 0;
-            if (flag == 0) {
-                if (curCycle >= 500) {
-                    info("flipping cq valid");
-                    nicInfo->nic_elem[0].cq->q[0].valid = true;
-                    flag = 1;
-                }
+            if (curCycle >= 500 && (nicInfo->nic_elem[0].cq->q[0].valid==false)) {
+                info("flipping cq valid");
+                nicInfo->nic_elem[0].cq->q[0].valid = true;
             }
 
             if (curPos == H) {  // rebase
