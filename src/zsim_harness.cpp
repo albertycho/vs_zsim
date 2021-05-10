@@ -424,7 +424,7 @@ int main(int argc, char *argv[]) {
     if (aslr) info("Not disabling ASLR, multiprocess runs will fail");
 
 
-	Launch_nic_process();
+	//Launch_nic_process();
 
     //Create children processes
     pinCmd = new PinCmd(&conf, configFile, outputDir, shmid);
