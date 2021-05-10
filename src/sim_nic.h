@@ -12,16 +12,17 @@
 #include "core.h"
 
 
+
 #ifndef _SIM_NIC_H_
 #define _SIM_NIC_H_
 
 //#include "nic_functions.h"
 
 #define SIM_NICELEM 		sim_nicInfo->nic_elem[core_id]
-
+/*
 glob_nic_elements* sim_nicInfo;
 
-/*
+
 void init_nicInfo();
 int create_cq_event(uint32_t procIdx, bool SR, uint32_t success, uint32_t tid, uint64_t recv_buf_addr);
 int create_cq_entry(uint32_t procIdx, rmc_cq_t* cq, bool SR, uint32_t success, uint32_t tid, uint64_t recv_buf_addr);
@@ -35,7 +36,7 @@ void run_NIC_proc();
 //Issue where when functions are moved to .cpp file, compiler won't recognize them. May have to do with SConstruct
 
 //Functions for Queueing write events
-
+/*
 cq_entry_t generate_cqe_(uint32_t success, uint32_t tid, uint64_t recv_buf_addr)
 {
 	cq_entry_t cqe;
@@ -311,7 +312,7 @@ void run_NIC_proc() {
 	exit(0);
 
 }
-
+*/
 
 #endif // _SIM_NIC_H_
 
