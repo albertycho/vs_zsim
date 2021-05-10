@@ -107,7 +107,7 @@ bool check_load_gen(void* lg_p, int cur_cycle) {
 int get_next_message(void* lg_p) {
 	int next_message = ((load_generator*)lg_p)->message;
 	((load_generator*)lg_p)->message = ((load_generator*)lg_p)->message + 1;
-	((load_generator*)lg_p)->next_cycle = ((load_generator*)lg_p)->next_cycle + 10000; 
+	((load_generator*)lg_p)->next_cycle = ((load_generator*)lg_p)->next_cycle + 1000000; 
 	//TODO: will do something more sophisticated for setting next_cycle offset 
 
 	return next_message;
