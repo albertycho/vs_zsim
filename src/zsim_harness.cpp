@@ -255,7 +255,7 @@ void Launch_nic_process(){
             usleep(1000);  // wait till proc idx 0 initializes everyhting
        }
 
-	   run_NIC_proc();
+	   //run_NIC_proc();
 
 	   std::cout<<"Launch_nic_process: we shouldn't see this"<<std::endl;
 

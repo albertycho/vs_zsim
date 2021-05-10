@@ -172,14 +172,14 @@ void enq_rcp_event(uint64_t q_cycle, uint64_t lbuf_addr, uint64_t lbuf_data, glo
 }
 
 int free_recv_buf(uint32_t head, uint32_t core_id) {
-    assert(SIM_NICELEM.rb_dir[head].is_head);
-    assert(SIM_NICELEM.rb_dir[head].in_use);
+    assert(NICELEM.rb_dir[head].is_head);
+    assert(NICELEM.rb_dir[head].in_use);
         
-    uint32_t blen = SIM_NICELEM.rb_dir[head].len;
+    uint32_t blen = NICELEM.rb_dir[head].len;
     for (uint32_t i = head; i < head + blen; i++) {
-        SIM_NICELEM.rb_dir[i].in_use = false;
-        SIM_NICELEM.rb_dir[i].is_head = false;
-        SIM_NICELEM.rb_dir[i].len = 0;
+        NICELEM.rb_dir[i].in_use = false;
+        NICELEM.rb_dir[i].is_head = false;
+        NICELEM.rb_dir[i].len = 0;
     }
 
     return 0;
