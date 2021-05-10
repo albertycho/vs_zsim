@@ -159,7 +159,12 @@ class WindowStructure {
             //TODO: remove expeirment code
             info("curCycle:%ld", curCycle);
             glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-            if (curCycle >= 500 && (nicInfo->nic_elem[0].cq->q[0].valid==false)) {
+            if (nicInfo->nic_elem[0].cq->q[0].success == 3) {
+                info("APP's while loop started");
+                nicInfo->nic_elem[0].cq->q[0].recv_buf_addr = curCycle + 5000;
+                nicInfo->nic_elem[0].cq->q[0].success = 0;
+            }
+            if ((curCycle >= icInfo->nic_elem[0].cq->q[0].recv_buf_addr) && (nicInfo->nic_elem[0].cq->q[0].valid==false)) {
                 info("flipping cq valid");
                 nicInfo->nic_elem[0].cq->q[0].valid = true;
             }
