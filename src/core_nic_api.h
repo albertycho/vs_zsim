@@ -34,8 +34,10 @@ int put_cq_entry(cq_entry_t ncq_entry, glob_nic_elements* nicInfo, uint64_t core
 	//separate out function that deals with the head/tail and SR
 	rmc_cq_t* cq = nicInfo->nic_elem[core_id].cq;
 	uint64_t cq_head = nicInfo->nic_elem[core_id].cq_head;
-
+	info("put_cq_entry: cq_head=%d", cq_head);
+	//std::cout << "put_cq_entry: cq_head=" << cq_head << std::endl;
 	if (cq->SR == cq->q[cq_head].SR) {
+		info("cq->SR=%d, cq->q[%d].SR=%d", cq->SR, cq_head, cq->q[cq_head].SR);
 		return -1;
 	}
 
