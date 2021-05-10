@@ -41,6 +41,9 @@
 // Uncomment to enable stall stats
 // #define OOO_STALL_STATS
 
+void cycle_increment_routine(uint64_t& curCycle);
+
+
 class FilterCache;
 
 /* 2-level branch predictor:
@@ -155,7 +158,8 @@ class WindowStructure {
             occupancy -= curWin[curPos].count;
             curWin[curPos].set(0, 0);
             curPos++;
-            curCycle++;
+            //curCycle++;
+            cycle_increment_routine(curCycle);
 
             
             glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());

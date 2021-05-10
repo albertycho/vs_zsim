@@ -525,3 +525,7 @@ void OOOCore::BranchFunc(THREADID tid, ADDRINT pc, BOOL taken, ADDRINT takenNpc,
     static_cast<OOOCore*>(cores[tid])->branch(pc, taken, takenNpc, notTakenNpc);
 }
 
+void cycle_increment_routine(uint64_t& curCycle) {
+    curCycle++;
+
+}
