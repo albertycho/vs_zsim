@@ -15,7 +15,7 @@ int main() {
 	//std::cout<<"APP: wq="<<std::hex<<wq<<std::endl;
 
 	uint64_t count = 0;
-
+	std::cout << "APP: before while loop" << std::endl;
 	//while(send_count<=32)
 	while (cq->q[0].valid == false) {
 		count++;
