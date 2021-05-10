@@ -35,6 +35,8 @@
 #include "ooo_core_recorder.h"
 #include "pad.h"
 
+#include "nic_defines.h"
+
 // Uncomment to enable stall stats
 // #define OOO_STALL_STATS
 
