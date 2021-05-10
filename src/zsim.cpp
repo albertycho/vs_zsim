@@ -188,7 +188,7 @@ int free_recv_buf(uint32_t head, uint32_t core_id) {
 }
 
 int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {
-    inf("free_recv_buf_addr, buf_addr:%x", buf_addr);
+    info("free_recv_buf_addr, buf_addr:%x", buf_addr);
     uint64_t buf_base = (uint64_t)(&(NICELEM.recv_buf[0]));
     uint64_t offset = buf_addr - buf_base;
     uint32_t head = (uint32_t)(offset / 8);
