@@ -133,9 +133,9 @@ struct nic_element {
 	bool cq_valid;
 	bool nwq_SR;
 	bool ncq_SR;
-	uint32_t recv_buf[RECV_BUF_POOL_SIZE];
+	uint64_t recv_buf[RECV_BUF_POOL_SIZE];
 	recv_buf_dir_t rb_dir[RECV_BUF_POOL_SIZE];
-	uint32_t lbuf[RECV_BUF_POOL_SIZE];
+	uint64_t lbuf[RECV_BUF_POOL_SIZE];
 	
 	cq_wr_event* cq_wr_event_q;
 	rcp_event* rcp_eq;
