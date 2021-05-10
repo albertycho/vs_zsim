@@ -27,7 +27,7 @@
 #include "filter_cache.h"
 #include "zsim.h"
 
-//#include "core_nic_api.h"
+#include "core_nic_api.h"
 
 #include <thread>
 
@@ -96,8 +96,6 @@ void TimingCore::storeAndRecord(Address addr) {
 void TimingCore::bblAndRecord(Address bblAddr, BblInfo* bblInfo) {
     instrs += bblInfo->instrs;
     curCycle += bblInfo->instrs;
-    
-    /*
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
     void* lg_p = static_cast<void*>(gm_get_lg_ptr());
     
@@ -122,7 +120,7 @@ void TimingCore::bblAndRecord(Address bblAddr, BblInfo* bblInfo) {
     core_ceq_routine(curCycle, nicInfo, 0);
     RRPP_routine(curCycle, nicInfo, lg_p, 0);
     RCP_routine(curCycle, nicInfo, 0);
-    */
+
     Address endBblAddr = bblAddr + bblInfo->bytes;
     for (Address fetchAddr = bblAddr; fetchAddr < endBblAddr; fetchAddr+=(1 << lineBits)) {
         uint64_t startCycle = curCycle;

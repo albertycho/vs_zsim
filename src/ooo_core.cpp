@@ -32,6 +32,8 @@
 #include "filter_cache.h"
 #include "zsim.h"
 
+#include "core_nic_api.h"
+
 /* Uncomment to induce backpressure to the IW when the load/store buffers fill up. In theory, more detailed,
  * but sometimes much slower (as it relies on range poisoning in the IW, potentially O(n^2)), and in practice
  * makes a negligible difference (ROB backpressures).

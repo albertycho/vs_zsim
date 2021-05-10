@@ -36,7 +36,7 @@
 #include "pad.h"
 
 #include "nic_defines.h"
-#include "core_nic_api.h"
+//#include "core_nic_api.h"
 
 // Uncomment to enable stall stats
 // #define OOO_STALL_STATS
@@ -162,9 +162,9 @@ class WindowStructure {
             void* lg_p = static_cast<void*>(gm_get_lg_ptr());
 
             //TODO: find core number
-            core_ceq_routine(curCycle, nicInfo, 0);
-            RRPP_routine(curCycle, nicInfo, lg_p, 0);
-            RCP_routine(curCycle, nicInfo, 0);
+            //core_ceq_routine(curCycle, nicInfo, 0);
+            //RRPP_routine(curCycle, nicInfo, lg_p, 0);
+            //RCP_routine(curCycle, nicInfo, 0);
 
             //TODO: remove expeirment code
             /*
