@@ -98,7 +98,7 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 bool check_load_gen(void* lg_p, int cur_cycle) {
 
 	glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-	if (nicInfo->nic_elem[0].cq_valid) return false;
+	if (nicInfo->nic_elem[0].cq_valid==false) return false;
 
 	int lg_next_cycle = ((load_generator*)lg_p)->next_cycle;
 	if (lg_next_cycle <= cur_cycle) {
