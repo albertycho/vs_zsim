@@ -26,6 +26,8 @@ int main() {
 	uint64_t send_serviced=0;
 
 
+	int ctx_id = 0;
+	int msg_entry_size = 1;
 	//////////////////////////////////////////////////
 	//////// CHECK ONLY RRPP - BEGIN//////////////////
 	//////////////////////////////////////////////////
@@ -40,6 +42,7 @@ int main() {
 		std::cout << "APP: recvd incoming msg.              recv_count:" << std::dec << send_serviced << ", rbuf_addr:" << std::hex << recv_completion.recv_buf_addr << ", rbuf_val:" << *(uint32_t*)(recv_completion.recv_buf_addr) << std::endl;
 
 		send_serviced++;
+		rmc_hw_recv(wq, ctx_id, (void*)recv_completion.recv_buf_addr, msg_entry_size);
 	}
 
 

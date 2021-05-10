@@ -115,6 +115,7 @@ int get_next_message(void* lg_p) {
 
 uint64_t RRPP_allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t core_id) { // reusing(modifying) sim_nic.h function
 //TODO: go over this, find problems.. might be better to rewrite
+	//returns the index of allocated recv buffer, not the address!
 	uint32_t head = 0;
 	while (head < RECV_BUF_POOL_SIZE)
 	{
@@ -167,9 +168,9 @@ uint64_t RRPP_allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint3
 
 	}
 
-	uint32_t rb_head =  RECV_BUF_POOL_SIZE + 1;
-	uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[0].recv_buf[rb_head]));
-	return recv_buf_addr;
+	return RECV_BUF_POOL_SIZE + 1; // indicate that we didn't find a fit
+	//uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[0].recv_buf[rb_head]));
+	//return recv_buf_addr;
 }
 
 
@@ -237,6 +238,7 @@ int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uin
 	if (check_load_gen(lg_p, cur_cycle)) {
 		int message = get_next_message(lg_p);
 		uint32_t rb_head = RRPP_allocate_recv_buf(1, nicInfo, core_id);
+		info("recv buf index:%d", rb_head);
 		uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[0].recv_buf[rb_head]));
 		inject_inbound_packet(message, recv_buf_addr);
 		create_CEQ_entry(recv_buf_addr, 0x7f, cur_cycle, nicInfo, core_id);

@@ -138,6 +138,8 @@ wq_entry_t poll_wq(uint32_t core_id, rmc_wq_t* wq) {
 }
 
 uint32_t allocate_recv_buf(uint32_t blen, uint32_t core_id) {
+
+	//returns index of allocated recv buffer, not the addr!
 	uint32_t head = 0;
 	while (head < RECV_BUF_POOL_SIZE)
 	{

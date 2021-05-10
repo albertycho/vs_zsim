@@ -171,11 +171,35 @@ void enq_rcp_event(uint64_t q_cycle, uint64_t lbuf_addr, uint64_t lbuf_data, glo
     }
 }
 
+int free_recv_buf(uint32_t head, uint32_t core_id) {
+    assert(SIM_NICELEM.rb_dir[head].is_head);
+    assert(SIM_NICELEM.rb_dir[head].in_use);
+        
+    uint32_t blen = SIM_NICELEM.rb_dir[head].len;
+    for (uint32_t i = head; i < head + blen; i++) {
+        SIM_NICELEM.rb_dir[i].in_use = false;
+        SIM_NICELEM.rb_dir[i].is_head = false;
+        SIM_NICELEM.rb_dir[i].len = 0;
+    }
+
+    return 0;
+
+}
+
+int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {
+    uint64_t buf_base = (uint64_t)(&(SIM_NICELEM.recv_buf[0]));
+    uint64_t offset = buf_addr - buf_base;
+    uint32_t head = (uint32_t)(offset / 8);
+    //TODO may need debug prints to check offset and head calculation
+    return free_recv_buf(head, core_id);
+}
+
 void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elements* nicInfo)
 {
     if (cur_wq_entry.op == RMC_RECV) {
         //TODO:rewrite free_recv_buf_addr for core_nic_api
         //free_recv_buf_addr(cur_wq_entry.buf_addr, core_id);
+        free_recv_buf_addr(cur_wq_entry.buf_addr, core_id);
         return;
     }
 
