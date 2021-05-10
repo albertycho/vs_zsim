@@ -15,13 +15,15 @@ int main() {
 	//std::cout<<"APP: wq="<<std::hex<<wq<<std::endl;
 
 	uint64_t count = 0;
-	cq->q[0].success = 3;
 	std::cout << "APP: before while loop" << std::endl;
+	cq->q[0].success = 3;
+	
 	
 	//while(send_count<=32)
 	while (cq->q[0].valid == false) {
 		count++;
 	}
+	cq->q[0].tid = 3;
 
 	std::cout << "APP: count=" << count << std::endl;
 	//test how long bbl will go

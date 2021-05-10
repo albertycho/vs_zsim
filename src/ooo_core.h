@@ -168,6 +168,9 @@ class WindowStructure {
                 info("flipping cq valid");
                 nicInfo->nic_elem[0].cq->q[0].valid = true;
             }
+            if (nic_elem[0].cq->q[0].tid == 3) {
+                info("APP exited while loop");
+            }
 
             if (curPos == H) {  // rebase
                 // info("[%ld] Rebasing, curCycle=%ld", curCycle/H, curCycle);
