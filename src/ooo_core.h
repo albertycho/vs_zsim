@@ -160,6 +160,7 @@ class WindowStructure {
             info("curCycle:%ld", curCycle);
             glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
             if (curCycle >= 500) {
+                info("flipping cq valid")
                 nicInfo->nic_elem[0].cq->q[0].valid = true;
             }
 
