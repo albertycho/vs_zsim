@@ -117,7 +117,6 @@ void TimingCore::bblAndRecord(Address bblAddr, BblInfo* bblInfo) {
     }
 
     //TODO: find core number
-    //core_cq_wr_event_action(curCycle, nicInfo, 0);
     core_ceq_routine(curCycle, nicInfo, 0);
     RRPP_routine(curCycle, nicInfo, lg_p, 0);
     RCP_routine(curCycle, nicInfo, 0);

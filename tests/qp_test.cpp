@@ -25,6 +25,30 @@ int main() {
 	uint64_t send_count=0;
 	uint64_t send_serviced=0;
 
+
+	//////////////////////////////////////////////////
+	//////// CHECK ONLY RRPP - BEGIN//////////////////
+	//////////////////////////////////////////////////
+	while (send_count <= 32)
+	{
+		successStruct recv_completion;
+		do {
+			recv_completion = rmc_check_cq(wq, cq);
+		} while (recv_completion.op != (RMC_INCOMING_SEND));
+
+		//std::cout<<"APP - recv_completion.op="<<recv_completion.op<<std::endl;
+		std::cout << "APP: recvd incoming msg.              recv_count:" << std::dec << send_serviced << ", rbuf_addr:" << std::hex << recv_completion.recv_buf_addr << ", rbuf_val:" << *(uint32_t*)(recv_completion.recv_buf_addr) << std::endl;
+
+		send_serviced++;
+	}
+
+
+	return 0;
+
+	//////////////////////////////////////////////////
+	//////// CHECK ONLY RRPP - END////////////////////
+	//////////////////////////////////////////////////
+
 	while(send_count<=32)
 	{
 		successStruct recv_completion;

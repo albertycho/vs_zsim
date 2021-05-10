@@ -87,6 +87,8 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 	return 0;
 }
 
+
+
 //functions for interfacing load_generator
 bool check_load_gen(void* lg_p, int cur_cycle) {
 	int lg_next_cycle = ((load_generator*)lg_p)->next_cycle;
@@ -167,26 +169,65 @@ uint64_t RRPP_allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint3
 
 int inject_inbound_packet(int message, uint64_t recv_buf_addr) { //input is packet, so type may change with code update
 	//write to recv buffer TODO: do this in a function?
-	//*((uint64_t*)recv_buf_addr) = message;
+	*((uint64_t*)recv_buf_addr) = message;
 	//update uarch state (call access)
 
 	//TODO: what to return? 
 	return 0;
 }
+cq_entry_t generate_cqe(uint32_t success, uint32_t tid, uint64_t recv_buf_addr)
+{
+	cq_entry_t cqe;
+	cqe.recv_buf_addr = recv_buf_addr;
+	cqe.success = success;
+	cqe.tid = tid;
+	cqe.valid = 1;
+	return cqe;
 
-int create_CEQ_entry(uint64_t recv_buf_addr, uint64_t cur_cycle, glob_nic_elements* nicInfo, uint32_t core_id) {
+}
+
+void cq_event_enqueue(uint64_t q_cycle, cq_entry_t cqe, glob_nic_elements* nicInfo, uint64_t core_id)
+{
+	cq_wr_event* cq_wr_e = gm_calloc<cq_wr_event>();
+	cq_wr_e->cqe = cqe;
+	cq_wr_e->q_cycle = q_cycle;
+	cq_wr_e->next = NULL;
+
+	if (nicInfo->nic_elem[core_id].cq_wr_event_q == NULL)
+	{
+		nicInfo->nic_elem[core_id].cq_wr_event_q = cq_wr_e;
+	}
+	else
+	{
+		cq_wr_event* cq_wr_event_q_tail = CQ_WR_EV_Q;
+		while (cq_wr_event_q_tail->next != NULL)
+		{
+			cq_wr_event_q_tail = cq_wr_event_q_tail->next;
+		}
+		cq_wr_event_q_tail->next = cq_wr_e;
+	}
+}
+
+int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycle, glob_nic_elements* nicInfo, uint32_t core_id) {
 	//TODO: create and enq CEQ entry - reuse functions from sim_nic.h
+	uint64_t ceq_delay = 100;
+	uint32_t tid = 0;//TODO: handle tid better
+	cq_entry_t cqe = generaet_cqe(success, tid, recv_buf_addr);
+	cq_event_enqueue(cur_cycle + ceq_delay, cqe, nicInfo, core_id);
 
 	return 0;
 }
+
+
 
 int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id) {
 /*Wrapper for the whole RRPP routine*/
 	if (check_load_gen(lg_p, cur_cycle)) {
 		int message = get_next_message(lg_p);
-		uint64_t recv_buf_addr = RRPP_allocate_recv_buf(1, nicInfo, core_id);
+		uint32_t rb_head = RRPP_allocate_recv_buf(1, nicInfo, core_id);
+		uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[0].recv_buf[rb_head]));
 		inject_inbound_packet(message, recv_buf_addr);
-		create_CEQ_entry(recv_buf_addr, cur_cycle, nicInfo, core_id);
+		create_CEQ_entry(recv_buf_addr, 0x7f, cur_cycle, nicInfo, core_id);
 
 	}
 

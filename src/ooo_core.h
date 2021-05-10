@@ -36,6 +36,7 @@
 #include "pad.h"
 
 #include "nic_defines.h"
+#include "core_nic_api.h"
 
 // Uncomment to enable stall stats
 // #define OOO_STALL_STATS
@@ -156,9 +157,18 @@ class WindowStructure {
             curPos++;
             curCycle++;
 
-            //TODO: remove expeirment code
-            info("curCycle:%ld", curCycle);
+            
             glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+            void* lg_p = static_cast<void*>(gm_get_lg_ptr());
+
+            //TODO: find core number
+            core_ceq_routine(curCycle, nicInfo, 0);
+            RRPP_routine(curCycle, nicInfo, lg_p, 0);
+            RCP_routine(curCycle, nicInfo, 0);
+
+            //TODO: remove expeirment code
+            /*
+            info("curCycle:%ld", curCycle);
             if (nicInfo->nic_elem[0].cq->q[0].success == 3) {
                 info("APP's while loop started");
                 nicInfo->nic_elem[0].cq->q[0].recv_buf_addr = curCycle + 5000;
@@ -172,6 +182,7 @@ class WindowStructure {
                 info("APP exited while loop");
                 nicInfo->nic_elem[0].cq->q[0].tid = 4;
             }
+            */
 
             if (curPos == H) {  // rebase
                 // info("[%ld] Rebasing, curCycle=%ld", curCycle/H, curCycle);
