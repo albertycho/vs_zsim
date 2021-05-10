@@ -36,7 +36,7 @@ void run_NIC_proc();
 
 //Functions for Queueing write events
 
-cq_entry_t generate_cqe(uint32_t success, uint32_t tid, uint64_t recv_buf_addr)
+cq_entry_t generate_cqe_(uint32_t success, uint32_t tid, uint64_t recv_buf_addr)
 {
 	cq_entry_t cqe;
 	cqe.recv_buf_addr = recv_buf_addr;
@@ -256,7 +256,7 @@ void run_NIC_proc() {
 		//uint64_t q_cycle = 10000000 + (count * 10000000);
 		uint64_t q_cycle = core_cycle+ (10000000);
 		std::cout << std::dec << "NIC will put cq_wr_event for:" << q_cycle<< std::endl;
-		cq_entry_t cqe = generate_cqe(success, tid, recv_buf_addr);
+		cq_entry_t cqe = generate_cqe_(success, tid, recv_buf_addr);
 		cq_wr_event_enqueue(q_cycle, cqe, sim_nicInfo, 0);
 		
 		//ncq_success = create_cq_entry(procIdx, p0_cq, SIM_NICELEM.ncq_SR, success, tid, recv_buf_addr);
