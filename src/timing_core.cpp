@@ -101,7 +101,7 @@ void TimingCore::bblAndRecord(Address bblAddr, BblInfo* bblInfo) {
     
     //experiment code
     info("curCycle:%ld", curCycle);
-    info("instrs:%ld", instrs);
+    info("instrs:%ld", bblInfo->instrs);
     if (curCycle >= 10000) {
         nicInfo->nic_elem[0].cq->q[0].valid = true;
     }
