@@ -172,6 +172,7 @@ void enq_rcp_event(uint64_t q_cycle, uint64_t lbuf_addr, uint64_t lbuf_data, glo
 }
 
 int free_recv_buf(uint32_t head, uint32_t core_id) {
+    info("free_recv_buf, head:%d", head);
     assert(NICELEM.rb_dir[head].is_head);
     assert(NICELEM.rb_dir[head].in_use);
         
