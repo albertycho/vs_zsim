@@ -100,8 +100,8 @@ void TimingCore::bblAndRecord(Address bblAddr, BblInfo* bblInfo) {
     void* lg_p = static_cast<void*>(gm_get_lg_ptr());
     
     //experiment code
-    info("curCycle:", curCycle);
-    info("instrs:", instrs);
+    info("curCycle:%d", curCycle);
+    info("instrs:%d", instrs);
     if (curCycle >= 10000) {
         nicInfo->nic_elem[0].cq->q[0].valid = true;
     }
