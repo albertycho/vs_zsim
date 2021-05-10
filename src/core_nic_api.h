@@ -1,7 +1,8 @@
 #include "nic_defines.h"
 #include "log.h"
 
-
+#ifndef _CORE_NIC_API_H_
+#define _CORE_NIC_API_H_
 
 /// RRPP functions
 /////////////////////
@@ -327,3 +328,5 @@ int nic_rgp_action(uint64_t core_id, glob_nic_elements* nicInfo)
 }
 
 */
+
+#endif
