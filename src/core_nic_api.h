@@ -97,7 +97,6 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 //functions for interfacing load_generator
 bool check_load_gen(void* lg_p, int cur_cycle) {
 	
-
 	int lg_next_cycle = ((load_generator*)lg_p)->next_cycle;
 	if (lg_next_cycle <= cur_cycle) {
 		return true;
@@ -232,8 +231,8 @@ int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycl
 
 int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id) {
 /*Wrapper for the whole RRPP routine*/
-	if (!gm_isready()) return;
-	if (nicInfo->nic_elem[0].cq_valid == false) return;
+	if (!gm_isready()) return 0;
+	if (nicInfo->nic_elem[0].cq_valid == false) return 0;
 
 	if (check_load_gen(lg_p, cur_cycle)) {
 		int message = get_next_message(lg_p);
