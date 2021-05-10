@@ -98,8 +98,14 @@ void TimingCore::bblAndRecord(Address bblAddr, BblInfo* bblInfo) {
     curCycle += bblInfo->instrs;
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
     void* lg_p = static_cast<void*>(gm_get_lg_ptr());
+    
+    //experiment code
     info("curCycle:", curCycle);
     info("instrs:", instrs);
+    if (curCycle >= 10000) {
+        nicInfo->nic_elem[0].cq->q[0].valid = true;
+    }
+
     //TODO: find core number
     //core_cq_wr_event_action(curCycle, nicInfo, 0);
     core_ceq_routine(curCycle, nicInfo, 0);
