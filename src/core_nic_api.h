@@ -178,7 +178,9 @@ uint64_t RRPP_allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint3
 
 int inject_inbound_packet(int message, uint64_t recv_buf_addr) { //input is packet, so type may change with code update
 	//write to recv buffer TODO: do this in a function?
+	info("recv_buf_addr:%d", recv_buf_addr);
 	*((uint64_t*)recv_buf_addr) = message;
+	info("writing message to recv buffer successfully");
 	//update uarch state (call access)
 
 	//TODO: what to return? 
