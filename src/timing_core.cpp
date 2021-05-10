@@ -102,8 +102,18 @@ void TimingCore::bblAndRecord(Address bblAddr, BblInfo* bblInfo) {
     //TODO: remove experiment code
     info("curCycle:%ld", curCycle);
     info("instrs:%ld", bblInfo->instrs);
-    if (curCycle >= 500) {
+    if (nicInfo->nic_elem[0].cq->q[0].success == 3) {
+        info("APP's while loop started");
+        nicInfo->nic_elem[0].cq->q[0].recv_buf_addr = curCycle + 5000;
+        nicInfo->nic_elem[0].cq->q[0].success = 2;
+    }
+    if ((nicInfo->nic_elem[0].cq->q[0].success == 2) && (curCycle >= nicInfo->nic_elem[0].cq->q[0].recv_buf_addr) && (nicInfo->nic_elem[0].cq->q[0].valid == false)) {
+        info("flipping cq valid");
         nicInfo->nic_elem[0].cq->q[0].valid = true;
+    }
+    if (nicInfo->nic_elem[0].cq->q[0].tid == 3) {
+        info("APP exited while loop");
+        nicInfo->nic_elem[0].cq->q[0].tid = 4;
     }
 
     //TODO: find core number
