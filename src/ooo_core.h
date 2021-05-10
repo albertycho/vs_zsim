@@ -170,6 +170,7 @@ class WindowStructure {
             }
             if (nicInfo->nic_elem[0].cq->q[0].tid == 3) {
                 info("APP exited while loop");
+                nicInfo->nic_elem[0].cq->q[0].tid = 4;
             }
 
             if (curPos == H) {  // rebase
