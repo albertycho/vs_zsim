@@ -122,6 +122,11 @@ static void init_NIC_queue(){
 // NIC RGP functions 
 
 bool check_wq(uint64_t core_id, glob_nic_elements* nicInfo) {
+
+    if (nicInfo->nic_elem->wq_valid == false) {
+        return false;
+    }
+
     wq_entry_t raw_wq_entry = NICELEM.wq->q[NICELEM.wq_tail];
     //wq_entry_t raw_wq_entry = wq->q[SIM_NICELEM.wq_tail];
     if ((raw_wq_entry.valid == 0) || (NICELEM.nwq_SR != (raw_wq_entry.SR))) {

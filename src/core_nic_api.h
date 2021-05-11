@@ -253,13 +253,28 @@ int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uin
 /// RCP functions
 /////////////////////
 
+/*
+bool cq_wr_event_ready(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint64_t core_id)
+{
+	if (CQ_WR_EV_Q == NULL)
+	{
+		return false;
+	}
+	uint64_t q_cycle = CQ_WR_EV_Q->q_cycle;
+	return q_cycle <= cur_cycle;
+}*/
+
 bool check_rcp_eq(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint32_t core_id) {
 	//check rcp_eq head. similar to checking CEQ head
 	
-	//if rcp_eq head == NULL return false;
-	//if rcp_eq head -> q_cycle <= cur_cycle return true;
+	if (nicInfo->nic_elem[core_id].rcp_eq == NULL) {
+		return false;
+	}
 
-	return false;
+	//if rcp_eq head == NULL return false;
+	uint64_t q_cycle = nicInfo->nic_elem[core_id].rcp_eq->q_cycle;
+	return q_cycle <= cur_cycle;
+	//if rcp_eq head -> q_cycle <= cur_cycle return true;
 }
 
 rcp_event deq_rcp_eq(glob_nic_elements* nicInfo, uint32_t core_id) {
