@@ -69,6 +69,12 @@ successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
 				ret.tid = raw_cqe_entry.tid;
 				return ret;		
 			}
+			if (raw_cqe_entry.success == 1) {
+				ret.recv_buf_addr = raw_cqe_entry.recv_buf_addr;
+				ret.op = RMC_INCOMING_RESP;
+				ret.tid = raw_cqe_entry.tid;
+				return ret;
+			}
 
 			//FIXME: tid supposed to be used like this?
 			tid = raw_cqe_entry.tid;

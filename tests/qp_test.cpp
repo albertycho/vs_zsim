@@ -47,7 +47,8 @@ int main() {
 		successStruct recv_completion;
 		do {
 			recv_completion = rmc_check_cq(wq, cq);
-		} while (recv_completion.op != (RMC_INCOMING_SEND));
+		} while (recv_completion.op != (RMC_INCOMING_RESP));
+		std::cout<<"APP:cq_resp:"<<std::hex<<*(recv_completion.recv_buf_addr)
 
 		send_serviced++;
 	}
