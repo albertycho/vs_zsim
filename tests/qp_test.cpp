@@ -48,7 +48,8 @@ int main() {
 		do {
 			recv_completion = rmc_check_cq(wq, cq);
 		} while (recv_completion.op != (RMC_INCOMING_RESP));
-		std::cout << "APP:cq_resp:" << std::hex << (*(recv_completion.recv_buf_addr));
+
+		std::cout << "APP:cq_resp:" << std::hex << *(uint64_t*)(recv_completion.recv_buf_addr) << std::endl;
 
 		send_serviced++;
 	}
