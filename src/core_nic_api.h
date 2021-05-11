@@ -291,7 +291,7 @@ rcp_event* deq_rcp_eq(glob_nic_elements* nicInfo, uint32_t core_id) {
 void process_rcp_event(rcp_event* nrcp_event, glob_nic_elements* nicInfo, uint32_t core_id, uint64_t cur_cycle) {
 	//write response to local buffer
 	uint64_t response = nrcp_event.lbuf_data + 0xab00;
-	*((uint64_t*)nrcp_event.lbuf_addr) = response;
+	*((uint64_t*)(nrcp_event->lbuf_addr)) = response;
 	//access lbuf microarchitecturally
 	uint64_t lbuf_addr = nrcp_event->lbuf_addr;
 	
