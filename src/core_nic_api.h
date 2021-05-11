@@ -288,7 +288,7 @@ rcp_event* deq_rcp_eq(glob_nic_elements* nicInfo, uint32_t core_id) {
 	return ret;
 }
 
-void process_rcp_event(rcp_event* nrcp_event, glob_nic_elements* nicInfo, uint32_t core_id) {
+void process_rcp_event(rcp_event* nrcp_event, glob_nic_elements* nicInfo, uint32_t core_id, uint64_t cur_cycle) {
 	//write response to local buffer
 	uint64_t response = nrcp_event.lbuf_data + 0xab00;
 	*((uint64_t*)nrcp_event.lbuf_addr) = response;
@@ -304,7 +304,7 @@ void process_rcp_event(rcp_event* nrcp_event, glob_nic_elements* nicInfo, uint32
 void RCP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint32_t core_id) {
 	if (check_rcp_eq(cur_cycle, nicInfo, core_id)) {
 		rcp_event* nrcp_event = deq_rcp_eq(nicInfo, core_id);
-		process_rcp_event(nrcp_event, nicInfo, core_id);
+		process_rcp_event(nrcp_event, nicInfo, core_id, cur_cycle);
 	}
 }
 
