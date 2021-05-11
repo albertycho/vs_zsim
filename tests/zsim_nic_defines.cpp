@@ -54,6 +54,7 @@ successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
 			//FIXME: okay to unset cq valid here?
 			cq->q[cq_tail].valid=0;
 			cq->tail = cq->tail + 1;
+			std::cout << "app increments cq tail" << std::endl;
 			if (cq->tail >= MAX_NUM_WQ) {
                 cq->tail = 0;
                 cq->SR ^= 1;
@@ -72,7 +73,7 @@ successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
 			//FIXME: tid supposed to be used like this?
 			tid = raw_cqe_entry.tid;
 			std::cout<<"APP - invalidating wq entry "<<tid<<std::endl;
-	        wq->q[tid].valid = 0;
+	        //wq->q[tid].valid = 0;
 	
 		  	ret.op = wq->q[tid].op;
 			if (ret.op == RMC_SABRE) {

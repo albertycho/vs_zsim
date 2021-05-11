@@ -29,6 +29,33 @@ int main() {
 	int ctx_id = 0;
 	int msg_entry_size = 1;
 	//////////////////////////////////////////////////
+	//////// CHECK ONLY RGP&RCP - BEGIN///////////////
+	//////////////////////////////////////////////////
+	while (send_serviced <= 32) {
+
+		int send_ret;
+		//FIXME: figure out what to do with msg_entry_size
+		uint64_t msg_entry_size = 1;
+		lbuf_ptr = lbuf_base + send_count;
+		//std::cout<<"APP: lbuf_Ptr="<<lbuf_ptr<<std::endl;
+		*lbuf_ptr = 0xabcd0 + send_count;
+		do {
+			send_ret = rmc_hw_send(wq, ctx_id, lbuf_ptr, msg_entry_size, target_node);
+		} while (send_ret);
+		send_count++;
+
+		successStruct recv_completion;
+		do {
+			recv_completion = rmc_check_cq(wq, cq);
+		} while (recv_completion.op != (RMC_INCOMING_SEND));
+
+	}
+
+	//////////////////////////////////////////////////
+	//////// CHECK ONLY RGP&RCP - END/////////////////
+	//////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////
 	//////// CHECK ONLY RRPP - BEGIN//////////////////
 	//////////////////////////////////////////////////
 	while (send_serviced <= 32)

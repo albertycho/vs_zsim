@@ -253,45 +253,55 @@ int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uin
 /// RCP functions
 /////////////////////
 
-/*
-bool cq_wr_event_ready(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint64_t core_id)
-{
-	if (CQ_WR_EV_Q == NULL)
-	{
-		return false;
-	}
-	uint64_t q_cycle = CQ_WR_EV_Q->q_cycle;
-	return q_cycle <= cur_cycle;
-}*/
+
 
 bool check_rcp_eq(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint32_t core_id) {
 	//check rcp_eq head. similar to checking CEQ head
 	
-	if (nicInfo->nic_elem[core_id].rcp_eq == NULL) {
+	if (RCP_EQ == NULL) {
 		return false;
 	}
 
 	//if rcp_eq head == NULL return false;
-	uint64_t q_cycle = nicInfo->nic_elem[core_id].rcp_eq->q_cycle;
+	uint64_t q_cycle = RCP_EQ->q_cycle;
 	return q_cycle <= cur_cycle;
 	//if rcp_eq head -> q_cycle <= cur_cycle return true;
 }
 
+/*
+cq_wr_event* deq_cq_wr_event(glob_nic_elements* nicInfo, uint64_t core_id)
+{
+	assert(CQ_WR_EV_Q != NULL);
+
+	cq_wr_event* ret = CQ_WR_EV_Q;
+
+	CQ_WR_EV_Q = CQ_WR_EV_Q->next;
+
+	return ret;
+}
+*/
 rcp_event deq_rcp_eq(glob_nic_elements* nicInfo, uint32_t core_id) {
 	//similar to deq_cq_wr_event
-	rcp_event ret;
+	assert(RCP_EQ != NULL);
+	rcp_event ret = RCP_EQ;
+	RCP_EQ = RCP_EQ->next;
 	return ret;
 }
 
-void process_rcp_event(rcp_event nrcp_event) {
+void process_rcp_event(rcp_event nrcp_event, glob_nic_elements* nicInfo, uint32_t core_id) {
 	//write response to local buffer
+	uint64_t response = nrcp_event.lbuf_data + 0xab00;
+	*((uint64_t*)nrcp_event.lbuf_addr) = response;
+	//access lbuf microarchitecturally
+	
 	//create cq entry (CEQ entry)
+	create_CEQ_entry(recv_buf_addr, 1, cur_cycle, nicInfo, core_id);
 }
 
 void RCP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint32_t core_id) {
 	if (check_rcp_eq(cur_cycle, nicInfo, core_id)) {
 		rcp_event nrcp_event = deq_rcp_eq(nicInfo, core_id);
-		process_rcp_event(nrcp_event);
+		process_rcp_event(nrcp_event, nicInfo, core_id);
 	}
 }
 
