@@ -303,7 +303,7 @@ void process_rcp_event(rcp_event* nrcp_event, glob_nic_elements* nicInfo, uint32
 
 void RCP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint32_t core_id) {
 	if (check_rcp_eq(cur_cycle, nicInfo, core_id)) {
-		rcp_event nrcp_event = deq_rcp_eq(nicInfo, core_id);
+		rcp_event* nrcp_event = deq_rcp_eq(nicInfo, core_id);
 		process_rcp_event(nrcp_event, nicInfo, core_id);
 	}
 }
