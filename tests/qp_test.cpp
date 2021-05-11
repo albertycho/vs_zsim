@@ -40,7 +40,7 @@ int main() {
 		//std::cout<<"APP: lbuf_Ptr="<<lbuf_ptr<<std::endl;
 		*lbuf_ptr = 0xabcd0 + send_count;
 		do {
-			send_ret = rmc_hw_send(wq, ctx_id, lbuf_ptr, msg_entry_size, target_node);
+			send_ret = rmc_hw_send(wq, ctx_id, lbuf_ptr, msg_entry_size, 1);
 		} while (send_ret);
 		send_count++;
 
