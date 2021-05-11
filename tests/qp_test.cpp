@@ -49,6 +49,7 @@ int main() {
 			recv_completion = rmc_check_cq(wq, cq);
 		} while (recv_completion.op != (RMC_INCOMING_SEND));
 
+		send_serviced++;
 	}
 
 	//////////////////////////////////////////////////
