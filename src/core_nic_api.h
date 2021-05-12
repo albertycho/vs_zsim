@@ -38,7 +38,7 @@ int put_cq_entry(cq_entry_t ncq_entry, glob_nic_elements* nicInfo, uint64_t core
 	
 	if (cq->SR == cq->q[cq_head].SR) {
 		info("FAILED cq->SR == cq->q[cq_head].SR check");
-		info("cq_head=%d"cq_head);
+		info("cq_head=%d",cq_head);
 		return -1;
 	}
 
