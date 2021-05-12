@@ -112,7 +112,7 @@ int get_next_message(void* lg_p) {
 	return next_message;
 }
 
-uint64_t RRPP_allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t core_id) { // reusing(modifying) sim_nic.h function
+uint64_t allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t core_id) { // reusing(modifying) sim_nic.h function
 //TODO: go over this, find problems.. might be better to rewrite
 	//returns the index of allocated recv buffer, not the address!
 	uint32_t head = 0;
@@ -234,7 +234,7 @@ int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uin
 
 	if (check_load_gen(lg_p, cur_cycle)) {
 		int message = get_next_message(lg_p);
-		uint32_t rb_head = RRPP_allocate_recv_buf(1, nicInfo, core_id);
+		uint32_t rb_head = allocate_recv_buf(1, nicInfo, core_id);
 		uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[0].recv_buf[rb_head]));
 		inject_inbound_packet(message, recv_buf_addr);
 		create_CEQ_entry(recv_buf_addr, 0x7f, cur_cycle, nicInfo, core_id);
