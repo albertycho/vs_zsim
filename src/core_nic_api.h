@@ -34,10 +34,8 @@ int put_cq_entry(cq_entry_t ncq_entry, glob_nic_elements* nicInfo, uint64_t core
 	//separate out function that deals with the head/tail and SR
 	rmc_cq_t* cq = nicInfo->nic_elem[core_id].cq;
 	uint64_t cq_head = nicInfo->nic_elem[core_id].cq_head;
-	info("cq valid:%d", NICELEM.cq_valid);
-	info("put_cq_entry: cq_head=%d", cq_head);
-	info("cq->SR=%d, cq->q[%d].SR=%d", cq->SR, cq_head, cq->q[cq_head].SR);
-	//std::cout << "put_cq_entry: cq_head=" << cq_head << std::endl;
+	
+	
 	if (cq->SR == cq->q[cq_head].SR) {
 		info("FAILED cq->SR == cq->q[cq_head].SR check");
 		return -1;
@@ -169,17 +167,15 @@ uint64_t RRPP_allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint3
 	}
 
 	return RECV_BUF_POOL_SIZE + 1; // indicate that we didn't find a fit
-	//uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[0].recv_buf[rb_head]));
-	//return recv_buf_addr;
+
 }
 
 
 int inject_inbound_packet(int message, uint64_t recv_buf_addr) { //input is packet, so type may change with code update
 	//write to recv buffer TODO: do this in a function?
-	//info("recv_buf_addr:%d", recv_buf_addr);
-	std::cout << "recv_buf_addr:" << std::hex << recv_buf_addr << std::endl;
+
 	*((uint64_t*)recv_buf_addr) = message;
-	info("writing message to recv buffer successfully");
+
 	//update uarch state (call access)
 
 	//TODO: what to return? 
@@ -238,7 +234,6 @@ int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uin
 	if (check_load_gen(lg_p, cur_cycle)) {
 		int message = get_next_message(lg_p);
 		uint32_t rb_head = RRPP_allocate_recv_buf(1, nicInfo, core_id);
-		info("recv buf index:%d", rb_head);
 		uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[0].recv_buf[rb_head]));
 		inject_inbound_packet(message, recv_buf_addr);
 		create_CEQ_entry(recv_buf_addr, 0x7f, cur_cycle, nicInfo, core_id);
@@ -268,18 +263,7 @@ bool check_rcp_eq(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint32_t core_
 	//if rcp_eq head -> q_cycle <= cur_cycle return true;
 }
 
-/*
-cq_wr_event* deq_cq_wr_event(glob_nic_elements* nicInfo, uint64_t core_id)
-{
-	assert(CQ_WR_EV_Q != NULL);
 
-	cq_wr_event* ret = CQ_WR_EV_Q;
-
-	CQ_WR_EV_Q = CQ_WR_EV_Q->next;
-
-	return ret;
-}
-*/
 rcp_event* deq_rcp_eq(glob_nic_elements* nicInfo, uint32_t core_id) {
 	//similar to deq_cq_wr_event
 	assert(RCP_EQ != NULL);
