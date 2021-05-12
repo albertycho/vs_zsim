@@ -54,7 +54,7 @@ successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
 			//FIXME: okay to unset cq valid here?
 			cq->q[cq_tail].valid=0;
 			cq->tail = cq->tail + 1;
-			std::cout << "app increments cq tail" << std::endl;
+			//std::cout << "app increments cq tail" << std::endl;
 			if (cq->tail >= MAX_NUM_WQ) {
                 cq->tail = 0;
                 cq->SR ^= 1;
