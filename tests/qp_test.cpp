@@ -31,7 +31,7 @@ int main() {
 	//////////////////////////////////////////////////
 	//////// CHECK ONLY RGP&RCP - BEGIN///////////////
 	//////////////////////////////////////////////////
-	
+	/*
 	while (send_serviced <= 32) {
 
 		int send_ret;
@@ -54,7 +54,7 @@ int main() {
 
 		send_serviced++;
 	}
-	
+	return 0;
 	//////////////////////////////////////////////////
 	//////// CHECK ONLY RGP&RCP - END/////////////////
 	//////////////////////////////////////////////////
@@ -82,7 +82,7 @@ int main() {
 	//////////////////////////////////////////////////
 	//////// CHECK ONLY RRPP - END////////////////////
 	//////////////////////////////////////////////////
-
+	*/
 	while(send_count<=32)
 	{
 		successStruct recv_completion;
@@ -99,7 +99,7 @@ int main() {
 		uint32_t target_node = recv_completion.tid;
 
 		//calcualte lbuf_ptr address
-		int ctx_id=0;
+
 		int send_ret;
 		//FIXME: figure out what to do with msg_entry_size
 		uint64_t msg_entry_size=1;
