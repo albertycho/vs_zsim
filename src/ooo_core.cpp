@@ -273,6 +273,9 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
                         reqSatisfiedCycle = l1d->load(addr, dispatchCycle) + L1D_LAT;
                         cRec.record(curCycle, dispatchCycle, reqSatisfiedCycle);
                     }
+                    else {
+                        info("i should not see this");
+                    }
 
                     // Enforce st-ld forwarding
                     uint32_t fwdIdx = (addr>>2) & (FWD_ENTRIES-1);
