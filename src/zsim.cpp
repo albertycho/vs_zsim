@@ -320,7 +320,6 @@ VOID PIN_FAST_ANALYSIS_CALL IndirectPredStoreSingle(THREADID tid, ADDRINT addr, 
 
 // Join variants: Call join on the next instrumentation poin and return to analysis code
 void Join(uint32_t tid) {
-    info("join called in zsim.cpp");
     assert(fPtrs[tid].type == FPTR_JOIN);
     uint32_t cid = zinfo->sched->join(procIdx, tid); //can block
     setCid(tid, cid);
