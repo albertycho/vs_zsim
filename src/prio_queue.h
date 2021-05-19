@@ -77,7 +77,6 @@ class PrioQueue {
         }
 
         void enqueue(T* obj, uint64_t cycle) {
-            info("enqueue to prioqueue");
             uint64_t absBlock = cycle/64;
             assert(absBlock >= curBlock);
 
