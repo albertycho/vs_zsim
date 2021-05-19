@@ -292,6 +292,7 @@ void ContentionSim::simThreadLoop(uint32_t thid) {
 void ContentionSim::simulatePhaseThread(uint32_t thid) {
     uint32_t thDomains = simThreads[thid].supDomain - simThreads[thid].firstDomain;
     uint32_t numFinished = 0;
+    info("simulatePhaseThread");
 
     if (thDomains == 1) {
         DomainData& domain = domains[simThreads[thid].firstDomain];
