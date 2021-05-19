@@ -447,6 +447,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
 
 // Timing simulation code
 void OOOCore::join() {
+    info("OOOCore : join()");
     DEBUG_MSG("[%s] Joining, curCycle %ld phaseEnd %ld", name.c_str(), curCycle, phaseEndCycle);
     uint64_t targetCycle = cRec.notifyJoin(curCycle);
     if (targetCycle > curCycle) advance(targetCycle);
@@ -456,11 +457,13 @@ void OOOCore::join() {
 }
 
 void OOOCore::leave() {
+    info("OOOCore : leave()");
     DEBUG_MSG("[%s] Leaving, curCycle %ld phaseEnd %ld", name.c_str(), curCycle, phaseEndCycle);
     cRec.notifyLeave(curCycle);
 }
 
 void OOOCore::cSimStart() {
+    info("OOOCore: cSimStart called");
     uint64_t targetCycle = cRec.cSimStart(curCycle);
     assert(targetCycle >= curCycle);
     if (targetCycle > curCycle) advance(targetCycle);
