@@ -470,6 +470,7 @@ void OOOCore::cSimStart() {
 }
 
 void OOOCore::cSimEnd() {
+    info("OOOCore: cSimEnd called");
     uint64_t targetCycle = cRec.cSimEnd(curCycle);
     assert(targetCycle >= curCycle);
     if (targetCycle > curCycle) advance(targetCycle);
