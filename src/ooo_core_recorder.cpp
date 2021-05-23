@@ -44,7 +44,6 @@ class OOOIssueEvent : public TimingEvent {
         OOOIssueEvent(uint32_t preDelay, uint64_t _zllStartCycle, OOOCoreRecorder* _cRec, int32_t domain = -1) : TimingEvent(preDelay, 0, domain), zllStartCycle(_zllStartCycle), cRec(_cRec) {}
 
         void simulate(uint64_t startCycle) {
-            info("issueEvent simulate called")
             TRACE_MSG("Issue %ld zllStartCycle %ld startCycle %ld minStartCycle %ld", id, zllStartCycle, startCycle, getMinStartCycle());
             cRec->reportIssueEventSimulated(this, startCycle);
             done(startCycle);

@@ -195,7 +195,6 @@ void ContentionSim::enqueue(TimingEvent* ev, uint64_t cycle) {
     assert(ev->numParents == 0);
     assert(ev->domain != -1);
     assert(ev->domain < (int32_t)numDomains);
-    info("inCSIM - enqueue to domain.pq");
     domains[ev->domain].pq.enqueue(ev, cycle);
 }
 
