@@ -137,6 +137,7 @@ InstrFuncPtrs OOOCore::GetFuncPtrs() {return {LoadFunc, StoreFunc, BblFunc, Bran
 
 inline void OOOCore::load(Address addr) {
     loadAddrs[loads++] = addr;
+    info("load - loadAddr : %x, (loads  =%d)", addr, loads);
 }
 
 void OOOCore::store(Address addr) {
@@ -270,6 +271,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
                     Address addr = loadAddrs[loadIdx++];
                     uint64_t reqSatisfiedCycle = dispatchCycle;
                     if (addr != ((Address)-1L)) {
+                        info("bbl  - loadAddr : %x, (loadIdx=%d)", addr, loadIdx);
                         reqSatisfiedCycle = l1d->load(addr, dispatchCycle) + L1D_LAT;
                         cRec.record(curCycle, dispatchCycle, reqSatisfiedCycle);
                     }
