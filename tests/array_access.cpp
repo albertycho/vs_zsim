@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "zsim_nic_defines.hpp"
 
-#define ARR_SIZE 10000000
+#define ARR_SIZE 1000000
 using namespace std;
 
 int main() {
@@ -28,8 +28,10 @@ int main() {
 	}
 
 	uint64_t sum = 0;
-	for (int i = 0; i < ARR_SIZE; i++) {
-		sum += long_array[i];
+	for (int j = 0; j < 100; j++) {
+		for (int i = 0; i < ARR_SIZE; i++) {
+			sum += long_array[i];
+		}
 	}
 	std::cout << "sum=" << sum << std::endl;
 	return 0;
