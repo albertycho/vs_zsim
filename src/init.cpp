@@ -479,8 +479,11 @@ static void InitSystem(Config& config) {
     unordered_map<string, CacheGroup*> cMap;
     list<string> fringe;  // FIFO
     fringe.push_back(llc);
+    
+    auto fringe_front = fringe.begin();
     for (uint32_t i = 0; i < fringe.size(); i++) {
-        std::cout << fringe[i] << std::endl;
+        std::cout << *fringe_front << std::endl;
+        std::advance(fringe_front, 1);
     }
     while (!fringe.empty()) {
         string group = fringe.front();
