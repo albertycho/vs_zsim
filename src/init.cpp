@@ -481,8 +481,9 @@ static void InitSystem(Config& config) {
     fringe.push_back(llc);
     
     auto fringe_front = fringe.begin();
+    std::cout << fringe.size() << std::endl;
     for (uint32_t i = 0; i < fringe.size(); i++) {
-        std::cout << *fringe_front << std::endl;
+        std::cout << fringe_front << std::endl;
         std::advance(fringe_front, 1);
     }
     while (!fringe.empty()) {
