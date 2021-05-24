@@ -540,7 +540,7 @@ void cycle_increment_routine(uint64_t& curCycle) {
                 l1d->store(recv_buf_addr, curCycle);
             }
         }
-    }|
+    }
 
 
     return;
