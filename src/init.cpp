@@ -269,7 +269,8 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
     }
     rp->setCC(cc);
     if (!isTerminal) {
-        info("!isTerminal, type==%s", type);
+        std::cout << "!isTerminal, type=" << type << std::endl; 
+        //info("!isTerminal, type==%s", type);
         if (type == "Simple") {
             cache = new Cache(numLines, cc, array, rp, accLat, invLat, name);
         } else if (type == "Timing") {
