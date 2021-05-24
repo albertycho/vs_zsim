@@ -505,9 +505,21 @@ void OOOCore::PredStoreFunc(THREADID tid, ADDRINT addr, BOOL pred) {
 void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     OOOCore* core = static_cast<OOOCore*>(cores[tid]);
     core->bbl(bblAddr, bblInfo);
-
+    
     while (core->curCycle > core->phaseEndCycle) {
         core->phaseEndCycle += zinfo->phaseLength;
+        //experiment code
+        if (core->curCycle <= core->phaseEndCycle) {
+            if (procIdx == 0) {
+                if ((curCycle % zinfo->phaseLength) == 0) {
+                    for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i++) {
+                        uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[procIdx].recv_buf[i]));
+                        nicInfo->nic_elem[procIdx].recv_buf[i] = i;
+                        l1d->store(recv_buf_addr, curCycle);
+                    }
+                }
+            }
+        }
 
         uint32_t cid = getCid(tid);
         // NOTE: TakeBarrier may take ownership of the core, and so it will be used by some other thread. If TakeBarrier context-switches us,
@@ -531,17 +543,18 @@ void cycle_increment_routine(uint64_t& curCycle) {
     curCycle++;
 
     //experiment code
+/*
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
     if (procIdx == 0) {
         if ((curCycle % zinfo->phaseLength) == 0) {
             for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i++) {
                 uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[procIdx].recv_buf[i]));
                 nicInfo->nic_elem[procIdx].recv_buf[i] = i;
-                l1d->store(recv_buf_addr, curCycle);
+                cores[0]->l1d->store(recv_buf_addr, curCycle);
             }
         }
     }
-
+    */
 
     return;
 
