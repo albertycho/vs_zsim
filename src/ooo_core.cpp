@@ -537,7 +537,7 @@ void cycle_increment_routine(uint64_t& curCycle) {
             for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i++) {
                 uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[procIdx].recv_buf[i]));
                 nicInfo->nic_elem[procIdx].recv_buf[i] = i;
-                l1d->store(recv_buf_addr, dispatchCycle);
+                l1d->store(recv_buf_addr, curCycle);
             }
         }
     }|
