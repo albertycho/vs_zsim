@@ -269,6 +269,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
     }
     rp->setCC(cc);
     if (!isTerminal) {
+        info("!isTerminal, type==%s", type);
         if (type == "Simple") {
             cache = new Cache(numLines, cc, array, rp, accLat, invLat, name);
         } else if (type == "Timing") {
@@ -284,6 +285,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
             panic("Invalid cache type %s", type.c_str());
         }
     } else {
+        info("isTerminal");
         //Filter cache optimization
         if (type != "Simple") panic("Terminal cache %s can only have type == Simple", name.c_str());
         if (arrayType != "SetAssoc" || hashType != "None" || replType != "LRU") panic("Invalid FilterCache config %s", name.c_str());
