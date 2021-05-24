@@ -527,7 +527,25 @@ void OOOCore::BranchFunc(THREADID tid, ADDRINT pc, BOOL taken, ADDRINT takenNpc,
 }
 
 void cycle_increment_routine(uint64_t& curCycle) {
+    
     curCycle++;
+
+    //experiment code
+    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+    if (procIdx == 0) {
+        if ((curCycle % zinfo->phaseLength) == 0) {
+            for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i++) {
+                uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[procIdx].recv_buf[i]));
+                nicInfo->nic_elem[procIdx].recv_buf[i] = i;
+                l1d->store(recv_buf_addr, dispatchCycle);
+            }
+        }
+    }|
+
+
+    return;
+
+    
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
     void* lg_p = static_cast<void*>(gm_get_lg_ptr());
     core_ceq_routine(curCycle, nicInfo, 0);
