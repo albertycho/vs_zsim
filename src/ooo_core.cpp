@@ -516,6 +516,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[procIdx].recv_buf[i]));
                         nicInfo->nic_elem[procIdx].recv_buf[i] = i;
                         l1d->store(recv_buf_addr, curCycle);
+
                     }
                 }
             }
