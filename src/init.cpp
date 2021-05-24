@@ -412,6 +412,7 @@ CacheGroup* BuildCacheGroup(Config& config, const string& name, bool isTerminal)
             }
             g_string bankName(ss.str().c_str());
             uint32_t domain = (i*banks + j)*zinfo->numDomains/(caches*banks); //(banks > 1)? nextDomain() : (i*banks + j)*zinfo->numDomains/(caches*banks);
+            info("calling BuildCacheBank");
             cg[i][j] = BuildCacheBank(config, prefix, bankName, bankSize, isTerminal, domain);
         }
     }
@@ -482,6 +483,7 @@ static void InitSystem(Config& config) {
         string group = fringe.front();
         fringe.pop_front();
         if (cMap.count(group)) panic("The cache 'tree' has a loop at %s", group.c_str());
+        info("calling BuildCacheGroup");
         cMap[group] = BuildCacheGroup(config, group, isTerminal(group));
         for (auto& childVec : childMap[group]) fringe.insert(fringe.end(), childVec.begin(), childVec.end());
     }
