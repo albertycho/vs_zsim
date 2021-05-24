@@ -511,6 +511,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         //experiment code
         if (core->curCycle <= core->phaseEndCycle) {
             if (procIdx == 0) {
+                info("calling mock memory access from NIC");
 
                     for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i++) {
                         uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[procIdx].recv_buf[i]));
