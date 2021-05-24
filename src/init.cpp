@@ -479,6 +479,9 @@ static void InitSystem(Config& config) {
     unordered_map<string, CacheGroup*> cMap;
     list<string> fringe;  // FIFO
     fringe.push_back(llc);
+    for (int i = 0; i < fringe.size(); i++) {
+        info("fringe[%d] = %s", i, fringe[i]);
+    }
     while (!fringe.empty()) {
         string group = fringe.front();
         fringe.pop_front();
