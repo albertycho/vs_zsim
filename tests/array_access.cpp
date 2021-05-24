@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "zsim_nic_defines.hpp"
 
-#define ARR_SIZE 100000
+#define ARR_SIZE 10000000
 using namespace std;
 
 int main() {
