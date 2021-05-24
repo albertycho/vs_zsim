@@ -516,8 +516,9 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                     for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i++) {
                         uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[procIdx].recv_buf[i]));
                         nicInfo->nic_elem[procIdx].recv_buf[i] = i;
-                        core->l1d->store(recv_buf_addr, core->curCycle);
-
+                        //uint64_t reqSatisfiedCycle = l1d->store(addr, dispatchCycle) + L1D_LAT;
+                        uint64_t reqSatisfiedCycle = core->l1d->store(recv_buf_addr, core->curCycle)+ L1D_LAT;
+                        core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
                     }
                 
             }
