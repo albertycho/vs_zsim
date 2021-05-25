@@ -509,10 +509,12 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     while (core->curCycle > core->phaseEndCycle) {
         core->phaseEndCycle += zinfo->phaseLength;
         //experiment code
-        /*
+        
         if (core->curCycle <= core->phaseEndCycle) {
             if (procIdx == 0) {
-                //info("calling mock memory access from NIC");
+                info("calling mock memory access from NIC");
+                std::cout << "coreCurcycle:" << core->curCycle << std::endl;
+
 
                     for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i+=8) {
                         uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[procIdx].recv_buf[i]));
@@ -521,10 +523,11 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         uint64_t reqSatisfiedCycle = core->l1d->store(recv_buf_addr, core->curCycle)+ L1D_LAT;
                         //core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
                     }
+                    std::cout << "coreCurcycle:" << core->curCycle << std::endl;
                 
             }
         }
-        */
+        
         uint32_t cid = getCid(tid);
         // NOTE: TakeBarrier may take ownership of the core, and so it will be used by some other thread. If TakeBarrier context-switches us,
         // the *only* safe option is to return inmmediately after we detect this, or we can race and corrupt core state. However, the information
