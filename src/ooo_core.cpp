@@ -513,7 +513,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
             if (procIdx == 0) {
                 info("calling mock memory access from NIC");
 
-                    for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i++) {
+                    for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i+=8) {
                         uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[procIdx].recv_buf[i]));
                         nicInfo->nic_elem[procIdx].recv_buf[i] = i;
                         //uint64_t reqSatisfiedCycle = l1d->store(addr, dispatchCycle) + L1D_LAT;
