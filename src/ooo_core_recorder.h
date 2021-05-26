@@ -31,6 +31,7 @@
 #include "event_recorder.h"
 #include "g_std/g_string.h"
 #include "g_std/g_vector.h"
+#include "timing_event.h"
 
 class OOOIssueEvent;
 class OOORespEvent;
