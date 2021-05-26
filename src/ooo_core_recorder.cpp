@@ -344,6 +344,7 @@ uint64_t OOOCoreRecorder::cSimEnd(uint64_t curCycle) {
     }
 
     if (!lastEvProduced) {
+        info("cSimEnd - before assert DRAINING");
         //if we were RUNNING, the phase would have been tapered off
         assert_msg(state == DRAINING, "[%s] state %d lastEvSimulated startCycle %ld curCycle %ld", name.c_str(), state, lastEvSimulatedStartCycle, curCycle);
         lastUnhaltedCycle = lastEvSimulatedStartCycle; //the taper is a 0-delay event
