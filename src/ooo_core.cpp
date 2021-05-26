@@ -513,8 +513,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         if (core->curCycle <= core->phaseEndCycle) {
             if (procIdx == 0) {
 
-                info("calling mock memory access from NIC");
-                std::cout << "coreCurcycle:" << core->curCycle << std::endl;
+                //info("calling mock memory access from NIC");
+                //std::cout << "coreCurcycle:" << core->curCycle << std::endl;
 
 
                     for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i+=8) {
@@ -524,7 +524,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         uint64_t reqSatisfiedCycle = core->l1d->store(recv_buf_addr, core->curCycle)+ L1D_LAT;
                         core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
                     }
-                    std::cout << "coreCurcycle:" << core->curCycle << std::endl;
+                    //std::cout << "coreCurcycle:" << core->curCycle << std::endl;
                 
             }
         }
