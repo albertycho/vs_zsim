@@ -100,7 +100,7 @@ class OOOCoreRecorder {
             TimingEvent* te = tr.startEvent;
             while (te != NULL) {
                 TimingEvent* tee = te;
-                te = te->next;
+                tee = te->next;
                 gm_free(tee);
             }
         }
