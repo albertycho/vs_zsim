@@ -509,7 +509,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     while (core->curCycle > core->phaseEndCycle) {
         core->phaseEndCycle += zinfo->phaseLength;
         //experiment code
-        /*
+        
         if (core->curCycle <= core->phaseEndCycle) {
             if (procIdx == 0) {
 
@@ -522,13 +522,13 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         nicInfo->nic_elem[procIdx].recv_buf[i] = i;
                         //uint64_t reqSatisfiedCycle = l1d->store(addr, dispatchCycle) + L1D_LAT;
                         uint64_t reqSatisfiedCycle = core->l1d->store(recv_buf_addr, core->curCycle)+ L1D_LAT;
-                        core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
+                        //core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
                     }
                     std::cout << "coreCurcycle:" << core->curCycle << std::endl;
                 
             }
         }
-        */
+        
         uint32_t cid = getCid(tid);
         // NOTE: TakeBarrier may take ownership of the core, and so it will be used by some other thread. If TakeBarrier context-switches us,
         // the *only* safe option is to return inmmediately after we detect this, or we can race and corrupt core state. However, the information
