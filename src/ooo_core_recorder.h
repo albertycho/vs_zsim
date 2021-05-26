@@ -98,11 +98,8 @@ class OOOCoreRecorder {
         void discard_record() {
             TimingRecord tr = eventRecorder.popRecord();
             TimingEvent* te = tr.startEvent;
-            while (te != NULL) {
-                TimingEvent* tee = te;
-                tee = te->next;
-                gm_free(tee);
-            }
+            te->freeEvent_public(te);
+
         }
 
         //This better be inlined 100% of the time, it's called on EVERY access

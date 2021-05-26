@@ -212,6 +212,10 @@ class TimingEvent {
         //Describe yourself, useful for debugging
         virtual std::string str() { std::string res; return res; }
 
+        void freeEvent_public(TimingEvent * te) {
+            te->freeEvent();
+        }
+
     private:
         void* operator new (size_t);
 
