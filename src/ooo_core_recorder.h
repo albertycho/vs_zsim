@@ -96,7 +96,8 @@ class OOOCoreRecorder {
         void notifyLeave(uint64_t curCycle);
 
         void discard_record() {
-            eventRecorder.popRecord();
+            TimingRecord tr = eventRecorder.popRecord();
+            delete(tr);
         }
 
         //This better be inlined 100% of the time, it's called on EVERY access
