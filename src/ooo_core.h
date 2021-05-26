@@ -469,7 +469,7 @@ class OOOCore : public Core {
         OOOCoreRecorder cRec;
 
     public:
-        OOOCore(FilterCache* _l1i, FilterCache* _l1d, g_string& _name);
+        OOOCore(FilterCache* _l1i, FilterCache* _l1d, uint32_t domain, g_string& _name);
 
         void initStats(AggregateStat* parentStat);
 
