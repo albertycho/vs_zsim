@@ -208,6 +208,7 @@ uint64_t CoreRecorder::cSimEnd(uint64_t curCycle) {
     /*DEBUG_MSG*/ //info("[%s] curCycle %ld zllCurCycle %ld lec1 %ld lec2 %ld skew %ld", name.c_str(), curCycle, curCycle-gapCycles, lastEvCycle1, lastEvCycle2, skew);
 
     if (!prevRespEvent) {
+        info("cSimEnd - before assert DRAINING");
         //if we were RUNNING, the phase would have been tapered off
         assert_msg(state == DRAINING, "[%s] state %d lastEventSimulated startCycle %ld curCycle %ld", name.c_str(), state, lastEventSimulatedStartCycle, curCycle);
         lastUnhaltedCycle = lastEventSimulatedStartCycle; //the taper is a 0-delay event
