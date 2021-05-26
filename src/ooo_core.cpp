@@ -522,7 +522,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         nicInfo->nic_elem[procIdx].recv_buf[i] = i;
                         //uint64_t reqSatisfiedCycle = l1d->store(addr, dispatchCycle) + L1D_LAT;
                         uint64_t reqSatisfiedCycle = core->l1d->store(recv_buf_addr, core->curCycle)+ L1D_LAT;
-                        core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
+                        //core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
+                        TimingRecord tr = core->cRec.eventRecorder.popRecord();
                     }
                     //std::cout << "coreCurcycle:" << core->curCycle << std::endl;
                 
