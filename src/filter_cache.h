@@ -154,7 +154,7 @@ class FilterCache : public Cache {
             MESIState dummyState = MESIState::I;
             futex_lock(&filterLock);
             uint32_t nr_flags = reqFlags || 1<<6; //NORECORD
-            MemReq req = { pLineAddr, isLoad ? GETS : GETX, 0, &dummyState, curCycle, &filterLock, dummyState, srcId, reqFlags };
+            MemReq req = { pLineAddr, isLoad ? GETS : GETX, 0, &dummyState, curCycle, &filterLock, dummyState, srcId, nr_flags};
             uint64_t respCycle = access(req);
 
             //Due to the way we do the locking, at this point the old address might be invalidated, but we have the new address guaranteed until we release the lock
