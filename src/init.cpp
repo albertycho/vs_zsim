@@ -285,7 +285,6 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
             panic("Invalid cache type %s", type.c_str());
         }
     } else {
-        info("isTerminal");
         //Filter cache optimization
         if (type != "Simple") panic("Terminal cache %s can only have type == Simple", name.c_str());
         if (arrayType != "SetAssoc" || hashType != "None" || replType != "LRU") panic("Invalid FilterCache config %s", name.c_str());
@@ -414,7 +413,6 @@ CacheGroup* BuildCacheGroup(Config& config, const string& name, bool isTerminal)
             }
             g_string bankName(ss.str().c_str());
             uint32_t domain = (i*banks + j)*zinfo->numDomains/(caches*banks); //(banks > 1)? nextDomain() : (i*banks + j)*zinfo->numDomains/(caches*banks);
-            info("calling BuildCacheBank");
             cg[i][j] = BuildCacheBank(config, prefix, bankName, bankSize, isTerminal, domain);
         }
     }
@@ -493,7 +491,6 @@ static void InitSystem(Config& config) {
         fringe.pop_front();
         std::cout << "group:" << group << std::endl; 
         if (cMap.count(group)) panic("The cache 'tree' has a loop at %s", group.c_str());
-        info("calling BuildCacheGroup");
         cMap[group] = BuildCacheGroup(config, group, isTerminal(group));
         for (auto& childVec : childMap[group]) fringe.insert(fringe.end(), childVec.begin(), childVec.end());
     }

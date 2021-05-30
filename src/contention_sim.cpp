@@ -211,7 +211,6 @@ void ContentionSim::enqueueSynced(TimingEvent* ev, uint64_t cycle) {
     assert_msg(cycle < lastLimit+10*zinfo->phaseLength+10000, "Queued  (synced) event too far into the future, cycle %ld lastLimit %ld", cycle, lastLimit);
     ev->privCycle = cycle;
     assert(ev->numParents == 0);
-    info("notinCSIM - enqueue to domain.pq");
     domains[ev->domain].pq.enqueue(ev, cycle);
 
     futex_unlock(&domains[domain].pqLock);
