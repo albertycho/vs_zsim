@@ -510,7 +510,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         core->phaseEndCycle += zinfo->phaseLength;
         //experiment code
         
-        
+        /*
         if (core->curCycle <= core->phaseEndCycle) {
             if (procIdx == 0) {
                 //info("calling mock memory access from NIC");
@@ -527,7 +527,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 
             }
         }
-        
+        */
 
         uint32_t cid = getCid(tid);
         // NOTE: TakeBarrier may take ownership of the core, and so it will be used by some other thread. If TakeBarrier context-switches us,
