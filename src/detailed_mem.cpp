@@ -1100,6 +1100,9 @@ void MemControllerBase::TickScheduler(uint64_t sysCycle) {
 }
 
 uint64_t MemControllerBase::access(MemReq& req) {
+
+    bool no_record = ((req.flags) & (1 << 6)) != 0;
+
     switch (req.type) {
         case PUTS:
         case PUTX:
@@ -1121,6 +1124,10 @@ uint64_t MemControllerBase::access(MemReq& req) {
     MemAccessType accessType = (req.type == PUTS || req.type == PUTX) ? WRITE : READ;
     uint64_t respCycle = req.cycle + minLatency[accessType];
     assert(respCycle >= req.cycle);
+
+    if (no_record) {
+        return respCycle;
+    }
 
     if ((req.type != PUTS) && zinfo->eventRecorders[req.srcId]) {
         Address addr = req.lineAddr;

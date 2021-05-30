@@ -113,7 +113,7 @@ void TimingCache::initStats(AggregateStat* parentStat) {
 // TODO(dsm): This is copied verbatim from Cache. We should split Cache into different methods, then call those.
 uint64_t TimingCache::access(MemReq& req) {
 
-    bool no_record = req.flags & (1 << 6) != 0;
+    bool no_record = ((req.flags) & (1 << 6)) != 0;
 
     EventRecorder* evRec = zinfo->eventRecorders[req.srcId];
     assert_msg(evRec, "TimingCache is not connected to TimingCore");

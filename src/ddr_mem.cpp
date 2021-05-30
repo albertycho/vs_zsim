@@ -241,6 +241,9 @@ void DDRMemory::initStats(AggregateStat* parentStat) {
 /* Bound phase interface */
 
 uint64_t DDRMemory::access(MemReq& req) {
+    
+    bool no_record = ((req.flags) & (1 << 6)) != 0;
+
     switch (req.type) {
         case PUTS:
         case PUTX:
@@ -261,6 +264,9 @@ uint64_t DDRMemory::access(MemReq& req) {
     } else {
         bool isWrite = (req.type == PUTX);
         uint64_t respCycle = req.cycle + (isWrite? minWrLatency : minRdLatency);
+        if (no_record) {
+            return respCycle;
+        }
         if (zinfo->eventRecorders[req.srcId]) {
             DDRMemoryAccEvent* memEv = new (zinfo->eventRecorders[req.srcId]) DDRMemoryAccEvent(this,
                     isWrite, req.lineAddr, domain, preDelay, isWrite? postDelayWr : postDelayRd);
