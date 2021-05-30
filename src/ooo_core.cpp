@@ -510,6 +510,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         core->phaseEndCycle += zinfo->phaseLength;
         //experiment code
         
+        /*
         if (core->curCycle <= core->phaseEndCycle) {
             if (procIdx == 0) {
 
@@ -529,7 +530,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 
             }
         }
-        
+        */
         uint32_t cid = getCid(tid);
         // NOTE: TakeBarrier may take ownership of the core, and so it will be used by some other thread. If TakeBarrier context-switches us,
         // the *only* safe option is to return inmmediately after we detect this, or we can race and corrupt core state. However, the information
