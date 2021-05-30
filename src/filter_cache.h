@@ -186,6 +186,23 @@ class FilterCache : public Cache {
             }
         }
 
+        inline uint64_t store_norecord(Address vAddr, uint64_t curCycle) {
+            Address vLineAddr = vAddr >> lineBits;
+            uint32_t idx = vLineAddr & setMask;
+            uint64_t availCycle = filterArray[idx].availCycle; //read before, careful with ordering to avoid timing races
+            if (vLineAddr == filterArray[idx].wrAddr) {
+                fGETXHit++;
+                //NOTE: Stores don't modify availCycle; we'll catch matches in the core
+                //filterArray[idx].availCycle = curCycle; //do optimistic store-load forwarding
+                return MAX(curCycle, availCycle);
+            }
+            else {
+                return replace_norecord(vLineAddr, idx, false, curCycle);
+            }
+        }
+
+        ///////////////////////////
+
         uint64_t invalidate(const InvReq& req) {
             Cache::startInvalidate();  // grabs cache's downLock
             futex_lock(&filterLock);
