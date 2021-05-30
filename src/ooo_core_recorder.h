@@ -96,12 +96,6 @@ class OOOCoreRecorder {
         uint64_t notifyJoin(uint64_t curCycle); //returns th updated curCycle, if it needs updating
         void notifyLeave(uint64_t curCycle);
 
-        void discard_record() {
-            TimingRecord tr = eventRecorder.popRecord();
-            TimingEvent* te = tr.startEvent;
-            te->freeEvent_public(te);
-
-        }
 
         //This better be inlined 100% of the time, it's called on EVERY access
         inline void record(uint64_t curCycle, uint64_t dispatchCycle, uint64_t respCycle) {

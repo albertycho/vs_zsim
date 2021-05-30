@@ -522,7 +522,6 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         uint64_t reqSatisfiedCycle = core->l1d->store_norecord(recv_buf_addr, core->curCycle)+ L1D_LAT;
                         
                         //core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
-                        //core->cRec.discard_record();
                     }
                     //std::cout << "coreCurcycle:" << core->curCycle << std::endl;
                 
