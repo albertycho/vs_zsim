@@ -519,10 +519,10 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                     for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i+=8) {
                         uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[procIdx].recv_buf[i]));
                         nicInfo->nic_elem[procIdx].recv_buf[i] = i;                        
-                        uint64_t reqSatisfiedCycle = core->l1d->store_norecord(recv_buf_addr, core->curCycle)+ L1D_LAT;
+                        //uint64_t reqSatisfiedCycle = core->l1d->store_norecord(recv_buf_addr, core->curCycle)+ L1D_LAT;
                         //uint64_t reqSatisfiedCycle = core->l1d->store(recv_buf_addr, core->curCycle)+ L1D_LAT;
-                        
-                        core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
+                        std::cout << core->l1d->getParent(recv_buf_addr >> lineBits)->getName() << std::endl;
+                        //core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
                     }
                     //std::cout << "coreCurcycle:" << core->curCycle << std::endl;
                 

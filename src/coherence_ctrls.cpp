@@ -94,10 +94,11 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, uint32_t lineId, AccessTy
     MESIState* state = &array[lineId];
 
     //dbgprint
+    /*
     std::cout << "processaccess: parents.size()=" << parents.size() << std::endl;
     std::cout << "parentId=" << getParentId(lineAddr) << std::endl;
     std::cout << "parent:" << parents[getParentId(lineAddr)]->getName() << std::endl;
-
+    */
 
     switch (type) {
         // A PUTS/PUTX does nothing w.r.t. higher coherence levels --- it dies here

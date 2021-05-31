@@ -63,6 +63,11 @@ class Cache : public BaseCache {
         void setChildren(const g_vector<BaseCache*>& children, Network* network);
         void initStats(AggregateStat* parentStat);
 
+        MemObject* getParent(Address lineaddr) {
+            return cc->getParent(lineaddr);
+
+        }
+
         virtual uint64_t access(MemReq& req);
 
         //NOTE: reqWriteback is pulled up to true, but not pulled down to false.
