@@ -42,6 +42,7 @@ class CC : public GlobAlloc {
     public:
         //Initialization
         virtual void setParents(uint32_t childId, const g_vector<MemObject*>& parents, Network* network) = 0;
+        virtual void getParent(Address lineaddr) = 0;
         virtual void setChildren(const g_vector<BaseCache*>& children, Network* network) = 0;
         virtual void initStats(AggregateStat* cacheStat) = 0;
 
