@@ -158,7 +158,7 @@ class MESIBottomCC : public GlobAlloc {
 
 
         MemObject* getParentC(Address lineaddr) {
-            uint32_t parentId = getParentId(lineAddr);
+            uint32_t parentId = getParentId(lineaddr);
             return parents[parentId];
         }
 
