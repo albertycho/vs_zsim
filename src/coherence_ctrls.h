@@ -157,7 +157,7 @@ class MESIBottomCC : public GlobAlloc {
         uint64_t processNonInclusiveWriteback(Address lineAddr, AccessType type, uint64_t cycle, MESIState* state, uint32_t srcId, uint32_t flags);
 
 
-        MemObject* getParent(Addr lineaddr) {
+        MemObject* getParentC(Addr lineaddr) {
             uint32_t parentId = getParentId(lineAddr);
             return parents[parentId];
         }
@@ -301,7 +301,7 @@ class MESICC : public CC {
         }
 
         MemObject* getParent(Addr lineaddr) {
-            return bcc->getParent(lineaddr);
+            return bcc->getParentC(lineaddr);
         }
 
         void setChildren(const g_vector<BaseCache*>& children, Network* network) {
@@ -437,7 +437,7 @@ class MESITerminalCC : public CC {
         }
 
         MemObject* getParent(Addr lineaddr) {
-            return bcc->getParent(lineaddr);
+            return bcc->getParentC(lineaddr);
         }
 
         void setChildren(const g_vector<BaseCache*>& children, Network* network) {
