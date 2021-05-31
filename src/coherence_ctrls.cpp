@@ -96,7 +96,7 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, uint32_t lineId, AccessTy
     //dbgprint
     std::cout << "processaccess: parents.size()=" << parents.size() << std::endl;
     std::cout << "parentId=" << getParentId(lineAddr) << std::endl;
-    std::cout << "parent:" << parents[getParentId(lineAddr)] << std::endl;
+    std::cout << "parent:" << parents[getParentId(lineAddr)]->getName() << std::endl;
 
 
     switch (type) {
