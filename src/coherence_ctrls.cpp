@@ -92,6 +92,13 @@ uint64_t MESIBottomCC::processEviction(Address wbLineAddr, uint32_t lineId, bool
 uint64_t MESIBottomCC::processAccess(Address lineAddr, uint32_t lineId, AccessType type, uint64_t cycle, uint32_t srcId, uint32_t flags) {
     uint64_t respCycle = cycle;
     MESIState* state = &array[lineId];
+
+    //dbgprint
+    std::cout << "processaccess: parents.size()=" << parents.size() << std::endl;
+    std::cout << "parentId=" << getParentId(lineAddr) << std::endl;
+    std::cout << "parent:" << parents[getParentId(lineAddr)] << std::endl;
+
+
     switch (type) {
         // A PUTS/PUTX does nothing w.r.t. higher coherence levels --- it dies here
         case PUTS: //Clean writeback, nothing to do (except profiling)
