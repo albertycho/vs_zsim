@@ -159,11 +159,6 @@ class MESIBottomCC : public GlobAlloc {
 
         MemObject* getParentC(Address lineaddr) {
             uint32_t parentId = getParentId(lineaddr);
-            //dbgprint
-            for (int i; i < parents.size(); i++) {
-                std::cout << parents[i]->getName() << std::endl;
-            }
-
             return parents[parentId];
         }
 
