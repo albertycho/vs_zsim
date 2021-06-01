@@ -318,24 +318,34 @@ uint64_t MESITopCC::processAccess(Address lineAddr, uint32_t lineId, AccessType 
         case GETX:
             assert(haveExclusive); //the current cache better have exclusive access to this line
 
-            // If child is in sharers list (this is an upgrade miss), take it out
-            if (e->sharers[childId]) {
-                assert_msg(!e->isExclusive(), "Spurious GETX, childId=%d numSharers=%d isExcl=%d excl=%d", childId, e->numSharers, e->isExclusive(), e->exclusive);
-                e->sharers[childId] = false;
-                e->numSharers--;
+            if (childId == 0xDA0000) {//direct access
+                info("directAccess");
+                // Invalidate all other copies
+                respCycle = sendInvalidates(lineAddr, lineId, INV, inducedWriteback, cycle, srcId);
+                assert(e->numSharers == 0);
+                e->exclusive = true;
             }
+            else {
+                // If child is in sharers list (this is an upgrade miss), take it out
+                if (e->sharers[childId]) {
+                    assert_msg(!e->isExclusive(), "Spurious GETX, childId=%d numSharers=%d isExcl=%d excl=%d", childId, e->numSharers, e->isExclusive(), e->exclusive);
+                    e->sharers[childId] = false;
+                    e->numSharers--;
+                }
 
-            // Invalidate all other copies
-            respCycle = sendInvalidates(lineAddr, lineId, INV, inducedWriteback, cycle, srcId);
 
-            // Set current sharer, mark exclusive
-            e->sharers[childId] = true;
-            e->numSharers++;
-            e->exclusive = true;
+                // Invalidate all other copies
+                respCycle = sendInvalidates(lineAddr, lineId, INV, inducedWriteback, cycle, srcId);
 
-            assert(e->numSharers == 1);
+                // Set current sharer, mark exclusive
+                e->sharers[childId] = true;
+                e->numSharers++;
+                e->exclusive = true;
 
-            *childState = M; //give in M directly
+                assert(e->numSharers == 1);
+
+                *childState = M; //give in M directly
+            }
             break;
 
         default: panic("!?");
