@@ -226,19 +226,11 @@ void MESITopCC::init(const g_vector<BaseCache*>& _children, Network* network, co
 uint64_t MESITopCC::sendInvalidates(Address lineAddr, uint32_t lineId, InvType type, bool* reqWriteback, uint64_t cycle, uint32_t srcId) {
     //Send down downgrades/invalidates
     Entry* e = &array[lineId];
-    info("send inval");
 
-
+    //TODO acho: determine if this is okay with direct access
     //Don't propagate downgrades if sharers are not exclusive.
     if (type == INVX && !e->isExclusive()) {
         return cycle;
-    }
-    uint32_t numChildren = children.size();
-    for (uint32_t c = 0; c < numChildren; c++) {
-        std::cout << "sendInval - " << children[c]->getName() << std::endl;
-        if (e->sharers[c]) {
-            info("is sharer");
-        }
     }
     
     uint64_t maxCycle = cycle; //keep maximum cycle only, we assume all invals are sent in parallel
@@ -328,7 +320,7 @@ uint64_t MESITopCC::processAccess(Address lineAddr, uint32_t lineId, AccessType 
             assert(haveExclusive); //the current cache better have exclusive access to this line
 
             if (childId == 0xDA0000) {//direct access
-                info("directAccess");
+                //info("directAccess");
                 // Invalidate all other copies
                 respCycle = sendInvalidates(lineAddr, lineId, INV, inducedWriteback, cycle, srcId);
                 assert(e->numSharers == 0);
