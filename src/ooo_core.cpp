@@ -510,7 +510,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         core->phaseEndCycle += zinfo->phaseLength;
         //experiment code
         
-        /*
+        
         if (core->curCycle <= core->phaseEndCycle) {
             //if (procIdx == 0) {
             if (getCid(tid) == 0) {
@@ -524,8 +524,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         Address rbuf_lineAddr = recv_buf_addr >> lineBits;
                         MESIState dummyState = MESIState::I;
 
-                        //MemReq req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, 0, MemReq::NORECORD };
-                        MemReq req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, 0, 0};
+                        MemReq req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, 0, MemReq::NORECORD };
+                        //MemReq req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, 0, 0};
                         uint64_t reqSatisfiedCycle = core->l1d->getParent(recv_buf_addr >> lineBits)->access(req);
                         //std::cout << core->l1d->getParent(recv_buf_addr >> lineBits)->getName() << std::endl;
                         core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
@@ -535,7 +535,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                     //std::cout << "coreCurcycle:" << core->curCycle << std::endl;
             }
         }
-        */
+        
 
         uint32_t cid = getCid(tid);
         // NOTE: TakeBarrier may take ownership of the core, and so it will be used by some other thread. If TakeBarrier context-switches us,
