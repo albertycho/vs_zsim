@@ -321,7 +321,7 @@ uint64_t MESITopCC::processAccess(Address lineAddr, uint32_t lineId, AccessType 
             assert(haveExclusive); //the current cache better have exclusive access to this line
 
             if (childId == 0xDA0000) {//direct access
-                //info("directAccess");
+                info("directAccess");
                 // Invalidate all other copies
                 respCycle = sendInvalidates(lineAddr, lineId, INV, inducedWriteback, cycle, srcId);
                 assert(e->numSharers == 0);
