@@ -527,7 +527,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         //MemReq req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, 0, MemReq::NORECORD };
                         MemReq req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, 0, 0};
                         uint64_t reqSatisfiedCycle = core->l1d->getParent(recv_buf_addr >> lineBits)->access(req);
-                        std::cout << core->l1d->getParent(recv_buf_addr >> lineBits)->getName() << std::endl;
+                        //std::cout << core->l1d->getParent(recv_buf_addr >> lineBits)->getName() << std::endl;
                         core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
                         
                     }
