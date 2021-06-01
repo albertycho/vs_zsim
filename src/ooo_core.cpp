@@ -529,7 +529,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         uint64_t reqSatisfiedCycle = core->l1d->getParent(recv_buf_addr >> lineBits)->access(req);
                         //std::cout << core->l1d->getParent(recv_buf_addr >> lineBits)->getName() << std::endl;
                         //core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
-                        core->cRec.record(core->curCycle, core->curCycle, core->curCycle);
+                        core->cRec.record(core->curCycle, core->curCycle, core->curCycle+1);
                     }
 
                     //std::cout << "coreCurcycle:" << core->curCycle << std::endl;
