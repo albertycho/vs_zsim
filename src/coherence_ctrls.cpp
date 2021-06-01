@@ -226,7 +226,7 @@ void MESITopCC::init(const g_vector<BaseCache*>& _children, Network* network, co
 uint64_t MESITopCC::sendInvalidates(Address lineAddr, uint32_t lineId, InvType type, bool* reqWriteback, uint64_t cycle, uint32_t srcId) {
     //Send down downgrades/invalidates
     Entry* e = &array[lineId];
-
+    info("send inval");
     //Don't propagate downgrades if sharers are not exclusive.
     if (type == INVX && !e->isExclusive()) {
         return cycle;
