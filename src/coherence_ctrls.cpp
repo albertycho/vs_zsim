@@ -231,13 +231,15 @@ uint64_t MESITopCC::sendInvalidates(Address lineAddr, uint32_t lineId, InvType t
     if (type == INVX && !e->isExclusive()) {
         return cycle;
     }
-
+    
     uint64_t maxCycle = cycle; //keep maximum cycle only, we assume all invals are sent in parallel
     if (!e->isEmpty()) {
         uint32_t numChildren = children.size();
         uint32_t sentInvs = 0;
         for (uint32_t c = 0; c < numChildren; c++) {
+            std::cout << "sendInval - " << children[c]->getName() << std::endl;
             if (e->sharers[c]) {
+                info("is sharer");
                 InvReq req = {lineAddr, type, reqWriteback, cycle, srcId};
                 uint64_t respCycle = children[c]->invalidate(req);
                 respCycle += childrenRTTs[c];
