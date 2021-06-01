@@ -531,8 +531,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         //core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
                         core->cRec.record(core->curCycle, core->curCycle, core->curCycle);
                     }
+
                     //std::cout << "coreCurcycle:" << core->curCycle << std::endl;
-                
             }
         }
         
