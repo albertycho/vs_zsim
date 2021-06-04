@@ -535,6 +535,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 }
                     //std::cout << "coreCurcycle:" << core->curCycle << std::endl;
             }
+            /*
             else if (getCid(tid) == 1) {
                 for (uint64_t i = 8; i < RECV_BUF_POOL_SIZE; i += 16) {
                     uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[procIdx].recv_buf[i]));
@@ -552,7 +553,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                     core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
 
                 }
-            }
+            }*/
         }
         
 
