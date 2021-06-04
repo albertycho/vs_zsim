@@ -86,37 +86,48 @@ uint64_t Cache::access(MemReq& req) {
         EventRecorder* evRec = zinfo->eventRecorders[req.srcId];
         TimingRecord wbAcc;
         wbAcc.clear();
+
+        if (no_record) {
+            assert(!(evRec->hasRecord()));
+        }
+
         if (unlikely(evRec && evRec->hasRecord())) {
             wbAcc = evRec->popRecord();
         }
 
         respCycle = cc->processAccess(req, lineId, respCycle);
 
-        // Access may have generated another timing record. If *both* access
-        // and wb have records, stitch them together
-        if (unlikely(wbAcc.isValid())) {
-            if (!evRec->hasRecord()) {
-                // Downstream should not care about endEvent for PUTs
-                wbAcc.endEvent = nullptr;
-                evRec->pushRecord(wbAcc);
-            } else {
-                // Connect both events
-                TimingRecord acc = evRec->popRecord();
-                assert(wbAcc.reqCycle >= req.cycle);
-                assert(acc.reqCycle >= req.cycle);
-                DelayEvent* startEv = new (evRec) DelayEvent(0);
-                DelayEvent* dWbEv = new (evRec) DelayEvent(wbAcc.reqCycle - req.cycle);
-                DelayEvent* dAccEv = new (evRec) DelayEvent(acc.reqCycle - req.cycle);
-                startEv->setMinStartCycle(req.cycle);
-                dWbEv->setMinStartCycle(req.cycle);
-                dAccEv->setMinStartCycle(req.cycle);
-                startEv->addChild(dWbEv, evRec)->addChild(wbAcc.startEvent, evRec);
-                startEv->addChild(dAccEv, evRec)->addChild(acc.startEvent, evRec);
+        if (no_record) {
+            assert(!evRec->hasRecord());
+        }
+        else {
+            // Access may have generated another timing record. If *both* access
+            // and wb have records, stitch them together
+            if (unlikely(wbAcc.isValid())) {
+                if (!evRec->hasRecord()) {
+                    // Downstream should not care about endEvent for PUTs
+                    wbAcc.endEvent = nullptr;
+                    evRec->pushRecord(wbAcc);
+                }
+                else {
+                    // Connect both events
+                    TimingRecord acc = evRec->popRecord();
+                    assert(wbAcc.reqCycle >= req.cycle);
+                    assert(acc.reqCycle >= req.cycle);
+                    DelayEvent* startEv = new (evRec) DelayEvent(0);
+                    DelayEvent* dWbEv = new (evRec) DelayEvent(wbAcc.reqCycle - req.cycle);
+                    DelayEvent* dAccEv = new (evRec) DelayEvent(acc.reqCycle - req.cycle);
+                    startEv->setMinStartCycle(req.cycle);
+                    dWbEv->setMinStartCycle(req.cycle);
+                    dAccEv->setMinStartCycle(req.cycle);
+                    startEv->addChild(dWbEv, evRec)->addChild(wbAcc.startEvent, evRec);
+                    startEv->addChild(dAccEv, evRec)->addChild(acc.startEvent, evRec);
 
-                acc.reqCycle = req.cycle;
-                acc.startEvent = startEv;
-                // endEvent / endCycle stay the same; wbAcc's endEvent not connected
-                evRec->pushRecord(acc);
+                    acc.reqCycle = req.cycle;
+                    acc.startEvent = startEv;
+                    // endEvent / endCycle stay the same; wbAcc's endEvent not connected
+                    evRec->pushRecord(acc);
+                }
             }
         }
     }
