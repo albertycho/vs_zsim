@@ -63,8 +63,8 @@
 #define RMC_INCOMING_RESP       (1<<SEND_OP_SHIFT) | (1<<INCOMING_RESP_SHIFT)
 #define RMC_INVAL               42
 
-//#define RECV_BUF_POOL_SIZE 16000
-#define RECV_BUF_POOL_SIZE 32000
+#define RECV_BUF_POOL_SIZE 16000
+//#define RECV_BUF_POOL_SIZE 32000
 
 typedef struct wq_entry {
 	//first double-word (8 bytes)

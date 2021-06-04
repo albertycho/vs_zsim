@@ -516,7 +516,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
             if (getCid(tid) == 0) {
                 //info("calling mock memory access from NIC");
                 //std::cout << "coreCurcycle:" << core->curCycle << std::endl;
-                    for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i+=8) {
+                    //for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i+=8) {
+                for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i += 16) {
                         uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[procIdx].recv_buf[i]));
                         nicInfo->nic_elem[procIdx].recv_buf[i] = i;                        
                         //uint64_t reqSatisfiedCycle = core->l1d->store_norecord(recv_buf_addr, core->curCycle)+ L1D_LAT;
@@ -531,9 +532,26 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         assert((!core->cRec.getEventRecorder()->hasRecord()));
                         core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
                         
-                    }
-
+                }
                     //std::cout << "coreCurcycle:" << core->curCycle << std::endl;
+            }
+            else if (getCid(tid) == 1) {
+                for (uint64_t i = 8; i < RECV_BUF_POOL_SIZE; i += 16) {
+                    uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[procIdx].recv_buf[i]));
+                    nicInfo->nic_elem[procIdx].recv_buf[i] = i;
+                    //uint64_t reqSatisfiedCycle = core->l1d->store_norecord(recv_buf_addr, core->curCycle)+ L1D_LAT;
+                    //uint64_t reqSatisfiedCycle = core->l1d->store(recv_buf_addr, core->curCycle)+ L1D_LAT;
+                    Address rbuf_lineAddr = recv_buf_addr >> lineBits;
+                    MESIState dummyState = MESIState::I;
+
+                    MemReq req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, 0, MemReq::NORECORD };
+                    //MemReq req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, 0, 0};
+                    uint64_t reqSatisfiedCycle = core->l1d->getParent(recv_buf_addr >> lineBits)->access(req);
+                    //std::cout << core->l1d->getParent(recv_buf_addr >> lineBits)->getName() << std::endl;
+                    assert((!core->cRec.getEventRecorder()->hasRecord()));
+                    core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
+
+                }
             }
         }
         
