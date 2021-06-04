@@ -7,7 +7,7 @@
 #include <chrono>
 
 //#define ARR_SIZE 1000000
-#define ARR_SIZE 260000
+#define ARR_SIZE 130000
 
 using namespace std;
 
