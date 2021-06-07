@@ -116,8 +116,6 @@ static uint32_t cids[MAX_THREADS];
 Core* cores[MAX_THREADS];
 
 
-static void init_NIC_queue(){
-}
 
 // NIC RGP functions 
 
@@ -1635,8 +1633,6 @@ static EXCEPT_HANDLING_RESULT InternalExceptionHandler(THREADID tid, EXCEPTION_I
 
 int main(int argc, char *argv[]) {
 	
-	init_NIC_queue();
-
     PIN_InitSymbols();
     if (PIN_Init(argc, argv)) return Usage();
 
