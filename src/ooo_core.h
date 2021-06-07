@@ -158,9 +158,9 @@ class WindowStructure {
             occupancy -= curWin[curPos].count;
             curWin[curPos].set(0, 0);
             curPos++;
-            curCycle++;
+            //curCycle++;
             /*NIC logic triggers*/
-            //cycle_increment_routine(curCycle);
+            cycle_increment_routine(curCycle);
 
             
             glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
