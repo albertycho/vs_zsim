@@ -31,7 +31,7 @@ int main() {
 	//////////////////////////////////////////////////
 	//////// CHECK ONLY RGP&RCP - BEGIN///////////////
 	//////////////////////////////////////////////////
-	
+	/*
 	while (send_serviced <= 32) {
 
 		int send_ret;
@@ -83,7 +83,7 @@ int main() {
 	//////// CHECK ONLY RRPP - END////////////////////
 	//////////////////////////////////////////////////
 	
-
+	*/
 	while(send_count<=32)
 	{
 		successStruct recv_completion;
@@ -96,7 +96,7 @@ int main() {
 		send_serviced++;
 		
 		//test_prints
-		std::cout << "APP: recvd incoming msg.              recv_count:"<<std::dec << send_serviced << ", rbuf_addr:" <<std::hex<< recv_completion.recv_buf_addr << ", rbuf_val:" << *(uint32_t*)(recv_completion.recv_buf_addr) << std::endl;
+		std::cout << "APP: recvd incoming msg.              recv_count:"<<std::dec << send_serviced << ", rbuf_addr:" <<std::hex<< recv_completion.recv_buf_addr << ", rbuf_val:" << *(uint64_t*)(recv_completion.recv_buf_addr) << std::endl;
 		uint32_t target_node = recv_completion.tid;
 
 		//calcualte lbuf_ptr address
