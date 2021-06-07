@@ -582,7 +582,7 @@ void cycle_increment_routine(uint64_t& curCycle) {
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
     void* lg_p = static_cast<void*>(gm_get_lg_ptr());
     core_ceq_routine(curCycle, nicInfo, 0);
-    RRPP_routine(curCycle, nicInfo, lg_p, 0);
+    //RRPP_routine(curCycle, nicInfo, lg_p, 0);
     RCP_routine(curCycle, nicInfo, 0);
     
     return;
