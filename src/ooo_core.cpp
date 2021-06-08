@@ -521,7 +521,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 //std::cout << "coreCurcycle:" << core->curCycle << std::endl;
                     //for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i+=8) {
                 //TODO: CHECK for TERMINATE condition. Need to be refined
-                if (core->curCycle > 1000000) {
+                if (core->curCycle > 10000000) {
                     int cores_connected_to_network = 0;
                     for (uint64_t i = 0; i < zinfo->numCores; i++) {
                         if (nicInfo->nic_elem[i].cq_valid) {

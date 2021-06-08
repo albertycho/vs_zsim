@@ -25,12 +25,12 @@ int main() {
 
 	*/
 
-	bool* zsim_done;
+	bool* nic_proc_on;
 
-	register_buffer((void*)(&zsim_done), (void*)0xB);
+	register_buffer((void*)(&nic_proc_on), (void*)0xB);
 
 	int dummy;
-	while (!(*zsim_done)) {
+	while ((*nic_proc_on)) {
 		dummy = 0;
 	}
 
