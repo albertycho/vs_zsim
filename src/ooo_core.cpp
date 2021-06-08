@@ -521,7 +521,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 //std::cout << "coreCurcycle:" << core->curCycle << std::endl;
                     //for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i+=8) {
                 //TODO: CHECK for TERMINATE condition. Need to be refined
-                if (core->curCycle > 10000) {
+                if (core->curCycle > 100000) {
                     int cores_connected_to_network = 0;
                     for (uint64_t i = 0; i < zinfo->numCores; i++) {
                         if (nicInfo->nic_elem[i].cq_valid) {
@@ -543,6 +543,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         assert((!core->cRec.getEventRecorder()->hasRecord()));
                         //MemReq req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, 0, MemReq::NORECORD };
                         //int srcid=core->l1d->
+                        
                         MemReq req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, 0, 0};
                         uint64_t reqSatisfiedCycle = core->l1d->getParent(recv_buf_addr >> lineBits)->access(req);
                         //std::cout << core->l1d->getParent(recv_buf_addr >> lineBits)->getName() << std::endl;
