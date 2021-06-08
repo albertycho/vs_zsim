@@ -519,6 +519,20 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 //info("calling mock memory access from NIC");
                 //std::cout << "coreCurcycle:" << core->curCycle << std::endl;
                     //for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i+=8) {
+                //TODO: CHECK for TERMINATE condition. Need to be refined
+                if (core->curCycle > 10000) {
+                    int cores_connected_to_network = 0;
+                    for (uint64_t i = 0; i < zinfo->numCores; i++) {
+                        if (nicInfo->nic_elem[i].cq_valid) {
+                            cores_connected_to_network++;
+                        }
+                    }
+                    if (cores_connected_to_network == 0) {
+                        nicInfo->nic_proc_on = false;
+                    }
+                }
+
+                nicInfo->nic_elem[core_id].
                 for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i += 8) {
                         uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[procIdx].recv_buf[i]));
                         nicInfo->nic_elem[procIdx].recv_buf[i] = i;                        
