@@ -516,6 +516,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
             //if (procIdx == 0) {
             //if (getCid(tid) == 0) {
             if((nicInfo->nic_pid == procIdx) && (nicInfo->nic_proc_on)){
+                std::cout << "nic_pid:" << nicInfo->nic_pid << ", nic_core_id:" << getCid(tid) << std::endl;
                 //info("calling mock memory access from NIC");
                 //std::cout << "coreCurcycle:" << core->curCycle << std::endl;
                     //for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i+=8) {
@@ -541,6 +542,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         MESIState dummyState = MESIState::I;
                         assert((!core->cRec.getEventRecorder()->hasRecord()));
                         //MemReq req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, 0, MemReq::NORECORD };
+                        //int srcid=core->l1d->
                         MemReq req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, 0, 0};
                         uint64_t reqSatisfiedCycle = core->l1d->getParent(recv_buf_addr >> lineBits)->access(req);
                         //std::cout << core->l1d->getParent(recv_buf_addr >> lineBits)->getName() << std::endl;
