@@ -503,6 +503,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    nicInfo->nic_proc_on = false;
     kill(-NIC_proc_pid, SIGKILL);
     kill(NIC_proc_pid, SIGKILL);
 

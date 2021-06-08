@@ -514,11 +514,12 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         
         if (core->curCycle <= core->phaseEndCycle) {
             //if (procIdx == 0) {
-            if (getCid(tid) == 0) {
+            //if (getCid(tid) == 0) {
+            if((nicInfo->nic_pid == procIdx) && (nicInfo->nic_proc_on))
                 //info("calling mock memory access from NIC");
                 //std::cout << "coreCurcycle:" << core->curCycle << std::endl;
                     //for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i+=8) {
-                for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i += 16) {
+                for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i += 8) {
                         uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[procIdx].recv_buf[i]));
                         nicInfo->nic_elem[procIdx].recv_buf[i] = i;                        
                         //uint64_t reqSatisfiedCycle = core->l1d->store_norecord(recv_buf_addr, core->curCycle)+ L1D_LAT;
@@ -536,7 +537,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 }
                     //std::cout << "coreCurcycle:" << core->curCycle << std::endl;
             }
-            
+            /*
             else if (getCid(tid) == 1) {
                 for (uint64_t i = 8; i < RECV_BUF_POOL_SIZE; i += 16) {
                     uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[procIdx].recv_buf[i]));
@@ -555,6 +556,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
 
                 }
             }
+            */
         }
         
 
@@ -582,7 +584,7 @@ void cycle_increment_routine(uint64_t& curCycle) {
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
     void* lg_p = static_cast<void*>(gm_get_lg_ptr());
     core_ceq_routine(curCycle, nicInfo, 0);
-    RRPP_routine(curCycle, nicInfo, lg_p, 0);
+    //RRPP_routine(curCycle, nicInfo, lg_p, 0);
     RCP_routine(curCycle, nicInfo, 0);
     
     return;

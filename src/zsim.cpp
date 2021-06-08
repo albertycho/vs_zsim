@@ -1301,6 +1301,11 @@ VOID HandleNicMagicOp(THREADID tid, ADDRINT val, ADDRINT field) {
         }
         */
         break;
+    case 0xB: //indicate app is nic_proxy_process
+        *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_proc_on));
+        nicInfo->nic_pid = procIdx;
+        nicInfo->nic_proc_on = true;
+        break;
 	case 0xdead: //invalidate entries after test app terminates
 		nicInfo->nic_elem[core_id].wq_tail=0;
 		nicInfo->nic_elem[core_id].cq_head=0;

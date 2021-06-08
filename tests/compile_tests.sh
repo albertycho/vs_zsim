@@ -14,3 +14,6 @@ g++ array_access.cpp zsim_nic_defines.cpp -std=c++11 -o control_test
 
 rm control_test_no_locality
 g++ array_access_large.cpp zsim_nic_defines.cpp -std=c++11 -o control_test_no_locality
+
+rm nic_proxy_app
+g++ nic_proxy_app.cpp zsim_nic_defines.cpp -std=c++11 -o nic_proxy_app
