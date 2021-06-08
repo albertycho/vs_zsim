@@ -515,7 +515,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         if (core->curCycle <= core->phaseEndCycle) {
             //if (procIdx == 0) {
             //if (getCid(tid) == 0) {
-            if((nicInfo->nic_pid == procIdx) && (nicInfo->nic_proc_on))
+            if((nicInfo->nic_pid == procIdx) && (nicInfo->nic_proc_on)){
                 //info("calling mock memory access from NIC");
                 //std::cout << "coreCurcycle:" << core->curCycle << std::endl;
                     //for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i+=8) {
