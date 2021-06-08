@@ -542,9 +542,9 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         MESIState dummyState = MESIState::I;
                         assert((!core->cRec.getEventRecorder()->hasRecord()));
                         //MemReq req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, 0, MemReq::NORECORD };
-                        //int srcid=core->l1d->
+                        int srcId = getCid(tid);
                         
-                        MemReq req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, 0, 0};
+                        MemReq req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, srcId, 0};
                         uint64_t reqSatisfiedCycle = core->l1d->getParent(recv_buf_addr >> lineBits)->access(req);
                         //std::cout << core->l1d->getParent(recv_buf_addr >> lineBits)->getName() << std::endl;
                         //assert((!core->cRec.getEventRecorder()->hasRecord()));
