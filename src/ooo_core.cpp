@@ -516,10 +516,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
             //if (procIdx == 0) {
             //if (getCid(tid) == 0) {
             if((nicInfo->nic_pid == procIdx) && (nicInfo->nic_proc_on)){
-                std::cout << "nic_pid:" << nicInfo->nic_pid << ", nic_core_id:" << getCid(tid) << std::endl;
-                //info("calling mock memory access from NIC");
-                //std::cout << "coreCurcycle:" << core->curCycle << std::endl;
-                    //for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i+=8) {
+                //std::cout << "nic_pid:" << nicInfo->nic_pid << ", nic_core_id:" << getCid(tid) << std::endl;
+                
                 //TODO: CHECK for TERMINATE condition. Need to be refined
                 if (core->curCycle > 10000000) {
                     int cores_connected_to_network = 0;
