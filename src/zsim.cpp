@@ -1305,6 +1305,7 @@ VOID HandleNicMagicOp(THREADID tid, ADDRINT val, ADDRINT field) {
         *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_proc_on));
         nicInfo->nic_pid = procIdx;
         nicInfo->nic_proc_on = true;
+        info("nic pid:%d, cid:%d", procIdx, core_id);
         break;
 	case 0xdead: //invalidate entries after test app terminates
 		nicInfo->nic_elem[core_id].wq_tail=0;
