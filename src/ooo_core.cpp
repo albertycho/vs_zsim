@@ -522,6 +522,9 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         
         
         if (core->curCycle <= core->phaseEndCycle) {
+            //TODO: DELETE THIS!! experiemnt code
+
+
             //if (procIdx == 0) {
             //if (getCid(tid) == 0) {
             if((nicInfo->nic_pid == procIdx) && (nicInfo->nic_proc_on)){

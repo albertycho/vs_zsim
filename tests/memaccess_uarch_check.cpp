@@ -33,9 +33,11 @@ int main() {
 	}
 	uint64_t * rbuf = (uint64_t *) (cq->q[0].recv_buf_addr);
 
-	uint64_t rbuf_val = *(rbuf);
+	std::cout << "rbuf addr:" << std::hex << rbuf << std::endl;
 
-	std::cout << "APP: rbuf_val = " << std::hex << rbuf_val;
+	//uint64_t rbuf_val = *(rbuf);
+
+	//std::cout << "APP: rbuf_val = " << std::hex << rbuf_val;
 
 
 
