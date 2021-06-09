@@ -31,6 +31,7 @@ int main() {
 	for (int i = 0; i < 12; i++) {
 		long_array[i] = i;
 	}
+	std::cout << "APP before reading rbuf_addr" << std::endl;
 	uint64_t * rbuf = (uint64_t *) (cq->q[0].recv_buf_addr);
 
 	std::cout << "rbuf addr:" << std::hex << rbuf << std::endl;
