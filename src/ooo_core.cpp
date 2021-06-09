@@ -273,6 +273,9 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
                         reqSatisfiedCycle = l1d->load(addr, dispatchCycle) + L1D_LAT;
                         cRec.record(curCycle, dispatchCycle, reqSatisfiedCycle);
                         std::cout << "curcycle,dispatchcycle,reqSatisfiedCycle" << curCycle << dispatchCycle << reqSatisfiedCycle << std::endl;
+                        std::cout << curCycle << std::endl;
+                        std::cout << dispatchCycle << std::endl;
+                        std::cout << reqSatisfiedCycle << std::endl;
                     }
                     
 
