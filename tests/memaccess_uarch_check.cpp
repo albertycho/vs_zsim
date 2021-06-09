@@ -31,7 +31,7 @@ int main() {
 	for (int i = 0; i < 12; i++) {
 		long_array[i] = i;
 	}
-	uint64_t * rbuf = cq->q[0].recv_buf_addr;
+	uint64_t * rbuf = (uint64_t *) (cq->q[0].recv_buf_addr);
 
 	uint64_t rbuf_val = *(rbuf);
 
