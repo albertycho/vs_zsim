@@ -44,6 +44,7 @@ int main() {
 	auto end = std::chrono::system_clock::now();
 	std::chrono::duration<double> elapsed_seconds = end - start;
 	std::cout << "elapsed time: " << elapsed_seconds.count() << std::endl;
+	register_buffer((void*)0, (void*)0xdead);
 
 	return 0;
 
