@@ -530,7 +530,6 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         nicInfo->nic_proc_on = false;
                     }
                 }
-                std::cout << "nic_proc_on addr from core:" << std::hex << &(nicInfo->nic_proc_on) << endl;
                 for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i += 8) {
                         uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[procIdx].recv_buf[i]));
                         nicInfo->nic_elem[procIdx].recv_buf[i] = i;                        
