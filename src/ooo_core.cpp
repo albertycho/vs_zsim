@@ -275,6 +275,9 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
                         
                         //TODO: remove experiment code
                         if (addr == (Address)(&(nicInfo->nic_elem[0].cq->q[0].recv_buf_addr))) {
+                            if (nicInfo->nic_proc_on) {
+                                std::cout << "DA to rbuf_addr var has been made by NIC before" << std::endl;
+                            }
                             std::cout << "recv_buf access  time for APP:" << (reqSatisfiedCycle - dispatchCycle) << std::endl;
                         }
                     }
@@ -520,7 +523,21 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         if (core->curCycle <= core->phaseEndCycle) {
             //TODO: DELETE THIS!! experiemnt code
             if (!nicInfo->nic_proc_on) {
-                //(Address)(&(nicInfo->nic_elem[0].cq->q[0].recv_buf_addr))
+                info("Direct accessing rbuf_addr var");
+                nicInfo->nic_elem[0].cq->q[0].recv_buf_addr = 0xABCD;
+                Address rbuf_addr = (Address)(&(nicInfo->nic_elem[0].cq->q[0].recv_buf_addr));
+                Address rbuf_lineAddr = rbuf_addr>> lineBits;
+                MESIState dummyState = MESIState::I;
+                assert((!core->cRec.getEventRecorder()->hasRecord()));
+                //MemReq req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, 0, MemReq::NORECORD };
+                int srcId = getCid(tid);
+
+                MemReq req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, srcId, 0 };
+                uint64_t reqSatisfiedCycle = core->l1d->getParent(recv_buf_addr >> lineBits)->access(req);
+                //std::cout << core->l1d->getParent(recv_buf_addr >> lineBits)->getName() << std::endl;
+                //assert((!core->cRec.getEventRecorder()->hasRecord()));
+                core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
+                nicInfo->nic_proc_on = true;
             }
                 
 
