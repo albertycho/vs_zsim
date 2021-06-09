@@ -7,8 +7,7 @@
 #include <chrono>
 
 //#define ARR_SIZE 1000000
-#define ARR_SIZE 130000
-
+#define ARR_SIZE 512
 using namespace std;
 
 int main() {
@@ -27,26 +26,24 @@ int main() {
 
 	auto start = std::chrono::system_clock::now();
 
-	uint64_t long_array[ARR_SIZE];
+	uint64_t long_array[12];
 
-	for (int i = 0; i < ARR_SIZE; i++) {
+	for (int i = 0; i < 12; i++) {
 		long_array[i] = i;
 	}
+	uint64_t * rbuf = cq->q[0].recv_buf_addr;
 
-	uint64_t sum = 0;
-	//for (int j = 0; j < 4; j++) {
-	for (int j = 0; j < 16; j++) {
-	//for (int j = 0; j < 10000; j++) {
-		for (int i = 0; i < ARR_SIZE; i++) {
-			sum += long_array[i];
-		}
-	}
-	std::cout << "sum=" << sum << std::endl;
+	uint64_t rbuf_val = *(rbuf);
+
+	std::cout << "APP: rbuf_val = " << std::hex << rbuf_val;
+
+
 
 	auto end = std::chrono::system_clock::now();
 	std::chrono::duration<double> elapsed_seconds = end - start;
-	std::cout << "elapsed time: " << elapsed_seconds.count() << std::endl;
+	std::cout << "elapsed time: " << std::dec << elapsed_seconds.count() << std::endl;
 	register_buffer((void*)0, (void*)0xdead);
+
 	return 0;
 
 }
