@@ -278,7 +278,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
                         std::cout << dispatchCycle << std::endl;
                         std::cout << reqSatisfiedCycle << std::endl;
                         */
-                        if (addr == &(nicInfo->nic_elem[0].cq->q[0].recv_buf_addr)) {
+                        if (addr == (Address)(&(nicInfo->nic_elem[0].cq->q[0].recv_buf_addr))) {
                             std::cout << "recv_buf access  time for APP:" << (reqSatisfiedCycle - dispatchCycle) << std::endl;
                         }
                     }
