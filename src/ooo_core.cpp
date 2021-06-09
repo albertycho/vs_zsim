@@ -272,10 +272,15 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
                     if (addr != ((Address)-1L)) {
                         reqSatisfiedCycle = l1d->load(addr, dispatchCycle) + L1D_LAT;
                         cRec.record(curCycle, dispatchCycle, reqSatisfiedCycle);
+                        /*
                         std::cout << "curcycle,dispatchcycle,reqSatisfiedCycle" << curCycle << dispatchCycle << reqSatisfiedCycle << std::endl;
                         std::cout << curCycle << std::endl;
                         std::cout << dispatchCycle << std::endl;
                         std::cout << reqSatisfiedCycle << std::endl;
+                        */
+                        if (addr == (nicInfo->nic_elem[0].cq->q[0].recv_buf_addr)) {
+                            std::cout << "recv_buf access  time for APP:" << (reqSatisfiedCycle - dispatchCycle) << std::endl;
+                        }
                     }
                     
 
