@@ -29,6 +29,8 @@ int main() {
 
 	register_buffer((void*)(&nic_proc_on), (void*)0xB);
 
+	std::cout << "nic_proc_on addr: " << std::hex << nic_proc_on << std::endl;
+
 	int dummy;
 	while ((*nic_proc_on)) {
 		dummy = 0;
