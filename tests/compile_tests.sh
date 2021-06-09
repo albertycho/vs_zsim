@@ -17,3 +17,6 @@ g++ array_access_large.cpp zsim_nic_defines.cpp -std=c++11 -o control_test_no_lo
 
 rm nic_proxy_app
 g++ nic_proxy_app.cpp zsim_nic_defines.cpp -std=c++11 -o nic_proxy_app
+
+rm ma_uarch_check
+g++ memaccess_uarch_check.cpp zsim_nic_defines.cpp -std=c++11 -o ma_uarch_check
