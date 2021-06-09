@@ -570,11 +570,6 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         nicInfo->nic_proc_on = false;
                     }
 
-                    /*
-                    if (nicInfo->nic_proc_on == false) {
-                        info("nic_proc_on is false, sim should end!")
-                    }
-                    */
 
                 }
 
