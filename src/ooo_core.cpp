@@ -278,14 +278,14 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
                             if (nicInfo->nic_proc_on) {
                                 std::cout << "DA to rbuf_addr var has been made by NIC before" << std::endl;
                             }
-                            std::cout << "recv_buf access  time for APP:" << (reqSatisfiedCycle - dispatchCycle) << std::endl;
+                            std::cout << "recv_buf[0] access  time for APP:" << (reqSatisfiedCycle - dispatchCycle) << std::endl;
                             std::cout << "procMask: " << procMask << std::endl;
                         }
                         if (addr == (Address)(&(nicInfo->nic_elem[1].cq->q[0].recv_buf_addr))) {
                             if (nicInfo->nic_proc_on) {
                                 std::cout << "DA to rbuf_addr var has been made by NIC before" << std::endl;
                             }
-                            std::cout << "recv_buf access  time for APP:" << (reqSatisfiedCycle - dispatchCycle) << std::endl;
+                            std::cout << "recv_buf access[1]  time for APP:" << (reqSatisfiedCycle - dispatchCycle) << std::endl;
                             std::cout << "procMask: " << procMask << std::endl;
                         }
                     }
@@ -552,7 +552,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 nicInfo->nic_proc_on = true;
             }
                 
-
+            /*
             //if (procIdx == 0) {
             //if (getCid(tid) == 0) {
             if((nicInfo->nic_pid == procIdx) && (nicInfo->nic_proc_on)){
@@ -600,6 +600,9 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 }
                     //std::cout << "coreCurcycle:" << core->curCycle << std::endl;
             }
+            */
+
+
             /*
             else if (getCid(tid) == 1) {
                 for (uint64_t i = 8; i < RECV_BUF_POOL_SIZE; i += 16) {
