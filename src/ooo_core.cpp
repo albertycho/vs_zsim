@@ -279,6 +279,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
                                 std::cout << "DA to rbuf_addr var has been made by NIC before" << std::endl;
                             }
                             std::cout << "recv_buf access  time for APP:" << (reqSatisfiedCycle - dispatchCycle) << std::endl;
+                            std::cout << "procMask: " << procMask << std::endl;
                         }
                     }
                     
