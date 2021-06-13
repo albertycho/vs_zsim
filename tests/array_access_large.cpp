@@ -34,8 +34,8 @@ int main() {
 	}
 
 	uint64_t sum = 0;
-	//for (int j = 0; j < 4; j++) {
-	for (int j = 0; j < 16; j++) {
+	for (int j = 0; j < 4; j++) {
+	//for (int j = 0; j < 16; j++) {
 	//for (int j = 0; j < 10000; j++) {
 		for (int i = 0; i < ARR_SIZE; i++) {
 			sum += long_array[i];
