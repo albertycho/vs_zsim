@@ -595,7 +595,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 }
                     //std::cout << "coreCurcycle:" << core->curCycle << std::endl;
             }
-            */
+            
 
 
             
