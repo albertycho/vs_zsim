@@ -554,6 +554,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
             
             //if (procIdx == 0) {
             if (getCid(tid) == 0) {
+            
             /*
             if((nicInfo->nic_pid == procIdx) && (nicInfo->nic_proc_on)){
                 //std::cout << "nic_pid:" << nicInfo->nic_pid << ", nic_core_id:" << getCid(tid) << std::endl;
