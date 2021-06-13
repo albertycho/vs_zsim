@@ -527,7 +527,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
        
         if (core->curCycle <= core->phaseEndCycle) {
             /*
-            //TODO: DELETE THIS!! experiemnt code
+            //TODO: DELETE THIS!! experiemnt code for checking L2 access with procMask
             if (!nicInfo->nic_proc_on) {
                 info("Direct accessing rbuf_addr var");
                 for (int i = 0; i < 2; i++) {
