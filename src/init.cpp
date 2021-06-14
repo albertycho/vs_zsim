@@ -785,6 +785,9 @@ static void InitSystem(Config& config) {
     for (pair<string, CacheGroup*> kv : cMap) delete kv.second;
     cMap.clear();
 
+    uint64_t packet_injection_rate = config.get<uint64_t>("sim.packet_injection_rate", RECV_BUF_POOL_SIZE);
+    nicInfo->packet_injection_rate = packet_injection_rate;
+
     info("Initialized system");
 }
 
@@ -872,6 +875,15 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     zinfo = gm_calloc<GlobSimInfo>();
     zinfo->outputDir = gm_strdup(outputDir);
     zinfo->statsBackends = new g_vector<StatsBackend*>();
+
+    //init nic_elements ptr
+    //glob_nic_elements* nicInfo= gm_calloc<glob_nic_elements>();
+    nicInfo = gm_calloc<glob_nic_elements>();
+
+    for (uint64_t i = 0; i < MAX_THREADS; i++) {
+        nicInfo->nic_elem[i].wq = gm_calloc<rmc_wq_t>();
+        nicInfo->nic_elem[i].cq = gm_calloc<rmc_cq_t>();
+    }
 
     Config config(configFile);
 
@@ -1029,14 +1041,6 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 
     zinfo->contentionSim->postInit();
 
-	//init nic_elements ptr
-	//glob_nic_elements* nicInfo= gm_calloc<glob_nic_elements>();
-	nicInfo= gm_calloc<glob_nic_elements>();
-
-	for(uint64_t i=0;i<MAX_THREADS;i++){
-		nicInfo->nic_elem[i].wq=gm_calloc<rmc_wq_t>();
-		nicInfo->nic_elem[i].cq=gm_calloc<rmc_cq_t>();
-	}
 
 
     gm_set_nic_ptr(nicInfo);
