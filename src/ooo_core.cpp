@@ -584,15 +584,16 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                     nicInfo->nic_elem[procIdx].recv_buf[i] = i;                        
                     //uint64_t reqSatisfiedCycle = core->l1d->store_norecord(recv_buf_addr, core->curCycle)+ L1D_LAT;
                     //uint64_t reqSatisfiedCycle = core->l1d->store(recv_buf_addr, core->curCycle)+ L1D_LAT;
-                        
+                    
+                    MemReq req;
                     Address rbuf_lineAddr = recv_buf_addr >> lineBits;
                     MESIState dummyState = MESIState::I;
                     assert((!core->cRec.getEventRecorder()->hasRecord()));
                     if (nicInfo->record_nic_access) {
-                        MemReq req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, srcId, 0 };
+                        req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, srcId, 0 };
                     }
                     else {
-                        MemReq req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, srcId, MemReq::NORECORD };
+                        req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, srcId, MemReq::NORECORD };
                     }
                         
                         
