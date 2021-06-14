@@ -785,8 +785,8 @@ static void InitSystem(Config& config) {
     for (pair<string, CacheGroup*> kv : cMap) delete kv.second;
     cMap.clear();
 
-    uint64_t packet_injection_rate = config.get<uint64_t>("sim.packet_injection_rate", RECV_BUF_POOL_SIZE);
-    nicInfo->packet_injection_rate = packet_injection_rate;
+    uint32_t packet_injection_rate = config.get<uint32_t>("sim.packet_injection_rate", RECV_BUF_POOL_SIZE);
+    nicInfo->packet_injection_rate = (uint64_t) packet_injection_rate;
 
     info("Initialized system");
 }
