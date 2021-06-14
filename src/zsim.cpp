@@ -1307,6 +1307,7 @@ VOID HandleNicMagicOp(THREADID tid, ADDRINT val, ADDRINT field) {
         nicInfo->nic_proc_on = true;
         info("nic pid:%d, cid:%d", procIdx, core_id);
         info("packet injection rate:%d", nicInfo->packet_injection_rate);
+        std::cout << "nicInfo->record_nic_access: " << nicInfo->record_nic_access << std::endl;
         break;
 	case 0xdead: //invalidate entries after test app terminates
 		nicInfo->nic_elem[core_id].wq_tail=0;
