@@ -148,7 +148,9 @@ struct nic_element {
 struct glob_nic_elements {
 	uint64_t nic_pid;
 	bool nic_proc_on;
+	bool record_nic_access;
 	uint64_t packet_injection_rate;
+	PAD();
 	nic_element nic_elem[MAX_NUM_CORES];
 	
 	//cq_wr_event* cq_wr_event_q[MAX_NUM_CORES];

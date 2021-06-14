@@ -787,6 +787,8 @@ static void InitSystem(Config& config) {
 
     uint32_t packet_injection_rate = config.get<uint32_t>("sim.packet_injection_rate", RECV_BUF_POOL_SIZE);
     nicInfo->packet_injection_rate = (uint64_t) packet_injection_rate;
+    bool record_nic_access = config.get<bool>("sim.record_nic_access", true);
+    nicInfo->record_nic_access = record_nic_access;
 
     info("Initialized system");
 }
