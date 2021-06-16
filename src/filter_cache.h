@@ -132,7 +132,7 @@ class FilterCache : public Cache {
             Address gm_seg_size = 1<<30; //TODO: just use default? or wire it from init
             Address nicLineAddr_bot = gm_base_addr >> lineBits;
             Address nicLineAddr_top = (gm_base_addr + gm_seg_size) >> lineBits;
-            if (vLineAddr > nicLineAddr_bot && vLineAddr < nicLineAddr_top) {
+            if (vLineAddr >= nicLineAddr_bot && vLineAddr <= nicLineAddr_top) {
                 std::cout << "app accessing nic element" << std::endl;
                 procMask_f = 0;
             }
