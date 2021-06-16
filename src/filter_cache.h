@@ -126,7 +126,16 @@ class FilterCache : public Cache {
         }
 
         uint64_t replace(Address vLineAddr, uint32_t idx, bool isLoad, uint64_t curCycle) {
-            Address pLineAddr = procMask | vLineAddr;
+            Address procMask_f = procMask;
+            //Don't apply mask if it's a NIC related address
+            Address gm_base_addr = 0x00ABBA000000; // defined in galloc.cpp
+            Address gm_seg_size = 1<<30; //TODO: just use default? or wire it from init
+            Address nicLineAddr_bot = gm_base_addr >> lineBits;
+            Address nicLineAddr_top = (gm_base_addr + gm_seg_size) >> lineBits;
+            if (vLineAddr > nicLineAddr_bot && vLineAddr < nicLineAddr_top) {
+                procMask_f = 0;
+            }
+            Address pLineAddr = procMask_f | vLineAddr;
             MESIState dummyState = MESIState::I;
             futex_lock(&filterLock);
             MemReq req = {pLineAddr, isLoad? GETS : GETX, 0, &dummyState, curCycle, &filterLock, dummyState, srcId, reqFlags};
