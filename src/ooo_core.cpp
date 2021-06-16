@@ -518,6 +518,8 @@ void OOOCore::PredStoreFunc(THREADID tid, ADDRINT addr, BOOL pred) {
     else core->predFalseMemOp();
 }
 
+int uarch_check_flag = 0;
+
 void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     OOOCore* core = static_cast<OOOCore*>(cores[tid]);
     core->bbl(bblAddr, bblInfo);
@@ -526,9 +528,10 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         core->phaseEndCycle += zinfo->phaseLength;
        
         if (core->curCycle <= core->phaseEndCycle) {
-            /*
+            
             //TODO: DELETE THIS!! experiemnt code for checking L2 access with procMask
-            if (!nicInfo->nic_proc_on) {
+            //if (!nicInfo->nic_proc_on) {
+            if(uarch_check_flag==0)
                 info("Direct accessing rbuf_addr var");
                 for (int i = 0; i < 2; i++) {
                     nicInfo->nic_elem[i].cq->q[0].recv_buf_addr = 0xABCD;
@@ -547,9 +550,10 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 }
 
 
-                nicInfo->nic_proc_on = true;
+                //nicInfo->nic_proc_on = true;
+                uarch_check_flag = 1;
             }
-            */
+            
                 
             
             //if (procIdx == 0) {
