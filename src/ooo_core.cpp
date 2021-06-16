@@ -531,7 +531,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
             
             //TODO: DELETE THIS!! experiemnt code for checking L2 access with procMask
             //if (!nicInfo->nic_proc_on) {
-            if(uarch_check_flag==0)
+            if(uarch_check_flag==0){
                 info("Direct accessing rbuf_addr var");
                 for (int i = 0; i < 2; i++) {
                     nicInfo->nic_elem[i].cq->q[0].recv_buf_addr = 0xABCD;
