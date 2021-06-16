@@ -133,7 +133,7 @@ class FilterCache : public Cache {
             Address nicLineAddr_bot = gm_base_addr >> lineBits;
             Address nicLineAddr_top = (gm_base_addr + gm_seg_size) >> lineBits;
             if (vLineAddr >= nicLineAddr_bot && vLineAddr <= nicLineAddr_top) {
-                std::cout << "app accessing nic element" << std::endl;
+                std::cout << "app accessing nic element " << vLineAddr << std::endl;
                 procMask_f = 0;
             }
             Address pLineAddr = procMask_f | vLineAddr;

@@ -577,7 +577,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
 
                 }
                 
-                
+                /*
                 uint64_t packet_rate = nicInfo->packet_injection_rate;
                 //for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i += 8) {
                 for (uint64_t i = 0; i < packet_rate; i += 8) {
@@ -609,6 +609,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                     core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
                         
                 }
+
+                */
             }
             
 
