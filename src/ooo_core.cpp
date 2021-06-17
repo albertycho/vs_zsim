@@ -623,7 +623,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
 
                         //create CEQ entry
-                        uint64_t ceq_cycle = (uin64_t) (((load_generator*)lg_p)->next_cycle);
+                        uint64_t ceq_cycle = (uint64_t) (((load_generator*)lg_p)->next_cycle);
                         create_CEQ_entry(recv_buf_addr, 0x7f, ceq_cycle, nicInfo, core_iterator);
 
                     }
