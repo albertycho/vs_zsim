@@ -518,7 +518,6 @@ void OOOCore::PredStoreFunc(THREADID tid, ADDRINT addr, BOOL pred) {
     else core->predFalseMemOp();
 }
 
-int uarch_check_flag = 0;
 
 void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     OOOCore* core = static_cast<OOOCore*>(cores[tid]);
@@ -529,9 +528,9 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
        
         if (core->curCycle <= core->phaseEndCycle) {
             
+            /*
             //TODO: DELETE THIS!! experiemnt code for checking L2 access with procMask
             if (!nicInfo->nic_proc_on) {
-            //if(uarch_check_flag==0){
                 info("Direct accessing rbuf_addr var");
                 for (int i = 0; i < 2; i++) {
                     nicInfo->nic_elem[i].cq->q[0].recv_buf_addr = 0xABCD;
@@ -551,9 +550,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
 
 
                 nicInfo->nic_proc_on = true;
-                //uarch_check_flag = 1;
             }
-            
+            */
                 
             
             //if (procIdx == 0) {
@@ -572,12 +570,14 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                     }
                     if (cores_connected_to_network == 0) {
                         nicInfo->nic_proc_on = false;
+                        std::cout << "injection_rep_count: " << nicInfo->nic_elem[0].lbuf[0] << std::endl;
                     }
 
 
                 }
                 
-                /*
+                
+                nicInfo->nic_elem[0].lbuf[0]++;
                 uint64_t packet_rate = nicInfo->packet_injection_rate;
                 //for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i += 8) {
                 for (uint64_t i = 0; i < packet_rate; i += 8) {
@@ -610,7 +610,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         
                 }
 
-                */
+                
             }
             
 
