@@ -554,12 +554,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
             */
                 
             
-            //if (procIdx == 0) {
-            //if (getCid(tid) == 0) {
-            
-            if((nicInfo->nic_pid == procIdx) && (nicInfo->nic_proc_on)){
+            if ((nicInfo->nic_pid == procIdx) && (nicInfo->nic_proc_on)) {
                 //std::cout << "nic_pid:" << nicInfo->nic_pid << ", nic_core_id:" << getCid(tid) << std::endl;
-                
                 //TODO: CHECK for TERMINATE condition. Need to be refined
                 if (core->curCycle > 10000000) {
                     int cores_connected_to_network = 0;
@@ -570,55 +566,71 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                     }
                     if (cores_connected_to_network == 0) {
                         nicInfo->nic_proc_on = false;
-                        std::cout << "injection_rep_count: " << nicInfo->nic_elem[0].lbuf[0] << std::endl;
                     }
 
 
                 }
-                
-                
-                nicInfo->nic_elem[0].lbuf[0]++;
+
+                void* lg_p = static_cast<void*>(gm_get_lg_ptr());
+                uint32_t core_iterator = 0;
                 uint64_t packet_rate = nicInfo->packet_injection_rate;
-                //for (uint64_t i = 0; i < RECV_BUF_POOL_SIZE; i += 8) {
-                for (uint64_t i = 0; i < packet_rate; i += 8) {
-
-                    int srcId = getCid(tid);
-
-                    uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[procIdx].recv_buf[i]));
-                    nicInfo->nic_elem[procIdx].recv_buf[i] = i;                        
-                    //uint64_t reqSatisfiedCycle = core->l1d->store_norecord(recv_buf_addr, core->curCycle)+ L1D_LAT;
-                    //uint64_t reqSatisfiedCycle = core->l1d->store(recv_buf_addr, core->curCycle)+ L1D_LAT;
-                    
-                    MemReq req;
-                    Address rbuf_lineAddr = recv_buf_addr >> lineBits;
-                    MESIState dummyState = MESIState::I;
-                    assert((!core->cRec.getEventRecorder()->hasRecord()));
-                    if (nicInfo->record_nic_access) {
-                        req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, srcId, 0 };
-                    }
-                    else {
-                        req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, srcId, MemReq::NORECORD };
-                    }
-                        
-                        
-                    
-                    uint64_t reqSatisfiedCycle = core->l1d->getParent(recv_buf_addr >> lineBits)->access(req);
-                    //std::cout << core->l1d->getParent(recv_buf_addr >> lineBits)->getName() << std::endl;
-                    //assert((!core->cRec.getEventRecorder()->hasRecord()));
-
-                    core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
-                        
+                bool app_init_done = false;
+                int sample_core_id = 0;
+                if (getCid(tid) == 0) {
+                    sample_core_id = 1;
                 }
+                app_init_done = nicInfo->nic_elem[sample_core_id].cq_valid;
+                /// wait for applications to initialize
+                if(gm_isready() && app_init_done){
+                    if (((load_generator*)lg_p)->next_cycle == 0) {
+                        ((load_generator*)lg_p)->next_cycle = core->curCycle;
+                    }
+                    for (uint64_t i = 0; i < packet_rate; i += 8) {
+                    //for (uint64_t i = 0; i < packet_rate; i ++) {
 
-                
-            }
-            
+                        //TODO: assign core_id in round robin 
+                        core_iteartor++;
+                        if (core_iterator >= zinfo->numCores) {
+                            core_iterator = 0;
+                        }
+                        while (!(nicInfo->nic_elem[core_iterator].cq_valid)) {
+                            core_iterator++;
+                        }
 
+                        int message = get_next_message(lg_p);
+                        uint32_t rb_head = allocate_recv_buf(1, nicInfo, core_iterator);
+                        uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[core_iterator].recv_buf[rb_head]));
 
-            
+                        // write message to recv buffer
+                        nicInfo->nic_elem[core_iterator].recv_buf[rb_head] = message;
+
+                        int srcId = getCid(tid);
+                        MemReq req;
+                        Address rbuf_lineAddr = recv_buf_addr >> lineBits;
+                        MESIState dummyState = MESIState::I;
+                        assert((!core->cRec.getEventRecorder()->hasRecord()));
+                        if (nicInfo->record_nic_access) {
+                            req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, srcId, 0 };
+                        }
+                        else {
+                            req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, srcId, MemReq::NORECORD };
+                        }
+
+                        uint64_t reqSatisfiedCycle = core->l1d->getParent(recv_buf_addr >> lineBits)->access(req);
+                        //std::cout << core->l1d->getParent(recv_buf_addr >> lineBits)->getName() << std::endl;
+                        //assert((!core->cRec.getEventRecorder()->hasRecord()));
+
+                        core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
+
+                        //create CEQ entry
+                        uint64_t ceq_cycle = (uin64_t) (((load_generator*)lg_p)->next_cycle);
+                        create_CEQ_entry(recv_buf_addr, 0x7f, ceq_cycle, nicInfo, core_iterator);
+
+                    }
+                }
+            }          
         }
         
-
         uint32_t cid = getCid(tid);
         // NOTE: TakeBarrier may take ownership of the core, and so it will be used by some other thread. If TakeBarrier context-switches us,
         // the *only* safe option is to return inmmediately after we detect this, or we can race and corrupt core state. However, the information
@@ -650,3 +662,39 @@ void cycle_increment_routine(uint64_t& curCycle) {
 
 
 }
+
+
+
+
+/* 
+* old code for microarchitectural packet injection
+uint64_t packet_rate = nicInfo->packet_injection_rate
+//for (uint64_t i = 0; i < packet_rate; i += 8) {
+for (uint64_t i = 0; i < packet_rate; i++) {
+
+    int srcId = getCid(tid);
+
+    uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[procIdx].recv_buf[i]));
+    nicInfo->nic_elem[procIdx].recv_buf[i] = i;
+    //uint64_t reqSatisfiedCycle = core->l1d->store_norecord(recv_buf_addr, core->curCycle)+ L1D_LAT;
+    //uint64_t reqSatisfiedCycle = core->l1d->store(recv_buf_addr, core->curCycle)+ L1D_LAT;
+
+    MemReq req;
+    Address rbuf_lineAddr = recv_buf_addr >> lineBits;
+    MESIState dummyState = MESIState::I;
+    assert((!core->cRec.getEventRecorder()->hasRecord()));
+    if (nicInfo->record_nic_access) {
+        req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, srcId, 0 };
+    }
+    else {
+        req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, srcId, MemReq::NORECORD };
+    }
+
+    uint64_t reqSatisfiedCycle = core->l1d->getParent(recv_buf_addr >> lineBits)->access(req);
+    //std::cout << core->l1d->getParent(recv_buf_addr >> lineBits)->getName() << std::endl;
+    //assert((!core->cRec.getEventRecorder()->hasRecord()));
+
+    core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
+
+}
+*/

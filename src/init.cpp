@@ -1049,7 +1049,8 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 
     void* lgp;
     lgp = gm_calloc<load_generator>();
-    ((load_generator*)lgp)->next_cycle = 100000;
+    //((load_generator*)lgp)->next_cycle = 100000;
+    ((load_generator*)lgp)->next_cycle = 0;
     gm_set_lg_ptr(lgp);
   
 	//TODO: remove test_tag after validation

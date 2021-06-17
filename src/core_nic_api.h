@@ -106,7 +106,8 @@ bool check_load_gen(void* lg_p, int cur_cycle) {
 int get_next_message(void* lg_p) {
 	int next_message = ((load_generator*)lg_p)->message;
 	((load_generator*)lg_p)->message = ((load_generator*)lg_p)->message + 1;
-	((load_generator*)lg_p)->next_cycle = ((load_generator*)lg_p)->next_cycle + 1000000; 
+	//((load_generator*)lg_p)->next_cycle = ((load_generator*)lg_p)->next_cycle + 1000000; 
+	((load_generator*)lg_p)->next_cycle = ((load_generator*)lg_p)->next_cycle + 10; 
 	//TODO: will do something more sophisticated for setting next_cycle offset 
 
 	return next_message;
@@ -225,9 +226,27 @@ int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycl
 	return 0;
 }
 
-
-
 int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id) {
+	/*Wrapper for the whole RRPP routine*/
+	if (!gm_isready()) return 0;
+	if (nicInfo->nic_elem[0].cq_valid == false) return 0;
+
+	if (check_load_gen(lg_p, cur_cycle)) {
+		int message = get_next_message(lg_p);
+		uint32_t rb_head = allocate_recv_buf(1, nicInfo, core_id);
+		uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head]));
+		inject_inbound_packet(message, recv_buf_addr);
+		create_CEQ_entry(recv_buf_addr, 0x7f, cur_cycle, nicInfo, core_id);
+
+	}
+
+	return 0;
+}
+
+
+
+//This is an older version fo RRPP routine. Shall remove after proper version is stable
+int RRPP_routine_backup(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id) {
 /*Wrapper for the whole RRPP routine*/
 	if (!gm_isready()) return 0;
 	if (nicInfo->nic_elem[0].cq_valid == false) return 0;
