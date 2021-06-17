@@ -273,6 +273,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
                         reqSatisfiedCycle = l1d->load(addr, dispatchCycle) + L1D_LAT;
                         cRec.record(curCycle, dispatchCycle, reqSatisfiedCycle);
                         
+                        /*
                         //TODO: remove experiment code
                         if (addr == (Address)(&(nicInfo->nic_elem[0].cq->q[0].recv_buf_addr))) {
                             if (nicInfo->nic_proc_on) {
@@ -288,6 +289,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
                             std::cout << "recv_buf access[1]  time for APP:" << (reqSatisfiedCycle - dispatchCycle) << std::endl;
                             std::cout << "procMask: " << procMask << std::endl;
                         }
+                        */
                     }
                     
 
@@ -589,7 +591,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                     //for (uint64_t i = 0; i < packet_rate; i ++) {
 
                         //TODO: assign core_id in round robin 
-                        core_iteartor++;
+                        core_iterator++;
                         if (core_iterator >= zinfo->numCores) {
                             core_iterator = 0;
                         }
