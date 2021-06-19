@@ -76,7 +76,7 @@ int main() {
 		rmc_hw_recv(wq, ctx_id, (void*)recv_completion.recv_buf_addr, msg_entry_size);
 	}
 
-	register_buffer((void*)0, (void*)0xdead);
+	//register_buffer((void*)0, (void*)0xdead);
 	return 0;
 	
 	//////////////////////////////////////////////////
