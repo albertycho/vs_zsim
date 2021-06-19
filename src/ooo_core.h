@@ -158,7 +158,7 @@ class WindowStructure {
             occupancy -= curWin[curPos].count;
             curWin[curPos].set(0, 0);
             curPos++;
-            //curCycle++;
+            curCycle++;
             /*NIC logic triggers*/
             cycle_increment_routine(curCycle);
 

@@ -523,12 +523,14 @@ void OOOCore::PredStoreFunc(THREADID tid, ADDRINT addr, BOOL pred) {
 
 void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     OOOCore* core = static_cast<OOOCore*>(cores[tid]);
+    core_id = getCid(tid);
     core->bbl(bblAddr, bblInfo);
     
     while (core->curCycle > core->phaseEndCycle) {
         core->phaseEndCycle += zinfo->phaseLength;
        
         if (core->curCycle <= core->phaseEndCycle) {
+            std::cout << "tid: " << tid << ", procIdx: " << procIdx << std::endl;
             
             /*
             //TODO: DELETE THIS!! experiemnt code for checking L2 access with procMask
@@ -567,6 +569,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         }
                     }
                     if (cores_connected_to_network == 0) {
+                        info("turn off nic core");
                         nicInfo->nic_proc_on = false;
                     }
 
@@ -651,14 +654,20 @@ void OOOCore::BranchFunc(THREADID tid, ADDRINT pc, BOOL taken, ADDRINT takenNpc,
 }
 
 void cycle_increment_routine(uint64_t& curCycle) {
+    //procIdx
+    //getCid()
+
+    //TODO this is not correct!!!
+    uint64_t core_id = procIdx;
     
-    curCycle++;
-    
+    //TODO need to pass on core_id
+
+    //curCycle++;
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
     void* lg_p = static_cast<void*>(gm_get_lg_ptr());
-    core_ceq_routine(curCycle, nicInfo, 0);
+    core_ceq_routine(curCycle, nicInfo, core_id);
     //RRPP_routine(curCycle, nicInfo, lg_p, 0);
-    RCP_routine(curCycle, nicInfo, 0);
+    RCP_routine(curCycle, nicInfo, core_id);
     
     return;
 
