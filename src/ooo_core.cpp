@@ -530,7 +530,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         core->phaseEndCycle += zinfo->phaseLength;
        
         if (core->curCycle <= core->phaseEndCycle) {
-            std::cout << "tid: " << tid << ", procIdx: " << procIdx <<", cid: " <<core_id << std::endl;
+            //std::cout << "tid: " << tid << ", procIdx: " << procIdx <<", cid: " <<core_id << std::endl;
             
             /*
             //TODO: DELETE THIS!! experiemnt code for checking L2 access with procMask
@@ -658,7 +658,9 @@ void cycle_increment_routine(uint64_t& curCycle) {
     //getCid()
 
     //TODO this is not correct!!!
-    uint64_t core_id = procIdx;
+    //uint64_t core_id = procIdx;
+    //TODO: works for single threaded apps! ideally want to find a way to pass on tid to getCid func
+    uint64_t core_id = getCid(0); 
     
     //TODO need to pass on core_id
 
