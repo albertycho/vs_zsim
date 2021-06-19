@@ -75,6 +75,13 @@ int process_cq_wr_event(cq_wr_event* cq_wr, glob_nic_elements* nicInfo, uint64_t
 //int core_cq_wr_event_action(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint64_t core_id){
 int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t core_id) {
 //put all required action in one function to keep core.cpp files simpler
+	//TODO check if cq entry is available
+	rmc_cq_t* cq = nicInfo->nic_elem[core_id].cq;
+	uint64_t cq_head = nicInfo->nic_elem[core_id].cq_head;
+	if (cq->SR == cq->q[cq_head].SR) {
+		return -1;
+	}
+
 	if (cq_wr_event_ready(cur_cycle, nicInfo, core_id))
 	{
 		std::cout << std::dec << "wr_event ready @ cycle      :" << cur_cycle << std::endl;
