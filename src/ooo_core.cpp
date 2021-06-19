@@ -523,14 +523,14 @@ void OOOCore::PredStoreFunc(THREADID tid, ADDRINT addr, BOOL pred) {
 
 void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     OOOCore* core = static_cast<OOOCore*>(cores[tid]);
-    //core_id = getCid(tid);
+    uint64_t core_id = getCid(tid);
     core->bbl(bblAddr, bblInfo);
     
     while (core->curCycle > core->phaseEndCycle) {
         core->phaseEndCycle += zinfo->phaseLength;
        
         if (core->curCycle <= core->phaseEndCycle) {
-            std::cout << "tid: " << tid << ", procIdx: " << procIdx << std::endl;
+            std::cout << "tid: " << tid << ", procIdx: " << procIdx <<", cid: " <<core_id << std::endl;
             
             /*
             //TODO: DELETE THIS!! experiemnt code for checking L2 access with procMask
