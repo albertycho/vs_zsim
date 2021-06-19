@@ -662,6 +662,9 @@ void cycle_increment_routine(uint64_t& curCycle) {
     //TODO: works for single threaded apps! ideally want to find a way to pass on tid to getCid func
     uint64_t core_id = getCid(0); 
     
+    if (!(nicInfo->nic_elem[core_id].cq_valid)) {
+        return;
+    }
     //TODO need to pass on core_id
 
     //curCycle++;
