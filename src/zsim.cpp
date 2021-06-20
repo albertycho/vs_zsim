@@ -202,6 +202,7 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
     if (cur_wq_entry.op == RMC_RECV) {
         //TODO:rewrite free_recv_buf_addr for core_nic_api
         //free_recv_buf_addr(cur_wq_entry.buf_addr, core_id);
+        info("free_recv_buf called");
         free_recv_buf_addr(cur_wq_entry.buf_addr, core_id);
         return;
     }
