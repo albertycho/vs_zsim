@@ -81,16 +81,16 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 	if (cq->SR == cq->q[cq_head].SR) {
 
 		//DBGPrint
-		if (nicInfo->nic_elem[5].cq_head == 0) {
+		if (nicInfo->nic_elem[core_id+5].cq_head == 0) {
 			info("cq[%d] full", core_id);
-			nicInfo->nic_elem[5].cq_head = 1;
+			nicInfo->nic_elem[core_id+5].cq_head = 1;
 		}
 
 		return -1;
 	}
 
 	//DBGPrint
-	nicInfo->nic_elem[5].cq_head = 0;
+	nicInfo->nic_elem[core_id+5].cq_head = 0;
 
 	if (cq_wr_event_ready(cur_cycle, nicInfo, core_id))
 	{
