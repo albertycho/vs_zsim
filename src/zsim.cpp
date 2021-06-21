@@ -224,6 +224,7 @@ int nic_rgp_action(uint64_t core_id, glob_nic_elements* nicInfo)
 {
     if (!check_wq(core_id, nicInfo))
     {
+        info("nic_rgp_action called but nothing in wq");
         //nothing in wq, return
         return 0;
     }
