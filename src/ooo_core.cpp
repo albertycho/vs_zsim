@@ -673,6 +673,8 @@ void cycle_increment_routine(uint64_t& curCycle) {
     //TODO: works for single threaded apps! ideally want to find a way to pass on tid to getCid func
     uint64_t core_id = getCid(0); 
     
+    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+
     if (!(nicInfo->nic_elem[core_id].cq_valid)) {
         if (curCycle > 1000000) {
             //info("NIC is deregistered for core %d", core_id);
@@ -682,7 +684,7 @@ void cycle_increment_routine(uint64_t& curCycle) {
     //TODO need to pass on core_id
 
     //curCycle++;
-    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+
     void* lg_p = static_cast<void*>(gm_get_lg_ptr());
     core_ceq_routine(curCycle, nicInfo, core_id);
     //RRPP_routine(curCycle, nicInfo, lg_p, 0);
