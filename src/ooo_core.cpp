@@ -675,7 +675,7 @@ void cycle_increment_routine(uint64_t& curCycle) {
     
     if (!(nicInfo->nic_elem[core_id].cq_valid)) {
         if (curCycle > 1000000) {
-            info("NIC is deregistered for core %d", core_id);
+            //info("NIC is deregistered for core %d", core_id);
         }
         return;
     }
