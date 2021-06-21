@@ -665,7 +665,9 @@ void cycle_increment_routine(uint64_t& curCycle) {
     uint64_t core_id = getCid(0); 
     
     if (!(nicInfo->nic_elem[core_id].cq_valid)) {
-        info("NIC is deregistered for core %d", core_id);
+        if (curCycle >> 1000000) {
+            info("NIC is deregistered for core %d", core_id);
+        }
         return;
     }
     //TODO need to pass on core_id
