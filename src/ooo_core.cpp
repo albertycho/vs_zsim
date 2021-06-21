@@ -560,7 +560,6 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
             
             if ((nicInfo->nic_pid == procIdx) && (nicInfo->nic_proc_on)) {
                 info("for checking hang");
-                std::cout << "numprocs: " << zinfo->numProcs << std::endl;
                 //std::cout << "nic_pid:" << nicInfo->nic_pid << ", nic_core_id:" << getCid(tid) << std::endl;
                 //TODO: CHECK for TERMINATE condition. Need to be refined
                 if (core->curCycle > 10000000) {
@@ -666,6 +665,7 @@ void cycle_increment_routine(uint64_t& curCycle) {
     uint64_t core_id = getCid(0); 
     
     if (!(nicInfo->nic_elem[core_id].cq_valid)) {
+        info("NIC is deregistered for core %d", core_id);
         return;
     }
     //TODO need to pass on core_id
