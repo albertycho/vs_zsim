@@ -179,7 +179,7 @@ int free_recv_buf(uint32_t head, uint32_t core_id) {
     assert(NICELEM.rb_dir[head].in_use);
         
     uint32_t blen = NICELEM.rb_dir[head].len;
-    info("free_recv_buf: len = %d", blen);
+    info("free_recv_buf: head= %d, len = %d", head, blen);
     for (uint32_t i = head; i < head + blen; i++) {
         info("free_recv_buf - loop for free", blen);
         NICELEM.rb_dir[i].in_use = false;
