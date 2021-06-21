@@ -179,7 +179,9 @@ int free_recv_buf(uint32_t head, uint32_t core_id) {
     assert(NICELEM.rb_dir[head].in_use);
         
     uint32_t blen = NICELEM.rb_dir[head].len;
+    info("free_recv_buf: len = %d", blen);
     for (uint32_t i = head; i < head + blen; i++) {
+        info("free_recv_buf - loop for free", blen);
         NICELEM.rb_dir[i].in_use = false;
         NICELEM.rb_dir[i].is_head = false;
         NICELEM.rb_dir[i].len = 0;
@@ -194,6 +196,7 @@ int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {
     uint64_t offset = buf_addr - buf_base;
     uint32_t head = (uint32_t)(offset / 8);
     //TODO may need debug prints to check offset and head calculation
+
     return free_recv_buf(head, core_id);
 }
 
