@@ -86,7 +86,7 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 
 	if (cq_wr_event_ready(cur_cycle, nicInfo, core_id))
 	{
-		std::cout << std::dec << "wr_event ready @ cycle      :" << cur_cycle << std::endl;
+		//std::cout << std::dec << "wr_event ready @ cycle      :" << cur_cycle << std::endl;
 
 		cq_wr_event* cqwrev = deq_cq_wr_event(nicInfo, core_id);
 		//std::cout << "wrevent_q_cycle:" << cqwrev->q_cycle << std::endl;

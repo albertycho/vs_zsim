@@ -179,9 +179,7 @@ int free_recv_buf(uint32_t head, uint32_t core_id) {
     assert(NICELEM.rb_dir[head].in_use);
         
     uint32_t blen = NICELEM.rb_dir[head].len;
-    info("free_recv_buf: head= %d, len = %d", head, blen);
     for (uint32_t i = head; i < head + blen; i++) {
-        info("free_recv_buf - loop for free", blen);
         NICELEM.rb_dir[i].in_use = false;
         NICELEM.rb_dir[i].is_head = false;
         NICELEM.rb_dir[i].len = 0;
@@ -195,7 +193,6 @@ int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {
     uint64_t buf_base = (uint64_t)(&(NICELEM.recv_buf[0]));
     uint64_t offset = buf_addr - buf_base;
     uint32_t head = (uint32_t)(offset / 8);
-    std::cout << "free_recv_buf_addr: offset: " << offset << ", head: " << head << std::endl;
     //TODO may need debug prints to check offset and head calculation
 
     return free_recv_buf(head, core_id);
@@ -206,7 +203,6 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
     if (cur_wq_entry.op == RMC_RECV) {
         //TODO:rewrite free_recv_buf_addr for core_nic_api
         //free_recv_buf_addr(cur_wq_entry.buf_addr, core_id);
-        info("free_recv_buf called");
         free_recv_buf_addr(cur_wq_entry.buf_addr, core_id);
         return;
     }
