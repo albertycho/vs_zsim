@@ -122,7 +122,7 @@ int get_next_message(void* lg_p) {
 	return next_message;
 }
 
-uint64_t allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t core_id) { // reusing(modifying) sim_nic.h function
+uint32_t allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t core_id) { // reusing(modifying) sim_nic.h function
 //TODO: go over this, find problems.. might be better to rewrite
 	//returns the index of allocated recv buffer, not the address!
 	uint32_t head = 0;
