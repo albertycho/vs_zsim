@@ -562,7 +562,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 info("for checking hang");
                 //std::cout << "nic_pid:" << nicInfo->nic_pid << ", nic_core_id:" << getCid(tid) << std::endl;
                 //TODO: CHECK for TERMINATE condition. Need to be refined
-                if (core->curCycle > 10000000) {
+
+                if (core->curCycle > 2500000) {
 
                     int cores_connected_to_network = 0;
                     for (uint64_t i = 0; i < zinfo->numCores; i++) {
@@ -574,6 +575,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         info("turn off nic core");
                         nicInfo->nic_proc_on = false;
                     }
+
 
 
                 }
