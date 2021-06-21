@@ -1324,6 +1324,7 @@ VOID HandleNicMagicOp(THREADID tid, ADDRINT val, ADDRINT field) {
 			NICELEM.rb_dir[i].len=0;
 		}
         info("proc %d deregistered with NIC", procIdx);
+        std::cout << "cycle: " << zinfo->globPhaseCycles << std::endl;
 		break;
 	default:
 		break;
