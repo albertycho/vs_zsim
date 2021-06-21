@@ -121,7 +121,7 @@ Core* cores[MAX_THREADS];
 
 bool check_wq(uint64_t core_id, glob_nic_elements* nicInfo) {
 
-    if (nicInfo->nic_elem->wq_valid == false) {
+    if (nicInfo->nic_elem[core_id].wq_valid == false) {
         return false;
     }
 
