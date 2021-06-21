@@ -600,10 +600,19 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         if (core_iterator >= zinfo->numCores) {
                             core_iterator = 0;
                         }
+                        int dbg_count = 0;
                         while (!(nicInfo->nic_elem[core_iterator].cq_valid)) {
                             core_iterator++;
+                            dbg_count++;
+                            if (dbg_count > 100) {
+                                std::cout << "other cores deregistered NIC" << std::endl;
+                                break;
+                            }
                         }
-
+                        /*
+                        app_init_done = nicInfo->nic_elem[sample_core_id].cq_valid;
+                        if (!app_init_done) { break; }
+                        */
                         int message = get_next_message(lg_p);
                         uint32_t rb_head = allocate_recv_buf(1, nicInfo, core_iterator);
                         uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[core_iterator].recv_buf[rb_head]));
