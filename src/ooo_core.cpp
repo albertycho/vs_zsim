@@ -593,8 +593,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                     if (((load_generator*)lg_p)->next_cycle == 0) {
                         ((load_generator*)lg_p)->next_cycle = core->curCycle;
                     }
-                    //for (uint64_t i = 0; i < packet_rate; i += 8) {
-                    for (uint64_t i = 0; i < 1; i ++) {
+                    for (uint64_t i = 0; i < packet_rate; i += 8) {
+                    //for (uint64_t i = 0; i < 1; i ++) {
 
                         //TODO: assign core_id in round robin 
                         core_iterator++;
