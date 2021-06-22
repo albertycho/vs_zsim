@@ -564,6 +564,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 //TODO: CHECK for TERMINATE condition. Need to be refined
 
                 if (core->curCycle > 2500000) {
+                    //TODO: remove this line. force shutdown for expeiremnt
+                    nicInfo->nic_proc_on = false;
 
                     int cores_connected_to_network = 0;
                     for (uint64_t i = 0; i < zinfo->numCores; i++) {
@@ -575,8 +577,6 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         info("turn off nic core");
                         nicInfo->nic_proc_on = false;
                     }
-
-
 
                 }
 
@@ -676,6 +676,23 @@ void cycle_increment_routine(uint64_t& curCycle) {
     uint64_t core_id = getCid(0); 
     
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+
+    if (curCycle > 2500000) {
+        //TODO: remove this line. force shutdown for expeiremnt
+        nicInfo->nic_proc_on = false;
+
+        int cores_connected_to_network = 0;
+        for (uint64_t i = 0; i < zinfo->numCores; i++) {
+            if (nicInfo->nic_elem[i].cq_valid) {
+                cores_connected_to_network++;
+            }
+        }
+        if (cores_connected_to_network == 0) {
+            info("turn off nic core");
+            nicInfo->nic_proc_on = false;
+        }
+
+    }
 
     if (!(nicInfo->nic_elem[core_id].cq_valid)) {
         if (curCycle > 1000000) {
