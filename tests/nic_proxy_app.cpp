@@ -30,9 +30,12 @@ int main() {
 	register_buffer((void*)(&nic_proc_on), (void*)0xB);
 
 
-	int dummy;
+	int dummy=0;
 	while ((*nic_proc_on)) {
-		dummy = 0;
+		dummy++;
+		if (dummy % 1000000 == 0) {
+			std::cout << "nic proxy app running" << std:endl;
+		}
 	}
 
 
