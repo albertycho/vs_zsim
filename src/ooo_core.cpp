@@ -679,6 +679,9 @@ void cycle_increment_routine(uint64_t& curCycle) {
 
     if (curCycle > 2500000) {
         //TODO: remove this line. force shutdown for expeiremnt
+        if (nicInfo->nic_proc_on) {
+            info("turnoff nic_core");
+        }
         nicInfo->nic_proc_on = false;
 
         int cores_connected_to_network = 0;
