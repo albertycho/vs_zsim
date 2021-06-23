@@ -697,8 +697,8 @@ void cycle_increment_routine(uint64_t& curCycle) {
                 cores_connected_to_network++;
             }
         }
-        if (cores_connected_to_network == 0) {
-            info("turn off nic core");
+        if ((cores_connected_to_network == 0) && (nicInfo->nic_proc_on)) {
+            info("cycle inc routine: turn off nic core");
             nicInfo->nic_proc_on = false;
         }
 
