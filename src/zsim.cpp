@@ -1312,6 +1312,8 @@ VOID HandleNicMagicOp(THREADID tid, ADDRINT val, ADDRINT field) {
         std::cout << "nicInfo->record_nic_access: " << nicInfo->record_nic_access << std::endl;
         break;
 	case 0xdead: //invalidate entries after test app terminates
+        nicInfo->nic_elem[core_id].cq_valid = false;
+        /*
 		nicInfo->nic_elem[core_id].wq_tail=0;
 		nicInfo->nic_elem[core_id].cq_head=0;
 		nicInfo->nic_elem[core_id].wq_valid=false;
@@ -1323,6 +1325,7 @@ VOID HandleNicMagicOp(THREADID tid, ADDRINT val, ADDRINT field) {
 			NICELEM.rb_dir[i].is_head=false;
 			NICELEM.rb_dir[i].len=0;
 		}
+        */
         info("proc %d deregistered with NIC", procIdx);
         std::cout << "cycle: " << zinfo->globPhaseCycles << std::endl;
 		break;
