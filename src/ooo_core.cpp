@@ -689,7 +689,7 @@ void cycle_increment_routine(uint64_t& curCycle) {
         if (nicInfo->nic_proc_on) {
             info("turnoff nic_core");
         }
-        nicInfo->nic_proc_on = false;
+        //nicInfo->nic_proc_on = false;
 
         int cores_connected_to_network = 0;
         for (uint64_t i = 0; i < zinfo->numCores; i++) {
