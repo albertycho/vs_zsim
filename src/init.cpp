@@ -790,6 +790,10 @@ static void InitSystem(Config& config) {
     bool record_nic_access = config.get<bool>("sim.record_nic_access", true);
     nicInfo->record_nic_access = record_nic_access;
 
+    uint32_t num_cores_serving_nw = config.get<uint32_t>("sim.num_cores_serving_nw", 1);
+    nicInfo->expected_core_count = num_cores_serving_nw;
+    nicInfo->registered_core_count = 0;
+
     info("Initialized system");
 }
 

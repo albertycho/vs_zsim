@@ -1287,6 +1287,7 @@ VOID HandleNicMagicOp(THREADID tid, ADDRINT val, ADDRINT field) {
 
 		NICELEM.cq_valid=true;
 		*static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(nicInfo->nic_elem[core_id].cq);
+        nicInfo->registered_core_count = nicInfo->registered_core_count + 1;
 		break;
 	case 2: // lbuf
 		*static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_elem[core_id].lbuf[0]));
@@ -1312,8 +1313,12 @@ VOID HandleNicMagicOp(THREADID tid, ADDRINT val, ADDRINT field) {
         std::cout << "nicInfo->record_nic_access: " << nicInfo->record_nic_access << std::endl;
         break;
 	case 0xdead: //invalidate entries after test app terminates
-        nicInfo->nic_elem[core_id].cq_valid = false;
+        nicInfo->registered_core_count = nicInfo->registered_core_count - 1;
+
+        //nicInfo->nic_elem[core_id].cq_valid = false;
         /*
+        //setting cq_valid = false causes occasional crashes
+        //may want to look into debugging it
 		nicInfo->nic_elem[core_id].wq_tail=0;
 		nicInfo->nic_elem[core_id].cq_head=0;
 		nicInfo->nic_elem[core_id].wq_valid=false;

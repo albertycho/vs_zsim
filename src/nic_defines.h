@@ -147,9 +147,12 @@ struct nic_element {
 
 struct glob_nic_elements {
 	uint64_t nic_pid;
+	
+	uint64_t packet_injection_rate;
+	uint32_t expected_core_count;
+	uint32_t registered_core_count;
 	bool nic_proc_on;
 	bool record_nic_access;
-	uint64_t packet_injection_rate;
 	PAD();
 	nic_element nic_elem[MAX_NUM_CORES];
 	
