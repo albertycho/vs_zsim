@@ -565,7 +565,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
 
                 if (core->curCycle > 2500000) {
                     //TODO: remove this line. force shutdown for expeiremnt
-                    nicInfo->nic_proc_on = false;
+                    //nicInfo->nic_proc_on = false;
 
                     int cores_connected_to_network = 0;
                     for (uint64_t i = 0; i < zinfo->numCores; i++) {
