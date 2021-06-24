@@ -1288,6 +1288,11 @@ VOID HandleNicMagicOp(THREADID tid, ADDRINT val, ADDRINT field) {
 		NICELEM.cq_valid=true;
 		*static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(nicInfo->nic_elem[core_id].cq);
         nicInfo->registered_core_count = nicInfo->registered_core_count + 1;
+        if (nicInfo->registered_core_count == nicInfo->expected_core_count) {
+            if (nicInfo->nic_proc_on) {
+                nicInfo->nic_init_done = true;
+            }
+        }
 		break;
 	case 2: // lbuf
 		*static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_elem[core_id].lbuf[0]));
@@ -1311,6 +1316,9 @@ VOID HandleNicMagicOp(THREADID tid, ADDRINT val, ADDRINT field) {
         info("nic pid:%d, cid:%d", procIdx, core_id);
         info("packet injection rate:%d", nicInfo->packet_injection_rate);
         std::cout << "nicInfo->record_nic_access: " << nicInfo->record_nic_access << std::endl;
+        if (nicInfo->registered_core_count == nicInfo->expected_core_count) {
+            nicInfo->nic_init_done = true;
+        }
         break;
 	case 0xdead: //invalidate entries after test app terminates
         nicInfo->registered_core_count = nicInfo->registered_core_count - 1;

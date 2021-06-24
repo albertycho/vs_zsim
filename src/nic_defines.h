@@ -152,6 +152,7 @@ struct glob_nic_elements {
 	uint32_t expected_core_count;
 	uint32_t registered_core_count;
 	bool nic_proc_on;
+	bool nic_init_done;
 	bool record_nic_access;
 	PAD();
 	nic_element nic_elem[MAX_NUM_CORES];

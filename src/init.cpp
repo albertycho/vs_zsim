@@ -793,6 +793,7 @@ static void InitSystem(Config& config) {
     uint32_t num_cores_serving_nw = config.get<uint32_t>("sim.num_cores_serving_nw", 1);
     nicInfo->expected_core_count = num_cores_serving_nw;
     nicInfo->registered_core_count = 0;
+    nicInfo->nic_init_done = false;
 
     info("Initialized system");
 }
