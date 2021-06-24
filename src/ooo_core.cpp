@@ -665,30 +665,8 @@ void cycle_increment_routine(uint64_t& curCycle) {
     
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 
-    if (curCycle > 2500000) {
-        //TODO: remove this line. force shutdown for expeiremnt
-        /*if (nicInfo->nic_proc_on) {
-            info("turnoff nic_core");
-        }
-        //nicInfo->nic_proc_on = false;
-        */
-        int cores_connected_to_network = 0;
-        for (uint64_t i = 0; i < zinfo->numCores; i++) {
-            if (nicInfo->nic_elem[i].cq_valid) {
-                cores_connected_to_network++;
-            }
-        }
-        if ((cores_connected_to_network == 0) && (nicInfo->nic_proc_on)) {
-            info("cycle inc routine: turn off nic core");
-            nicInfo->nic_proc_on = false;
-        }
-
-    }
 
     if (!(nicInfo->nic_elem[core_id].cq_valid)) {
-        if (curCycle > 1000000) {
-            //info("NIC is deregistered for core %d", core_id);
-        }
         return;
     }
     //TODO need to pass on core_id

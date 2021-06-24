@@ -1324,7 +1324,7 @@ VOID HandleNicMagicOp(THREADID tid, ADDRINT val, ADDRINT field) {
         nicInfo->registered_core_count = nicInfo->registered_core_count - 1;
 
         //nicInfo->nic_elem[core_id].cq_valid = false;
-        /*
+        
         //setting cq_valid = false causes occasional crashes
         //may want to look into debugging it
 		nicInfo->nic_elem[core_id].wq_tail=0;
@@ -1338,7 +1338,7 @@ VOID HandleNicMagicOp(THREADID tid, ADDRINT val, ADDRINT field) {
 			NICELEM.rb_dir[i].is_head=false;
 			NICELEM.rb_dir[i].len=0;
 		}
-        */
+        
         info("proc %d deregistered with NIC", procIdx);
         std::cout << "cycle: " << zinfo->globPhaseCycles << std::endl;
 		break;
