@@ -214,6 +214,10 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
         uint64_t q_cycle = zinfo->cores[core_id]->getCycles() + nw_roundtrip_delay;
         uint64_t lbuf_addr = cur_wq_entry.buf_addr;
         uint64_t lbuf_data = *((uint64_t*)lbuf_addr);
+
+        //debug code
+        std::cout << "RGP data: " << std::hex << lubf_data << std::endl;
+
         //TODO: create write this function
         enq_rcp_event(q_cycle, lbuf_addr, lbuf_data, nicInfo, core_id);
         return;
