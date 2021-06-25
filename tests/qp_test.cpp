@@ -90,6 +90,11 @@ int main() {
 		successStruct recv_completion;
 		do{
 			recv_completion = rmc_check_cq(wq,cq);
+			//debug print
+			if (recv_completion.op != (RMC_INCOMING_SEND)) {
+				std::cout << "APP recvd REQUEST COPMPLETE, msg: " << std::hex << *(uint64_t*)(recv_completion.recv_buf_addr)<<"success:"<<recv_completion.op << std::endl;
+			}
+
 		} while (recv_completion.op != (RMC_INCOMING_SEND));
 
 		//std::cout<<"APP - recv_completion.op="<<recv_completion.op<<std::endl;
@@ -107,7 +112,7 @@ int main() {
 		uint64_t msg_entry_size=1;
 		lbuf_ptr=lbuf_base+send_count;
 		//std::cout<<"APP: lbuf_Ptr="<<lbuf_ptr<<std::endl;
-		*lbuf_ptr=0xabcd0+send_count;
+		*lbuf_ptr=0xabcd00+send_count;
 		do{
 			send_ret=rmc_hw_send(wq, ctx_id, lbuf_ptr, msg_entry_size, target_node);
 		} while (send_ret);
