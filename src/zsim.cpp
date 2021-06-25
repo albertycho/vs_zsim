@@ -217,7 +217,7 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
 
         //debug code
         std::cout << "RGP data: " << std::hex << lbuf_data <<std::dec << std::endl;
-
+        std::cout << "RCP q_cycle: " << q_cycle << std::endl;
         //TODO: create write this function
         enq_rcp_event(q_cycle, lbuf_addr, lbuf_data, nicInfo, core_id);
         return;

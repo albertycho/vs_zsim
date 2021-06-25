@@ -532,7 +532,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         if (core->curCycle <= core->phaseEndCycle) {
 
             if ((nicInfo->nic_pid == procIdx) && (nicInfo->nic_init_done)) {
-                info("for checking hang");
+                //info("for checking hang");
                 //std::cout << "nic_pid:" << nicInfo->nic_pid << ", nic_core_id:" << getCid(tid) << std::endl;
                 //TODO: CHECK for TERMINATE condition. Need to be refined
 
@@ -574,7 +574,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         if (((load_generator*)lg_p)->next_cycle == 0) {
                             ((load_generator*)lg_p)->next_cycle = core->curCycle;
                         }
-                        info("packet injection round");
+                        //info("packet injection round");
                         for (uint64_t i = 0; i < packet_rate; i += 8) {
                             //for (uint64_t i = 0; i < 1; i ++) {
 
