@@ -158,7 +158,6 @@ int rmc_hw_recv(rmc_wq_t *wq, uint32_t ctx_id, void *recv_buf, uint64_t length){
 	if(wq->q[wq_head].valid!=0){
 		return -1;
 	}
-	std::cout << "app calling RMC_RECV( <-> recv buf free)" << std::endl;
 	create_wq_entry(RMC_RECV, wq->SR, ctx_id, 0, (uint64_t)recv_buf, 0, length, (uint64_t)&(wq->q[wq_head])); // node id and ctx offset don't care
 
 	wq->head =  wq->head + 1;
