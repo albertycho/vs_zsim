@@ -575,6 +575,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                             ((load_generator*)lg_p)->next_cycle = core->curCycle;
                         }
                         //info("packet injection round");
+                        
                         for (uint64_t i = 0; i < packet_rate; i += 8) {
                             //for (uint64_t i = 0; i < 1; i ++) {
 
@@ -597,7 +598,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                             if (!app_init_done) { break; }
                             */
                             int message = get_next_message(lg_p);
-                            uint32_t rb_head = allocate_recv_buf(1, nicInfo, core_iterator);
+                            uint32_t rb_head = allocate_recv_buf(8, nicInfo, core_iterator);
 
                             if (rb_head > RECV_BUF_POOL_SIZE) {
                                 info("core %d out of recv buffer", core_iterator);
