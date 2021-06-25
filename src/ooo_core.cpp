@@ -655,12 +655,8 @@ void OOOCore::BranchFunc(THREADID tid, ADDRINT pc, BOOL taken, ADDRINT takenNpc,
 }
 
 void cycle_increment_routine(uint64_t& curCycle) {
-    //procIdx
-    //getCid()
 
-    //TODO this is not correct!!!
-    //uint64_t core_id = procIdx;
-    //TODO: works for single threaded apps! ideally want to find a way to pass on tid to getCid func
+    //TODO: getting core_id - this works for single threaded apps! ideally want to find a way to pass on tid to getCid func
     uint64_t core_id = getCid(0); 
     
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
@@ -669,9 +665,6 @@ void cycle_increment_routine(uint64_t& curCycle) {
     if (!(nicInfo->nic_elem[core_id].cq_valid)) {
         return;
     }
-    //TODO need to pass on core_id
-
-    //curCycle++;
 
     void* lg_p = static_cast<void*>(gm_get_lg_ptr());
     core_ceq_routine(curCycle, nicInfo, core_id);

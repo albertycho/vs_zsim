@@ -63,15 +63,6 @@ int main() {
 		rmc_hw_recv(wq, ctx_id, (void*) recv_completion.recv_buf_addr, msg_entry_size);
 	}
 
-	successStruct recv_completion;
-	do {
-		recv_completion = rmc_check_cq(wq, cq);
-		//debug print
-		if (recv_completion.op == (1)) {
-			std::cout << "APP recvd REQUEST COPMPLETE, msg: " << std::hex << *(uint64_t*)(recv_completion.recv_buf_addr) << "success:" << recv_completion.op << std::endl;
-		}
-
-	} while (recv_completion.op != (1));
 
 	register_buffer((void*) 0, (void*) 0xdead);
 	std::cout<<"APP - terminating"<<std::endl;

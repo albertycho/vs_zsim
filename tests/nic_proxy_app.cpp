@@ -40,7 +40,7 @@ int main() {
 
 
 
-	register_buffer((void*) 0, (void*) 0xdead);
+	//register_buffer((void*) 0, (void*) 0xdead);
 	std::cout<<"nic proxy app - terminating"<<std::endl;
     return 0;
 }
