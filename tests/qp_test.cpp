@@ -20,8 +20,6 @@ int main() {
 	register_buffer((void*) (&wq), (void*) 0);
 	register_buffer((void*) (&cq), (void*) 1);
 
-	//std::cout<<"APP: wq="<<std::hex<<wq<<std::endl;
-
 	uint64_t send_count=0;
 	uint64_t send_serviced=0;
 
@@ -64,6 +62,16 @@ int main() {
 		//std::cout<<"APP: send_count="<<send_count<<std::endl;
 		rmc_hw_recv(wq, ctx_id, (void*) recv_completion.recv_buf_addr, msg_entry_size);
 	}
+
+	successStruct recv_completion;
+	do {
+		recv_completion = rmc_check_cq(wq, cq);
+		//debug print
+		if (recv_completion.op == (1)) {
+			std::cout << "APP recvd REQUEST COPMPLETE, msg: " << std::hex << *(uint64_t*)(recv_completion.recv_buf_addr) << "success:" << recv_completion.op << std::endl;
+		}
+
+	} while (recv_completion.op != (1));
 
 	register_buffer((void*) 0, (void*) 0xdead);
 	std::cout<<"APP - terminating"<<std::endl;
