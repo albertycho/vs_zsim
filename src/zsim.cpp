@@ -1301,7 +1301,7 @@ VOID HandleNicMagicOp(THREADID tid, ADDRINT val, ADDRINT field) {
 		break;
 
     case NOTIFY_WQ_WRITE://NOTIFY WQ WRITE from application
-        info("notify_wq_write")
+        //info("notify_wq_write")
         nic_rgp_action(core_id, nicInfo);
         /*
         if(check_wq(core_id, nicInfo))

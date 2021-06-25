@@ -33,9 +33,12 @@ int main() {
 		do{
 			recv_completion = rmc_check_cq(wq,cq);
 			//debug print
+			//NOTE - adding this dbg print causes hang at the end of test.. why?
+			/*
 			if (recv_completion.op != (RMC_INCOMING_SEND)) {
 				std::cout << "APP recvd REQUEST COPMPLETE, msg: " << std::hex << *(uint64_t*)(recv_completion.recv_buf_addr)<<"success:"<<recv_completion.op << std::endl;
 			}
+			*/
 
 		} while (recv_completion.op != (RMC_INCOMING_SEND));
 
