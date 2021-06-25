@@ -210,13 +210,13 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
     if (cur_wq_entry.op == RMC_SEND)
     {
         //TODO - define this somewhere else? decide how to handle nw_roundtrip_delay
-        uint64_t nw_roundtrip_delay = 10000;
+        uint64_t nw_roundtrip_delay = 100;
         uint64_t q_cycle = zinfo->cores[core_id]->getCycles() + nw_roundtrip_delay;
         uint64_t lbuf_addr = cur_wq_entry.buf_addr;
         uint64_t lbuf_data = *((uint64_t*)lbuf_addr);
 
         //debug code
-        std::cout << "RGP data: " << std::hex << lbuf_data << std::endl;
+        std::cout << "RGP data: " << std::hex << lbuf_data <<std::dec << std::endl;
 
         //TODO: create write this function
         enq_rcp_event(q_cycle, lbuf_addr, lbuf_data, nicInfo, core_id);
