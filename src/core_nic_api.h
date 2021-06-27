@@ -184,17 +184,6 @@ uint32_t allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t c
 
 }
 
-
-int inject_inbound_packet(int message, uint64_t recv_buf_addr) { //input is packet, so type may change with code update
-	//write to recv buffer TODO: do this in a function?
-
-	*((uint64_t*)recv_buf_addr) = message;
-
-	//update uarch state (call access)
-
-	//TODO: what to return? 
-	return 0;
-}
 cq_entry_t generate_cqe(uint32_t success, uint32_t tid, uint64_t recv_buf_addr)
 {
 	cq_entry_t cqe;
@@ -240,6 +229,10 @@ int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycl
 
 int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id) {
 	/*Wrapper for the whole RRPP routine*/
+
+	//TODO: rewrite this function around inject_incoming_packet
+
+	/*
 	if (!gm_isready()) return 0;
 	if (nicInfo->nic_elem[0].cq_valid == false) return 0;
 
@@ -247,16 +240,17 @@ int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uin
 		int message = get_next_message(lg_p);
 		uint32_t rb_head = allocate_recv_buf(1, nicInfo, core_id);
 		uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head]));
-		inject_inbound_packet(message, recv_buf_addr);
+		//inject_inbound_packet(message, recv_buf_addr);
 		create_CEQ_entry(recv_buf_addr, 0x7f, cur_cycle, nicInfo, core_id);
 
 	}
-
+	*/
 	return 0;
 }
 
 
 int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id, int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*MemObject* dest*/) {
+	//TODO: passing on l1d for now, to use getParent method. Will have to be updated with the correct Memory Direct access method
 	int message = get_next_message(lg_p);
 	uint32_t rb_head = allocate_recv_buf(8, nicInfo, core_id);
 	if (rb_head > RECV_BUF_POOL_SIZE) {
@@ -285,29 +279,11 @@ int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void*
 	uint64_t ceq_cycle = (uint64_t)(((load_generator*)lg_p)->next_cycle);
 	create_CEQ_entry(recv_buf_addr, 0x7f, ceq_cycle, nicInfo, core_id);
 
+	//TODO may want to pass the reqSatisfiedcycle value back to the caller via updating an argument
+
 	return 0;
 
 }
-
-
-//This is an older version fo RRPP routine. Shall remove after proper version is stable
-int RRPP_routine_backup(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id) {
-/*Wrapper for the whole RRPP routine*/
-	if (!gm_isready()) return 0;
-	if (nicInfo->nic_elem[0].cq_valid == false) return 0;
-
-	if (check_load_gen(lg_p, cur_cycle)) {
-		int message = get_next_message(lg_p);
-		uint32_t rb_head = allocate_recv_buf(1, nicInfo, core_id);
-		uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[0].recv_buf[rb_head]));
-		inject_inbound_packet(message, recv_buf_addr);
-		create_CEQ_entry(recv_buf_addr, 0x7f, cur_cycle, nicInfo, core_id);
-
-	}
-
-	return 0;
-}
-
 
 
 /// RCP functions
