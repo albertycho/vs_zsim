@@ -265,6 +265,10 @@ int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void*
 	// write message to recv buffer
 	nicInfo->nic_elem[core_id].recv_buf[rb_head] = message;
 
+	MemReq req;
+	Address rbuf_lineAddr = recv_buf_addr >> lineBits;
+	MESIState dummyState = MESIState::I;
+	assert((!core->cRec.getEventRecorder()->hasRecord()));
 
 	return 0;
 
