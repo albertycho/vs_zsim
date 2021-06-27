@@ -268,7 +268,16 @@ int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void*
 	MemReq req;
 	Address rbuf_lineAddr = recv_buf_addr >> lineBits;
 	MESIState dummyState = MESIState::I;
-	assert((!core->cRec.getEventRecorder()->hasRecord()));
+	//assert((!core->cRec.getEventRecorder()->hasRecord()));
+
+	if (nicInfo->record_nic_access) {
+		req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, srcId, 0 };
+	}
+	else {
+		req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, srcId, MemReq::NORECORD };
+	}
+
+	uint64_t reqSatisfiedCycle = core->l1d->getParent(recv_buf_addr >> lineBits)->access(req);
 
 	return 0;
 
