@@ -255,7 +255,7 @@ int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uin
 }
 
 
-int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id, int srcid, OOOCore* core, OOOCoreRecorder* cRec) {
+int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id, int srcId, OOOCore* core, OOOCoreRecorder* cRec) {
 	int message = get_next_message(lg_p);
 	uint32_t rb_head = allocate_recv_buf(8, nicInfo, core_id);
 	if (rb_head > RECV_BUF_POOL_SIZE) {
