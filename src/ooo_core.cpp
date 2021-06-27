@@ -582,7 +582,11 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                             if (!app_init_done) { break; }
                             */
                             int srcId = getCid(tid);
-                            inject_incoming_packet(core->curCycle, nicInfo, lg_p, core_iterator, srcId, core, core->cRec, core->l1d);
+                            int inj_attempt = inject_incoming_packet(core->curCycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), core->l1d);
+                            if (inj_attempt == -1) {
+                                //core out of recv buffer
+                                break;
+                            }
                             
                             /*
                             int message = get_next_message(lg_p);
