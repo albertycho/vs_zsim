@@ -2,6 +2,7 @@
 #include "log.h"
 #include "ooo_core.h"
 #include "ooo_core_recorder.h"
+#include "memory_hierarchy.h"
 
 #ifndef _CORE_NIC_API_H_
 #define _CORE_NIC_API_H_
@@ -255,7 +256,7 @@ int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uin
 }
 
 
-int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id, int srcId, OOOCore* core, OOOCoreRecorder* cRec) {
+int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id, int srcId, OOOCore* core, OOOCoreRecorder* cRec, MemObject* dest) {
 	int message = get_next_message(lg_p);
 	uint32_t rb_head = allocate_recv_buf(8, nicInfo, core_id);
 	if (rb_head > RECV_BUF_POOL_SIZE) {
@@ -279,6 +280,10 @@ int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void*
 	}
 
 	//uint64_t reqSatisfiedCycle = core->l1d->getParent(recv_buf_addr >> lineBits)->access(req);
+	uint64_t reqSatisfiedCycle = dest->access(req);
+	cRec->record(cur_cycle, cur_cycle, reqSatisfiedCycle);
+	uint64_t ceq_cycle = (uint64_t)(((load_generator*)lg_p)->next_cycle);
+	create_CEQ_entry(recv_buf_addr, 0x7f, ceq_cycle, nicInfo, core_id);
 
 	return 0;
 
