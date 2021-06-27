@@ -262,7 +262,7 @@ int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void*
 	}
 	uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head]));
 	// write message to recv buffer
-	nicInfo->nic_elem[core_iterator].recv_buf[rb_head] = message;
+	nicInfo->nic_elem[core_id].recv_buf[rb_head] = message;
 
 
 	return 0;
