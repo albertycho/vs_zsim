@@ -545,49 +545,38 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                     void* lg_p = static_cast<void*>(gm_get_lg_ptr());
                     uint32_t core_iterator = 0;
                     uint64_t packet_rate = nicInfo->packet_injection_rate;
-                    bool app_init_done = false;
-                    int sample_core_id = 0;
-                    if (getCid(tid) == 0) {
-                        sample_core_id = 1;
-                    }
-                    app_init_done = nicInfo->nic_elem[sample_core_id].cq_valid;
-                    /// wait for applications to initialize
-                    //if (gm_isready() && app_init_done) {
-                        if (((load_generator*)lg_p)->next_cycle == 0) {
-                            ((load_generator*)lg_p)->next_cycle = core->curCycle;
-                        }
-                        //info("packet injection round");
-                        packet_rate = packet_rate / 4;
-                        for (uint64_t i = 0; i < packet_rate; i += 8) {
-                            //for (uint64_t i = 0; i < 1; i ++) {
 
-                                //TODO: assign core_id in round robin 
+                    if (((load_generator*)lg_p)->next_cycle == 0) {
+                        ((load_generator*)lg_p)->next_cycle = core->curCycle;
+                    }
+                    //info("packet injection round");
+                    packet_rate = packet_rate / 4;
+                    for (uint64_t i = 0; i < packet_rate; i += 8) {
+                        //for (uint64_t i = 0; i < 1; i ++) {
+
+                        //assign core_id in round robin 
+                        core_iterator++;
+                        if (core_iterator >= zinfo->numCores) {
+                            core_iterator = 0;
+                        }
+                        int drop_count = 0;
+                        while (!(nicInfo->nic_elem[core_iterator].cq_valid)) {
                             core_iterator++;
-                            if (core_iterator >= zinfo->numCores) {
-                                core_iterator = 0;
-                            }
-                            int dbg_count = 0;
-                            while (!(nicInfo->nic_elem[core_iterator].cq_valid)) {
-                                core_iterator++;
-                                dbg_count++;
-                                if (dbg_count > 100) {
-                                    std::cout << "other cores deregistered NIC" << std::endl;
-                                    break;
-                                }
-                            }
-                            /*
-                            app_init_done = nicInfo->nic_elem[sample_core_id].cq_valid;
-                            if (!app_init_done) { break; }
-                            */
-                            int srcId = getCid(tid);
-                            int inj_attempt = inject_incoming_packet(core->curCycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), core->l1d);
-                            if (inj_attempt == -1) {
-                                //core out of recv buffer
+                            drop_count++;
+                            if (drop_count > 100) {
+                                std::cout << "other cores deregistered NIC" << std::endl;
                                 break;
                             }
-
                         }
-                    //}
+
+                        int srcId = getCid(tid);
+                        int inj_attempt = inject_incoming_packet(core->curCycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), core->l1d);
+                        if (inj_attempt == -1) {
+                            //core out of recv buffer
+                            break;
+                        }
+
+                    }
                 }
             }
         }
