@@ -253,6 +253,22 @@ int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uin
 }
 
 
+int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id, int srcid) {
+	int message = get_next_message(lg_p);
+	uint32_t rb_head = allocate_recv_buf(8, nicInfo, core_id);
+	if (rb_head > RECV_BUF_POOL_SIZE) {
+		info("core %d out of recv buffer", core_iterator);
+		return -1;
+	}
+	uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head]));
+	// write message to recv buffer
+	nicInfo->nic_elem[core_iterator].recv_buf[rb_head] = message;
+
+
+	return 0;
+
+}
+
 
 //This is an older version fo RRPP routine. Shall remove after proper version is stable
 int RRPP_routine_backup(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id) {
@@ -320,6 +336,8 @@ void RCP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint32_t core_i
 		process_rcp_event(nrcp_event, nicInfo, core_id, cur_cycle);
 	}
 }
+
+
 
 
 /// RGP functions
