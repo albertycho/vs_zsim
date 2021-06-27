@@ -526,6 +526,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     uint64_t core_id = getCid(tid);
     core->bbl(bblAddr, bblInfo);
     
+    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+
     while (core->curCycle > core->phaseEndCycle) {
         core->phaseEndCycle += zinfo->phaseLength;
 
@@ -534,31 +536,13 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
             if ((nicInfo->nic_pid == procIdx) && (nicInfo->nic_init_done)) {
                 //info("for checking hang");
                 //std::cout << "nic_pid:" << nicInfo->nic_pid << ", nic_core_id:" << getCid(tid) << std::endl;
-                //TODO: CHECK for TERMINATE condition. Need to be refined
-
-
-                //TODO: remove this line. force shutdown for expeiremnt
-                //if(curCycle == 2500000){
-                //nicInfo->nic_proc_on = false;
-                //}
 
                 //check if cores finished their processes
                 if (nicInfo->registered_core_count == 0) {
                     nicInfo->nic_proc_on = false;
                 }
 
-                /*
-                int cores_connected_to_network = 0;
-                for (uint64_t i = 0; i < zinfo->numCores; i++) {
-                    if (nicInfo->nic_elem[i].cq_valid) {
-                        cores_connected_to_network++;
-                    }
-                }
-                if (cores_connected_to_network == 0) {
-                    info("turn off nic core");
-                    nicInfo->nic_proc_on = false;
-                }
-                */
+
                 else{
                     void* lg_p = static_cast<void*>(gm_get_lg_ptr());
                     uint32_t core_iterator = 0;
@@ -575,7 +559,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                             ((load_generator*)lg_p)->next_cycle = core->curCycle;
                         }
                         //info("packet injection round");
-                        
+                        packet_rate = packet_rate / 4;
                         for (uint64_t i = 0; i < packet_rate; i += 8) {
                             //for (uint64_t i = 0; i < 1; i ++) {
 

@@ -27,7 +27,7 @@ int main() {
 	int ctx_id = 0;
 	int msg_entry_size = 1;
 
-	while(send_count<=32)
+	while(send_count<=15000)
 	{
 		successStruct recv_completion;
 		do{
@@ -47,6 +47,9 @@ int main() {
 		send_serviced++;
 		
 		//test_prints
+		if (recv_completion.recv_buf_addr & 0xffff000000 != 0xabba000000) {
+			std::cout << "incorrect recv_buf_addr" << std::endl;
+		}
 		std::cout << "APP: recvd incoming msg.              recv_count:"<<std::dec << send_serviced << ", rbuf_addr:" <<std::hex<< recv_completion.recv_buf_addr << ", rbuf_val:" << *(uint64_t*)(recv_completion.recv_buf_addr) << std::endl;
 		uint32_t target_node = recv_completion.tid;
 
