@@ -257,7 +257,7 @@ int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void*
 	int message = get_next_message(lg_p);
 	uint32_t rb_head = allocate_recv_buf(8, nicInfo, core_id);
 	if (rb_head > RECV_BUF_POOL_SIZE) {
-		info("core %d out of recv buffer", core_iterator);
+		info("core %d out of recv buffer", core_id);
 		return -1;
 	}
 	uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head]));
