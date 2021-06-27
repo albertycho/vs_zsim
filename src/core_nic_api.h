@@ -1,6 +1,7 @@
 #include "nic_defines.h"
 #include "log.h"
 #include "ooo_core.h"
+#include "ooo_core_recorder.h"
 
 #ifndef _CORE_NIC_API_H_
 #define _CORE_NIC_API_H_
@@ -254,7 +255,7 @@ int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uin
 }
 
 
-int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id, int srcid, OOOCore* core) {
+int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id, int srcid, OOOCore* core, OOOCoreRecorder* cRec) {
 	int message = get_next_message(lg_p);
 	uint32_t rb_head = allocate_recv_buf(8, nicInfo, core_id);
 	if (rb_head > RECV_BUF_POOL_SIZE) {
@@ -268,7 +269,7 @@ int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void*
 	MemReq req;
 	Address rbuf_lineAddr = recv_buf_addr >> lineBits;
 	MESIState dummyState = MESIState::I;
-	//assert((!core->cRec.getEventRecorder()->hasRecord()));
+	assert((!cRec->getEventRecorder()->hasRecord()));
 
 	if (nicInfo->record_nic_access) {
 		req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, srcId, 0 };
@@ -277,7 +278,7 @@ int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void*
 		req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, srcId, MemReq::NORECORD };
 	}
 
-	uint64_t reqSatisfiedCycle = core->l1d->getParent(recv_buf_addr >> lineBits)->access(req);
+	//uint64_t reqSatisfiedCycle = core->l1d->getParent(recv_buf_addr >> lineBits)->access(req);
 
 	return 0;
 
