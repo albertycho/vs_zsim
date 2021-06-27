@@ -581,6 +581,10 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                             app_init_done = nicInfo->nic_elem[sample_core_id].cq_valid;
                             if (!app_init_done) { break; }
                             */
+                            int srcId = getCid(tid);
+                            inject_incoming_packet(core->curCycle, nicInfo, lg_p, core_iterator, srcId, core, core->cRec, core->l1d);
+                            
+                            /*
                             int message = get_next_message(lg_p);
                             uint32_t rb_head = allocate_recv_buf(8, nicInfo, core_iterator);
 
@@ -594,7 +598,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                             // write message to recv buffer
                             nicInfo->nic_elem[core_iterator].recv_buf[rb_head] = message;
 
-                            int srcId = getCid(tid);
+                            
                             MemReq req;
                             Address rbuf_lineAddr = recv_buf_addr >> lineBits;
                             MESIState dummyState = MESIState::I;
@@ -615,6 +619,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                             //create CEQ entry
                             uint64_t ceq_cycle = (uint64_t)(((load_generator*)lg_p)->next_cycle);
                             create_CEQ_entry(recv_buf_addr, 0x7f, ceq_cycle, nicInfo, core_iterator);
+                            */
 
                         }
                     }
