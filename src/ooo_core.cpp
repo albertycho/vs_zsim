@@ -541,8 +541,6 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 if (nicInfo->registered_core_count == 0) {
                     nicInfo->nic_proc_on = false;
                 }
-
-
                 else{
                     void* lg_p = static_cast<void*>(gm_get_lg_ptr());
                     uint32_t core_iterator = 0;
@@ -554,7 +552,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                     }
                     app_init_done = nicInfo->nic_elem[sample_core_id].cq_valid;
                     /// wait for applications to initialize
-                    if (gm_isready() && app_init_done) {
+                    //if (gm_isready() && app_init_done) {
                         if (((load_generator*)lg_p)->next_cycle == 0) {
                             ((load_generator*)lg_p)->next_cycle = core->curCycle;
                         }
@@ -587,46 +585,9 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                                 //core out of recv buffer
                                 break;
                             }
-                            
-                            /*
-                            int message = get_next_message(lg_p);
-                            uint32_t rb_head = allocate_recv_buf(8, nicInfo, core_iterator);
-
-                            if (rb_head > RECV_BUF_POOL_SIZE) {
-                                info("core %d out of recv buffer", core_iterator);
-                                break;
-                            }
-
-                            uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[core_iterator].recv_buf[rb_head]));
-
-                            // write message to recv buffer
-                            nicInfo->nic_elem[core_iterator].recv_buf[rb_head] = message;
-
-                            
-                            MemReq req;
-                            Address rbuf_lineAddr = recv_buf_addr >> lineBits;
-                            MESIState dummyState = MESIState::I;
-                            assert((!core->cRec.getEventRecorder()->hasRecord()));
-                            if (nicInfo->record_nic_access) {
-                                req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, srcId, 0 };
-                            }
-                            else {
-                                req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, srcId, MemReq::NORECORD };
-                            }
-
-                            uint64_t reqSatisfiedCycle = core->l1d->getParent(recv_buf_addr >> lineBits)->access(req);
-                            //std::cout << core->l1d->getParent(recv_buf_addr >> lineBits)->getName() << std::endl;
-                            //assert((!core->cRec.getEventRecorder()->hasRecord()));
-
-                            core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
-
-                            //create CEQ entry
-                            uint64_t ceq_cycle = (uint64_t)(((load_generator*)lg_p)->next_cycle);
-                            create_CEQ_entry(recv_buf_addr, 0x7f, ceq_cycle, nicInfo, core_iterator);
-                            */
 
                         }
-                    }
+                    //}
                 }
             }
         }
@@ -728,4 +689,40 @@ if (!nicInfo->nic_proc_on) {
 
     nicInfo->nic_proc_on = true;
 }
+*/
+/*
+int message = get_next_message(lg_p);
+uint32_t rb_head = allocate_recv_buf(8, nicInfo, core_iterator);
+
+if (rb_head > RECV_BUF_POOL_SIZE) {
+    info("core %d out of recv buffer", core_iterator);
+    break;
+}
+
+uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[core_iterator].recv_buf[rb_head]));
+
+// write message to recv buffer
+nicInfo->nic_elem[core_iterator].recv_buf[rb_head] = message;
+
+
+MemReq req;
+Address rbuf_lineAddr = recv_buf_addr >> lineBits;
+MESIState dummyState = MESIState::I;
+assert((!core->cRec.getEventRecorder()->hasRecord()));
+if (nicInfo->record_nic_access) {
+    req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, srcId, 0 };
+}
+else {
+    req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, core->curCycle, NULL, dummyState, srcId, MemReq::NORECORD };
+}
+
+uint64_t reqSatisfiedCycle = core->l1d->getParent(recv_buf_addr >> lineBits)->access(req);
+//std::cout << core->l1d->getParent(recv_buf_addr >> lineBits)->getName() << std::endl;
+//assert((!core->cRec.getEventRecorder()->hasRecord()));
+
+core->cRec.record(core->curCycle, core->curCycle, reqSatisfiedCycle);
+
+//create CEQ entry
+uint64_t ceq_cycle = (uint64_t)(((load_generator*)lg_p)->next_cycle);
+create_CEQ_entry(recv_buf_addr, 0x7f, ceq_cycle, nicInfo, core_iterator);
 */
