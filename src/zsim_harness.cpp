@@ -74,7 +74,6 @@ struct ProcInfo {
 #define MAX_CHILDREN (2*MAX_THREADS)
 ProcInfo childInfo[MAX_CHILDREN];
 
-int NIC_proc_pid;
 
 volatile uint32_t debuggerChildIdx = MAX_THREADS;
 
@@ -470,9 +469,6 @@ int main(int argc, char *argv[]) {
             exit(42);
         }
     }
-
-    kill(-NIC_proc_pid, SIGKILL);
-    kill(NIC_proc_pid, SIGKILL);
 
 
     uint32_t exitCode = 0;
