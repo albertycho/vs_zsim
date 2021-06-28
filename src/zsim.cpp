@@ -184,9 +184,7 @@ int free_recv_buf(uint32_t head, uint32_t core_id) {
         NICELEM.rb_dir[i].is_head = false;
         NICELEM.rb_dir[i].len = 0;
     }
-
     return 0;
-
 }
 
 int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {

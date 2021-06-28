@@ -551,7 +551,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                     uint32_t core_iterator = 0;
                     //info("inject packets for this phase");
                     packet_rate = packet_rate / 4;
-                    for (uint64_t i = 0; i < packet_rate; i += 8) {
+                    //for (uint64_t i = 0; i < packet_rate; i += 8) {
+                    for (uint64_t i = 0; i < 400; i += 8) {
 
                         //assign core_id in round robin 
                         core_iterator++;

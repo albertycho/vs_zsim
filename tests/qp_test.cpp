@@ -52,6 +52,7 @@ int main() {
 		if (recv_completion.recv_buf_addr & 0xffff000000 != 0xabba000000) {
 			std::cout << "incorrect recv_buf_addr" << std::endl;
 		}
+		
 		//std::cout << "APP: recvd incoming msg.              recv_count:"<<std::dec << send_serviced << ", rbuf_addr:" <<std::hex<< recv_completion.recv_buf_addr << ", rbuf_val:" << *(uint64_t*)(recv_completion.recv_buf_addr) << std::endl;
 		sum += *(uint64_t*)(recv_completion.recv_buf_addr);
 
@@ -81,60 +82,3 @@ int main() {
 }
 
 
-//////////////////////////////////////////////////
-//////// CHECK ONLY RGP&RCP - BEGIN///////////////
-//////////////////////////////////////////////////
-/*
-while (send_serviced <= 32) {
-
-	int send_ret;
-	//FIXME: figure out what to do with msg_entry_size
-	uint64_t msg_entry_size = 1;
-	lbuf_ptr = lbuf_base + send_count;
-	//std::cout<<"APP: lbuf_Ptr="<<lbuf_ptr<<std::endl;
-	*lbuf_ptr = 0xabcd0 + send_count;
-	do {
-		send_ret = rmc_hw_send(wq, ctx_id, lbuf_ptr, msg_entry_size, 1);
-	} while (send_ret);
-	send_count++;
-
-	successStruct recv_completion;
-	do {
-		recv_completion = rmc_check_cq(wq, cq);
-	} while (recv_completion.op != (RMC_INCOMING_RESP));
-
-	std::cout << "APP:cq_resp:" << std::hex << *(uint64_t*)(recv_completion.recv_buf_addr) << std::endl;
-
-	send_serviced++;
-}
-return 0;
-//////////////////////////////////////////////////
-//////// CHECK ONLY RGP&RCP - END/////////////////
-//////////////////////////////////////////////////
-*/
-//////////////////////////////////////////////////
-//////// CHECK ONLY RRPP - BEGIN//////////////////
-//////////////////////////////////////////////////
-/*
-while (send_serviced <= 32)
-{
-	successStruct recv_completion;
-	do {
-		recv_completion = rmc_check_cq(wq, cq);
-	} while (recv_completion.op != (RMC_INCOMING_SEND));
-
-	//std::cout<<"APP - recv_completion.op="<<recv_completion.op<<std::endl;
-	std::cout << "APP: recvd incoming msg.              recv_count:" << std::dec << send_serviced << ", rbuf_addr:" << std::hex << recv_completion.recv_buf_addr << ", rbuf_val:" << *(uint32_t*)(recv_completion.recv_buf_addr) << std::endl;
-
-	send_serviced++;
-	rmc_hw_recv(wq, ctx_id, (void*)recv_completion.recv_buf_addr, msg_entry_size);
-}
-
-//register_buffer((void*)0, (void*)0xdead);
-return 0;
-
-//////////////////////////////////////////////////
-//////// CHECK ONLY RRPP - END////////////////////
-//////////////////////////////////////////////////
-
-*/
