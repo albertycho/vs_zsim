@@ -104,9 +104,7 @@ int eraseChild(int pid) {
             return i;
         }
     }
-	if(pid== NIC_proc_pid){
-		return -0xff;
-	}
+
     panic("Could not erase child!!");
 }
 
@@ -118,7 +116,6 @@ void chldSigHandler(int sig) {
     int cpid;
     while ((cpid = waitpid(-1, &status, WNOHANG)) > 0) {
         int idx = eraseChild(cpid);
-		if(idx==-0xff) return;
         if (idx < MAX_THREADS) {
             info("Child %d done", cpid);
             int exitCode = WIFEXITED(status)? WEXITSTATUS(status) : 0;
@@ -180,9 +177,6 @@ void sigHandler(int sig) {
             }
         }
 
-        kill(-NIC_proc_pid,SIGKILL);
-        usleep(100000);
-        kill(NIC_proc_pid, SIGKILL);
         info("Done sending kill signals");
     }
 }
@@ -240,31 +234,7 @@ static void printHeartbeat(GlobSimInfo* zinfo) {
     lastCycles = cycles;
 }
 
-void Launch_nic_process(){
 
-	int cpid=fork();
-	if(cpid){ //parent
-		//TODO: may need parent to track this process
-		NIC_proc_pid=cpid;
-		return;
-	}
-	else{
-
-		std::cout<<"This is the NIC process!"<<std::endl;
-       while (!gm_isready()) {
-            usleep(1000);  // wait till proc idx 0 initializes everyhting
-       }
-
-	   //run_NIC_proc();
-
-	   std::cout<<"Launch_nic_process: we shouldn't see this"<<std::endl;
-
-		
-		exit(0);
-
-	}
-
-}
 
 void LaunchProcess(uint32_t procIdx) {
     int cpid = fork();
@@ -423,8 +393,6 @@ int main(int argc, char *argv[]) {
     aslr = conf.get<bool>("sim.aslr", false);
     if (aslr) info("Not disabling ASLR, multiprocess runs will fail");
 
-
-	//Launch_nic_process();
 
     //Create children processes
     pinCmd = new PinCmd(&conf, configFile, outputDir, shmid);
