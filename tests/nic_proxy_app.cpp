@@ -33,9 +33,9 @@ int main() {
 	int dummy=0;
 	while ((*nic_proc_on)) {
 		dummy++;
-		if (dummy % 10000 == 0) {
-			std::cout << "nic proxy app running" << std::endl;
-		}
+		//if (dummy % 10000 == 0) {
+		//	std::cout << "nic proxy app running" << std::endl;
+		//}
 	}
 
 
