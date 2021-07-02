@@ -608,6 +608,10 @@ void cycle_increment_routine(uint64_t& curCycle) {
 
     if (core_id > 2) {
         info("core_id out of bound: %d", core_id);
+        if (!(nicInfo->nic_elem[core_id].cq_valid)) {
+            return;
+        }
+        info("past !(nicInfo->nic_elem[core_id].cq_valid)");
     }
 
     if (!(nicInfo->nic_elem[core_id].cq_valid)) {
