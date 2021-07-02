@@ -43,6 +43,7 @@
 int launchXtermDebugger(int targetPid, LibInfo* libzsimAddrs) {
     int childPid = fork();
     if (childPid == 0) {
+        info("launching xterm debugger");
         std::string targetPidStr = Str(targetPid);
         char symbolCmdStr[2048];
         snprintf(symbolCmdStr, sizeof(symbolCmdStr), "add-symbol-file %s %p -s .data %p -s .bss %p", QUOTED(ZSIM_PATH), libzsimAddrs->textAddr, libzsimAddrs->dataAddr, libzsimAddrs->bssAddr);
