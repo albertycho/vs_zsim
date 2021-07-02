@@ -606,6 +606,9 @@ void cycle_increment_routine(uint64_t& curCycle) {
     
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 
+    if (core_id > 2) {
+        info("core_id out of bound: %d", core_id);
+    }
 
     if (!(nicInfo->nic_elem[core_id].cq_valid)) {
         return;
