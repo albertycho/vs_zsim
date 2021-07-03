@@ -561,12 +561,21 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         }
                         //find next valid core
                         int drop_count = 0;
+                        //DBG code
+                        if (core_iterator > 2) {
+                            info("BblFunc - core_iterator out of bound: %d", core_iterator);
+                        }
+
                         while (!(nicInfo->nic_elem[core_iterator].cq_valid)) {
                             core_iterator++;
                             drop_count++;
                             if (drop_count > 100) {
                                 std::cout << "other cores deregistered NIC" << std::endl;
                                 break;
+                            }
+                            //DBG code
+                            if (core_iterator > 2) {
+                                info("BblFunc - core_iterator out of bound: %d", core_iterator);
                             }
                         }
 

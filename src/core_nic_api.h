@@ -219,6 +219,11 @@ void cq_event_enqueue(uint64_t q_cycle, cq_entry_t cqe, glob_nic_elements* nicIn
 
 int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycle, glob_nic_elements* nicInfo, uint32_t core_id) {
 	//TODO: create and enq CEQ entry - reuse functions from sim_nic.h
+	
+	if (core_id > ((zinfo->numCores) - 1)) {
+		info("inject_incoming_packet - core_id out of bound: %d", core_id);
+	}
+
 	uint64_t ceq_delay = 100;
 	uint32_t tid = 0;//TODO: handle tid better
 	cq_entry_t cqe = generate_cqe(success, tid, recv_buf_addr);
@@ -251,14 +256,21 @@ int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uin
 
 int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id, int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*MemObject* dest*/) {
 	//TODO: passing on l1d for now, to use getParent method. Will have to be updated with the correct Memory Direct access method
+	if (core_id > 2) {
+		info("inject_incoming_packet - core_id out of bound: %d", core_id);
+	}
 	int message = get_next_message(lg_p);
 	uint32_t rb_head = allocate_recv_buf(8, nicInfo, core_id);
 	if (rb_head > RECV_BUF_POOL_SIZE) {
 		info("core %d out of recv buffer", core_id);
+		info("((zinfo->numCores) - 1)=%d", ((zinfo->numCores) - 1));
 		return -1;
 	}
 	uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head]));
 	// write message to recv buffer
+	if (core_id > 2) {
+		info("inject_incoming_packet - core_id out of bound: %d", core_id);
+	}
 	nicInfo->nic_elem[core_id].recv_buf[rb_head] = message;
 
 	MemReq req;
