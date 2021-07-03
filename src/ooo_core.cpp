@@ -562,7 +562,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         //find next valid core
                         int drop_count = 0;
                         //DBG code
-                        if (core_iterator > 2) {
+                        if (core_iterator >= zinfo->numCores) {
                             info("BblFunc - core_iterator out of bound: %d", core_iterator);
                         }
 
@@ -574,7 +574,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                                 break;
                             }
                             //DBG code
-                            if (core_iterator > 2) {
+                            if (core_iterator >= zinfo->numCores) {
                                 info("BblFunc - core_iterator out of bound: %d", core_iterator);
                             }
                         }
@@ -615,7 +615,7 @@ void cycle_increment_routine(uint64_t& curCycle) {
     
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 
-    if (core_id > 2) {
+    if (core_id > ((zinfo->numCores) - 1)) {
         info("cycle_inc_routine - core_id out of bound: %d", core_id);
         if (!(nicInfo->nic_elem[core_id].cq_valid)) {
             info("past !(nicInfo->nic_elem[core_id].cq_valid)");
