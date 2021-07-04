@@ -148,7 +148,7 @@ uint32_t allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t c
 					}
 					else//should not happen
 					{
-						std::cout << "ALLOCATE_RECV_BUF BROKEN - IS_HEAD ERROR" << std::endl;
+						std::cout << "ALLOCATE_RECV_BUF BROKEN - IS_HEAD ERROR - 151 head: " <<head <<", i: "<< i << std::endl;
 					}
 					break;
 				}
@@ -173,7 +173,7 @@ uint32_t allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t c
 			}
 			else//should not happen
 			{
-				std::cout << "ALLOCATE_RECV_BUF BROKEN - IS_HEAD ERROR" << std::endl;
+				std::cout << "ALLOCATE_RECV_BUF BROKEN - IS_HEAD ERROR - 176, head: "<<head << std::endl;
 			}
 
 		}
@@ -266,6 +266,8 @@ int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void*
 		//info("((zinfo->numCores) - 1)=%d", ((zinfo->numCores) - 1));
 		return -1;
 	}
+	std::cout << "allocate_recv_buf returned :" << std::dec << rb_head << ", core_id: " << core_id << std::endl;
+
 	uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head]));
 	// write message to recv buffer
 	if (core_id > ((zinfo->numCores) - 1)) {
