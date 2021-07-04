@@ -187,7 +187,7 @@ int free_recv_buf(uint32_t head, uint32_t core_id) {
         NICELEM.rb_dir[i].len = 0;
     }
     //dbg print
-    info("free_recv_buf - finished freeing);
+    info("free_recv_buf - finished freeing");
     return 0;
 }
 
