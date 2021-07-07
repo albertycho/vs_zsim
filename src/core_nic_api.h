@@ -221,7 +221,7 @@ int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycl
 	//TODO: create and enq CEQ entry - reuse functions from sim_nic.h
 	
 	if (core_id > ((zinfo->numCores) - 1)) {
-		info("inject_incoming_packet - core_id out of bound: %d", core_id);
+		info("create_ceq_entry - core_id out of bound: %d", core_id);
 	}
 
 	uint64_t ceq_delay = 100;
