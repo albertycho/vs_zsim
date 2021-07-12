@@ -181,11 +181,13 @@ int free_recv_buf(uint32_t head, uint32_t core_id) {
     //info("free_recv_buf - core_id = %d, head = %d", core_id, head);
         
     uint32_t blen = NICELEM.rb_dir[head].len;
+    futex_lock(&nicInfo->nic_elem[core_id].rb_lock);
     for (uint32_t i = head; i < head + blen; i++) {
         NICELEM.rb_dir[i].in_use = false;
         NICELEM.rb_dir[i].is_head = false;
         NICELEM.rb_dir[i].len = 0;
     }
+    futex_unlock(&nicInfo->nic_elem[core_id].rb_lock);
     //dbg print
     //info("free_recv_buf - finished freeing");
     return 0;
