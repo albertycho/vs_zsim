@@ -140,6 +140,8 @@ struct nic_element {
 	
 	cq_wr_event* cq_wr_event_q;
 	rcp_event* rcp_eq;
+	lock_t ceq_lock;
+	lock_t rb_lock;
 	PAD();
 
 };

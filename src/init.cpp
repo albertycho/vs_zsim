@@ -890,6 +890,8 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     for (uint64_t i = 0; i < MAX_THREADS; i++) {
         nicInfo->nic_elem[i].wq = gm_calloc<rmc_wq_t>();
         nicInfo->nic_elem[i].cq = gm_calloc<rmc_cq_t>();
+        futex_init(&nicInfo->nic_elem[i].rb_lock);
+        futex_init(&nicInfo->nic_elem[i].ceq_lock);
     }
 
     Config config(configFile);
