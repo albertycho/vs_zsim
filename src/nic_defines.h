@@ -6,6 +6,7 @@
 #include <string>
 #include "pad.h"
 #include <unistd.h>
+#include "locks.h"
 
 
 #ifndef _NIC_DEFINES_H_
