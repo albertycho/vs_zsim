@@ -134,6 +134,10 @@ bool check_wq(uint64_t core_id, glob_nic_elements* nicInfo) {
 }
 
 wq_entry_t deq_wq_entry(uint64_t core_id, glob_nic_elements* nicInfo) {
+/*
+* deq_wq_entry: removes the first entry from wq and returns it
+*   returned wq_entry can be then processed
+*/
     wq_entry_t raw_wq_entry = NICELEM.wq->q[NICELEM.wq_tail];
 
     rmc_wq_t* wq = NICELEM.wq;
@@ -152,10 +156,12 @@ wq_entry_t deq_wq_entry(uint64_t core_id, glob_nic_elements* nicInfo) {
 }
 
 void enq_rcp_event(uint64_t q_cycle, uint64_t lbuf_addr, uint64_t lbuf_data, glob_nic_elements* nicInfo, uint64_t core_id) {
-    //reference cq_wr_event_enqueue in sim_nic.h
-    //TODO write this function
-    
-    //nicInfo->nic_elem[core_id].rcp_eq
+/*
+* eqn_rcp_event - called by process_wq_entry
+*       creates an rcp_event that corresponds to a RGP call from wq_entry(RMC_SEND)
+*       and enqueues it to RCP_EQ, which is polled by core
+*/
+
     rcp_event* rcp_e = gm_calloc<rcp_event>();
     rcp_e->lbuf_addr = lbuf_addr;
     rcp_e->lbuf_data = lbuf_data;
