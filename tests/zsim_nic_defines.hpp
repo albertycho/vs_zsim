@@ -21,6 +21,8 @@
 #define RMC_INVAL               42
 
 
+//defining WQ and CQ structs
+
 typedef struct wq_entry{
 	//first double-word (8 bytes)
 	uint32_t op;        //up to 64 soNUMA ops
@@ -62,36 +64,11 @@ typedef struct {
 	uint64_t recv_buf_addr;
 } successStruct;
 
-//int register_buffer(void * val, void* field)
-//{
-////variables: start addr of WQ/CQ
-////			 size of WQ/CQ
-////can distinguish the type of variable depending on value of rbx?
-//	int dummy;
-//	asm(
-//		"movq %1, %%rbx;"
-//		"movq %2, %%rcx;"
-//		"xchg %%rbx, %%rbx;"
-//		:"=r" (dummy)
-//		:"r"(val), "r"(field)
-//		:"%rbx","%rcx" //clobbered registers
-//	);
-//	return 0;
-//}
 
 int register_buffer(void * val, void* field);
 int reg_wq(rmc_wq_t ** wq);
 int reg_cq(rmc_cq_t **cq);
 
-//int reg_wq(rmc_wq_t ** wq){
-//	register_buffer((void*) (wq), (void*) 0);
-//	return 0;
-//}
-//
-//int reg_cq(rmc_cq_t **cq){
-//	register_buffer((void*) (cq), (void*) 1);
-//	return 0;
-//}
 
 successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq);
 int rmc_hw_send(rmc_wq_t *wq, uint32_t ctx_id, void *data_address, uint64_t length, int nid);

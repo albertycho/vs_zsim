@@ -22,6 +22,8 @@ int register_buffer(void * val, void* field)
 	);
 	return 0;
 }
+
+
 int reg_wq(rmc_wq_t ** wq){
 	register_buffer((void*) (wq), (void*) 0);
 	return 0;
