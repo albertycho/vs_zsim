@@ -181,6 +181,10 @@ void enq_rcp_event(uint64_t q_cycle, uint64_t lbuf_addr, uint64_t lbuf_data, glo
 }
 
 int free_recv_buf(uint32_t head, uint32_t core_id) {
+/*
+* free_recv_buf - called by free_recv_buf_addr. 
+        Takes the index of the recv_buf to be freed
+*/
     assert(NICELEM.rb_dir[head].is_head);
     assert(NICELEM.rb_dir[head].in_use);
     //dbg print
@@ -200,6 +204,11 @@ int free_recv_buf(uint32_t head, uint32_t core_id) {
 }
 
 int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {
+/*
+* free_recv_buf_addr - called if wq_entry is RMC_RECV. 
+*       calculate the index of recv_buf from the addr and calls free_recv_buf
+*       (added layer of function for easier edit/debug)
+*/
     uint64_t buf_base = (uint64_t)(&(NICELEM.recv_buf[0]));
     uint64_t offset = buf_addr - buf_base;
     uint32_t head = (uint32_t)(offset / 8);
@@ -210,6 +219,9 @@ int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {
 
 void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elements* nicInfo)
 {
+/*
+* process_wq_entry - handles the wq_entry by calling appropirate action based on OP
+*/
     if (cur_wq_entry.op == RMC_RECV) {
         //TODO:rewrite free_recv_buf_addr for core_nic_api
         //free_recv_buf_addr(cur_wq_entry.buf_addr, core_id);
@@ -236,6 +248,10 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
 
 int nic_rgp_action(uint64_t core_id, glob_nic_elements* nicInfo)
 {
+/*
+* nic_rgp_action - called when app(core) notifies of new wq_entry
+*       dequeues the wq_entry and processes it (take appropriate action)
+*/
     if (!check_wq(core_id, nicInfo))
     {
         info("nic_rgp_action called but nothing in wq");
@@ -249,6 +265,7 @@ int nic_rgp_action(uint64_t core_id, glob_nic_elements* nicInfo)
 }
 
 
+////////////////////////////////////////////////////////////////////
 
 static inline void clearCid(uint32_t tid) {
     assert(tid < MAX_THREADS);
@@ -1315,13 +1332,6 @@ VOID HandleNicMagicOp(THREADID tid, ADDRINT val, ADDRINT field) {
     case NOTIFY_WQ_WRITE://NOTIFY WQ WRITE from application
         //info("notify_wq_write")
         nic_rgp_action(core_id, nicInfo);
-        /*
-        if(check_wq(core_id, nicInfo))
-        {
-          wq_entry_t cur_wq_entry = deq_wq_entry(core_id, nicInfo);
-          process_wq_entry(cur_wq_entry, core_id, nicInfo);
-        }
-        */
         break;
     case 0xB: //indicate app is nic_proxy_process
         *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_proc_on));
