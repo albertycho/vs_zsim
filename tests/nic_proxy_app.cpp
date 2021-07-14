@@ -2,28 +2,29 @@
 #include <cstdint>
 #include <stdlib.h>
 #include <stdint.h>
+#include <sched.h>
 #include "zsim_nic_defines.hpp"
 
 using namespace std;
 
 int main() {
 
-	/*
-	rmc_wq_t * wq;
-	rmc_cq_t * cq;
+	const int core_id = 0;
 
-	uint32_t * lbuf_base;
-	uint32_t * lbuf_ptr;
-	//register lbuf_base
+	//const pid_t pid = getpid();
 
-	register_buffer((void*) (&lbuf_base), (void*) 2);
-	register_buffer((void*) (&wq), (void*) 0);
-	register_buffer((void*) (&cq), (void*) 1);
+	// cpu_set_t: This data set is a bitset where each bit represents a CPU.
 
-	
-	//std::cout<<"APP: wq="<<std::hex<<wq<<std::endl;
+	cpu_set_t cpuset;
 
-	*/
+	// CPU_ZERO: This macro initializes the CPU set set to be the empty set.
+
+	CPU_ZERO(&cpuset);
+
+	// CPU_SET: This macro adds cpu to the CPU set set.
+
+	CPU_SET(core_id, &cpuset);
+
 
 	bool* nic_proc_on;
 
