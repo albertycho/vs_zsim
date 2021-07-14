@@ -609,31 +609,29 @@ void OOOCore::BranchFunc(THREADID tid, ADDRINT pc, BOOL taken, ADDRINT takenNpc,
 }
 
 void cycle_increment_routine(uint64_t& curCycle) {
+/*
+* cycle_increment_routine
+*       checks CEQ and RCP-EQ every cycle
+*       Process entries that are due (by creating CQ_entries)
+*/
 
     //TODO: getting core_id - this works for single threaded apps! ideally want to find a way to pass on tid to getCid func
     uint64_t core_id = getCid(0); 
     
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 
+    /* if statement is for preventing crash at the end of simulation */
     if (core_id > ((zinfo->numCores) - 1)) {
-        return;
-
-        //debug code
-        info("cycle_inc_routine - core_id out of bound: %d", core_id);
-        if (!(nicInfo->nic_elem[core_id].cq_valid)) {
-            info("past !(nicInfo->nic_elem[core_id].cq_valid)");
-            return;
-        }
-       
+        return;  
     }
 
     if (!(nicInfo->nic_elem[core_id].cq_valid)) {
         return;
     }
 
-    void* lg_p = static_cast<void*>(gm_get_lg_ptr());
+
     core_ceq_routine(curCycle, nicInfo, core_id);
-    //RRPP_routine(curCycle, nicInfo, lg_p, 0);
+
     RCP_routine(curCycle, nicInfo, core_id);
     
     return;
