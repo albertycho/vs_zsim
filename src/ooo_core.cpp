@@ -563,7 +563,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         int drop_count = 0;
                         //DBG code
                         if (core_iterator >= zinfo->numCores) {
-                            info("BblFunc - core_iterator out of bound: %d", core_iterator);
+                            info("BblFunc - core_iterator out of bound: %d, cycle: %d", core_iterator, core->curCycle);
                         }
 
                         while (!(nicInfo->nic_elem[core_iterator].cq_valid)) {
