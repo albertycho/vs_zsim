@@ -587,7 +587,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         if (inj_attempt == -1) {
                             //core out of recv buffer. stop injecting for this phase
                             inject_fail_counter++;
-                            if (inject_fail_counter > (zinfo->numCores - 1)) {
+                            if (inject_fail_counter >= (zinfo->numCores - 1)) {
                                 break;
                             }
                         }
