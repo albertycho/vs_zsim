@@ -564,6 +564,9 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         int drop_count = 0;
                         while (!(nicInfo->nic_elem[core_iterator].cq_valid)) {
                             core_iterator++;
+                            if (core_iterator >= zinfo->numCores) {
+                                core_iterator = 0;
+                            }
                             drop_count++;
                             if (drop_count > 100) {
                                 std::cout << "other cores deregistered NIC" << std::endl;
