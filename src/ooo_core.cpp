@@ -551,6 +551,9 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                     uint32_t core_iterator = 0;
                     //info("inject packets for this phase");
                     //packet_rate = packet_rate / 4;
+
+                    uint32_t inject_fail_counter = 0;
+
                     for (uint64_t i = 0; i < packet_rate; i += 8) {
                     //for (uint64_t i = 0; i < 800; i += 8) {
 
@@ -583,7 +586,10 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                         int inj_attempt = inject_incoming_packet(core->curCycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), core->l1d);
                         if (inj_attempt == -1) {
                             //core out of recv buffer. stop injecting for this phase
-                            break;
+                            inject_fail_counter++;
+                            if (inject_fail_counter > zinfo->numCores) {
+                                break;
+                            }
                         }
 
                     }
