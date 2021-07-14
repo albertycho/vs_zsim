@@ -531,12 +531,12 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     while (core->curCycle > core->phaseEndCycle) {
         core->phaseEndCycle += zinfo->phaseLength;
 
-        //Do the nic routine once a phase
+        /* Do the nic remote packet injection routine once a phase */
         if (core->curCycle <= core->phaseEndCycle) {
-            //start nic routine for this phase if this is the nic proxy process && cores are registered to NIC
+            /* execute this code only for the NIC process && nic init is done */
             if ((nicInfo->nic_pid == procIdx) && (nicInfo->nic_init_done)) {
 
-                //check if cores finished their processes
+                /* check if cores finished their processes and exit if so */
                 if (nicInfo->registered_core_count == 0) {
                     nicInfo->nic_proc_on = false;
                 }
@@ -550,22 +550,18 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                     }
                     uint32_t core_iterator = 0;
                     //info("inject packets for this phase");
-                    packet_rate = packet_rate / 4;
-                    //for (uint64_t i = 0; i < packet_rate; i += 8) {
-                    for (uint64_t i = 0; i < 800; i += 8) {
+                    //packet_rate = packet_rate / 4;
+                    for (uint64_t i = 0; i < packet_rate; i += 8) {
+                    //for (uint64_t i = 0; i < 800; i += 8) {
 
-                        //assign core_id in round robin 
+                        /* assign core_id in round robin */
                         core_iterator++;
                         if (core_iterator >= zinfo->numCores) {
                             core_iterator = 0;
                         }
-                        //find next valid core
+                        
+                        /* find next valid core that is still running */
                         int drop_count = 0;
-                        //DBG code
-                        if (core_iterator >= zinfo->numCores) {
-                            info("BblFunc (line566) - core_iterator out of bound: %d, cycle: %d", core_iterator, core->curCycle);
-                        }
-
                         while (!(nicInfo->nic_elem[core_iterator].cq_valid)) {
                             core_iterator++;
                             drop_count++;
@@ -579,10 +575,11 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                             }
                         }
 
+                        /* Inject packet (call core function) */
                         int srcId = getCid(tid);
                         int inj_attempt = inject_incoming_packet(core->curCycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), core->l1d);
                         if (inj_attempt == -1) {
-                            //core out of recv buffer
+                            //core out of recv buffer. stop injecting for this phase
                             break;
                         }
 
