@@ -2,12 +2,31 @@
 #include <cstdint>
 #include <stdlib.h>
 #include <stdint.h>
+#include <unistd.h>
+#include <pthread.h>
 #include "zsim_nic_defines.hpp"
 
 using namespace std;
 
 int main() {
 
+	//pid_t pid = getpid();
+
+	//cpu_set_t cpuset;
+	//CPU_ZERO(&cpuset);
+	//std::cout<<"calling getaffinity"<<std::endl;
+	////int getaffinity_result = pthread_getaffinity_np(pid, sizeof(cpuset), &cpuset);
+	//int getaffinity_result = sched_getaffinity(pid, sizeof(cpuset), &cpuset);
+
+	//if(getaffinity_result!=0) {
+	//	std::cout<<"getaffinity_result failed: "<<getaffinity_result<<std::endl;
+	//}
+	//
+	//for(int i=0; i<64;i++){
+	//	if(CPU_ISSET(i, &cpuset)){
+	//		std::cout<<"cpu "<<i<<" is set"<<std::endl;
+	//	}
+	//}
 
 	rmc_wq_t * wq;
 	rmc_cq_t * cq;
