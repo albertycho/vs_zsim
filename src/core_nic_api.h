@@ -13,6 +13,9 @@
 
 bool cq_wr_event_ready(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint64_t core_id)
 {
+/*
+* cq_wr_event_ready - returns true if there is a event due in CEQ
+*/
 	if (CQ_WR_EV_Q == NULL)
 	{
 		return false;
@@ -23,6 +26,9 @@ bool cq_wr_event_ready(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint64_t 
 
 cq_wr_event* deq_cq_wr_event(glob_nic_elements* nicInfo, uint64_t core_id)
 {
+/*
+* deq_cq_wr_event removes the head in CEQ and returns the entry to caller
+*/
 	futex_lock(&nicInfo->nic_elem[core_id].ceq_lock);
 	assert(CQ_WR_EV_Q != NULL);
 
