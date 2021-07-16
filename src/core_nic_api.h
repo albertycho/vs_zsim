@@ -42,6 +42,9 @@ cq_wr_event* deq_cq_wr_event(glob_nic_elements* nicInfo, uint64_t core_id)
 
 int put_cq_entry(cq_entry_t ncq_entry, glob_nic_elements* nicInfo, uint64_t core_id)
 {
+/*
+* put_cq_entry - takes in a new CQ_entry as input and inserts it in CQ
+*/
 	//separate out function that deals with the head/tail and SR
 	rmc_cq_t* cq = nicInfo->nic_elem[core_id].cq;
 	uint64_t cq_head = nicInfo->nic_elem[core_id].cq_head;
@@ -70,6 +73,10 @@ int put_cq_entry(cq_entry_t ncq_entry, glob_nic_elements* nicInfo, uint64_t core
 
 int process_cq_wr_event(cq_wr_event* cq_wr, glob_nic_elements* nicInfo, uint64_t core_id)
 {
+/*
+* process_cq_wr_event - takes popped CEQ entry as input. 
+*		processes it by writing to CQ, and frees CEQ entry
+*/
 	assert(cq_wr != NULL);
 
 	cq_entry_t ncq_entry = cq_wr->cqe;
@@ -83,17 +90,20 @@ int process_cq_wr_event(cq_wr_event* cq_wr, glob_nic_elements* nicInfo, uint64_t
 	return 0;
 
 }
-//int core_cq_wr_event_action(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint64_t core_id){
+
+
 int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t core_id) {
-//put all required action in one function to keep core.cpp files simpler
+/*
+* core_ceq_routine - put all required action in one function to keep core.cpp files simpler
+*		checks CEQ for event due and processes entry if necessary
+*/
+	
 	//TODO check if cq entry is available
 	rmc_cq_t* cq = nicInfo->nic_elem[core_id].cq;
 	uint64_t cq_head = nicInfo->nic_elem[core_id].cq_head;
 	if (cq->SR == cq->q[cq_head].SR) {
 		return -1;
 	}
-
-
 
 	if (cq_wr_event_ready(cur_cycle, nicInfo, core_id))
 	{
@@ -114,16 +124,12 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 
 
 //functions for interfacing load_generator
-bool check_load_gen(void* lg_p, int cur_cycle) {
-	
-	int lg_next_cycle = ((load_generator*)lg_p)->next_cycle;
-	if (lg_next_cycle <= cur_cycle) {
-		return true;
-	}
-	return false;
-}
 
 int get_next_message(void* lg_p) {
+/*
+* get_next_message - grabs the next message from load generator and updates the cycle next packet is due
+*		(in this prototype its all done manually in this function. eventually want to make it more elegant)
+*/
 	int next_message = ((load_generator*)lg_p)->message;
 	((load_generator*)lg_p)->message = ((load_generator*)lg_p)->message + 1;
 	//((load_generator*)lg_p)->next_cycle = ((load_generator*)lg_p)->next_cycle + 1000000; 
@@ -134,8 +140,11 @@ int get_next_message(void* lg_p) {
 }
 
 uint32_t allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t core_id) { // reusing(modifying) sim_nic.h function
-//TODO: go over this, find problems.. might be better to rewrite
-	//returns the index of allocated recv buffer, not the address!
+/*
+* allocate_recv_buf - finds free recv buffer from buffer pool and returns head index
+*				returns the index of allocated recv buffer, not the address!
+*/
+	
 	uint32_t head = 0;
 	while (head < RECV_BUF_POOL_SIZE)
 	{
