@@ -203,6 +203,9 @@ uint32_t allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t c
 
 cq_entry_t generate_cqe(uint32_t success, uint32_t tid, uint64_t recv_buf_addr)
 {
+/*
+* generate_cqe - builds a cq entry based on inputs
+*/
 	cq_entry_t cqe;
 	cqe.recv_buf_addr = recv_buf_addr;
 	cqe.success = success;
@@ -214,6 +217,10 @@ cq_entry_t generate_cqe(uint32_t success, uint32_t tid, uint64_t recv_buf_addr)
 
 void cq_event_enqueue(uint64_t q_cycle, cq_entry_t cqe, glob_nic_elements* nicInfo, uint64_t core_id)
 {
+/*
+* cq_event_enqueue - takes in a cq entry and its scheduled cycle
+*			creqtes a CEQ entry and enqueues it
+*/
 	cq_wr_event* cq_wr_e = gm_calloc<cq_wr_event>();
 	cq_wr_e->cqe = cqe;
 	cq_wr_e->q_cycle = q_cycle;
@@ -237,13 +244,16 @@ void cq_event_enqueue(uint64_t q_cycle, cq_entry_t cqe, glob_nic_elements* nicIn
 }
 
 int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycle, glob_nic_elements* nicInfo, uint32_t core_id) {
-	//TODO: create and enq CEQ entry - reuse functions from sim_nic.h
+/*
+* create_CEQ_entry - wrapper to generate cq entry, and enq corresponding CEQ entry
+*/
 	
 	if (core_id > ((zinfo->numCores) - 1)) {
 		info("create_ceq_entry - core_id out of bound: %d", core_id);
 	}
 
-	uint64_t ceq_delay = 100;
+
+	uint64_t ceq_delay = 100; //TODO: make this programmable
 	uint32_t tid = 0;//TODO: handle tid better
 	cq_entry_t cqe = generate_cqe(success, tid, recv_buf_addr);
 	cq_event_enqueue(cur_cycle + ceq_delay, cqe, nicInfo, core_id);
@@ -267,6 +277,13 @@ int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uin
 
 
 int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id, int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*MemObject* dest*/) {
+/*
+* inject_incoming_packet - takes necessary architectural AND microarchitectural actions to inject packet
+*				fetches next msg from load generator
+*				allocates recv buffer and writes msg to it
+*				record the memory access from injection (microarchitecutral)
+*				creates ceq entry (architectural)
+*/
 	//TODO: passing on l1d for now, to use getParent method. Will have to be updated with the correct Memory Direct access method
 	if (core_id > ((zinfo->numCores) - 1)) {
 		info("inject_incoming_packet - core_id out of bound: %d", core_id);
@@ -317,10 +334,10 @@ int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void*
 /// RCP functions
 /////////////////////
 
-
-
 bool check_rcp_eq(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint32_t core_id) {
-	//check rcp_eq head. similar to checking CEQ head
+/* 
+* check rcp_eq head. similar to checking CEQ head
+*/
 	
 	if (RCP_EQ == NULL) {
 		return false;
@@ -334,7 +351,9 @@ bool check_rcp_eq(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint32_t core_
 
 
 rcp_event* deq_rcp_eq(glob_nic_elements* nicInfo, uint32_t core_id) {
-	//similar to deq_cq_wr_event
+/* 
+* similar to deq_cq_wr_event
+*/
 	assert(RCP_EQ != NULL);
 	rcp_event* ret = RCP_EQ;
 	RCP_EQ = RCP_EQ->next;
@@ -342,7 +361,12 @@ rcp_event* deq_rcp_eq(glob_nic_elements* nicInfo, uint32_t core_id) {
 }
 
 void process_rcp_event(rcp_event* nrcp_event, glob_nic_elements* nicInfo, uint32_t core_id, uint64_t cur_cycle) {
+/*
+* process_rcp_event - takes in dequeued rcp_event. 
+*			writes response to local buffer and create cq write event
+*/
 	//write response to local buffer
+	//TODO: response may have to be programmable
 	uint64_t response = nrcp_event->lbuf_data + 0xca000000;
 	*((uint64_t*)(nrcp_event->lbuf_addr)) = response;
 	//access lbuf microarchitecturally
@@ -355,6 +379,9 @@ void process_rcp_event(rcp_event* nrcp_event, glob_nic_elements* nicInfo, uint32
 }
 
 void RCP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint32_t core_id) {
+/*
+* RCP_routine - wrapper for checking avaliable rcp action and processing it
+*/
 	if (check_rcp_eq(cur_cycle, nicInfo, core_id)) {
 		rcp_event* nrcp_event = deq_rcp_eq(nicInfo, core_id);
 		process_rcp_event(nrcp_event, nicInfo, core_id, cur_cycle);
