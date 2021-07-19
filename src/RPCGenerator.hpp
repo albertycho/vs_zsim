@@ -13,6 +13,7 @@ class RPCGenerator {
         RPCGenerator(size_t num_keys, size_t update_fraction);
         virtual void generatePackedRPC(char* userBuffer) const ;
         virtual uint32_t getRPCPayloadSize() const ;
+        size_t get_num_keys() { retrun num_keys; }
 };
 
 #define MICA_MAX_VALUE \

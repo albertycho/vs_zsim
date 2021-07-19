@@ -886,7 +886,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     //init nic_elements ptr
     //glob_nic_elements* nicInfo= gm_calloc<glob_nic_elements>();
     nicInfo = gm_calloc<glob_nic_elements>();
-
+    nicInfo->RPCGen = new RPCGenerator(100, 10);
     for (uint64_t i = 0; i < MAX_THREADS; i++) {
         nicInfo->nic_elem[i].wq = gm_calloc<rmc_wq_t>();
         nicInfo->nic_elem[i].cq = gm_calloc<rmc_cq_t>();
