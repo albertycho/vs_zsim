@@ -540,7 +540,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 if (nicInfo->registered_core_count == 0) {
 
                     //testPRINT TODO REMOVE
-                    info("rpcGEN numkeys: %d", nicInfo->RPCGen.get_num_keys());
+                    info("rpcGEN numkeys: %d", nicInfo->RPCGen->get_num_keys());
 
                     nicInfo->nic_proc_on = false;
                 }
