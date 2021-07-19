@@ -15,6 +15,16 @@ class RPCGenerator {
         virtual uint32_t getRPCPayloadSize() const ;
 };
 
+#define MICA_MAX_VALUE \
+  (64 - (sizeof(struct mica_key) + sizeof(uint8_t) + sizeof(uint8_t)))
+
+/* Fixed-size 16 byte keys */
+struct mica_key {
+    unsigned long long __unused : 64;
+    unsigned int bkt : 32;
+    unsigned int server : 16;
+    unsigned int tag : 16;
+};
 
 struct mica_op {
     struct mica_key key; /* This must be the 1st field and 16B aligned */
