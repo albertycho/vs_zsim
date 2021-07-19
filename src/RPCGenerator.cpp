@@ -16,11 +16,11 @@ RPCGenerator::RPCGenerator(size_t aNumKeys, size_t anUpdateFrac) :
 
 
 void
-HerdRPCGenerator::generatePackedRPC(char* userBuffer) const {
+RPCGenerator::generatePackedRPC(char* userBuffer) const {
     return;
 }
 
 uint32_t
-HerdRPCGenerator::getRPCPayloadSize() const {
+RPCGenerator::getRPCPayloadSize() const {
     return sizeof(struct mica_op);
 }
