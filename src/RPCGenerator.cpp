@@ -17,6 +17,21 @@ RPCGenerator::RPCGenerator(size_t aNumKeys, size_t anUpdateFrac) :
 
 void
 RPCGenerator::generatePackedRPC(char* userBuffer) const {
+    bool is_update = (std::rand() % 100) < (int)update_fraction ? true : false;
+    int key_i = std::rand() % num_keys;
+
+    struct mica_op req;
+    req.opcode = is_update ? HERD_OP_PUT : HERD_OP_GET;
+    req.val_len = is_update ? HERD_VALUE_SIZE : -1;
+    if (is_update) {
+        for (size_t i = 0; i < MICA_MAX_VALUE; i++) {
+            req.value[i] = (char)(std::rand() & 0xff); // generate a random byte
+        }
+    }
+
+    std::cout << "sizeof mica_op: " << sizeof(mica_op) << std::endl;
+
+
     return;
 }
 
