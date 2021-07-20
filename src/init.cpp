@@ -795,6 +795,12 @@ static void InitSystem(Config& config) {
     nicInfo->registered_core_count = 0;
     nicInfo->nic_init_done = false;
 
+    uint32_t num_keys = config.get<uint32_t>("sim.num_keys", 100);
+    nicInfo->RPCGen->set_num_keys(num_keys);
+    
+    uint32_t update_fraction = config.get<uint32_t>("sim.update_fraction", 10);
+    nicInfo->RPCGen->set_update_fraction(update_fraction);
+
     info("Initialized system");
 }
 

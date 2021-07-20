@@ -539,7 +539,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 /* check if cores finished their processes and exit if so */
                 if (nicInfo->registered_core_count == 0) {
 
-                    //testPRINT TODO REMOVE
+                    //TODO testPRINT REMOVE
                     info("rpcGEN numkeys: %d", nicInfo->RPCGen->get_num_keys());
 
                     nicInfo->nic_proc_on = false;
