@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cassert>
+#include <iostream>
 
 RPCGenerator::RPCGenerator(size_t aNumKeys, size_t anUpdateFrac) :
     srand_seed(0xdeadbeef),
@@ -11,6 +12,7 @@ RPCGenerator::RPCGenerator(size_t aNumKeys, size_t anUpdateFrac) :
     //key_arr = get_random_permutation(num_keys, 1 /*clt id*/, &srand_seed);
     key_arr = NULL;
     std::srand(srand_seed);
+    std::cout << "sizeof mica_op: " << sizeof(mica_op) << std::endl;
 }
 
 
@@ -29,8 +31,8 @@ RPCGenerator::generatePackedRPC(char* userBuffer) const {
         }
     }
 
-    std::cout << "sizeof mica_op: " << sizeof(mica_op) << std::endl;
-
+    //sizeof mica_op is 64
+    memcpy(userBuffer, &(req), sizeof(req));
 
     return;
 }
