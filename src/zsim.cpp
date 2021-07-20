@@ -185,7 +185,6 @@ int free_recv_buf(uint32_t head, uint32_t core_id) {
 * free_recv_buf - called by free_recv_buf_addr. 
         Takes the index of the recv_buf to be freed
 */
-    info("head: %d", head);
     assert(NICELEM.rb_dir[head].is_head);
     assert(NICELEM.rb_dir[head].in_use);
     //dbg print
@@ -212,7 +211,7 @@ int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {
 */
     uint64_t buf_base = (uint64_t)(&(NICELEM.recv_buf[0]));
     uint64_t offset = buf_addr - buf_base;
-    uint32_t head = (uint32_t)(offset / 8);
+    uint32_t head = (uint32_t)(offset / 8); //divide by size of buffer in bytes
     //TODO may need debug prints to check offset and head calculation
 
     return free_recv_buf(head, core_id);
