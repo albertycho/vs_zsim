@@ -290,7 +290,7 @@ int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void*
 	}
 	int message = get_next_message(lg_p);
 	futex_lock(&nicInfo->nic_elem[core_id].rb_lock);
-	uint32_t rb_head = allocate_recv_buf(8, nicInfo, core_id);
+	uint32_t rb_head = allocate_recv_buf(1, nicInfo, core_id);
 	futex_unlock(&nicInfo->nic_elem[core_id].rb_lock);
 	if (rb_head > RECV_BUF_POOL_SIZE) {
 		info("core %d out of recv buffer, cycle %d", core_id, cur_cycle);

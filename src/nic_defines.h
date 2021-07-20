@@ -142,10 +142,11 @@ struct nic_element {
 	bool ncq_SR;
 	//uint64_t recv_buf[RECV_BUF_POOL_SIZE];
 	z_cacheline recv_buf[RECV_BUF_POOL_SIZE];
-	recv_buf_dir_t rb_dir[RECV_BUF_POOL_SIZE];
 	//uint64_t lbuf[RECV_BUF_POOL_SIZE];
 	z_cacheline lbuf[RECV_BUF_POOL_SIZE];
-	
+	recv_buf_dir_t rb_dir[RECV_BUF_POOL_SIZE];
+	PAD();
+
 	cq_wr_event* cq_wr_event_q;
 	rcp_event* rcp_eq;
 	lock_t ceq_lock;
