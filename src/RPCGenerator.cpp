@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cassert>
 #include <iostream>
+#include <cstring>
 
 RPCGenerator::RPCGenerator(size_t aNumKeys, size_t anUpdateFrac) :
     srand_seed(0xdeadbeef),
@@ -23,6 +24,7 @@ RPCGenerator::generatePackedRPC(char* userBuffer) const {
     int key_i = std::rand() % num_keys;
 
     struct mica_op req;
+    //TODO: original code uses hash to get hval
     req.opcode = is_update ? HERD_OP_PUT : HERD_OP_GET;
     req.val_len = is_update ? HERD_VALUE_SIZE : -1;
     if (is_update) {

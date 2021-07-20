@@ -65,7 +65,7 @@
 #define RMC_INCOMING_RESP       (1<<SEND_OP_SHIFT) | (1<<INCOMING_RESP_SHIFT)
 #define RMC_INVAL               42
 
-#define RECV_BUF_POOL_SIZE 16000
+#define RECV_BUF_POOL_SIZE 2000
 //#define RECV_BUF_POOL_SIZE 32000
 
 typedef struct wq_entry {
@@ -125,6 +125,10 @@ typedef struct rcp_event {
 	rcp_event* next;
 } rcp_event;
 
+typedef struct z_cacheline {
+	uint64_t line_seg[8];
+} z_cacheline;
+
 struct nic_element {
 	//rmc_wq_t wq;
 	//rmc_cq_t cq;
@@ -136,9 +140,11 @@ struct nic_element {
 	bool cq_valid;
 	bool nwq_SR;
 	bool ncq_SR;
-	uint64_t recv_buf[RECV_BUF_POOL_SIZE];
+	//uint64_t recv_buf[RECV_BUF_POOL_SIZE];
+	z_cacheline recv_buf[RECV_BUF_POOL_SIZE];
 	recv_buf_dir_t rb_dir[RECV_BUF_POOL_SIZE];
-	uint64_t lbuf[RECV_BUF_POOL_SIZE];
+	//uint64_t lbuf[RECV_BUF_POOL_SIZE];
+	z_cacheline lbuf[RECV_BUF_POOL_SIZE];
 	
 	cq_wr_event* cq_wr_event_q;
 	rcp_event* rcp_eq;
