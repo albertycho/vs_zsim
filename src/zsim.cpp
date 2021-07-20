@@ -185,6 +185,7 @@ int free_recv_buf(uint32_t head, uint32_t core_id) {
 * free_recv_buf - called by free_recv_buf_addr. 
         Takes the index of the recv_buf to be freed
 */
+    info("head: %d", head);
     assert(NICELEM.rb_dir[head].is_head);
     assert(NICELEM.rb_dir[head].in_use);
     //dbg print

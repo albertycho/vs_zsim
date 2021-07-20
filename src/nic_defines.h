@@ -140,6 +140,7 @@ struct nic_element {
 	bool cq_valid;
 	bool nwq_SR;
 	bool ncq_SR;
+	PAD();
 	//uint64_t recv_buf[RECV_BUF_POOL_SIZE];
 	z_cacheline recv_buf[RECV_BUF_POOL_SIZE];
 	//uint64_t lbuf[RECV_BUF_POOL_SIZE];
