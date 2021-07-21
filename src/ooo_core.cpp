@@ -540,10 +540,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 if (nicInfo->registered_core_count == 0) {
 
                     //TODO testPRINT REMOVE
-                    info("call gm_get_lg_ptr ooo_core.cpp line 543");
-                    void* lg_p = static_cast<void*>(gm_get_lg_ptr());
-                    info("rpcGEN numkeys: %d", ((load_generator*)lg_p)->RPCGen->get_num_keys());
-
+                    //void* lg_p = static_cast<void*>(gm_get_lg_ptr());
+                    //info("rpcGEN numkeys: %d", ((load_generator*)lg_p)->RPCGen->get_num_keys());
                     nicInfo->nic_proc_on = false;
                 }
                 else{
@@ -556,11 +554,10 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                     }
                     uint32_t core_iterator = 0;
                     //info("inject packets for this phase");
-                    //packet_rate = packet_rate / 4;
 
                     uint32_t inject_fail_counter = 0;
 
-                    for (uint64_t i = 0; i < packet_rate; i += 8) {
+                    for (uint64_t i = 0; i < packet_rate; i++) {
                     //for (uint64_t i = 0; i < 800; i += 8) {
 
                         /* assign core_id in round robin */
