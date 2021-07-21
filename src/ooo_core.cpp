@@ -540,6 +540,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 if (nicInfo->registered_core_count == 0) {
 
                     //TODO testPRINT REMOVE
+                    info("call gm_get_lg_ptr ooo_core.cpp line 543");
                     void* lg_p = static_cast<void*>(gm_get_lg_ptr());
                     info("rpcGEN numkeys: %d", ((load_generator*)lg_p)->RPCGen->get_num_keys());
 

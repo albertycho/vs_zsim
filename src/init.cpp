@@ -892,6 +892,13 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     zinfo->outputDir = gm_strdup(outputDir);
     zinfo->statsBackends = new g_vector<StatsBackend*>();
 
+    void* lgp;
+    lgp = gm_calloc<load_generator>();
+    //((load_generator*)lgp)->next_cycle = 100000;
+    ((load_generator*)lgp)->next_cycle = 0;
+    ((load_generator*)lgp)->RPCGen = new RPCGenerator(100, 10);
+    gm_set_lg_ptr(lgp);
+
     //init nic_elements ptr
     //glob_nic_elements* nicInfo= gm_calloc<glob_nic_elements>();
     nicInfo = gm_calloc<glob_nic_elements>();
@@ -1062,13 +1069,6 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 
 
     gm_set_nic_ptr(nicInfo);
-
-    void* lgp;
-    lgp = gm_calloc<load_generator>();
-    //((load_generator*)lgp)->next_cycle = 100000;
-    ((load_generator*)lgp)->next_cycle = 0;
-    ((load_generator*)lgp)->RPCGen = new RPCGenerator(100, 10);
-    gm_set_lg_ptr(lgp);
   
 	//TODO: remove test_tag after validation
 
