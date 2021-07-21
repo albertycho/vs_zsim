@@ -796,7 +796,7 @@ static void InitSystem(Config& config) {
     nicInfo->nic_init_done = false;
 
     load_generator* lgp;
-    lgp=gm_get_lg_ptr();
+    lgp=(load_generator*)gm_get_lg_ptr();
 
     uint32_t num_keys = config.get<uint32_t>("sim.num_keys", 100);
     lgp->RPCGen->set_num_keys(num_keys);
