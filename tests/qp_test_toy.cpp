@@ -47,9 +47,8 @@ int main() {
 	int msg_entry_size = 1;
 
 	uint64_t sum = 0;
-	uint64_t put_req_count = 0;
 
-	while(send_count<=10000)
+	while(send_count<=15000)
 	{
 		successStruct recv_completion;
 		do{
@@ -76,14 +75,6 @@ int main() {
 		//std::cout << "APP: recvd incoming msg.              recv_count:"<<std::dec << send_serviced << ", rbuf_addr:" <<std::hex<< recv_completion.recv_buf_addr << ", rbuf_val:" << *(uint64_t*)(recv_completion.recv_buf_addr) << std::endl;
 		sum += *(uint64_t*)(recv_completion.recv_buf_addr);
 
-		mica_op* mp = (mica_op*)recv_completion.recv_buf_addr;
-		if (mp->opcode == HERD_OP_PUT) {
-			put_req_count++;
-		}
-		if (mp->opcode != HERD_OP_PUT && mp->opcode != HERD_OPT_GET) {
-			std::cout << "INCORRECT HERD OPCODE" << std::endl;
-		}
-
 		uint32_t target_node = recv_completion.tid;
 
 		//calcualte lbuf_ptr address
@@ -102,10 +93,7 @@ int main() {
 		rmc_hw_recv(wq, ctx_id, (void*) recv_completion.recv_buf_addr, msg_entry_size);
 	}
 
-	uint64_t put_req_ratio = put_req_count * 100 / send_count;
-
 	std::cout << "APP - SUM = " << std::dec << sum << std::endl;
-	std::cout << "APP - PUT REQ Ratio: " << std::dec << put_req_ratio << "%" << std::endl;
 
 	register_buffer((void*) 0, (void*) 0xdead);
 	std::cout<<"APP - terminating"<<std::endl;

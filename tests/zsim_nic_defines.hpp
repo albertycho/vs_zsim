@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <stdint.h>
 
 #define MAX_NUM_WQ 8
@@ -77,3 +78,31 @@ void create_wq_entry(uint32_t op, bool SR, uint32_t cid, uint32_t nid,
             uint64_t buf_addr, uint64_t offset, uint64_t length,
             uint64_t wq_entry_addr);
 int rmc_hw_recv(rmc_wq_t *wq, uint32_t ctx_id, void *recv_buf, uint64_t length);
+
+
+///////////MICA HERD defines////////////
+/* Fixed-size 16 byte keys */
+
+#define MICA_OP_GET 111
+#define MICA_OP_PUT 112
+#define HERD_MICA_OFFSET 10
+#define HERD_OP_PUT (MICA_OP_PUT + HERD_MICA_OFFSET)
+#define HERD_OP_GET (MICA_OP_GET + HERD_MICA_OFFSET)
+#define HERD_VALUE_SIZE 32
+#define MICA_MAX_VALUE \
+  (64 - (sizeof(struct mica_key) + sizeof(uint8_t) + sizeof(uint8_t)))
+
+
+struct mica_key {
+    unsigned long long __unused : 64;
+    unsigned int bkt : 32;
+    unsigned int server : 16;
+    unsigned int tag : 16;
+};
+
+struct mica_op {
+    struct mica_key key; /* This must be the 1st field and 16B aligned */
+    uint8_t opcode;
+    uint8_t val_len;
+    uint8_t value[MICA_MAX_VALUE];
+};
