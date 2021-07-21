@@ -269,7 +269,6 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
     }
     rp->setCC(cc);
     if (!isTerminal) {
-        std::cout << "!isTerminal, type=" << type << std::endl; 
         if (type == "Simple") {
             cache = new Cache(numLines, cc, array, rp, accLat, invLat, name);
         } else if (type == "Timing") {
@@ -480,16 +479,18 @@ static void InitSystem(Config& config) {
     list<string> fringe;  // FIFO
     fringe.push_back(llc);
     
+    /*
     auto fringe_front = fringe.begin();
     std::cout << "fringe size:"<< fringe.size() << std::endl;
     for (uint32_t i = 0; i < fringe.size(); i++) {
         std::cout << *fringe_front << std::endl;
         std::advance(fringe_front, 1);
     }
+    */
     while (!fringe.empty()) {
         string group = fringe.front();
         fringe.pop_front();
-        std::cout << "group:" << group << std::endl; 
+        //std::cout << "group:" << group << std::endl; 
         if (cMap.count(group)) panic("The cache 'tree' has a loop at %s", group.c_str());
         cMap[group] = BuildCacheGroup(config, group, isTerminal(group));
         for (auto& childVec : childMap[group]) fringe.insert(fringe.end(), childVec.begin(), childVec.end());
@@ -1070,7 +1071,6 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 
     gm_set_nic_ptr(nicInfo);
   
-	//TODO: remove test_tag after validation
 
 	info("Initialization complete");
     
