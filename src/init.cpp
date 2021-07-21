@@ -795,11 +795,14 @@ static void InitSystem(Config& config) {
     nicInfo->registered_core_count = 0;
     nicInfo->nic_init_done = false;
 
+    load_generator* lgp;
+    lgp=gm_get_lg_ptr();
+
     uint32_t num_keys = config.get<uint32_t>("sim.num_keys", 100);
-    nicInfo->RPCGen->set_num_keys(num_keys);
+    lgp->RPCGen->set_num_keys(num_keys);
     
     uint32_t update_fraction = config.get<uint32_t>("sim.update_fraction", 10);
-    nicInfo->RPCGen->set_update_fraction(update_fraction);
+    lgp->RPCGen->set_update_fraction(update_fraction);
 
     info("Initialized system");
 }
@@ -892,7 +895,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     //init nic_elements ptr
     //glob_nic_elements* nicInfo= gm_calloc<glob_nic_elements>();
     nicInfo = gm_calloc<glob_nic_elements>();
-    nicInfo->RPCGen = new RPCGenerator(100, 10);
+    //nicInfo->RPCGen = new RPCGenerator(100, 10);
     for (uint64_t i = 0; i < MAX_THREADS; i++) {
         nicInfo->nic_elem[i].wq = gm_calloc<rmc_wq_t>();
         nicInfo->nic_elem[i].cq = gm_calloc<rmc_cq_t>();
@@ -1064,6 +1067,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     lgp = gm_calloc<load_generator>();
     //((load_generator*)lgp)->next_cycle = 100000;
     ((load_generator*)lgp)->next_cycle = 0;
+    ((load_generator*)lgp)->RPCGen = new RPCGenerator(100, 10);
     gm_set_lg_ptr(lgp);
   
 	//TODO: remove test_tag after validation

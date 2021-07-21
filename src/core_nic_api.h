@@ -306,7 +306,7 @@ int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void*
 	}
 	//nicInfo->nic_elem[core_id].recv_buf[rb_head].line_seg[0] = message;
 
-	nicInfo->RPCGen->generatePackedRPC((char*)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head].line_seg[0])));
+	((load_generator*) lg_p)->RPCGen->generatePackedRPC((char*)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head].line_seg[0])));
 
 	MemReq req;
 	Address rbuf_lineAddr = recv_buf_addr >> lineBits;

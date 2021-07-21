@@ -159,7 +159,7 @@ struct nic_element {
 
 struct glob_nic_elements {
 	uint64_t nic_pid;
-	RPCGenerator * RPCGen;
+	//RPCGenerator* RPCGen;
 	
 	uint64_t packet_injection_rate;
 	uint32_t expected_core_count;
@@ -177,10 +177,11 @@ struct glob_nic_elements {
 struct load_generator {
 	int next_cycle;
 	int message; //may replace this to appropriate type
+	RPCGenerator* RPCGen;
 };
 
 
-#endif // _NIC_DEFINS_H_
+#endif // _NIC_DEFINES_H_
 
 
 
