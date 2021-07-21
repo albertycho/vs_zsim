@@ -535,17 +535,18 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         if (core->curCycle <= core->phaseEndCycle) {
             /* execute this code only for the NIC process && nic init is done */
             if ((nicInfo->nic_pid == procIdx) && (nicInfo->nic_init_done)) {
-                void* lg_p = static_cast<void*>(gm_get_lg_ptr());
 
                 /* check if cores finished their processes and exit if so */
                 if (nicInfo->registered_core_count == 0) {
 
                     //TODO testPRINT REMOVE
+                    void* lg_p = static_cast<void*>(gm_get_lg_ptr());
                     info("rpcGEN numkeys: %d", ((load_generator*)lg_p)->RPCGen->get_num_keys());
 
                     nicInfo->nic_proc_on = false;
                 }
                 else{
+                    void* lg_p = static_cast<void*>(gm_get_lg_ptr());
                     uint64_t packet_rate = nicInfo->packet_injection_rate;
 
                     //initialize load generator's next cycle. lg needs a lot of update in general yet
