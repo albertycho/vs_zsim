@@ -80,7 +80,7 @@ int main() {
 		if (mp->opcode == HERD_OP_PUT) {
 			put_req_count++;
 		}
-		if (mp->opcode != HERD_OP_PUT && mp->opcode != HERD_OPT_GET) {
+		if (mp->opcode != HERD_OP_PUT && mp->opcode != HERD_OP_GET) {
 			std::cout << "INCORRECT HERD OPCODE" << std::endl;
 		}
 
