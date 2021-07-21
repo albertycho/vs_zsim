@@ -211,7 +211,7 @@ int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {
 */
     uint64_t buf_base = (uint64_t)(&(NICELEM.recv_buf[0]));
     uint64_t offset = buf_addr - buf_base;
-    uint32_t head = (uint32_t)(offset / 8); //divide by size of buffer in bytes
+    uint32_t head = (uint32_t)(offset / 64); //divide by size of buffer in bytes
     //TODO may need debug prints to check offset and head calculation
 
     return free_recv_buf(head, core_id);
