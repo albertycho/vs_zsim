@@ -61,7 +61,7 @@ RPCGenerator::RPCGenerator(size_t aNumKeys, size_t anUpdateFrac) :
 }
 
 void
-RPCGenerator::set_num_keys(size_t i_num_keys) const {
+RPCGenerator::set_num_keys(size_t i_num_keys) {
     num_keys = i_num_keys;
     key_arr = get_random_permutation(num_keys, 1 /*clt id*/, &srand_seed);
 }
