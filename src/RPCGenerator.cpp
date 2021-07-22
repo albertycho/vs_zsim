@@ -18,7 +18,7 @@ int* get_random_permutation(unsigned int n, unsigned int clt_gid, uint64_t* seed
     }
 
     //printf("client %d: creating a permutation of 0--%d. This takes time..\n",
-        clt_gid, n - 1);
+    //    clt_gid, n - 1);
 
     //int* log = (int*)malloc(n * sizeof(int));
     int* log = (int*)gm_malloc(n * sizeof(int));
