@@ -542,6 +542,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                     //TODO testPRINT REMOVE
                     //void* lg_p = static_cast<void*>(gm_get_lg_ptr());
                     //info("rpcGEN numkeys: %d", ((load_generator*)lg_p)->RPCGen->get_num_keys());
+                    info("ooo_core.cpp - turn off nic proc");
                     nicInfo->nic_proc_on = false;
                 }
                 else{
