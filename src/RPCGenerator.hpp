@@ -23,9 +23,12 @@ class RPCGenerator {
         RPCGenerator(size_t num_keys, size_t update_fraction);
         virtual void generatePackedRPC(char* userBuffer) const ;
         virtual uint32_t getRPCPayloadSize() const ;
-        size_t get_num_keys() { return num_keys; }
         void set_num_keys(size_t i_num_keys) { num_keys = i_num_keys; }
         void set_update_fraction(size_t i_update_fraction) { update_fraction = i_update_fraction; }
+
+        //debug functions
+        size_t get_num_keys() { return num_keys; }
+        int* get_key_arr() { return key_arr; }
 };
 
 

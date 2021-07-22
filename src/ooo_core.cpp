@@ -540,8 +540,13 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 if (nicInfo->registered_core_count == 0) {
 
                     //TODO testPRINT REMOVE
-                    //void* lg_p = static_cast<void*>(gm_get_lg_ptr());
-                    //info("rpcGEN numkeys: %d", ((load_generator*)lg_p)->RPCGen->get_num_keys());
+                    void* lg_p = static_cast<void*>(gm_get_lg_ptr());
+                    int num_keys= ((load_generator*)lg_p)->RPCGen->get_num_keys();
+                    int* key_arr = ((load_generator*)lg_p)->RPCGen->get_key_arr();
+                    info("rpcGEN numkeys: %d", ((load_generator*)lg_p)->RPCGen->get_num_keys());
+                    for (int i = 0; i < num_keys; i++) {
+                        info("keys[%d] : %d", i, key_arr[i]);
+                    }
                     info("ooo_core.cpp - turn off nic proc");
                     nicInfo->nic_proc_on = false;
                 }
