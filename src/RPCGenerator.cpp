@@ -30,6 +30,9 @@ int* get_random_permutation(unsigned int n, unsigned int clt_gid, uint64_t* seed
     //printf("\tclient %d: shuffling..\n", clt_gid);
     for (i = n - 1; i >= 1; i--) {
         j = std::rand() % (i + 1);
+        if (j < 0) {
+            std::cout << "random_permutation - j is negative! j = " << j << std::endl;
+        }
         temp = log[i];
         log[i] = log[j];
         log[j] = temp;
@@ -47,7 +50,7 @@ RPCGenerator::RPCGenerator(size_t aNumKeys, size_t anUpdateFrac) :
     key_arr = get_random_permutation(num_keys, 1 /*clt id*/, &srand_seed);
     //key_arr = NULL;
     std::srand(srand_seed);
-    std::cout << "sizeof mica_op: " << sizeof(mica_op) << std::endl;
+    //std::cout << "sizeof mica_op: " << sizeof(mica_op) << std::endl;
 }
 
 
