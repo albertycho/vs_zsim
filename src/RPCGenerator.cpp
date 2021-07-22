@@ -54,14 +54,17 @@ RPCGenerator::RPCGenerator(size_t aNumKeys, size_t anUpdateFrac) :
     num_keys(aNumKeys),
     update_fraction(anUpdateFrac)
 {
-    std::cout << "numkeys: " << num_keys << std::endl;
-    key_arr = get_random_permutation(num_keys, 1 /*clt id*/, &srand_seed);
-    //key_arr = NULL;
+    //key_arr = get_random_permutation(num_keys, 1 /*clt id*/, &srand_seed);
+    key_arr = NULL;
     std::srand(srand_seed);
     //std::cout << "sizeof mica_op: " << sizeof(mica_op) << std::endl;
 }
 
-
+void
+RPCGenerator::set_num_keys(size_t i_num_keys) const {
+    num_keys = i_num_keys;
+    key_arr = get_random_permutation(num_keys, 1 /*clt id*/, &srand_seed);
+}
 
 void
 RPCGenerator::generatePackedRPC(char* userBuffer) const {
