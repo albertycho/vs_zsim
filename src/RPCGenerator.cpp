@@ -12,6 +12,8 @@ int* get_random_permutation(unsigned int n, unsigned int clt_gid, uint64_t* seed
     unsigned int i, j, temp;
     assert(n > 0);
 
+    std::cout << "get_random_permutation: n = " << n << std::endl;
+
     /* Each client uses a different range in the cycle space of fastrand */
     for (i = 0; i < clt_gid * n; i++) {
         std::rand();
@@ -21,7 +23,8 @@ int* get_random_permutation(unsigned int n, unsigned int clt_gid, uint64_t* seed
     //    clt_gid, n - 1);
 
     //int* log = (int*)malloc(n * sizeof(int));
-    int* log = (int*)gm_malloc(n * sizeof(int));
+    //int* log = (int*)gm_malloc(n * sizeof(int));
+    int* log = gm_calloc<int>(n);
     assert(log != NULL);
     for (i = 0; i < n; i++) {
         log[i] = i;
@@ -39,6 +42,10 @@ int* get_random_permutation(unsigned int n, unsigned int clt_gid, uint64_t* seed
     }
     //printf("\tclient %d: done creating random permutation\n", clt_gid);
 
+    for (i = 0; i < n; i++) {
+        std::cout << "log[" << i << "] = " << log[i] << std::endl;
+    }
+
     return log;
 }
 
@@ -47,6 +54,7 @@ RPCGenerator::RPCGenerator(size_t aNumKeys, size_t anUpdateFrac) :
     num_keys(aNumKeys),
     update_fraction(anUpdateFrac)
 {
+    std::cout << "numkeys: " << num_keys << std::endl;
     key_arr = get_random_permutation(num_keys, 1 /*clt id*/, &srand_seed);
     //key_arr = NULL;
     std::srand(srand_seed);
