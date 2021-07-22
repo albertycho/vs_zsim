@@ -42,9 +42,11 @@ int* get_random_permutation(unsigned int n, unsigned int clt_gid, uint64_t* seed
     }
     //printf("\tclient %d: done creating random permutation\n", clt_gid);
 
+    /*
     for (i = 0; i < n; i++) {
         std::cout << "log[" << i << "] = " << log[i] << std::endl;
     }
+    */
 
     return log;
 }
