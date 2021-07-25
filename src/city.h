@@ -101,6 +101,7 @@ struct _uint128 {
 #endif
 #endif
 
+/*
 // Hash function for a byte array.
 uint64 CityHash64(const char *buf, size_t len);
 
@@ -119,7 +120,7 @@ uint128 CityHash128(const char *s, size_t len);
 // Hash function for a byte array.  For convenience, a 128-bit seed is also
 // hashed into the result.
 uint128 CityHash128WithSeed(const char *s, size_t len, uint128 seed);
-
+*/
 
 static uint64 UNALIGNED_LOAD64(const char* p) {
     uint64 result;
