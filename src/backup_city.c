@@ -31,7 +31,7 @@
 // writing a program that systematically explores some of the space of
 // possible hash functions, by using SIMD instructions, or by
 // compromising on hash quality.
-
+/*
 #include <string.h>
 #include "city.h"
 
@@ -46,7 +46,7 @@ static uint32 UNALIGNED_LOAD32(const char *p) {
   memcpy(&result, p, sizeof(result));
   return result;
 }
-
+*/
 /*
 #if !defined(WORDS_BIGENDIAN)
 
@@ -84,7 +84,7 @@ static uint32 UNALIGNED_LOAD32(const char *p) {
 #endif
 
 */
-
+/*
 static uint64 Fetch64(const char *p) {
   return uint64_in_expected_order(UNALIGNED_LOAD64(p));
 }
@@ -401,7 +401,7 @@ uint128 CityHash128(const char *s, size_t len) {
     return CityHash128WithSeed(s, len, r);
   }
 }
-
+*/
 
 /*
 #ifdef __SSE4_2__
