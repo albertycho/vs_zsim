@@ -86,7 +86,7 @@ RPCGenerator::generatePackedRPC(char* userBuffer) const {
     }
 
     //sizeof mica_op is 64
-    memccpy(&req, &hval, sizeof(hval));
+    memcpy(&req, &hval, sizeof(hval));
     memcpy(userBuffer, &(req), sizeof(req));
 
     return;
