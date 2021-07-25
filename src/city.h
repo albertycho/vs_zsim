@@ -65,6 +65,42 @@ struct _uint128 {
 #define Uint128Low64(x) 	(x).first
 #define Uint128High64(x)	(x).second
 
+
+#if !defined(WORDS_BIGENDIAN)
+
+#define uint32_in_expected_order(x) (x)
+#define uint64_in_expected_order(x) (x)
+
+#else
+
+#ifdef _MSC_VER
+#include <stdlib.h>
+#define bswap_32(x) _byteswap_ulong(x)
+#define bswap_64(x) _byteswap_uint64(x)
+
+#elif defined(__APPLE__)
+// Mac OS X / Darwin features
+#include <libkern/OSByteOrder.h>
+#define bswap_32(x) OSSwapInt32(x)
+#define bswap_64(x) OSSwapInt64(x)
+
+#else
+#include <byteswap.h>
+#endif
+
+#define uint32_in_expected_order(x) (bswap_32(x))
+#define uint64_in_expected_order(x) (bswap_64(x))
+
+#endif  // WORDS_BIGENDIAN
+
+#if !defined(LIKELY)
+#if HAVE_BUILTIN_EXPECT
+#define LIKELY(x) (__builtin_expect(!!(x), 1))
+#else
+#define LIKELY(x) (x)
+#endif
+#endif
+
 // Hash function for a byte array.
 uint64 CityHash64(const char *buf, size_t len);
 
