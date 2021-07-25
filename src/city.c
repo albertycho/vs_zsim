@@ -47,6 +47,7 @@ static uint32 UNALIGNED_LOAD32(const char *p) {
   return result;
 }
 
+/*
 #if !defined(WORDS_BIGENDIAN)
 
 #define uint32_in_expected_order(x) (x)
@@ -81,6 +82,8 @@ static uint32 UNALIGNED_LOAD32(const char *p) {
 #define LIKELY(x) (x)
 #endif
 #endif
+
+*/
 
 static uint64 Fetch64(const char *p) {
   return uint64_in_expected_order(UNALIGNED_LOAD64(p));
@@ -399,6 +402,8 @@ uint128 CityHash128(const char *s, size_t len) {
   }
 }
 
+
+/*
 #ifdef __SSE4_2__
 #include "citycrc.h"
 #include <nmmintrin.h>
@@ -517,3 +522,4 @@ uint128 CityHashCrc128(const char *s, size_t len) {
 }
 
 #endif
+*/
