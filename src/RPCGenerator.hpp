@@ -2,6 +2,7 @@
 #define __RPC_GENERATOR
 #include <cstddef>
 #include <stdint.h>
+#include "city.h"
 
 #define MICA_OP_GET 111
 #define MICA_OP_PUT 112

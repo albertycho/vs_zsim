@@ -75,6 +75,8 @@ RPCGenerator::generatePackedRPC(char* userBuffer) const {
 
     struct mica_op req;
     //TODO: original code uses hash to get hval
+    uint128 hval = CityHash128((char*)&key_arr[key_i], 4);
+
     req.opcode = is_update ? HERD_OP_PUT : HERD_OP_GET;
     req.val_len = is_update ? HERD_VALUE_SIZE : -1;
     if (is_update) {
@@ -84,6 +86,7 @@ RPCGenerator::generatePackedRPC(char* userBuffer) const {
     }
 
     //sizeof mica_op is 64
+    memccpy(&req, &hval, sizeof(hval));
     memcpy(userBuffer, &(req), sizeof(req));
 
     return;
