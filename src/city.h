@@ -61,7 +61,7 @@ struct _uint128 {
   uint64 first;
   uint64 second;
 };
-
+/*
 // Hash function for a byte array.
 inline uint64 CityHash64(const char* buf, size_t len);
 
@@ -80,9 +80,9 @@ inline uint128 CityHash128(const char* s, size_t len);
 // Hash function for a byte array.  For convenience, a 128-bit seed is also
 // hashed into the result.
 inline uint128 CityHash128WithSeed(const char* s, size_t len, uint128 seed);
+*/
 
 
-/*
 #define Uint128Low64(x) 	(x).first
 #define Uint128High64(x)	(x).second
 
@@ -480,6 +480,6 @@ inline uint128 CityHash128(const char* s, size_t len) {
 }
 
 
-*/
+
 #endif  // CITY_HASH_H_
 
