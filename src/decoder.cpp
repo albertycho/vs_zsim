@@ -231,6 +231,7 @@ void Decoder::emitXchg(Instr& instr, DynUopVec& uops) {
         assert(instr.numLoads == 1 && instr.numStores == 1);
         assert(instr.numInRegs == 1 && instr.numOutRegs == 1);
         assert(instr.inRegs[0] == instr.outRegs[0]);
+        //
 
         emitLoad(instr, 0, uops);
         emitExecUop(instr.inRegs[0], 0, REG_EXEC_TEMP, 0, uops, 1, PORTS_015); //r -> temp
@@ -245,6 +246,8 @@ void Decoder::emitXchg(Instr& instr, DynUopVec& uops) {
         emitExecUop(instr.inRegs[0], 0, REG_EXEC_TEMP, 0, uops, 1, PORTS_015);
         emitExecUop(instr.inRegs[1], 0, instr.outRegs[0], 0, uops, 1, PORTS_015);
         emitExecUop(REG_EXEC_TEMP, 0, instr.outRegs[1], 0, uops, 1, PORTS_015);
+        // if (rbx, rbx)
+        // emit_wq_notify
     }
 }
 
