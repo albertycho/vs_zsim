@@ -82,11 +82,11 @@ inline uint128 CityHash128(const char* s, size_t len);
 inline uint128 CityHash128WithSeed(const char* s, size_t len, uint128 seed);
 
 
-/*
+
 #define Uint128Low64(x) 	(x).first
 #define Uint128High64(x)	(x).second
 
-
+/*
 #if !defined(WORDS_BIGENDIAN)
 
 #define uint32_in_expected_order(x) (x)
