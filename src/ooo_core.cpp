@@ -646,7 +646,9 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
         NICELEM.wq_valid = true;
         break;
     case 1://CQ
-        //nicInfo->nic_elem[procIdx].cq_valid=true;
+        //TODO: remove dbgprint
+        info("core %d registered CQ", core_id);
+
         NICELEM.cq->tail = 0;
         NICELEM.cq->SR = 1;
         NICELEM.ncq_SR = 1;
