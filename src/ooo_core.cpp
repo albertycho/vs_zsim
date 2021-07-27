@@ -628,6 +628,86 @@ void OOOCore::BranchFunc(THREADID tid, ADDRINT pc, BOOL taken, ADDRINT takenNpc,
 
 void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
     //TODO: fill this out with handlenicMagic from zsim.cpp
+
+    uint64_t core_id = getCid(tid);
+    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+
+    switch (field) {
+    case 0://WQ
+        //nicInfo->nic_elem[procIdx].wq_valid=true;
+        *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(nicInfo->nic_elem[core_id].wq);
+        NICELEM.wq->head = 0;
+        NICELEM.wq->SR = 1;
+        NICELEM.nwq_SR = 1;
+        for (int i = 0; i < MAX_NUM_WQ; i++) {
+            NICELEM.wq->q[i].SR = 0;
+        }
+        NICELEM.wq_tail = 0;
+        NICELEM.wq_valid = true;
+        break;
+    case 1://CQ
+        //nicInfo->nic_elem[procIdx].cq_valid=true;
+        NICELEM.cq->tail = 0;
+        NICELEM.cq->SR = 1;
+        NICELEM.ncq_SR = 1;
+        for (int i = 0; i < MAX_NUM_WQ; i++) {
+            NICELEM.cq->q[i].SR = 0;
+        }
+
+        NICELEM.cq_valid = true;
+        *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(nicInfo->nic_elem[core_id].cq);
+        nicInfo->registered_core_count = nicInfo->registered_core_count + 1;
+        if (nicInfo->registered_core_count == nicInfo->expected_core_count) {
+            if (nicInfo->nic_proc_on) {
+                nicInfo->nic_init_done = true;
+            }
+        }
+        break;
+    case 2: // lbuf
+        *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_elem[core_id].lbuf[0]));
+        break;
+
+    case NOTIFY_WQ_WRITE://NOTIFY WQ WRITE from application
+        //info("notify_wq_write")
+        nic_rgp_action(core_id, nicInfo);
+        break;
+    case 0xB: //indicate app is nic_proxy_process
+        *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_proc_on));
+        nicInfo->nic_pid = procIdx;
+        nicInfo->nic_proc_on = true;
+        info("nic pid:%d, cid:%d", procIdx, core_id);
+        info("packet injection rate:%d", nicInfo->packet_injection_rate);
+        std::cout << "nicInfo->record_nic_access: " << nicInfo->record_nic_access << std::endl;
+        if (nicInfo->registered_core_count == nicInfo->expected_core_count) {
+            nicInfo->nic_init_done = true;
+        }
+        break;
+    case 0xdead: //invalidate entries after test app terminates
+        nicInfo->registered_core_count = nicInfo->registered_core_count - 1;
+
+        //nicInfo->nic_elem[core_id].cq_valid = false;
+
+        //setting cq_valid = false causes occasional crashes
+        //may want to look into debugging it
+        nicInfo->nic_elem[core_id].wq_tail = 0;
+        nicInfo->nic_elem[core_id].cq_head = 0;
+        nicInfo->nic_elem[core_id].wq_valid = false;
+        nicInfo->nic_elem[core_id].cq_valid = false;
+        NICELEM.wq->head = 0;
+        NICELEM.cq->tail = 0;
+        //TODO - iterate for rb_dir len
+        for (int i = 0; i < 100; i++) {
+            NICELEM.rb_dir[i].in_use = false;
+            NICELEM.rb_dir[i].is_head = false;
+            NICELEM.rb_dir[i].len = 0;
+        }
+
+        info("proc %d deregistered with NIC", procIdx);
+        std::cout << "cycle: " << zinfo->globPhaseCycles << std::endl;
+        break;
+    default:
+        break;
+    }
     return;
 }
 

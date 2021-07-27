@@ -395,5 +395,154 @@ void RCP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint32_t core_i
 
 /// RGP functions
 // acho: Moved to zsim.cpp due to linking issues. May want to figure out a more elegant way later
+// NIC RGP functions 
+
+bool check_wq(uint64_t core_id, glob_nic_elements* nicInfo) {
+
+	if (nicInfo->nic_elem[core_id].wq_valid == false) {
+		return false;
+	}
+
+	wq_entry_t raw_wq_entry = NICELEM.wq->q[NICELEM.wq_tail];
+	//wq_entry_t raw_wq_entry = wq->q[SIM_NICELEM.wq_tail];
+	if ((raw_wq_entry.valid == 0) || (NICELEM.nwq_SR != (raw_wq_entry.SR))) {
+		return false;
+	}
+	return true;
+}
+
+wq_entry_t deq_wq_entry(uint64_t core_id, glob_nic_elements* nicInfo) {
+	/*
+	* deq_wq_entry: removes the first entry from wq and returns it
+	*   returned wq_entry can be then processed
+	*/
+	wq_entry_t raw_wq_entry = NICELEM.wq->q[NICELEM.wq_tail];
+
+	rmc_wq_t* wq = NICELEM.wq;
+
+	//FIXME: invalidating WQ at NIC for now. 
+	//must be updated s.t. app does this when getting cq entry
+	wq->q[NICELEM.wq_tail].valid = 0;
+	NICELEM.wq_tail = NICELEM.wq_tail + 1;
+	if (NICELEM.wq_tail >= MAX_NUM_WQ) {
+		NICELEM.wq_tail = 0;
+		NICELEM.nwq_SR = !(NICELEM.nwq_SR);
+		//std::cout<<"NIC - flip wq SR "<<std::endl;
+	}
+
+	return raw_wq_entry;
+}
+
+void enq_rcp_event(uint64_t q_cycle, uint64_t lbuf_addr, uint64_t lbuf_data, glob_nic_elements* nicInfo, uint64_t core_id) {
+	/*
+	* eqn_rcp_event - called by process_wq_entry
+	*       creates an rcp_event that corresponds to a RGP call from wq_entry(RMC_SEND)
+	*       and enqueues it to RCP_EQ, which is polled by core
+	*/
+
+	rcp_event* rcp_e = gm_calloc<rcp_event>();
+	rcp_e->lbuf_addr = lbuf_addr;
+	rcp_e->lbuf_data = lbuf_data;
+	rcp_e->q_cycle = q_cycle;
+	rcp_e->next = NULL;
+
+	if (RCP_EQ == NULL) {
+		RCP_EQ = rcp_e;
+	}
+	else {
+		rcp_event* rcp_eq_tail = RCP_EQ;
+		while (rcp_eq_tail->next != NULL) {
+			rcp_eq_tail = rcp_eq_tail->next;
+		}
+		rcp_eq_tail->next = rcp_e;
+	}
+}
+
+int free_recv_buf(uint32_t head, uint32_t core_id) {
+	/*
+	* free_recv_buf - called by free_recv_buf_addr.
+			Takes the index of the recv_buf to be freed
+	*/
+	assert(NICELEM.rb_dir[head].is_head);
+	assert(NICELEM.rb_dir[head].in_use);
+	//dbg print
+	//info("free_recv_buf - core_id = %d, head = %d", core_id, head);
+
+	uint32_t blen = NICELEM.rb_dir[head].len;
+	futex_lock(&nicInfo->nic_elem[core_id].rb_lock);
+	for (uint32_t i = head; i < head + blen; i++) {
+		NICELEM.rb_dir[i].in_use = false;
+		NICELEM.rb_dir[i].is_head = false;
+		NICELEM.rb_dir[i].len = 0;
+	}
+	futex_unlock(&nicInfo->nic_elem[core_id].rb_lock);
+	//dbg print
+	//info("free_recv_buf - finished freeing");
+	return 0;
+}
+
+int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {
+	/*
+	* free_recv_buf_addr - called if wq_entry is RMC_RECV.
+	*       calculate the index of recv_buf from the addr and calls free_recv_buf
+	*       (added layer of function for easier edit/debug)
+	*/
+	uint64_t buf_base = (uint64_t)(&(NICELEM.recv_buf[0]));
+	uint64_t offset = buf_addr - buf_base;
+	uint32_t head = (uint32_t)(offset / 64); //divide by size of buffer in bytes
+	//TODO may need debug prints to check offset and head calculation
+
+	return free_recv_buf(head, core_id);
+}
+
+void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elements* nicInfo)
+{
+	/*
+	* process_wq_entry - handles the wq_entry by calling appropirate action based on OP
+	*/
+	if (cur_wq_entry.op == RMC_RECV) {
+		//TODO:rewrite free_recv_buf_addr for core_nic_api
+		//free_recv_buf_addr(cur_wq_entry.buf_addr, core_id);
+
+		//info("RMC_RECV from APP"); // for debug
+		free_recv_buf_addr(cur_wq_entry.buf_addr, core_id);
+		return;
+	}
+
+	if (cur_wq_entry.op == RMC_SEND)
+	{
+		//TODO - define this somewhere else? decide how to handle nw_roundtrip_delay
+		uint64_t nw_roundtrip_delay = 100;
+
+		// TODO - getcycles may not retrun precise cycle (could be in phase granularity). May want something more precise
+		uint64_t q_cycle = zinfo->cores[core_id]->getCycles() + nw_roundtrip_delay;
+		uint64_t lbuf_addr = cur_wq_entry.buf_addr;
+		uint64_t lbuf_data = *((uint64_t*)lbuf_addr);
+
+		enq_rcp_event(q_cycle, lbuf_addr, lbuf_data, nicInfo, core_id);
+		return;
+	}
+}
+
+int nic_rgp_action(uint64_t core_id, glob_nic_elements* nicInfo)
+{
+	/*
+	* nic_rgp_action - called when app(core) notifies of new wq_entry
+	*       dequeues the wq_entry and processes it (take appropriate action)
+	*/
+	if (!check_wq(core_id, nicInfo))
+	{
+		info("nic_rgp_action called but nothing in wq");
+		//nothing in wq, return
+		return 0;
+	}
+	wq_entry_t cur_wq_entry = deq_wq_entry(core_id, nicInfo);
+	process_wq_entry(cur_wq_entry, core_id, nicInfo);
+
+	return 0;
+}
+
+
+////////////////////////////////////////////////////////////////////
 
 #endif
