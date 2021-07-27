@@ -133,7 +133,8 @@ void OOOCore::contextSwitch(int32_t gid) {
 }
 
 
-InstrFuncPtrs OOOCore::GetFuncPtrs() {return {LoadFunc, StoreFunc, BblFunc, BranchFunc, PredLoadFunc, PredStoreFunc, FPTR_ANALYSIS, {0}};}
+//InstrFuncPtrs OOOCore::GetFuncPtrs() {return {LoadFunc, StoreFunc, BblFunc, BranchFunc, PredLoadFunc, PredStoreFunc, FPTR_ANALYSIS, {0}};}
+InstrFuncPtrs OOOCore::GetFuncPtrs() { return { LoadFunc, StoreFunc, BblFunc, BranchFunc, PredLoadFunc, PredStoreFunc, NicMagicFunc, FPTR_ANALYSIS}; }
 
 inline void OOOCore::load(Address addr) {
     loadAddrs[loads++] = addr;
@@ -623,6 +624,11 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
 
 void OOOCore::BranchFunc(THREADID tid, ADDRINT pc, BOOL taken, ADDRINT takenNpc, ADDRINT notTakenNpc) {
     static_cast<OOOCore*>(cores[tid])->branch(pc, taken, takenNpc, notTakenNpc);
+}
+
+void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
+    //TODO: fill this out with handlenicMagic from zsim.cpp
+    return;
 }
 
 void cycle_increment_routine(uint64_t& curCycle) {

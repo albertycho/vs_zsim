@@ -78,6 +78,7 @@ class TimingCore : public Core {
         static void PredStoreAndRecordFunc(THREADID tid, ADDRINT addr, BOOL pred);
 
         static void BranchFunc(THREADID, ADDRINT, BOOL, ADDRINT, ADDRINT) {}
+        static void NicMagicFunc_dummy(THREADID, ADDRINT, ADDRINT) {}
 } ATTR_LINE_ALIGNED;
 
 #endif  // TIMING_CORE_H_

@@ -517,6 +517,7 @@ class OOOCore : public Core {
         static void PredStoreFunc(THREADID tid, ADDRINT addr, BOOL pred);
         static void BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo);
         static void BranchFunc(THREADID tid, ADDRINT pc, BOOL taken, ADDRINT takenNpc, ADDRINT notTakenNpc);
+        static void NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field);
 } ATTR_LINE_ALIGNED;  // Take up an int number of cache lines
 
 #endif  // OOO_CORE_H_

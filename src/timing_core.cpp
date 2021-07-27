@@ -132,7 +132,8 @@ void TimingCore::bblAndRecord(Address bblAddr, BblInfo* bblInfo) {
 
 
 InstrFuncPtrs TimingCore::GetFuncPtrs() {
-    return {LoadAndRecordFunc, StoreAndRecordFunc, BblAndRecordFunc, BranchFunc, PredLoadAndRecordFunc, PredStoreAndRecordFunc, FPTR_ANALYSIS, {0}};
+    //return {LoadAndRecordFunc, StoreAndRecordFunc, BblAndRecordFunc, BranchFunc, PredLoadAndRecordFunc, PredStoreAndRecordFunc, FPTR_ANALYSIS, {0}};
+    return { LoadAndRecordFunc, StoreAndRecordFunc, BblAndRecordFunc, BranchFunc, PredLoadAndRecordFunc, PredStoreAndRecordFunc, NicMagicFunc_dummy, FPTR_ANALYSIS};
 }
 
 void TimingCore::LoadAndRecordFunc(THREADID tid, ADDRINT addr) {
