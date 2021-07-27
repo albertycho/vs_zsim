@@ -40,6 +40,7 @@ struct BblInfo {
 /* Analysis function pointer struct
  * As an artifact of having a shared code cache, we need these to be the same for different core types.
  */
+//////// COMMIT BEFORE UPDATING InstrFuncPtrs struct ////////
 struct InstrFuncPtrs {  // NOLINT(whitespace)
     void (*loadPtr)(THREADID, ADDRINT);
     void (*storePtr)(THREADID, ADDRINT);
