@@ -497,7 +497,6 @@ int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {
 
 void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elements* nicInfo)
 {
-	info("process wq entry");
 	/*
 	* process_wq_entry - handles the wq_entry by calling appropirate action based on OP
 	*/
