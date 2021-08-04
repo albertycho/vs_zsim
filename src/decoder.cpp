@@ -233,8 +233,9 @@ void Decoder::emitXchg(Instr& instr, DynUopVec& uops) {
         assert(instr.inRegs[0] == instr.outRegs[0]);
         //UNTESTED CODE
         // if (rbx, rbx)
+        info("emitXchg - mem - reg");
         for (int i = 0; i < MAX_INSTR_REG_READS; i++) {
-            info("emitXchg inRegs[%d] = %d", i, instr.inRegs[i]);
+            info("inRegs[%d] = %d", i, instr.inRegs[i]);
         }
 
 
@@ -245,6 +246,15 @@ void Decoder::emitXchg(Instr& instr, DynUopVec& uops) {
         emitStore(instr, 0, uops, REG_EXEC_TEMP); //temp -> out
         if (!INS_LockPrefix(instr.ins)) emitFence(uops, 14); //xchg has an implicit lock prefix (TODO: Check we don't introduce two fences...)
     } else { // reg <-> reg
+        info("emitXchg - mem - reg");
+        for (int i = 0; i < MAX_INSTR_REG_READS; i++) {
+            info("inRegs[%d] = %d", i, instr.inRegs[i]);
+        }
+        for (int i = 0; i < MAX_INSTR_REG_READS; i++) {
+            info("outRegs[%d] = %d", i, instr.outRegs[i]);
+        }
+
+
         assert(instr.numInRegs == 2 && instr.numOutRegs == 2);
         assert(instr.inRegs[0] == instr.outRegs[0]);
         assert(instr.inRegs[1] == instr.outRegs[1]);
