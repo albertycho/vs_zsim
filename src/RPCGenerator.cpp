@@ -19,11 +19,7 @@ int* get_random_permutation(unsigned int n, unsigned int clt_gid, uint64_t* seed
         std::rand();
     }
 
-    //printf("client %d: creating a permutation of 0--%d. This takes time..\n",
-    //    clt_gid, n - 1);
 
-    //int* log = (int*)malloc(n * sizeof(int));
-    //int* log = (int*)gm_malloc(n * sizeof(int));
     int* log = gm_calloc<int>(n);
     assert(log != NULL);
     for (i = 0; i < n; i++) {
@@ -40,13 +36,7 @@ int* get_random_permutation(unsigned int n, unsigned int clt_gid, uint64_t* seed
         log[i] = log[j];
         log[j] = temp;
     }
-    //printf("\tclient %d: done creating random permutation\n", clt_gid);
 
-    /*
-    for (i = 0; i < n; i++) {
-        std::cout << "log[" << i << "] = " << log[i] << std::endl;
-    }
-    */
 
     return log;
 }

@@ -545,7 +545,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 else{
 
                     //TODO - remove DBGPrint
-                    info("p0 injecting packet for this phase");
+                    //info("p0 injecting packet for this phase");
 
                     void* lg_p = static_cast<void*>(gm_get_lg_ptr());
                     uint64_t packet_rate = nicInfo->packet_injection_rate;
