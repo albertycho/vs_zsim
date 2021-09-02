@@ -250,8 +250,18 @@ void Decoder::emitXchg(Instr& instr, DynUopVec& uops) {
         if (!INS_LockPrefix(instr.ins)) emitFence(uops, 14); //xchg has an implicit lock prefix (TODO: Check we don't introduce two fences...)
     } else { // reg <-> reg
         // WIP but just commenting out for commit before traveling
-        /*
+        
         info("emitXchg - reg - reg");
+        if (INS_IsXchg(ins) && INS_OperandReg(ins, 0) == REG_RCX && INS_OperandReg(ins, 1) == REG_RCX) {
+            info("xchg rcx rcx seen at decoder");
+            for (int i = 0; i < MAX_INSTR_REG_READS; i++) {
+                info("inRegs[%d] = %d", i, instr.inRegs[i]);
+            }
+            for (int i = 0; i < MAX_INSTR_REG_READS; i++) {
+                info("outRegs[%d] = %d", i, instr.outRegs[i]);
+            }
+        }
+        /*
         for (int i = 0; i < MAX_INSTR_REG_READS; i++) {
             info("inRegs[%d] = %d", i, instr.inRegs[i]);
         }
