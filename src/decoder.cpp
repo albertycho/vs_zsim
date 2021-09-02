@@ -252,8 +252,8 @@ void Decoder::emitXchg(Instr& instr, DynUopVec& uops) {
         // WIP but just commenting out for commit before traveling
         
         info("emitXchg - reg - reg");
-        if (INS_IsXchg(instr.ins) && INS_OperandReg(instr.ins, 0) == REG_RCX && INS_OperandReg(instr.ins, 1) == REG_RCX) {
-            info("xchg rcx rcx seen at decoder");
+        if (INS_IsXchg(instr.ins) && INS_OperandReg(instr.ins, 0) == REG_RBX && INS_OperandReg(instr.ins, 1) == REG_RBX) {
+            info("xchg rbx rbx seen at decoder");
             for (int i = 0; i < MAX_INSTR_REG_READS; i++) {
                 info("inRegs[%d] = %d", i, instr.inRegs[i]);
             }
