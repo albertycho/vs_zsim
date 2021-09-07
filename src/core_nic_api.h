@@ -135,6 +135,8 @@ int get_next_message(void* lg_p) {
 	//((load_generator*)lg_p)->next_cycle = ((load_generator*)lg_p)->next_cycle + 1000000; 
 	((load_generator*)lg_p)->next_cycle = ((load_generator*)lg_p)->next_cycle + 10; 
 	//TODO: will do something more sophisticated for setting next_cycle offset 
+	
+	((load_generator*)lg_p)->ptag = ((load_generator*)lg_p)->ptag + 1;
 
 	return next_message;
 }
@@ -243,6 +245,22 @@ void cq_event_enqueue(uint64_t q_cycle, cq_entry_t cqe, glob_nic_elements* nicIn
 	futex_unlock(&nicInfo->nic_elem[core_id].ceq_lock);
 }
 
+int add_time_card(p_time_card* ptc, load_generator * lg_p) {
+	if (lg_p->ptc_head == NULL)
+	{
+		lg_p->ptc_head = ptc;
+		return 0;
+	}
+
+	p_time_card* head = lg_p->ptc_head;
+	while (head->next != NULL) {
+		head = head->next;
+	}
+	head->next = ptc;
+	return 0;
+
+}
+
 int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycle, glob_nic_elements* nicInfo, uint32_t core_id) {
 /*
 * create_CEQ_entry - wrapper to generate cq entry, and enq corresponding CEQ entry
@@ -259,6 +277,11 @@ int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycl
 	uint32_t tid = lg_p->ptag;//TODO: put tid=lg_p->ptag
 
 	//TODO - log incoming packet ptag & issue time
+	p_time_card* ptc = gm_calloc<p_time_card>();
+	ptc->issue_cycle = cur_cycle;
+	ptc->ptag = lg_p->ptag;
+
+
 
 	cq_entry_t cqe = generate_cqe(success, tid, recv_buf_addr);
 	cq_event_enqueue(cur_cycle + ceq_delay, cqe, nicInfo, core_id);
