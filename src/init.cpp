@@ -897,6 +897,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     lgp = gm_calloc<load_generator>();
     //((load_generator*)lgp)->next_cycle = 100000;
     ((load_generator*)lgp)->next_cycle = 0;
+    ((load_generator*)lgp)->ptag= 0;
     ((load_generator*)lgp)->RPCGen = new RPCGenerator(100, 10);
     gm_set_lg_ptr(lgp);
 

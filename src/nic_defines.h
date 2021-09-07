@@ -157,6 +157,8 @@ struct nic_element {
 };
 
 
+
+
 struct glob_nic_elements {
 	uint64_t nic_pid;
 	//RPCGenerator* RPCGen;
@@ -174,9 +176,22 @@ struct glob_nic_elements {
 	//adding additional elements to this struct causes segfault at gm_calloc for unknown reason
 };
 
+
+
+typedef struct p_time_card {
+	uint64_t issue_cycle;
+	uint64_t ptag;
+	p_time_card* next;
+} p_time_card;
+
+
+
 struct load_generator {
 	int next_cycle;
 	int message; //may replace this to appropriate type
+	uint64_t ptag;
+	p_time_card* ptc_head;
+	
 	RPCGenerator* RPCGen;
 };
 

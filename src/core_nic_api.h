@@ -247,6 +247,7 @@ int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycl
 /*
 * create_CEQ_entry - wrapper to generate cq entry, and enq corresponding CEQ entry
 */
+	load_generator* lg_p = (load_generator * )gm_get_lg_ptr();
 	
 	if (core_id > ((zinfo->numCores) - 1)) {
 		info("create_ceq_entry - core_id out of bound: %d", core_id);
@@ -254,7 +255,11 @@ int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycl
 
 
 	uint64_t ceq_delay = 100; //TODO: make this programmable
-	uint32_t tid = 0;//TODO: handle tid better
+	
+	uint32_t tid = lg_p->ptag;//TODO: put tid=lg_p->ptag
+
+	//TODO - log incoming packet ptag & issue time
+
 	cq_entry_t cqe = generate_cqe(success, tid, recv_buf_addr);
 	cq_event_enqueue(cur_cycle + ceq_delay, cqe, nicInfo, core_id);
 
