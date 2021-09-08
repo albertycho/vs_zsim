@@ -578,8 +578,10 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
 		uint64_t lbuf_addr = cur_wq_entry.buf_addr;
 		uint64_t lbuf_data = *((uint64_t*)lbuf_addr);
 
-		//TODO - check what we want to use for timestamp
+		uint64_t ptag = cur_wq_entry.nid;
 
+		//TODO - check what we want to use for timestamp
+		log_packet_latency(ptag, q_cycle)
 
 		enq_rcp_event(q_cycle, lbuf_addr, lbuf_data, nicInfo, core_id);
 		return;
