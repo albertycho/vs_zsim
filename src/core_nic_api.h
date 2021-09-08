@@ -246,6 +246,7 @@ void cq_event_enqueue(uint64_t q_cycle, cq_entry_t cqe, glob_nic_elements* nicIn
 }
 
 int add_time_card(p_time_card* ptc, load_generator * lg_p) {
+	
 	if (lg_p->ptc_head == NULL)
 	{
 		lg_p->ptc_head = ptc;
@@ -260,6 +261,13 @@ int add_time_card(p_time_card* ptc, load_generator * lg_p) {
 	futex_unlock(&lg_p->ptc_lock);
 	return 0;
 
+}
+
+int insert_time_card(uint64_t ptag, uint64_t issue_time, load_generator* lg_p) {
+	futex_lock(&lg_p->ptc_lock);
+	(lg_p->tc_map)[ptag] = issue_time;
+	futex_unlock(&lg_p->ptc_lock);
+	return 0;
 }
 
 int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycle, glob_nic_elements* nicInfo, uint32_t core_id) {
@@ -278,11 +286,12 @@ int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycl
 	uint32_t tid = lg_p->ptag;//TODO: put tid=lg_p->ptag
 
 	//TODO - log incoming packet ptag & issue time
-	p_time_card* ptc = gm_calloc<p_time_card>();
-	ptc->issue_cycle = cur_cycle;
-	ptc->ptag = lg_p->ptag;
+	//p_time_card* ptc = gm_calloc<p_time_card>();
+	//ptc->issue_cycle = cur_cycle;
+	//ptc->ptag = lg_p->ptag;
 
-	add_time_card(ptc, lg_p);
+	//add_time_card(ptc, lg_p);
+	insert_time_card(lg_p->ptag, cur_cycle, lg_p);
 
 	cq_entry_t cqe = generate_cqe(success, tid, recv_buf_addr);
 	cq_event_enqueue(cur_cycle + ceq_delay, cqe, nicInfo, core_id);
@@ -526,9 +535,23 @@ int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {
 
 //TODO prevent race condition with add_time_card
 int log_packet_latency(uint64_t ptag, uint64_t fin_time) {
+	
+	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
+	uint64_t start_time = (lg_p->tc_map)[ptag];
+	futex_lock(&lg_p->ptc_lock);
+	lg_p->tc_map.erase(ptag);
+	futex_unlock(&lg_p->ptc_lock);
+
+	uint64_t latency = fin_time - start_time;
+
+
+	return 0;
+
+
+	////////////////code with linked list
 
 	//info("log packet latency called");
-	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
+
 	assert(lg_p->ptc_head != NULL);
 
 	futex_lock(&lg_p->ptc_lock);
