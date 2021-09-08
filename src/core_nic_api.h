@@ -525,6 +525,8 @@ int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {
 
 //TODO prevent race condition with add_time_card
 int log_packet_latency(uint64_t ptag, uint64_t fin_time) {
+
+	//info("log packet latency called");
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
 	assert(lg_p->ptc_head != NULL);
 	p_time_card* tmp = lg_p->ptc_head;
@@ -538,6 +540,10 @@ int log_packet_latency(uint64_t ptag, uint64_t fin_time) {
 		while (tmp->ptag != ptag) {
 			prev = tmp;
 			tmp = tmp->next;
+			//DBG
+			if (tmp == NULL) {
+				info("ptag=%d", ptag);
+			}
 			assert(tmp != NULL);
 		}
 

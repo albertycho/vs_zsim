@@ -191,7 +191,7 @@ struct load_generator {
 	int message; //may replace this to appropriate type
 	uint64_t ptag;
 	p_time_card* ptc_head;
-	
+	lock_t ptc_lock;
 	RPCGenerator* RPCGen;
 };
 
