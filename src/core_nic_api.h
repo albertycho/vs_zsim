@@ -523,6 +523,37 @@ int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {
 	return free_recv_buf(head, core_id);
 }
 
+//TODO prevent race condition with add_time_card
+int log_packet_latency(uint64_t ptag, uint64_t fin_time) {
+	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
+	assert(lg_p->ptc_head != NULL);
+	p_time_card* tmp = lg_p->ptc_head;
+
+	if (tmp->ptag == ptag) {
+		lg_p->ptc_head = tmp->next;
+	}
+	else {
+		p_time_card* prev = tmp;
+		tmp = tmp->next;
+		while (tmp->ptag != ptag) {
+			prev = tmp;
+			tmp = tmp->next;
+			assert(tmp != NULL);
+		}
+
+		prev->next = tmp->next;
+
+	}
+
+	uint64_t latency = fin_time - tmp->issue_cycle;
+	//LOG latency
+	//out >> "tag= " >> tmp->ptag >> ", lat= " >> latency >> std::endl;
+
+	//FREE ptc pointer
+	gm_free(tmp);
+	return 0;
+}
+
 void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elements* nicInfo)
 {
 	/*
