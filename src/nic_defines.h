@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include "locks.h"
 #include "RPCGenerator.hpp"
+#include <map>
 
 
 #ifndef _NIC_DEFINES_H_
