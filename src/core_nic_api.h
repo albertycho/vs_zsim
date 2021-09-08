@@ -265,8 +265,10 @@ int add_time_card(p_time_card* ptc, load_generator * lg_p) {
 
 int insert_time_card(uint64_t ptag, uint64_t issue_time, load_generator* lg_p) {
 	futex_lock(&lg_p->ptc_lock);
+	info("ptc insert to map");
 	(lg_p->tc_map)[ptag] = issue_time;
 	futex_unlock(&lg_p->ptc_lock);
+	info("ptc insert successful");
 	return 0;
 }
 
@@ -537,10 +539,13 @@ int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {
 int log_packet_latency(uint64_t ptag, uint64_t fin_time) {
 	
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
-	uint64_t start_time = (lg_p->tc_map)[ptag];
+	
 	futex_lock(&lg_p->ptc_lock);
+	info("reading ptc from map and removing");
+	uint64_t start_time = (lg_p->tc_map)[ptag];
 	lg_p->tc_map.erase(ptag);
 	futex_unlock(&lg_p->ptc_lock);
+	info("ptc erase successful");
 
 	uint64_t latency = fin_time - start_time;
 
