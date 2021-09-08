@@ -251,12 +251,13 @@ int add_time_card(p_time_card* ptc, load_generator * lg_p) {
 		lg_p->ptc_head = ptc;
 		return 0;
 	}
-
+	futex_lock(&lg_p->ptc_lock);
 	p_time_card* head = lg_p->ptc_head;
 	while (head->next != NULL) {
 		head = head->next;
 	}
 	head->next = ptc;
+	futex_unlock(&lg_p->ptc_lock);
 	return 0;
 
 }
@@ -529,6 +530,8 @@ int log_packet_latency(uint64_t ptag, uint64_t fin_time) {
 	//info("log packet latency called");
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
 	assert(lg_p->ptc_head != NULL);
+
+	futex_lock(&lg_p->ptc_lock);
 	p_time_card* tmp = lg_p->ptc_head;
 
 	if (tmp->ptag == ptag) {
@@ -550,6 +553,7 @@ int log_packet_latency(uint64_t ptag, uint64_t fin_time) {
 		prev->next = tmp->next;
 
 	}
+	futex_unlock(&lg_p->ptc_lock);
 
 	uint64_t latency = fin_time - tmp->issue_cycle;
 	//LOG latency
