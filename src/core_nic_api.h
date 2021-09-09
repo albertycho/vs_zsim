@@ -56,12 +56,17 @@ int add_time_card(uint64_t ptag, uint64_t issue_cycle) {
 		lg_p->ptc_head = ptc;
 		return 0;
 	}
+	
+	uint64_t tcount = 0;
+	
 	futex_lock(&lg_p->ptc_lock);
 	p_time_card* head = lg_p->ptc_head;
 	while (head->next != NULL) {
 		head = head->next;
+		tcount++;
 	}
 	head->next = ptc;
+	info("insert ptc pcount = %d", tcount);
 	futex_unlock(&lg_p->ptc_lock);
 	return 0;
 
@@ -573,6 +578,7 @@ int log_packet_latency(uint64_t ptag, uint64_t fin_time) {
 	////////////////code with linked list
 
 	//info("log packet latency called");
+	uint64_t tcount = 0;
 
 	assert(lg_p->ptc_head != NULL);
 
@@ -586,6 +592,8 @@ int log_packet_latency(uint64_t ptag, uint64_t fin_time) {
 		p_time_card* prev = tmp;
 		tmp = tmp->next;
 		while (tmp->ptag != ptag) {
+			tcount++;
+
 			prev = tmp;
 			tmp = tmp->next;
 			//DBG
@@ -598,9 +606,11 @@ int log_packet_latency(uint64_t ptag, uint64_t fin_time) {
 		prev->next = tmp->next;
 
 	}
+	info("log packet latency pcount = %d", tcount);
 	futex_unlock(&lg_p->ptc_lock);
 
 	uint64_t latency = fin_time - tmp->issue_cycle;
+
 	//LOG latency
 	//out >> "tag= " >> tmp->ptag >> ", lat= " >> latency >> std::endl;
 
