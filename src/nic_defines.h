@@ -193,7 +193,7 @@ struct load_generator {
 	uint64_t ptag;
 	p_time_card* ptc_head;
 	lock_t ptc_lock;
-	std::map<uint64_t, uint64_t> tc_map;
+	std::map<uint64_t, uint64_t> * tc_map;
 	RPCGenerator* RPCGen;
 };
 

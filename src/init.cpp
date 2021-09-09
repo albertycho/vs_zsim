@@ -900,6 +900,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     ((load_generator*)lgp)->ptag= 0;
     ((load_generator*)lgp)->RPCGen = new RPCGenerator(100, 10);
     ((load_generator*)lgp)->ptc_head = NULL;
+    ((load_generator*)lgp)->tc_map = new std::map<uint64_t, uint64_t>();
     futex_init(&(((load_generator*)lgp)->ptc_lock));
     gm_set_lg_ptr(lgp);
 

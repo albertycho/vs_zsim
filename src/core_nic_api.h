@@ -76,7 +76,7 @@ int insert_time_card(uint64_t ptag, uint64_t issue_time, load_generator* lg_p) {
 	futex_lock(&lg_p->ptc_lock);
 	info("ptc insert to map");
 	//(lg_p->tc_map)[ptag] = issue_time;
-	lg_p->tc_map.insert(std::make_pair(ptag, issue_time));
+	lg_p->tc_map->insert(std::make_pair(ptag, issue_time));
 	futex_unlock(&lg_p->ptc_lock);
 	info("ptc insert successful");
 	return 0;
