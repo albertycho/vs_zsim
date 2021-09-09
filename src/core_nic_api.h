@@ -40,6 +40,43 @@ cq_wr_event* deq_cq_wr_event(glob_nic_elements* nicInfo, uint64_t core_id)
 	return ret;
 }
 
+//int add_time_card(p_time_card* ptc, load_generator* lg_p) {
+int add_time_card(uint64_t ptag, uint64_t issue_cycle) {
+
+
+	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
+
+	//TODO - log incoming packet ptag & issue time
+	p_time_card* ptc = gm_calloc<p_time_card>();
+	ptc->issue_cycle = issue_cycle;
+	ptc->ptag = ptag;
+
+	if (lg_p->ptc_head == NULL)
+	{
+		lg_p->ptc_head = ptc;
+		return 0;
+	}
+	futex_lock(&lg_p->ptc_lock);
+	p_time_card* head = lg_p->ptc_head;
+	while (head->next != NULL) {
+		head = head->next;
+	}
+	head->next = ptc;
+	futex_unlock(&lg_p->ptc_lock);
+	return 0;
+
+}
+
+int insert_time_card(uint64_t ptag, uint64_t issue_time, load_generator* lg_p) {
+	futex_lock(&lg_p->ptc_lock);
+	info("ptc insert to map");
+	//(lg_p->tc_map)[ptag] = issue_time;
+	lg_p->tc_map.insert(std::make_pair(ptag, issue_time));
+	futex_unlock(&lg_p->ptc_lock);
+	info("ptc insert successful");
+	return 0;
+}
+
 int put_cq_entry(cq_entry_t ncq_entry, glob_nic_elements* nicInfo, uint64_t core_id)
 {
 /*
@@ -85,6 +122,10 @@ int process_cq_wr_event(cq_wr_event* cq_wr, glob_nic_elements* nicInfo, uint64_t
 	{
 		return -1;
 	}
+
+	uint64_t ptag = ncq_entry.tid;
+	uint64_t issue_cycle = cq_wr->q_cycle;
+	add_time_card(ptag, issue_cycle);
 
 	gm_free(cq_wr);
 	return 0;
@@ -245,32 +286,7 @@ void cq_event_enqueue(uint64_t q_cycle, cq_entry_t cqe, glob_nic_elements* nicIn
 	futex_unlock(&nicInfo->nic_elem[core_id].ceq_lock);
 }
 
-int add_time_card(p_time_card* ptc, load_generator * lg_p) {
-	
-	if (lg_p->ptc_head == NULL)
-	{
-		lg_p->ptc_head = ptc;
-		return 0;
-	}
-	futex_lock(&lg_p->ptc_lock);
-	p_time_card* head = lg_p->ptc_head;
-	while (head->next != NULL) {
-		head = head->next;
-	}
-	head->next = ptc;
-	futex_unlock(&lg_p->ptc_lock);
-	return 0;
 
-}
-
-int insert_time_card(uint64_t ptag, uint64_t issue_time, load_generator* lg_p) {
-	futex_lock(&lg_p->ptc_lock);
-	info("ptc insert to map");
-	(lg_p->tc_map)[ptag] = issue_time;
-	futex_unlock(&lg_p->ptc_lock);
-	info("ptc insert successful");
-	return 0;
-}
 
 int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycle, glob_nic_elements* nicInfo, uint32_t core_id) {
 /*
@@ -293,7 +309,7 @@ int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycl
 	//ptc->ptag = lg_p->ptag;
 
 	//add_time_card(ptc, lg_p);
-	insert_time_card(lg_p->ptag, cur_cycle, lg_p);
+	//insert_time_card(lg_p->ptag, cur_cycle, lg_p);
 
 	cq_entry_t cqe = generate_cqe(success, tid, recv_buf_addr);
 	cq_event_enqueue(cur_cycle + ceq_delay, cqe, nicInfo, core_id);
@@ -540,6 +556,7 @@ int log_packet_latency(uint64_t ptag, uint64_t fin_time) {
 	
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
 	
+	/*
 	futex_lock(&lg_p->ptc_lock);
 	info("reading ptc from map and removing");
 	uint64_t start_time = (lg_p->tc_map)[ptag];
@@ -551,7 +568,7 @@ int log_packet_latency(uint64_t ptag, uint64_t fin_time) {
 
 
 	return 0;
-
+	*/
 
 	////////////////code with linked list
 
@@ -583,7 +600,7 @@ int log_packet_latency(uint64_t ptag, uint64_t fin_time) {
 	}
 	futex_unlock(&lg_p->ptc_lock);
 
-	//uint64_t latency = fin_time - tmp->issue_cycle;
+	uint64_t latency = fin_time - tmp->issue_cycle;
 	//LOG latency
 	//out >> "tag= " >> tmp->ptag >> ", lat= " >> latency >> std::endl;
 
