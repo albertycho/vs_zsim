@@ -611,10 +611,11 @@ int log_packet_latency(uint64_t ptag, uint64_t fin_time) {
 		prev->next = tmp->next;
 
 	}
-	info("log packet latency pcount = %d", tcount);
+	uint64_t latency = fin_time - tmp->issue_cycle;
+	info("log packet latency pcount = %d ,ptag = %d, latency = %d", tcount, ptag, latency);
 	futex_unlock(&lg_p->ptc_lock);
 
-	uint64_t latency = fin_time - tmp->issue_cycle;
+	//uint64_t latency = fin_time - tmp->issue_cycle;
 
 	//LOG latency
 	//out >> "tag= " >> tmp->ptag >> ", lat= " >> latency >> std::endl;
