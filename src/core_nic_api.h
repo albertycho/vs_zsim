@@ -123,9 +123,11 @@ int process_cq_wr_event(cq_wr_event* cq_wr, glob_nic_elements* nicInfo, uint64_t
 
 	cq_entry_t ncq_entry = cq_wr->cqe;
 
-	uint64_t ptag = ncq_entry.tid;
-	uint64_t issue_cycle = cq_wr->q_cycle;
-	add_time_card(ptag, issue_cycle);
+	if (ncq_entry.success==0x7f) {
+		uint64_t ptag = ncq_entry.tid;
+		uint64_t issue_cycle = cq_wr->q_cycle;
+		add_time_card(ptag, issue_cycle);
+	}
 
 	int put_cq_entry_success = put_cq_entry(ncq_entry, nicInfo, core_id);
 	if (put_cq_entry_success == -1)
