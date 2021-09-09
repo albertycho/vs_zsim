@@ -46,6 +46,13 @@ int add_time_card(uint64_t ptag, uint64_t issue_cycle) {
 
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
 
+	info("ptc insert to map");
+	//(lg_p->tc_map)[ptag] = issue_time;
+	lg_p->tc_map->insert(std::make_pair(ptag, issue_cycle));
+	info("ptc insert to map successful");
+
+
+	///////////////////////
 	//TODO - log incoming packet ptag & issue time
 	p_time_card* ptc = gm_calloc<p_time_card>();
 	ptc->issue_cycle = issue_cycle;
