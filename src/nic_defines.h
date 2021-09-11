@@ -174,6 +174,9 @@ struct glob_nic_elements {
 	done_packet_info* done_packet_q_head;
 	done_packet_info* done_packet_q_tail;
 	lock_t dqp_lock;
+
+	uint64_t dpq_size;
+
 	uint64_t packet_injection_rate;
 	uint32_t expected_core_count;
 	uint32_t registered_core_count;

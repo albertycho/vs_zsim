@@ -529,6 +529,10 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 
+    if ((nicInfo->nic_pid == procIdx) && (nicInfo->nic_init_done)) {
+        ///////////////CALL DEQ_DPQ//////////////////////
+    }
+
     while (core->curCycle > core->phaseEndCycle) {
         core->phaseEndCycle += zinfo->phaseLength;
 

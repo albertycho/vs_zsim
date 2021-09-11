@@ -653,6 +653,8 @@ int enq_dpq(uint64_t lbuf_addr, uint64_t end_time, uint64_t ptag) {
 		nicInfo->done_packet_q_tail = dpq_entry;
 	}
 
+	nicInfo->dpq_size = nicInfo->dpq_size + 1;
+
 	futex_unlock(&(nicInfo->dqp_lock));
 
 	return 0;
@@ -686,7 +688,8 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
 		uint64_t ptag = cur_wq_entry.nid;
 
 		//TODO - check what we want to use for timestamp
-		//log_packet_latency(ptag, q_cycle);
+		log_packet_latency(ptag, q_cycle);
+		enq_dpq(lbuf_addr, q_cycle, ptag);
 
 		enq_rcp_event(rcp_q_cycle, lbuf_addr, lbuf_data, nicInfo, core_id);
 		return;
