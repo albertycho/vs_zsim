@@ -900,13 +900,18 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     ((load_generator*)lgp)->ptag= 0;
     ((load_generator*)lgp)->RPCGen = new RPCGenerator(100, 10);
     ((load_generator*)lgp)->ptc_head = NULL;
-    ((load_generator*)lgp)->tc_map = new std::map<uint64_t, uint64_t>();
+    //((load_generator*)lgp)->tc_map = new std::map<uint64_t, uint64_t>();
+    auto tmp_tcmap = std::shared_ptr<map<uint64_t, uint64_t>>(new ::map<uint64_t, uint64_t>());
+    ((load_generator*)lgp)->tc_map = tmp_tcmap;
     futex_init(&(((load_generator*)lgp)->ptc_lock));
     gm_set_lg_ptr(lgp);
 
     //init nic_elements ptr
     //glob_nic_elements* nicInfo= gm_calloc<glob_nic_elements>();
     nicInfo = gm_calloc<glob_nic_elements>();
+    futex_init(&(nicInfo->dqp_lock));
+    nicInfo->done_packet_q_head = NULL;
+    nicInfo->done_packet_q_tail = NULL;
     //nicInfo->RPCGen = new RPCGenerator(100, 10);
     for (uint64_t i = 0; i < MAX_THREADS; i++) {
         nicInfo->nic_elem[i].wq = gm_calloc<rmc_wq_t>();

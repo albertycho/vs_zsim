@@ -633,6 +633,31 @@ int log_packet_latency(uint64_t ptag, uint64_t fin_time) {
 	return 0;
 }
 
+int enq_dpq(uint64_t lbuf_addr, uint64_t end_time, uint64_t ptag) {
+	done_packet_info* dpq_entry = gm_calloc<done_packet_info>();
+	dpq_entry->end_cycle = end_time;
+	dpq_entry->lbuf_addr = lbuf_addr;
+	dpq_entry->tag = ptag;
+	dpq_entry->next = NULL;
+	dpq_entry->prev = NULL;
+
+	glob_nic_elements* nicInfo = gm_get_nic_ptr();
+	futex_lock(&(nicInfo->dqp_lock));
+	if (nicInfo->done_packet_q_tail == NULL) {
+		nicInfo->done_packet_q_tail = dpq_entry;
+		nicInfo->done_packet_q_head = dpq_entry;
+	}
+	else {
+		nicInfo->done_packet_q_tail->next = dpq_entry;
+		dpq_entry->prev = nicInfo->done_packet_q_tail;
+		nicInfo->done_packet_q_tail = dpq_entry;
+	}
+
+	futex_unlock(&(nicInfo->dqp_lock));
+
+	return 0;
+}
+
 void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elements* nicInfo)
 {
 	/*
@@ -653,16 +678,17 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
 		uint64_t nw_roundtrip_delay = 100;
 
 		// TODO - getcycles may not retrun precise cycle (could be in phase granularity). May want something more precise
-		uint64_t q_cycle = zinfo->cores[core_id]->getCycles() + nw_roundtrip_delay;
+		uint64_t q_cycle = zinfo->cores[core_id]->getCycles();
+		uint64_t rcp_q_cycle = q_cycle + nw_roundtrip_delay;
 		uint64_t lbuf_addr = cur_wq_entry.buf_addr;
 		uint64_t lbuf_data = *((uint64_t*)lbuf_addr);
 
 		uint64_t ptag = cur_wq_entry.nid;
 
 		//TODO - check what we want to use for timestamp
-		log_packet_latency(ptag, q_cycle);
+		//log_packet_latency(ptag, q_cycle);
 
-		enq_rcp_event(q_cycle, lbuf_addr, lbuf_data, nicInfo, core_id);
+		enq_rcp_event(rcp_q_cycle, lbuf_addr, lbuf_data, nicInfo, core_id);
 		return;
 	}
 }

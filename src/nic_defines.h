@@ -9,6 +9,7 @@
 #include "locks.h"
 #include "RPCGenerator.hpp"
 #include <map>
+#include <memory>
 
 
 #ifndef _NIC_DEFINES_H_
@@ -157,13 +158,22 @@ struct nic_element {
 
 };
 
-
+typedef struct done_packet_info {
+	uint64_t end_cycle;
+	uint64_t lbuf_addr;
+	uint64_t  tag;
+	
+	done_packet_info* next;
+	done_packet_info* prev;
+} done_packet_info;
 
 
 struct glob_nic_elements {
 	uint64_t nic_pid;
 	//RPCGenerator* RPCGen;
-	
+	done_packet_info* done_packet_q_head;
+	done_packet_info* done_packet_q_tail;
+	lock_t dqp_lock;
 	uint64_t packet_injection_rate;
 	uint32_t expected_core_count;
 	uint32_t registered_core_count;
@@ -193,7 +203,8 @@ struct load_generator {
 	uint64_t ptag;
 	p_time_card* ptc_head;
 	lock_t ptc_lock;
-	std::map<uint64_t, uint64_t> * tc_map;
+	//std::map<uint64_t, uint64_t> * tc_map;
+	std::shared_ptr<std::map<uint64_t, uint64_t>> tc_map;
 	RPCGenerator* RPCGen;
 };
 
