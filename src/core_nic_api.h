@@ -641,7 +641,7 @@ int enq_dpq(uint64_t lbuf_addr, uint64_t end_time, uint64_t ptag) {
 	dpq_entry->next = NULL;
 	dpq_entry->prev = NULL;
 
-	glob_nic_elements* nicInfo = gm_get_nic_ptr();
+	glob_nic_elements* nicInfo = (glob_nic_elements * ) gm_get_nic_ptr();
 	futex_lock(&(nicInfo->dqp_lock));
 	if (nicInfo->done_packet_q_tail == NULL) {
 		nicInfo->done_packet_q_tail = dpq_entry;
