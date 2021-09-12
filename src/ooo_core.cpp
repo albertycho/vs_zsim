@@ -531,6 +531,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
 
     if ((nicInfo->nic_pid == procIdx) && (nicInfo->nic_init_done)) {
         ///////////////CALL DEQ_DPQ//////////////////////
+        int srcId = getCid(tid);
+        deq_dpq(srcId, core, &(core->cRec), core->l1d/*MemObject* dest*/);
     }
 
     while (core->curCycle > core->phaseEndCycle) {
