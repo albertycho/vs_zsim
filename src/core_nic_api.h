@@ -4,6 +4,10 @@
 #include "ooo_core_recorder.h"
 #include "memory_hierarchy.h"
 
+#include <iostream>
+#include <fstream>
+
+
 #ifndef _CORE_NIC_API_H_
 #define _CORE_NIC_API_H_
 
@@ -577,6 +581,9 @@ int log_packet_latency(uint64_t ptag, uint64_t fin_time) {
 	
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
 	
+	ofstream list_latency_file;
+	list_latency_file.open("list_latency.txt");
+
 	/*
 	futex_lock(&lg_p->ptc_lock);
 	info("reading ptc from map and removing");
@@ -631,7 +638,9 @@ int log_packet_latency(uint64_t ptag, uint64_t fin_time) {
 
 	//LOG latency
 	//out >> "tag= " >> tmp->ptag >> ", lat= " >> latency >> std::endl;
+	list_latency_file << ptag << ", " << (fin_time - (tmp->issue_cycle)) << std::endl;
 
+	list_latency_file.close();
 	//FREE ptc pointer
 	gm_free(tmp);
 	return 0;
@@ -646,7 +655,7 @@ int enq_dpq(uint64_t lbuf_addr, uint64_t end_time, uint64_t ptag) {
 	dpq_entry->prev = NULL;
 
 	glob_nic_elements* nicInfo = (glob_nic_elements * ) gm_get_nic_ptr();
-	futex_lock(&(nicInfo->dqp_lock));
+	futex_lock(&(nicInfo->dpq_lock));
 	if (nicInfo->done_packet_q_tail == NULL) {
 		nicInfo->done_packet_q_tail = dpq_entry;
 		nicInfo->done_packet_q_head = dpq_entry;
@@ -659,7 +668,7 @@ int enq_dpq(uint64_t lbuf_addr, uint64_t end_time, uint64_t ptag) {
 
 	nicInfo->dpq_size = nicInfo->dpq_size + 1;
 	info("dpq_size = %d", nicInfo->dpq_size);
-	futex_unlock(&(nicInfo->dqp_lock));
+	futex_unlock(&(nicInfo->dpq_lock));
 
 	return 0;
 }
@@ -670,12 +679,18 @@ int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*M
 
 	info("deq_dpq - dpq size = %d", nicInfo->dpq_size);
 
+	ofstream map_latency_file;
+	map_latency_file.open("map_latency.txt");
+
+
 	while (nicInfo->done_packet_q_head != NULL) {
+		futex_lock(&(nicInfo->dpq_lock));
 		done_packet_info* dp = nicInfo->done_packet_q_head;
 		nicInfo->done_packet_q_head = dp->next;
 		if (nicInfo->done_packet_q_head == NULL) {
 			nicInfo->done_packet_q_tail = NULL;
 		}
+		futex_unlock(&(nicInfo->dpq_lock));
 		
 		uint64_t end_cycle = dp->end_cycle;
 
@@ -703,15 +718,19 @@ int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*M
 		
 		futex_lock(&lg_p->ptc_lock);
 		info("reading ptc from map and removing");
-		uint64_t start_time = (*(lg_p->tc_map))[ptag];
+		uint64_t start_cycle = (*(lg_p->tc_map))[ptag];
 		lg_p->tc_map->erase(ptag);
 
 		nicInfo->dpq_size--;
 
 		futex_unlock(&lg_p->ptc_lock);
 
+		map_latency_file << ptag << ", " << (end_cycle - start_cycle) << std::endl;
+
 
 	}
+
+	map_latency_file.close();
 
 	info("deq_dpq done - dpq size = %d", nicInfo->dpq_size);
 

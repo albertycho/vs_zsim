@@ -173,7 +173,7 @@ struct glob_nic_elements {
 	//RPCGenerator* RPCGen;
 	done_packet_info* done_packet_q_head;
 	done_packet_info* done_packet_q_tail;
-	lock_t dqp_lock;
+	lock_t dpq_lock;
 
 	uint64_t dpq_size;
 
