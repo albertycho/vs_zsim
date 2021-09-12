@@ -577,14 +577,14 @@ int log_packet_latency(uint64_t ptag, uint64_t fin_time) {
 	
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
 	
-	
+	/*
 	futex_lock(&lg_p->ptc_lock);
 	info("reading ptc from map and removing");
 	uint64_t start_time = (*(lg_p->tc_map))[ptag];
 	lg_p->tc_map->erase(ptag);
 	futex_unlock(&lg_p->ptc_lock);
 	info("ptc erase successful");
-	
+	*/
 	/*
 	uint64_t latency = fin_time - start_time;
 
