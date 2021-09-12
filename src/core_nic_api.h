@@ -581,8 +581,8 @@ int log_packet_latency(uint64_t ptag, uint64_t fin_time) {
 	
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
 	
-	ofstream list_latency_file;
-	list_latency_file.open("list_latency.txt");
+	ofstream list_latency_file("list_latency.txt", ios::app);
+	//list_latency_file.open("list_latency.txt");
 
 	/*
 	futex_lock(&lg_p->ptc_lock);
@@ -679,8 +679,8 @@ int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*M
 
 	info("deq_dpq - dpq size = %d", nicInfo->dpq_size);
 
-	ofstream map_latency_file;
-	map_latency_file.open("map_latency.txt");
+	ofstream map_latency_file("map_latency.txt", ios::app);
+	//map_latency_file.open("map_latency.txt");
 
 
 	while (nicInfo->done_packet_q_head != NULL) {
