@@ -654,8 +654,53 @@ int enq_dpq(uint64_t lbuf_addr, uint64_t end_time, uint64_t ptag) {
 	}
 
 	nicInfo->dpq_size = nicInfo->dpq_size + 1;
-
+	info("dpq_size = %d", nicInfo->dpq_size);
 	futex_unlock(&(nicInfo->dqp_lock));
+
+	return 0;
+}
+
+int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*MemObject* dest*/) {
+	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
+
+	while (nicInfo->done_packet_q_head != NULL) {
+		done_packet_info* dp = nicInfo->done_packet_q_head;
+		nicInfo->done_packet_q_head = dp->next;
+		if (nicInfo->done_packet_q_head == NULL) {
+			nicInfo->done_packet_q_tail = NULL;
+		}
+		
+		uint64_t end_cycle = dp->end_cycle;
+
+		/// handle done packet - uarch mem access, lookup map to match ptag and log latency
+		///////////////// UARCH MEM ACCESS /////////////////////////
+		MemReq req;
+		Address lbuf_lineAddr = dp->lbuf_addr >> lineBits;
+		MESIState dummyState = MESIState::I;
+		assert((!cRec->getEventRecorder()->hasRecord()));
+
+		if (nicInfo->record_nic_access) {
+			req = { lbuf_lineAddr, GETX, 0xDA0000, &dummyState, end_cycle, NULL, dummyState, srcId, 0 };
+		}
+		else {
+			req = { lbuf_lineAddr, GETX, 0xDA0000, &dummyState, end_cycle, NULL, dummyState, srcId, MemReq::NORECORD };
+		}
+
+		uint64_t reqSatisfiedCycle = l1d->getParent(lbuf_lineAddr)->access(req);
+		cRec->record(end_cycle, end_cycle, reqSatisfiedCycle);
+
+
+		//////// get packet latency info from tag-starttime map //////
+		uint64_t ptag = dp->tag;
+		
+		//futex_lock(&lg_p->ptc_lock);
+		//info("reading ptc from map and removing");
+		//uint64_t start_time = (*(lg_p->tc_map))[ptag];
+		//lg_p->tc_map->erase(ptag);
+		//futex_unlock(&lg_p->ptc_lock);
+
+
+	}
 
 	return 0;
 }
