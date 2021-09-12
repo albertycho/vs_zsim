@@ -668,6 +668,8 @@ int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*M
 	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
 
+	info("deq_dpq - dpq size = %d", nicInfo->dpq_size);
+
 	while (nicInfo->done_packet_q_head != NULL) {
 		done_packet_info* dp = nicInfo->done_packet_q_head;
 		nicInfo->done_packet_q_head = dp->next;
@@ -679,6 +681,7 @@ int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*M
 
 		/// handle done packet - uarch mem access, lookup map to match ptag and log latency
 		///////////////// UARCH MEM ACCESS /////////////////////////
+		/*
 		MemReq req;
 		Address lbuf_lineAddr = dp->lbuf_addr >> lineBits;
 		MESIState dummyState = MESIState::I;
@@ -693,7 +696,7 @@ int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*M
 
 		uint64_t reqSatisfiedCycle = l1d->getParent(lbuf_lineAddr)->access(req);
 		cRec->record(end_cycle, end_cycle, reqSatisfiedCycle);
-
+		*/
 
 		//////// get packet latency info from tag-starttime map //////
 		uint64_t ptag = dp->tag;
@@ -702,10 +705,15 @@ int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*M
 		info("reading ptc from map and removing");
 		uint64_t start_time = (*(lg_p->tc_map))[ptag];
 		lg_p->tc_map->erase(ptag);
+
+		nicInfo->dpq_size--;
+
 		futex_unlock(&lg_p->ptc_lock);
 
 
 	}
+
+	info("deq_dpq done - dpq size = %d", nicInfo->dpq_size);
 
 	return 0;
 }
