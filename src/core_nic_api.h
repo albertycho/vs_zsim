@@ -133,7 +133,7 @@ int process_cq_wr_event(cq_wr_event* cq_wr, glob_nic_elements* nicInfo, uint64_t
 	if (ncq_entry.success==0x7f) {
 		uint64_t ptag = ncq_entry.tid;
 		uint64_t issue_cycle = cq_wr->q_cycle;
-		add_time_card(ptag, issue_cycle);
+		//add_time_card(ptag, issue_cycle);
 	}
 
 	int put_cq_entry_success = put_cq_entry(ncq_entry, nicInfo, core_id);
@@ -327,6 +327,7 @@ int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycl
 
 	//add_time_card(ptc, lg_p);
 	//insert_time_card(lg_p->ptag, cur_cycle, lg_p);
+	add_time_card(ptag, issue_cycle);
 
 	cq_entry_t cqe = generate_cqe(success, tid, recv_buf_addr);
 	cq_event_enqueue(cur_cycle + ceq_delay, cqe, nicInfo, core_id);
@@ -662,6 +663,7 @@ int enq_dpq(uint64_t lbuf_addr, uint64_t end_time, uint64_t ptag) {
 
 int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*MemObject* dest*/) {
 	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
+	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
 
 	while (nicInfo->done_packet_q_head != NULL) {
 		done_packet_info* dp = nicInfo->done_packet_q_head;
