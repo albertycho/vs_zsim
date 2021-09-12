@@ -693,11 +693,11 @@ int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*M
 		//////// get packet latency info from tag-starttime map //////
 		uint64_t ptag = dp->tag;
 		
-		//futex_lock(&lg_p->ptc_lock);
-		//info("reading ptc from map and removing");
-		//uint64_t start_time = (*(lg_p->tc_map))[ptag];
-		//lg_p->tc_map->erase(ptag);
-		//futex_unlock(&lg_p->ptc_lock);
+		futex_lock(&lg_p->ptc_lock);
+		info("reading ptc from map and removing");
+		uint64_t start_time = (*(lg_p->tc_map))[ptag];
+		lg_p->tc_map->erase(ptag);
+		futex_unlock(&lg_p->ptc_lock);
 
 
 	}
