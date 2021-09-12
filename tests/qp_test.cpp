@@ -49,7 +49,8 @@ int main() {
 	uint64_t sum = 0;
 	uint64_t put_req_count = 0;
 
-	while(send_count<=10000)
+	//while(send_count<=10000)
+	while (send_count <= 2000)
 	{
 		successStruct recv_completion;
 		do{
