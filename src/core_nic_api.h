@@ -327,7 +327,10 @@ int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycl
 
 	//add_time_card(ptc, lg_p);
 	//insert_time_card(lg_p->ptag, cur_cycle, lg_p);
-	add_time_card(ptag, issue_cycle);
+	if (success == 0x7f) {
+		uint64_t start_cycle = cur_cycle;
+		add_time_card(tid, start_cycle);
+	}
 
 	cq_entry_t cqe = generate_cqe(success, tid, recv_buf_addr);
 	cq_event_enqueue(cur_cycle + ceq_delay, cqe, nicInfo, core_id);
