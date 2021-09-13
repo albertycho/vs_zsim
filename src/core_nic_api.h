@@ -696,22 +696,22 @@ int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*M
 
 		/// handle done packet - uarch mem access, lookup map to match ptag and log latency
 		///////////////// UARCH MEM ACCESS /////////////////////////
-		/*
+		
 		MemReq req;
 		Address lbuf_lineAddr = dp->lbuf_addr >> lineBits;
 		MESIState dummyState = MESIState::I;
 		assert((!cRec->getEventRecorder()->hasRecord()));
 
 		if (nicInfo->record_nic_access) {
-			req = { lbuf_lineAddr, GETX, 0xDA0000, &dummyState, end_cycle, NULL, dummyState, srcId, 0 };
+			req = { lbuf_lineAddr, GETS, 0xDA0000, &dummyState, end_cycle, NULL, dummyState, srcId, 0 };
 		}
 		else {
-			req = { lbuf_lineAddr, GETX, 0xDA0000, &dummyState, end_cycle, NULL, dummyState, srcId, MemReq::NORECORD };
+			req = { lbuf_lineAddr, GETS, 0xDA0000, &dummyState, end_cycle, NULL, dummyState, srcId, MemReq::NORECORD };
 		}
 
 		uint64_t reqSatisfiedCycle = l1d->getParent(lbuf_lineAddr)->access(req);
 		cRec->record(end_cycle, end_cycle, reqSatisfiedCycle);
-		*/
+		
 
 		//////// get packet latency info from tag-starttime map //////
 		uint64_t ptag = dp->tag;
