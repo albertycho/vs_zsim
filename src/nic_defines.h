@@ -204,8 +204,8 @@ struct load_generator {
 	int next_cycle;
 	int message; //may replace this to appropriate type
 	uint64_t ptag;
-	p_time_card* ptc_head;
-	lock_t ptc_lock;
+	p_time_card* ptc_head; // this linked list packet_time_card is not used, 
+	lock_t ptc_lock;	   // keeping code for DBG/Comparison purpose
 	//std::map<uint64_t, uint64_t> * tc_map;
 	std::shared_ptr<std::map<uint64_t, uint64_t>> tc_map;
 	RPCGenerator* RPCGen;
