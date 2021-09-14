@@ -61,7 +61,10 @@ int tc_map_insert(uint64_t ptag, uint64_t issue_cycle) {
 
 int tc_linked_list_insert(uint64_t ptag, uint64_t issue_cycle) {
 	///////////////////////
-	//TODO - log incoming packet ptag & issue time
+	
+	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
+	
+
 	p_time_card* ptc = gm_calloc<p_time_card>();
 	ptc->issue_cycle = issue_cycle;
 	ptc->ptag = ptag;
