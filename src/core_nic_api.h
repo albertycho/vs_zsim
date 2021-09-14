@@ -45,7 +45,7 @@ cq_wr_event* deq_cq_wr_event(glob_nic_elements* nicInfo, uint64_t core_id)
 }
 
 //int add_time_card(p_time_card* ptc, load_generator* lg_p) {
-int add_time_card(uint64_t ptag, uint64_t issue_cycle) {
+int tc_map_insert(uint64_t ptag, uint64_t issue_cycle) {
 
 
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
@@ -56,6 +56,10 @@ int add_time_card(uint64_t ptag, uint64_t issue_cycle) {
 	info("ptc insert to map successful, map size : %d", lg_p->tc_map->size());
 	futex_unlock(&lg_p->ptc_lock);
 
+	return 0;
+}
+
+int tc_linked_list_insert(uint64_t ptag, uint64_t issue_cycle) {
 	///////////////////////
 	//TODO - log incoming packet ptag & issue time
 	p_time_card* ptc = gm_calloc<p_time_card>();
@@ -83,15 +87,7 @@ int add_time_card(uint64_t ptag, uint64_t issue_cycle) {
 
 }
 
-int insert_time_card(uint64_t ptag, uint64_t issue_time, load_generator* lg_p) {
-	futex_lock(&lg_p->ptc_lock);
-	info("ptc insert to map");
-	//(lg_p->tc_map)[ptag] = issue_time;
-	lg_p->tc_map->insert(std::make_pair(ptag, issue_time));
-	futex_unlock(&lg_p->ptc_lock);
-	info("ptc insert successful");
-	return 0;
-}
+
 
 int put_cq_entry(cq_entry_t ncq_entry, glob_nic_elements* nicInfo, uint64_t core_id)
 {
@@ -138,6 +134,7 @@ int process_cq_wr_event(cq_wr_event* cq_wr, glob_nic_elements* nicInfo, uint64_t
 		uint64_t ptag = ncq_entry.tid;
 		uint64_t issue_cycle = cq_wr->q_cycle;
 		//add_time_card(ptag, issue_cycle);
+		tc_linked_list_insert(ptag, issue_cycle);
 	}
 
 	int put_cq_entry_success = put_cq_entry(ncq_entry, nicInfo, core_id);
@@ -329,11 +326,10 @@ int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycl
 	//ptc->issue_cycle = cur_cycle;
 	//ptc->ptag = lg_p->ptag;
 
-	//add_time_card(ptc, lg_p);
 	//insert_time_card(lg_p->ptag, cur_cycle, lg_p);
 	if (success == 0x7f) {
 		uint64_t start_cycle = cur_cycle;
-		add_time_card(tid, start_cycle);
+		tc_map_insert(tid, start_cycle);
 	}
 
 	cq_entry_t cqe = generate_cqe(success, tid, recv_buf_addr);
@@ -576,8 +572,8 @@ int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {
 	return free_recv_buf(head, core_id);
 }
 
-//TODO prevent race condition with add_time_card
-int log_packet_latency(uint64_t ptag, uint64_t fin_time) {
+
+int log_packet_latency_list(uint64_t ptag, uint64_t fin_time) {
 	
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
 	
@@ -674,6 +670,10 @@ int enq_dpq(uint64_t lbuf_addr, uint64_t end_time, uint64_t ptag) {
 }
 
 int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*MemObject* dest*/) {
+	/*
+	* deq_dpq - run by nic_core in bbl(). gets the packet latency info from tc_map
+	*			uarch access to memobject and record
+	*/
 	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
 
@@ -696,7 +696,7 @@ int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*M
 
 		/// handle done packet - uarch mem access, lookup map to match ptag and log latency
 		///////////////// UARCH MEM ACCESS /////////////////////////
-		
+		/*
 		MemReq req;
 		Address lbuf_lineAddr = dp->lbuf_addr >> lineBits;
 		MESIState dummyState = MESIState::I;
@@ -711,7 +711,7 @@ int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*M
 
 		uint64_t reqSatisfiedCycle = l1d->getParent(lbuf_lineAddr)->access(req);
 		cRec->record(end_cycle, end_cycle, reqSatisfiedCycle);
-		
+		*/
 
 		//////// get packet latency info from tag-starttime map //////
 		uint64_t ptag = dp->tag;
@@ -765,7 +765,7 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
 		uint64_t ptag = cur_wq_entry.nid;
 
 		//TODO - check what we want to use for timestamp
-		log_packet_latency(ptag, q_cycle);
+		log_packet_latency_list(ptag, q_cycle);
 		enq_dpq(lbuf_addr, q_cycle, ptag);
 
 		enq_rcp_event(rcp_q_cycle, lbuf_addr, lbuf_data, nicInfo, core_id);
