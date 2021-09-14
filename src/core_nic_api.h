@@ -50,10 +50,10 @@ int tc_map_insert(uint64_t ptag, uint64_t issue_cycle) {
 
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
 	futex_lock(&lg_p->ptc_lock);
-	info("ptc insert to map");
+	//info("ptc insert to map");
 	//(lg_p->tc_map)[ptag] = issue_time;
 	lg_p->tc_map->insert(std::make_pair(ptag, issue_cycle));
-	info("ptc insert to map successful, map size : %d", lg_p->tc_map->size());
+	//info("ptc insert to map successful, map size : %d", lg_p->tc_map->size());
 	futex_unlock(&lg_p->ptc_lock);
 
 	return 0;
@@ -84,7 +84,7 @@ int tc_linked_list_insert(uint64_t ptag, uint64_t issue_cycle) {
 		tcount++;
 	}
 	head->next = ptc;
-	info("insert ptc pcount = %d", tcount);
+	//info("insert ptc pcount = %d", tcount);
 	futex_unlock(&lg_p->ptc_lock);
 	return 0;
 
@@ -630,7 +630,7 @@ int log_packet_latency_list(uint64_t ptag, uint64_t fin_time) {
 
 	}
 	uint64_t latency = fin_time - tmp->issue_cycle;
-	info("log packet latency pcount = %d ,ptag = %d, latency = %d", tcount, ptag, latency);
+	//info("log packet latency pcount = %d ,ptag = %d, latency = %d", tcount, ptag, latency);
 	futex_unlock(&lg_p->ptc_lock);
 
 	//uint64_t latency = fin_time - tmp->issue_cycle;
@@ -666,7 +666,7 @@ int enq_dpq(uint64_t lbuf_addr, uint64_t end_time, uint64_t ptag) {
 	}
 
 	nicInfo->dpq_size = nicInfo->dpq_size + 1;
-	info("dpq_size = %d", nicInfo->dpq_size);
+	//info("dpq_size = %d", nicInfo->dpq_size);
 	futex_unlock(&(nicInfo->dpq_lock));
 
 	return 0;
@@ -680,7 +680,7 @@ int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*M
 	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
 
-	info("deq_dpq - dpq size = %d", nicInfo->dpq_size);
+	//info("deq_dpq : dpq size = %d", nicInfo->dpq_size);
 
 	ofstream map_latency_file("map_latency.txt", ios::app);
 	//map_latency_file.open("map_latency.txt");
@@ -720,7 +720,7 @@ int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*M
 		uint64_t ptag = dp->tag;
 		
 		futex_lock(&lg_p->ptc_lock);
-		info("reading ptc from map and removing");
+		//info("reading ptc from map and removing");
 		uint64_t start_cycle = (*(lg_p->tc_map))[ptag];
 		lg_p->tc_map->erase(ptag);
 
@@ -735,7 +735,7 @@ int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*M
 
 	map_latency_file.close();
 
-	info("deq_dpq done - dpq size = %d", nicInfo->dpq_size);
+	//info("deq_dpq done : dpq size = %d", nicInfo->dpq_size);
 
 	return 0;
 }
