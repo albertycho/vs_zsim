@@ -472,8 +472,9 @@ int main(int argc, char *argv[]) {
 
     /// latency stat output
     info("writing to map_latency_file");
-    ofstream map_latency_file("map_latency.txt");
+    std::ofstream map_latency_file("map_latency.txt");
     //map_latency_file.open("map_latency.txt");
+    glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
     for (uint64_t iii = 0; iii < nicInfo->latencies_size; iii++) {
         map_latency_file << nicInfo->latencies[iii] << std::endl;
     }
