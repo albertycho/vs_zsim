@@ -70,6 +70,8 @@
 #define RECV_BUF_POOL_SIZE 2000
 //#define RECV_BUF_POOL_SIZE 32000
 
+#define LAT_ARR_SIZE 60000
+
 typedef struct wq_entry {
 	//first double-word (8 bytes)
 	uint32_t op;        //up to 64 soNUMA ops
@@ -183,6 +185,11 @@ struct glob_nic_elements {
 	bool nic_proc_on;
 	bool nic_init_done;
 	bool record_nic_access;
+
+	//need to find a way to wire this into existing zsim stats
+	uint64_t* latencies;
+	uint64_t latencies_size;
+
 	PAD();
 	nic_element nic_elem[MAX_NUM_CORES];
 	
