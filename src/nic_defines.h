@@ -189,6 +189,10 @@ struct glob_nic_elements {
 	//need to find a way to wire this into existing zsim stats
 	uint64_t* latencies;
 	uint64_t latencies_size;
+	uint64_t latencies_capa;
+	//debug data structures, tobe commented out
+	uint64_t* latencies_list;
+	uint64_t latencies_list_capa;
 
 	PAD();
 	nic_element nic_elem[MAX_NUM_CORES];
