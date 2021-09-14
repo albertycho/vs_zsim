@@ -133,19 +133,20 @@ int process_cq_wr_event(cq_wr_event* cq_wr, glob_nic_elements* nicInfo, uint64_t
 
 	cq_entry_t ncq_entry = cq_wr->cqe;
 
+	/*
 	if (ncq_entry.success==0x7f) {
 		uint64_t ptag = ncq_entry.tid;
 		uint64_t issue_cycle = cq_wr->q_cycle;
 		//add_time_card(ptag, issue_cycle);
 		tc_linked_list_insert(ptag, issue_cycle);
 	}
+	*/
 
 	int put_cq_entry_success = put_cq_entry(ncq_entry, nicInfo, core_id);
 	if (put_cq_entry_success == -1)
 	{
 		return -1;
 	}
-
 
 
 	gm_free(cq_wr);
@@ -575,6 +576,35 @@ int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {
 	return free_recv_buf(head, core_id);
 }
 
+int resize_latencies_arr() {
+	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
+
+	uint64_t new_capa = (nicInfo->latencies_capa) * 2;
+
+	uint64_t * new_latencies = gm_calloc<uint64_t>(new_capa);
+
+	memcpy(new_latencies, nicInfo->latencies, (sizeof(uint64_t))*(nicInfo->latencies_size));
+
+	gm_free(nicInfo->latencies);
+
+	nicInfo->latencies = new_latencies;
+	nicInfo->latencies_capa = new_capa;
+	
+	return 0;
+}
+
+int insert_latency_stat(uint64_t p_latency) {
+	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
+
+	if (nicInfo->latencies_size >= nicInfo->latencies_capa) {
+		resize_latencies_arr();
+	}
+
+	nicInfo->latencies[nicInfo->latencies_size] = p_latency;
+	nicInfo->latencies_size = nicInfo->latencies_size + 1;
+
+	return 0;
+}
 
 int log_packet_latency_list(uint64_t ptag, uint64_t fin_time) {
 	
@@ -682,7 +712,7 @@ int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*M
 
 	//info("deq_dpq : dpq size = %d", nicInfo->dpq_size);
 
-	ofstream map_latency_file("map_latency.txt", ios::app);
+	//ofstream map_latency_file("map_latency.txt", ios::app);
 	//map_latency_file.open("map_latency.txt");
 
 
@@ -728,12 +758,14 @@ int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*M
 
 		futex_unlock(&lg_p->ptc_lock);
 
-		map_latency_file << ptag << ", " << (end_cycle - start_cycle) << std::endl;
+		//map_latency_file << ptag << ", " << (end_cycle - start_cycle) << std::endl;
+		uint64_t p_latency = end_cycle - start_cycle;
+		insert_latency_stat(p_latency);
 
 
 	}
 
-	map_latency_file.close();
+	//map_latency_file.close();
 
 	//info("deq_dpq done : dpq size = %d", nicInfo->dpq_size);
 
@@ -768,7 +800,7 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
 		uint64_t ptag = cur_wq_entry.nid;
 
 		//TODO - check what we want to use for timestamp
-		log_packet_latency_list(ptag, q_cycle);
+		//log_packet_latency_list(ptag, q_cycle);
 		enq_dpq(lbuf_addr, q_cycle, ptag);
 
 		enq_rcp_event(rcp_q_cycle, lbuf_addr, lbuf_data, nicInfo, core_id);
