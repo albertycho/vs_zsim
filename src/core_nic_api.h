@@ -59,36 +59,7 @@ int tc_map_insert(uint64_t ptag, uint64_t issue_cycle) {
 	return 0;
 }
 
-int tc_linked_list_insert(uint64_t ptag, uint64_t issue_cycle) {
-	///////////////////////
-	
-	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
-	
 
-	p_time_card* ptc = gm_calloc<p_time_card>();
-	ptc->issue_cycle = issue_cycle;
-	ptc->ptag = ptag;
-
-	if (lg_p->ptc_head == NULL)
-	{
-		lg_p->ptc_head = ptc;
-		return 0;
-	}
-	
-	uint64_t tcount = 0;
-	
-	futex_lock(&lg_p->ptc_lock);
-	p_time_card* head = lg_p->ptc_head;
-	while (head->next != NULL) {
-		head = head->next;
-		tcount++;
-	}
-	head->next = ptc;
-	//info("insert ptc pcount = %d", tcount);
-	futex_unlock(&lg_p->ptc_lock);
-	return 0;
-
-}
 
 
 
@@ -606,74 +577,7 @@ int insert_latency_stat(uint64_t p_latency) {
 	return 0;
 }
 
-int log_packet_latency_list(uint64_t ptag, uint64_t fin_time) {
-	
-	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
-	
-	ofstream list_latency_file("list_latency.txt", ios::app);
-	//list_latency_file.open("list_latency.txt");
 
-	/*
-	futex_lock(&lg_p->ptc_lock);
-	info("reading ptc from map and removing");
-	uint64_t start_time = (*(lg_p->tc_map))[ptag];
-	lg_p->tc_map->erase(ptag);
-	futex_unlock(&lg_p->ptc_lock);
-	info("ptc erase successful");
-	*/
-	/*
-	uint64_t latency = fin_time - start_time;
-
-
-	return 0;
-	*/
-
-	////////////////code with linked list
-
-	//info("log packet latency called");
-	uint64_t tcount = 0;
-
-	assert(lg_p->ptc_head != NULL);
-
-	futex_lock(&lg_p->ptc_lock);
-	p_time_card* tmp = lg_p->ptc_head;
-
-	if (tmp->ptag == ptag) {
-		lg_p->ptc_head = tmp->next;
-	}
-	else {
-		p_time_card* prev = tmp;
-		tmp = tmp->next;
-		while (tmp->ptag != ptag) {
-			tcount++;
-
-			prev = tmp;
-			tmp = tmp->next;
-			//DBG
-			if (tmp == NULL) {
-				info("ptag=%d", ptag);
-			}
-			assert(tmp != NULL);
-		}
-
-		prev->next = tmp->next;
-
-	}
-	uint64_t latency = fin_time - tmp->issue_cycle;
-	//info("log packet latency pcount = %d ,ptag = %d, latency = %d", tcount, ptag, latency);
-	futex_unlock(&lg_p->ptc_lock);
-
-	//uint64_t latency = fin_time - tmp->issue_cycle;
-
-	//LOG latency
-	//out >> "tag= " >> tmp->ptag >> ", lat= " >> latency >> std::endl;
-	list_latency_file << ptag << ", " << (fin_time - (tmp->issue_cycle)) << std::endl;
-
-	list_latency_file.close();
-	//FREE ptc pointer
-	gm_free(tmp);
-	return 0;
-}
 
 int enq_dpq(uint64_t lbuf_addr, uint64_t end_time, uint64_t ptag) {
 	done_packet_info* dpq_entry = gm_calloc<done_packet_info>();
@@ -709,11 +613,6 @@ int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*M
 	*/
 	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
-
-	//info("deq_dpq : dpq size = %d", nicInfo->dpq_size);
-
-	//ofstream map_latency_file("map_latency.txt", ios::app);
-	//map_latency_file.open("map_latency.txt");
 
 
 	while (nicInfo->done_packet_q_head != NULL) {
@@ -758,16 +657,11 @@ int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*M
 
 		futex_unlock(&lg_p->ptc_lock);
 
-		//map_latency_file << ptag << ", " << (end_cycle - start_cycle) << std::endl;
 		uint64_t p_latency = end_cycle - start_cycle;
 		insert_latency_stat(p_latency);
 
 
 	}
-
-	//map_latency_file.close();
-
-	//info("deq_dpq done : dpq size = %d", nicInfo->dpq_size);
 
 	return 0;
 }
@@ -830,3 +724,92 @@ int nic_rgp_action(uint64_t core_id, glob_nic_elements* nicInfo)
 ////////////////////////////////////////////////////////////////////
 
 #endif
+
+
+
+
+//int tc_linked_list_insert(uint64_t ptag, uint64_t issue_cycle) {
+//	/*
+//	 * we won't use list so this is obsolete, keeping for possible comparison
+//	 */
+//
+//	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
+//
+//
+//	p_time_card* ptc = gm_calloc<p_time_card>();
+//	ptc->issue_cycle = issue_cycle;
+//	ptc->ptag = ptag;
+//
+//	if (lg_p->ptc_head == NULL)
+//	{
+//		lg_p->ptc_head = ptc;
+//		return 0;
+//	}
+//
+//	uint64_t tcount = 0;
+//
+//	futex_lock(&lg_p->ptc_lock);
+//	p_time_card* head = lg_p->ptc_head;
+//	while (head->next != NULL) {
+//		head = head->next;
+//		tcount++;
+//	}
+//	head->next = ptc;
+//	//info("insert ptc pcount = %d", tcount);
+//	futex_unlock(&lg_p->ptc_lock);
+//	return 0;
+//
+//}
+
+//int log_packet_latency_list(uint64_t ptag, uint64_t fin_time) {
+//	/*
+//	* we won't use list so this is obsolete, keeping for possible comparison
+//	*/
+//
+//	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
+//
+//	ofstream list_latency_file("list_latency.txt", ios::app);
+//
+//	uint64_t tcount = 0;
+//
+//	assert(lg_p->ptc_head != NULL);
+//
+//	futex_lock(&lg_p->ptc_lock);
+//	p_time_card* tmp = lg_p->ptc_head;
+//
+//	if (tmp->ptag == ptag) {
+//		lg_p->ptc_head = tmp->next;
+//	}
+//	else {
+//		p_time_card* prev = tmp;
+//		tmp = tmp->next;
+//		while (tmp->ptag != ptag) {
+//			tcount++;
+//
+//			prev = tmp;
+//			tmp = tmp->next;
+//			//DBG
+//			if (tmp == NULL) {
+//				info("ptag=%d", ptag);
+//			}
+//			assert(tmp != NULL);
+//		}
+//
+//		prev->next = tmp->next;
+//
+//	}
+//	uint64_t latency = fin_time - tmp->issue_cycle;
+//	//info("log packet latency pcount = %d ,ptag = %d, latency = %d", tcount, ptag, latency);
+//	futex_unlock(&lg_p->ptc_lock);
+//
+//	//uint64_t latency = fin_time - tmp->issue_cycle;
+//
+//	//LOG latency
+//	//out >> "tag= " >> tmp->ptag >> ", lat= " >> latency >> std::endl;
+//	list_latency_file << ptag << ", " << (fin_time - (tmp->issue_cycle)) << std::endl;
+//
+//	list_latency_file.close();
+//	//FREE ptc pointer
+//	gm_free(tmp);
+//	return 0;
+//}

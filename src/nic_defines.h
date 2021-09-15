@@ -190,9 +190,9 @@ struct glob_nic_elements {
 	uint64_t* latencies;
 	uint64_t latencies_size;
 	uint64_t latencies_capa;
-	//debug data structures, tobe commented out
-	uint64_t* latencies_list;
-	uint64_t latencies_list_capa;
+	//debug data structures, to be commented out
+	//uint64_t* latencies_list;
+	//uint64_t latencies_list_capa;
 
 	PAD();
 	nic_element nic_elem[MAX_NUM_CORES];
