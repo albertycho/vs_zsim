@@ -478,13 +478,14 @@ int main(int argc, char *argv[]) {
     assert(nicInfo->hist_interval != 0);
     uint64_t hist_width = ((nicInfo->max_latency) / (nicInfo->hist_interval)) + 1;
     uint64_t* hist_counters = new uint64_t[hist_width];
+    //gives me garbage if I don't clear
     for (uint64_t iii = 0; iii < hist_width; iii++) {
         hist_counters[iii] = 0;
     }
 
     for (uint64_t iii = 0; iii < nicInfo->latencies_size; iii++) {
         map_latency_file << nicInfo->latencies[iii] << std::endl;
-        uint64_t tmp_index = (nicInfo->latencies[iii] / nicInfo->hist_interval) + 1;
+        uint64_t tmp_index = (nicInfo->latencies[iii] / nicInfo->hist_interval);
         hist_counters[tmp_index]++;
     }
     map_latency_file.close();
