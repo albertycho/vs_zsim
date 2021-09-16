@@ -190,6 +190,10 @@ struct glob_nic_elements {
 	uint64_t* latencies;
 	uint64_t latencies_size;
 	uint64_t latencies_capa;
+
+	//var for histogram processing
+	uint32_t hist_interval;
+	uint64_t max_latency;
 	//debug data structures, to be commented out
 	//uint64_t* latencies_list;
 	//uint64_t latencies_list_capa;

@@ -574,6 +574,10 @@ int insert_latency_stat(uint64_t p_latency) {
 	nicInfo->latencies[nicInfo->latencies_size] = p_latency;
 	nicInfo->latencies_size = nicInfo->latencies_size + 1;
 
+	if (p_latency > nicInfo->max_latency) {
+		nicInfo->max_latency = p_latency;
+	}
+
 	return 0;
 }
 

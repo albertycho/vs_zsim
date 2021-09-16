@@ -796,6 +796,9 @@ static void InitSystem(Config& config) {
     nicInfo->registered_core_count = 0;
     nicInfo->nic_init_done = false;
 
+    uint32_t hist_interval = config.get<uint32_t>("sim.hist_interval", 5000);
+    nicInfo->hist_interval = hist_interval;
+
     load_generator* lgp;
     lgp=(load_generator*)gm_get_lg_ptr();
 

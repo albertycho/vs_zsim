@@ -473,12 +473,23 @@ int main(int argc, char *argv[]) {
     /// latency stat output
     info("writing to map_latency_file");
     std::ofstream map_latency_file("map_latency.txt");
-    //map_latency_file.open("map_latency.txt");
     glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
+
+    assert(nicInfo->hist_interval != 0);
+    uint64_t hist_width = ((nicInfo->max_latency) / (nicInfo->hist_interval)) + 1;
+    uint64_t* hist_counters = new uint64_t[hist_width];
+
     for (uint64_t iii = 0; iii < nicInfo->latencies_size; iii++) {
         map_latency_file << nicInfo->latencies[iii] << std::endl;
+        uint64_t tmp_index = (nicInfo->latencies[iii] / hist_width) + 1;
+        hist_counters[tmp_index]++;
     }
     map_latency_file.close();
+    std::ofstream latency_hist_file("latency_hist.txt");
+    for (uint64_t iii = 0; iii < nicInfo->latencies_size; iii++) {
+        latency_hist_file << iii * nicInfo->hist_interval << "," << hist_counters[iii] << "," << std::endl;
+    }
+    latency_hist_file.close();
 
 
     uint32_t exitCode = 0;
