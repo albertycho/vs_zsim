@@ -481,12 +481,14 @@ int main(int argc, char *argv[]) {
 
     for (uint64_t iii = 0; iii < nicInfo->latencies_size; iii++) {
         map_latency_file << nicInfo->latencies[iii] << std::endl;
-        uint64_t tmp_index = (nicInfo->latencies[iii] / hist_width) + 1;
+        uint64_t tmp_index = (nicInfo->latencies[iii] / nicInfo->hist_interval) + 1;
         hist_counters[tmp_index]++;
     }
     map_latency_file.close();
+
+    info("writing to latency_hist file");
     std::ofstream latency_hist_file("latency_hist.txt");
-    for (uint64_t iii = 0; iii < nicInfo->latencies_size; iii++) {
+    for (uint64_t iii = 0; iii < hist_width; iii++) {
         latency_hist_file << iii * nicInfo->hist_interval << "," << hist_counters[iii] << "," << std::endl;
     }
     latency_hist_file.close();
