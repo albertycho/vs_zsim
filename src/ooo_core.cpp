@@ -537,7 +537,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     
     if ((nicInfo->nic_pid != procIdx) && (nicInfo->nic_init_done)) {
         //TODO find how to locate nicCore in cores[x]
-        if (core->curCycle > nicInfo->nicCore->getCycles()) {
+        if (core->curCycle > (OOOCore *)(nicInfo->nicCore)->getCycles()) {
+            info("thisCore curCycle = %d, nicCore curcycle = %d", core->curCycle, (OOOCore*)(nicInfo->nicCore)->getCycles());
             usleep(10);
         }
     }
@@ -689,7 +690,7 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
         if (nicInfo->registered_core_count == nicInfo->expected_core_count) {
             nicInfo->nic_init_done = true;
         }
-        nicInfo->nicCore = cores[tid];
+        nicInfo->nicCore = (void*) cores[tid];
         break;
     case 0xdead: //invalidate entries after test app terminates
         nicInfo->registered_core_count = nicInfo->registered_core_count - 1;

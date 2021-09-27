@@ -172,7 +172,7 @@ typedef struct done_packet_info {
 
 struct glob_nic_elements {
 	uint64_t nic_pid;
-	OOOCore* nicCore;
+	void* nicCore;
 	//RPCGenerator* RPCGen;
 	done_packet_info* done_packet_q_head;
 	done_packet_info* done_packet_q_tail;
