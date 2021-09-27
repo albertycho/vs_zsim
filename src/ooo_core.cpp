@@ -537,8 +537,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     
     if ((nicInfo->nic_pid != procIdx) && (nicInfo->nic_init_done)) {
         //TODO find how to locate nicCore in cores[x]
-        if (core->curCycle > (OOOCore *)(nicInfo->nicCore)->getCycles()) {
-            info("thisCore curCycle = %d, nicCore curcycle = %d", core->curCycle, (OOOCore*)(nicInfo->nicCore)->getCycles());
+        if (core->curCycle > (((OOOCore *)(nicInfo->nicCore))->getCycles())) {
+            //info("thisCore curCycle = %d, nicCore curcycle = %d", core->curCycle, (OOOCore*)(nicInfo->nicCore)->getCycles());
             usleep(10);
         }
     }
