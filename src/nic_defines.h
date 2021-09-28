@@ -204,9 +204,7 @@ struct glob_nic_elements {
 
 	PAD();
 	nic_element nic_elem[MAX_NUM_CORES];
-	
-	//cq_wr_event* cq_wr_event_q[MAX_NUM_CORES];
-	//adding additional elements to this struct causes segfault at gm_calloc for unknown reason
+	//adding additional elements to this struct below nic_elem causes segfault at gm_calloc for unknown reason
 };
 
 
