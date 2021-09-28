@@ -529,13 +529,14 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 
-    if ((nicInfo->nic_pid == procIdx) && (nicInfo->nic_init_done)) {
+    //TODO check which nic (ingress or egress) should handle this
+    if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) {
         ///////////////CALL DEQ_DPQ//////////////////////
         int srcId = getCid(tid);
         deq_dpq(srcId, core, &(core->cRec), core->l1d/*MemObject* dest*/);
     }
     
-    if ((nicInfo->nic_pid != procIdx) && (nicInfo->nic_init_done)) {
+    if ((nicInfo->nic_ingress_pid != procIdx) && (nicInfo->nic_init_done)) {
         //TODO find how to locate nicCore in cores[x]
         if (core->curCycle > (((OOOCore *)(nicInfo->nicCore))->getCycles())) {
             info("thisCore curCycle = %d, nicCore curcycle = %d", core->curCycle, ((OOOCore*)(nicInfo->nicCore))->getCycles());
@@ -554,7 +555,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 /* check if cores finished their processes and exit if so */
                 if (nicInfo->registered_core_count == 0) {
                     info("ooo_core.cpp - turn off nic proc");
-                    nicInfo->nic_proc_on = false;
+                    nicInfo->nic_ingress_proc_on = false;
+                    nicInfo->nic_egress_proc_on = false;
                 }
                 else{
 
@@ -680,17 +682,27 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
         //info("notify_wq_write")
         nic_rgp_action(core_id, nicInfo);
         break;
-    case 0xB: //indicate app is nic_proxy_process
-        *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_proc_on));
-        nicInfo->nic_pid = procIdx;
-        nicInfo->nic_proc_on = true;
-        info("nic pid:%d, cid:%d", procIdx, core_id);
-        info("packet injection rate:%d", nicInfo->packet_injection_rate);
-        std::cout << "nicInfo->record_nic_access: " << nicInfo->record_nic_access << std::endl;
+    case 0xB: //indicate app is nic_proxy_process (INGRESS)
+        *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_ingress_proc_on));
+        nicInfo->nic_ingress_pid = procIdx;
+        nicInfo->nic_ingress_proc_on = true;
+        info("nic ingress pid:%d, cid:%d", procIdx, core_id);
+        info("packet injection rate:%d", nicInfo->packet_injection_rate)
         if (nicInfo->registered_core_count == nicInfo->expected_core_count) {
             nicInfo->nic_init_done = true;
         }
-        nicInfo->nicCore = (void*) cores[tid];
+        nicInfo->nicCore_ingress = (void*) cores[tid];
+        break;
+
+    case 0xC: //indicate app is nic_proxy_process (EGRESS)
+        *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_egress_proc_on));
+        nicInfo->nic_egress_pid = procIdx;
+        nicInfo->nic_egress_proc_on = true;
+        info("nic egress  pid:%d, cid:%d", procIdx, core_id);
+        if (nicInfo->registered_core_count == nicInfo->expected_core_count) {
+            nicInfo->nic_init_done = true;
+        }
+        nicInfo->nicCore_egress = (void*)cores[tid];
         break;
     case 0xdead: //invalidate entries after test app terminates
         nicInfo->registered_core_count = nicInfo->registered_core_count - 1;

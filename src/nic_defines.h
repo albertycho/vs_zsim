@@ -171,8 +171,10 @@ typedef struct done_packet_info {
 
 
 struct glob_nic_elements {
-	uint64_t nic_pid;
-	void* nicCore;
+	uint64_t nic_ingress_pid;
+	uint64_t nic_egress_pid;
+	void* nicCore_ingress;
+	void* nicCore_eress;
 	//RPCGenerator* RPCGen;
 	done_packet_info* done_packet_q_head;
 	done_packet_info* done_packet_q_tail;
@@ -183,7 +185,8 @@ struct glob_nic_elements {
 	uint64_t packet_injection_rate;
 	uint32_t expected_core_count;
 	uint32_t registered_core_count;
-	bool nic_proc_on;
+	bool nic_ingress_proc_on;
+	bool nic_egress_proc_on;
 	bool nic_init_done;
 	bool record_nic_access;
 
