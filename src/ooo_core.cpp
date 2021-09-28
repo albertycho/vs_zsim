@@ -538,8 +538,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     
     if ((nicInfo->nic_ingress_pid != procIdx) && (nicInfo->nic_init_done)) {
         //TODO find how to locate nicCore in cores[x]
-        if (core->curCycle > (((OOOCore *)(nicInfo->nicCore))->getCycles())) {
-            info("thisCore curCycle = %d, nicCore curcycle = %d", core->curCycle, ((OOOCore*)(nicInfo->nicCore))->getCycles());
+        if (core->curCycle > (((OOOCore *)(nicInfo->nicCore_ingress))->getCycles())) {
+            info("thisCore curCycle = %d, nicCore curcycle = %d", core->curCycle, ((OOOCore*)(nicInfo->nicCore_ingress))->getCycles());
             usleep(10);
         }
     }
@@ -550,7 +550,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         /* Do the nic remote packet injection routine once a phase */
         if (core->curCycle <= core->phaseEndCycle) {
             /* execute this code only for the NIC process && nic init is done */
-            if ((nicInfo->nic_pid == procIdx) && (nicInfo->nic_init_done)) {
+            if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) {
 
                 /* check if cores finished their processes and exit if so */
                 if (nicInfo->registered_core_count == 0) {
