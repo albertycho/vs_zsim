@@ -669,7 +669,7 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
         *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(nicInfo->nic_elem[core_id].cq);
         nicInfo->registered_core_count = nicInfo->registered_core_count + 1;
         if (nicInfo->registered_core_count == nicInfo->expected_core_count) {
-            if (nicInfo->nic_proc_on) {
+            if (nicInfo->nic_ingress_proc_on) {
                 nicInfo->nic_init_done = true;
             }
         }

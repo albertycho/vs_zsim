@@ -174,7 +174,7 @@ struct glob_nic_elements {
 	uint64_t nic_ingress_pid;
 	uint64_t nic_egress_pid;
 	void* nicCore_ingress;
-	void* nicCore_eress;
+	void* nicCore_egress;
 	//RPCGenerator* RPCGen;
 	done_packet_info* done_packet_q_head;
 	done_packet_info* done_packet_q_tail;
