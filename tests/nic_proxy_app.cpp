@@ -39,7 +39,7 @@ int main() {
 
 	bool* nic_proc_on;
 
-	register_buffer((void*)(&nic_proc_on), (void*)0xC);
+	register_buffer((void*)(&nic_proc_on), (void*)0xB);
 
 	//std::cout<<"pid: "<<pid<<", setresult: " <<setresult<<std::endl;
 
@@ -54,6 +54,6 @@ int main() {
 
 
 	//register_buffer((void*) 0, (void*) 0xdead);
-	std::cout<<"nic egress proxy app - terminating"<<std::endl;
+	std::cout<<"nic ingress proxy app - terminating"<<std::endl;
     return 0;
 }

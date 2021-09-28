@@ -84,6 +84,10 @@ int main() {
 		if (mp->opcode != HERD_OP_PUT && mp->opcode != HERD_OP_GET) {
 			std::cout << "INCORRECT HERD OPCODE" << std::endl;
 		}
+		else {
+			if (mp->opcode == HERD_OP_PUT) std::cout << "HERD_OP_PUT" << std::endl;
+			if (mp->opcode == HERD_OP_GET) std::cout << "HERD_OP_GET" << std::endl;
+		}
 
 		uint32_t target_node = recv_completion.tid;
 
