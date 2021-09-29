@@ -615,8 +615,9 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                                 break;
                             }
                         }
-                        */
+                        
                     }
+                    */
                 }
             }
         }
