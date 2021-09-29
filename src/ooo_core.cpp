@@ -536,19 +536,25 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         deq_dpq(srcId, core, &(core->cRec), core->l1d/*MemObject* dest*/);
     }
     
+    // Simple synchronization mechanism for enforcing producer consumer order for NIC_Ingress and other cores
     if ((nicInfo->nic_ingress_pid != procIdx) && (nicInfo->nic_init_done)) {
-        //TODO find how to locate nicCore in cores[x]
-        if (core->curCycle > (((OOOCore *)(nicInfo->nicCore_ingress))->getCycles())) {
-            info("thisCore curCycle = %d, nicCore curcycle = %d", core->curCycle, ((OOOCore*)(nicInfo->nicCore_ingress))->getCycles());
-            usleep(10);
+        if (nicInfo->nic_egress_pid == procIdx) {
+            //don't need to adjust egress core clock here
+        }
+        else {
+            if (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles())) {
+                info("thisCore curCycle = %d, nicCore curcycle = %d", core->curCycle, ((OOOCore*)(nicInfo->nicCore_ingress))->getCycles());
+                usleep(10);
+            }
         }
     }
+
 
     while (core->curCycle > core->phaseEndCycle) {
         core->phaseEndCycle += zinfo->phaseLength;
 
-        /* Do the nic remote packet injection routine once a phase */
         if (core->curCycle <= core->phaseEndCycle) {
+            /* Do the nic remote packet injection routine once a phase */
             /* execute this code only for the NIC process && nic init is done */
             if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) {
 
@@ -559,14 +565,11 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                     nicInfo->nic_egress_proc_on = false;
                 }
                 else{
-
-                    //TODO - remove DBGPrint
-                    //info("p0 injecting packet for this phase");
+                    //Inject packets for this phase
 
                     void* lg_p = static_cast<void*>(gm_get_lg_ptr());
                     uint64_t packet_rate = nicInfo->packet_injection_rate;
 
-                    //initialize load generator's next cycle. lg needs a lot of update in general yet
                     if (((load_generator*)lg_p)->next_cycle == 0) {
                         ((load_generator*)lg_p)->next_cycle = core->curCycle;
                     }
@@ -576,7 +579,6 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                     uint32_t inject_fail_counter = 0;
 
                     for (uint64_t i = 0; i < packet_rate; i++) {
-                    //for (uint64_t i = 0; i < 800; i += 8) {
 
                         /* assign core_id in round robin */
                         core_iterator++;
@@ -764,3 +766,57 @@ void cycle_increment_routine(uint64_t& curCycle) {
 
 }
 
+int nic_ingress_routine(OOOCore* core) {
+
+    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+    void* lg_p = static_cast<void*>(gm_get_lg_ptr());
+    uint64_t packet_rate = nicInfo->packet_injection_rate;
+
+    if (((load_generator*)lg_p)->next_cycle == 0) {
+        ((load_generator*)lg_p)->next_cycle = core->curCycle;
+    }
+    uint32_t core_iterator = 0;
+
+    uint32_t inject_fail_counter = 0;
+
+    for (uint64_t i = 0; i < packet_rate; i++) {
+
+        /* assign core_id in round robin */
+        core_iterator++;
+        if (core_iterator >= zinfo->numCores) {
+            core_iterator = 0;
+        }
+
+        /* find next valid core that is still running */
+        int drop_count = 0;
+        while (!(nicInfo->nic_elem[core_iterator].cq_valid)) {
+            core_iterator++;
+            if (core_iterator >= zinfo->numCores) {
+                core_iterator = 0;
+            }
+            drop_count++;
+            if (drop_count > 100) { // TODO 100 is arbitrary, set a better number
+                std::cout << "other cores deregistered NIC" << std::endl;
+                break;
+            }
+            //DBG code
+            if (core_iterator >= zinfo->numCores) {
+                info("nic_ingress_routine (line803) - core_iterator out of bound: %d, cycle: %d", core_iterator, core->curCycle);
+            }
+        }
+
+        /* Inject packet (call core function) */
+        int srcId = getCid(tid);
+        int inj_attempt = inject_incoming_packet(core->curCycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), core->l1d);
+        if (inj_attempt == -1) {
+            //core out of recv buffer. stop injecting for this phase
+            inject_fail_counter++;
+            if (inject_fail_counter >= (nicInfo->registered_core_count - 1)) {
+                break;
+            }
+        }
+
+    }
+
+    return 0;
+}
