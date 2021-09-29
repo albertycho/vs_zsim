@@ -766,7 +766,7 @@ void cycle_increment_routine(uint64_t& curCycle) {
 
 }
 
-int OOOCore::nic_ingress_routine() {
+int OOOCore::nic_ingress_routine(THREADID tid) {
 
     OOOCore* core = static_cast<OOOCore*>(cores[tid]);
 
