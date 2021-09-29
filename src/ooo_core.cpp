@@ -543,9 +543,11 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         }
         else {
             //if (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles())) {
-            while (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles())) {
+            //while (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles())) {
+            while (core->curCycle > ((((OOOCore*)(nicInfo->nicCore_ingress))->getCycles()) + 50) ) {
                 info("thisCore curCycle = %lu, nicCore curcycle = %lu", core->curCycle, ((OOOCore*)(nicInfo->nicCore_ingress))->getCycles());
-                usleep(10);
+                //usleep(10);
+                sleep(1);
             }
         }
     }
