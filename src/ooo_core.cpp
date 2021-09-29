@@ -688,8 +688,8 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
         *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_ingress_proc_on));
         nicInfo->nic_ingress_pid = procIdx;
         nicInfo->nic_ingress_proc_on = true;
-        info("nic ingress pid:%d, cid:%d", procIdx, core_id);
-        info("packet injection rate:%d", nicInfo->packet_injection_rate)
+        info("nic ingress pid:%d, cid:%lu", procIdx, core_id);
+        info("packet injection rate:%lu", nicInfo->packet_injection_rate)
         if (nicInfo->registered_core_count == nicInfo->expected_core_count) {
             nicInfo->nic_init_done = true;
         }
@@ -700,7 +700,7 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
         *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_egress_proc_on));
         nicInfo->nic_egress_pid = procIdx;
         nicInfo->nic_egress_proc_on = true;
-        info("nic egress  pid:%d, cid:%d", procIdx, core_id);
+        info("nic egress  pid:%d, cid:%lu", procIdx, core_id);
         if (nicInfo->registered_core_count == nicInfo->expected_core_count) {
             nicInfo->nic_init_done = true;
         }
@@ -803,7 +803,7 @@ int OOOCore::nic_ingress_routine(THREADID tid) {
             }
             //DBG code
             if (core_iterator >= zinfo->numCores) {
-                info("nic_ingress_routine (line803) - core_iterator out of bound: %d, cycle: %d", core_iterator, core->curCycle);
+                info("nic_ingress_routine (line803) - core_iterator out of bound: %d, cycle: %lu", core_iterator, core->curCycle);
             }
         }
 

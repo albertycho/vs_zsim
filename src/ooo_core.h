@@ -163,31 +163,7 @@ class WindowStructure {
             cycle_increment_routine(curCycle);
 
             
-            glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-            void* lg_p = static_cast<void*>(gm_get_lg_ptr());
 
-            //TODO: find core number
-            //core_ceq_routine(curCycle, nicInfo, 0);
-            //RRPP_routine(curCycle, nicInfo, lg_p, 0);
-            //RCP_routine(curCycle, nicInfo, 0);
-
-            //TODO: remove expeirment code
-            /*
-            info("curCycle:%ld", curCycle);
-            if (nicInfo->nic_elem[0].cq->q[0].success == 3) {
-                info("APP's while loop started");
-                nicInfo->nic_elem[0].cq->q[0].recv_buf_addr = curCycle + 5000;
-                nicInfo->nic_elem[0].cq->q[0].success = 2;
-            }
-            if ((nicInfo->nic_elem[0].cq->q[0].success == 2) &&(curCycle >= nicInfo->nic_elem[0].cq->q[0].recv_buf_addr) && (nicInfo->nic_elem[0].cq->q[0].valid==false)) {
-                info("flipping cq valid");
-                nicInfo->nic_elem[0].cq->q[0].valid = true;
-            }
-            if (nicInfo->nic_elem[0].cq->q[0].tid == 3) {
-                info("APP exited while loop");
-                nicInfo->nic_elem[0].cq->q[0].tid = 4;
-            }
-            */
 
             if (curPos == H) {  // rebase
                 // info("[%ld] Rebasing, curCycle=%ld", curCycle/H, curCycle);
@@ -517,6 +493,7 @@ class OOOCore : public Core {
         static void PredStoreFunc(THREADID tid, ADDRINT addr, BOOL pred);
         static void BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo);
         static void BranchFunc(THREADID tid, ADDRINT pc, BOOL taken, ADDRINT takenNpc, ADDRINT notTakenNpc);
+        
         static void NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field);
         static int  nic_ingress_routine(THREADID tid);
 } ATTR_LINE_ALIGNED;  // Take up an int number of cache lines
