@@ -75,7 +75,7 @@ int put_cq_entry(cq_entry_t ncq_entry, glob_nic_elements* nicInfo, uint64_t core
 	
 	if (cq->SR == cq->q[cq_head].SR) {
 		info("FAILED cq->SR == cq->q[cq_head].SR check");
-		info("cq_head=%d",cq_head);
+		info("cq_head=%lu",cq_head);
 		return -1;
 	}
 
@@ -328,7 +328,7 @@ int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uin
 }
 
 
-int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id, int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*MemObject* dest*/) {
+int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id, uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*MemObject* dest*/) {
 /*
 * inject_incoming_packet - takes necessary architectural AND microarchitectural actions to inject packet
 *				fetches next msg from load generator
@@ -345,7 +345,7 @@ int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void*
 	uint32_t rb_head = allocate_recv_buf(1, nicInfo, core_id);
 	futex_unlock(&nicInfo->nic_elem[core_id].rb_lock);
 	if (rb_head > RECV_BUF_POOL_SIZE) {
-		info("core %d out of recv buffer, cycle %d", core_id, cur_cycle);
+		info("core %d out of recv buffer, cycle %lu", core_id, cur_cycle);
 		//info("((zinfo->numCores) - 1)=%d", ((zinfo->numCores) - 1));
 		return -1;
 	}

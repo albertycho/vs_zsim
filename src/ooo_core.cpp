@@ -543,7 +543,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         }
         else {
             if (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles())) {
-                info("thisCore curCycle = %d, nicCore curcycle = %d", core->curCycle, ((OOOCore*)(nicInfo->nicCore_ingress))->getCycles());
+                info("thisCore curCycle = %lu, nicCore curcycle = %lu", core->curCycle, ((OOOCore*)(nicInfo->nicCore_ingress))->getCycles());
                 usleep(10);
             }
         }
@@ -600,12 +600,12 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                             }
                             //DBG code
                             if (core_iterator >= zinfo->numCores) {
-                                info("BblFunc (line578) - core_iterator out of bound: %d, cycle: %d", core_iterator, core->curCycle);
+                                info("BblFunc (line578) - core_iterator out of bound: %d, cycle: %lu", core_iterator, core->curCycle);
                             }
                         }
 
                         /* Inject packet (call core function) */
-                        int srcId = getCid(tid);
+                        uint32_t srcId = getCid(tid);
                         int inj_attempt = inject_incoming_packet(core->curCycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), core->l1d);
                         if (inj_attempt == -1) {
                             //core out of recv buffer. stop injecting for this phase
@@ -658,7 +658,7 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
         break;
     case 1://CQ
         //TODO: remove dbgprint
-        info("core %d registered CQ", core_id);
+        info("core %lu registered CQ", core_id);
 
         NICELEM.cq->tail = 0;
         NICELEM.cq->SR = 1;
@@ -808,7 +808,7 @@ int OOOCore::nic_ingress_routine(THREADID tid) {
         }
 
         /* Inject packet (call core function) */
-        int srcId = getCid(tid);
+        uint32_t srcId = getCid(tid);
         int inj_attempt = inject_incoming_packet(core->curCycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), core->l1d);
         if (inj_attempt == -1) {
             //core out of recv buffer. stop injecting for this phase
