@@ -159,20 +159,18 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 
 //functions for interfacing load_generator
 
-int get_next_message(void* lg_p) {
+int update_loadgen(void* lg_p) {
 /*
-* get_next_message - grabs the next message from load generator and updates the cycle next packet is due
-*		(in this prototype its all done manually in this function. eventually want to make it more elegant)
+* update_loadgen- updates cycle and tag for load gen
+*					packet creation is done in RPCGEN::generatePackedRPC
 */
-	int next_message = ((load_generator*)lg_p)->message;
-	((load_generator*)lg_p)->message = ((load_generator*)lg_p)->message + 1;
-	//((load_generator*)lg_p)->next_cycle = ((load_generator*)lg_p)->next_cycle + 1000000; 
-	((load_generator*)lg_p)->next_cycle = ((load_generator*)lg_p)->next_cycle + 10; 
+		
 	//TODO: will do something more sophisticated for setting next_cycle offset 
-	
+	((load_generator*)lg_p)->next_cycle = ((load_generator*)lg_p)->next_cycle + 10; 
+
 	((load_generator*)lg_p)->ptag = ((load_generator*)lg_p)->ptag + 1;
 
-	return next_message;
+	return 0;
 }
 
 uint32_t allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t core_id) { // reusing(modifying) sim_nic.h function
@@ -340,7 +338,7 @@ int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void*
 	if (core_id > ((zinfo->numCores) - 1)) {
 		info("inject_incoming_packet - core_id out of bound: %d", core_id);
 	}
-	int message = get_next_message(lg_p);
+
 	futex_lock(&nicInfo->nic_elem[core_id].rb_lock);
 	uint32_t rb_head = allocate_recv_buf(1, nicInfo, core_id);
 	futex_unlock(&nicInfo->nic_elem[core_id].rb_lock);
@@ -352,13 +350,15 @@ int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void*
 	//std::cout << "allocate_recv_buf returned :" << std::dec << rb_head << ", core_id: " << core_id << std::endl;
 
 	uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head]));
-	// write message to recv buffer
+	
+
 	if (core_id > ((zinfo->numCores) - 1)) {
 		info("inject_incoming_packet - core_id out of bound: %d", core_id);
 	}
-	//nicInfo->nic_elem[core_id].recv_buf[rb_head].line_seg[0] = message;
 
+	// write message to recv buffer via load generator/RPCGen
 	((load_generator*) lg_p)->RPCGen->generatePackedRPC((char*)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head].line_seg[0])));
+	update_loadgen(lg_p);
 
 	MemReq req;
 	Address rbuf_lineAddr = recv_buf_addr >> lineBits;
