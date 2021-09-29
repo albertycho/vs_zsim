@@ -544,10 +544,16 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         else {
             //if (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles())) {
             //while (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles())) {
+            // Sometime this check gets stuck at the end of the phase, adding safety break
+            int safety_counter = 0;
             while (core->curCycle > ((((OOOCore*)(nicInfo->nicCore_ingress))->getCycles()) + 50) ) {
                 info("thisCore curCycle = %lu, nicCore curcycle = %lu", core->curCycle, ((OOOCore*)(nicInfo->nicCore_ingress))->getCycles());
                 //usleep(10);
                 sleep(1);
+                safety_counter++;
+                if (safety_counter > 2) {
+                    break;
+                }
             }
         }
     }
