@@ -524,7 +524,7 @@ void OOOCore::PredStoreFunc(THREADID tid, ADDRINT addr, BOOL pred) {
 
 void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     OOOCore* core = static_cast<OOOCore*>(cores[tid]);
-    uint64_t core_id = getCid(tid);
+    //uint64_t core_id = getCid(tid); // using processID to identify nicCore for now
     core->bbl(bblAddr, bblInfo);
     
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
@@ -566,7 +566,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 }
                 else{
                     //Inject packets for this phase
-
+                    nic_ingress_routine(tid);
+                    /*
                     void* lg_p = static_cast<void*>(gm_get_lg_ptr());
                     uint64_t packet_rate = nicInfo->packet_injection_rate;
 
@@ -580,13 +581,13 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
 
                     for (uint64_t i = 0; i < packet_rate; i++) {
 
-                        /* assign core_id in round robin */
+                        // assign core_id in round robin
                         core_iterator++;
                         if (core_iterator >= zinfo->numCores) {
                             core_iterator = 0;
                         }
                         
-                        /* find next valid core that is still running */
+                        // find next valid core that is still running
                         int drop_count = 0;
                         while (!(nicInfo->nic_elem[core_iterator].cq_valid)) {
                             core_iterator++;
@@ -604,7 +605,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                             }
                         }
 
-                        /* Inject packet (call core function) */
+                        // Inject packet (call core function)
                         uint32_t srcId = getCid(tid);
                         int inj_attempt = inject_incoming_packet(core->curCycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), core->l1d);
                         if (inj_attempt == -1) {
@@ -614,7 +615,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                                 break;
                             }
                         }
-
+                        */
                     }
                 }
             }

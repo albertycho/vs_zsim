@@ -350,11 +350,6 @@ int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void*
 	//std::cout << "allocate_recv_buf returned :" << std::dec << rb_head << ", core_id: " << core_id << std::endl;
 
 	uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head]));
-	
-
-	if (core_id > ((zinfo->numCores) - 1)) {
-		info("inject_incoming_packet - core_id out of bound: %d", core_id);
-	}
 
 	// write message to recv buffer via load generator/RPCGen
 	((load_generator*) lg_p)->RPCGen->generatePackedRPC((char*)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head].line_seg[0])));
