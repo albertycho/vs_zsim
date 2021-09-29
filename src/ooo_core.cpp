@@ -766,7 +766,9 @@ void cycle_increment_routine(uint64_t& curCycle) {
 
 }
 
-int nic_ingress_routine(OOOCore* core) {
+int OOOCore::nic_ingress_routine() {
+
+    OOOCore* core = static_cast<OOOCore*>(cores[tid]);
 
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
     void* lg_p = static_cast<void*>(gm_get_lg_ptr());
