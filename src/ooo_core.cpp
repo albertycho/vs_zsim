@@ -542,16 +542,15 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
             //don't need to adjust egress core clock here
         }
         else {
-            //if (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles())) {
-            //while (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles())) {
             // Sometime this check gets stuck at the end of the phase, adding safety break
             int safety_counter = 0;
-            while (core->curCycle > ((((OOOCore*)(nicInfo->nicCore_ingress))->getCycles()) + 50) ) {
+            while (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles())) {
+            //while (core->curCycle > ((((OOOCore*)(nicInfo->nicCore_ingress))->getCycles()) + 50) ) { 
+                // +50this could be a performance optmiziation, not sure how significant correctness hazard is
                 info("thisCore curCycle = %lu, nicCore curcycle = %lu", core->curCycle, ((OOOCore*)(nicInfo->nicCore_ingress))->getCycles());
-                //usleep(10);
-                sleep(1);
+                usleep(10); // short delay seems to work sufficient
                 safety_counter++;
-                if (safety_counter > 2) {
+                if (safety_counter > 2) { // >2 seems to work in current env. May need to be adjusted when running on different machine
                     break;
                 }
             }
@@ -578,6 +577,9 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                     nic_ingress_routine(tid);
                     
                 }
+            }
+            else if ((nicInfo->nic_gress_pid == procIdx) && (nicInfo->nic_init_done)) {
+                //call egress routine
             }
         }
         
