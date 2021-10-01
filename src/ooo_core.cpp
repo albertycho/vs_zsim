@@ -544,10 +544,10 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         else {
             // Sometime this check gets stuck at the end of the phase, adding safety break
             int safety_counter = 0;
-            while (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles())) {
+            while (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch())) {
             //while (core->curCycle > ((((OOOCore*)(nicInfo->nicCore_ingress))->getCycles()) + 50) ) { 
                 // +50this could be a performance optmiziation, not sure how significant correctness hazard is
-                info("thisCore curCycle = %lu, nicCore curcycle = %lu", core->curCycle, ((OOOCore*)(nicInfo->nicCore_ingress))->getCycles());
+                info("thisCore curCycle = %lu, nicCore curcycle = %lu", core->curCycle, ((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch());
                 usleep(10); // short delay seems to work sufficient
                 safety_counter++;
                 if (safety_counter > 2) { // >2 seems to work in current env. May need to be adjusted when running on different machine
