@@ -207,12 +207,14 @@ uint32_t allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t c
 			}
 			if (fit)
 			{
+				futex_lock(&nicInfo->nic_elem[core_id].rb_lock);
 				NICELEM.rb_dir[head].is_head = true;
 				NICELEM.rb_dir[head].len = blen;
 				for (uint32_t i = head; i < head + blen; i++)
 				{
 					NICELEM.rb_dir[i].in_use = true;
 				}
+				futex_unlock(&nicInfo->nic_elem[core_id].rb_lock);
 				return head;
 			}
 		}
