@@ -454,7 +454,7 @@ class OOOCore : public Core {
         uint64_t getCycles() const {return cRec.getUnhaltedCycles(curCycle);}
 
         //new getCycle for synching during bound
-        uint64_t getCycle_forSynch() { return curCycle; }
+        uint64_t getCycles_forSynch() { return curCycle; }
 
         void contextSwitch(int32_t gid);
 
