@@ -547,6 +547,7 @@ int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {
 
 	info("Free_recv_buf_addr: core_id= %d, head= %d", core_id, head);
 
+
 	//TODO may need debug prints to check offset and head calculation
 	futex_lock(&nicInfo->nic_elem[core_id].rb_lock);
 	int retval = free_recv_buf(head, core_id);
