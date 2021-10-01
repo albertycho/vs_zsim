@@ -515,7 +515,7 @@ int free_recv_buf(uint32_t head, uint32_t core_id) {
 	* free_recv_buf - called by free_recv_buf_addr.
 			Takes the index of the recv_buf to be freed
 	*/
-	futex_lock(&nicInfo->nic_elem[core_id].rb_lock);
+
 	assert(NICELEM.rb_dir[head].is_head);
 	assert(NICELEM.rb_dir[head].in_use);
 	//dbg print
@@ -528,7 +528,7 @@ int free_recv_buf(uint32_t head, uint32_t core_id) {
 		NICELEM.rb_dir[i].is_head = false;
 		NICELEM.rb_dir[i].len = 0;
 	}
-	futex_unlock(&nicInfo->nic_elem[core_id].rb_lock);
+
 	//dbg print
 	//info("free_recv_buf - finished freeing");
 	return 0;
@@ -540,12 +540,15 @@ int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {
 	*       calculate the index of recv_buf from the addr and calls free_recv_buf
 	*       (added layer of function for easier edit/debug)
 	*/
+	info("Free_recv_buf_addr: core_id= %d", core_id);
 	uint64_t buf_base = (uint64_t)(&(NICELEM.recv_buf[0]));
 	uint64_t offset = buf_addr - buf_base;
 	uint32_t head = (uint32_t)(offset / 64); //divide by size of buffer in bytes
 	//TODO may need debug prints to check offset and head calculation
-
-	return free_recv_buf(head, core_id);
+	futex_lock(&nicInfo->nic_elem[core_id].rb_lock);
+	int retval = free_recv_buf(head, core_id);
+	futex_unlock(&nicInfo->nic_elem[core_id].rb_lock);
+	return retval;
 }
 
 int resize_latencies_arr() {

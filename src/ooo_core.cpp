@@ -662,7 +662,6 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
         }
         nicInfo->nicCore_ingress = (void*) cores[tid];
 
-        std::cout << "nicCoreIngress addr: " << (uint64_t)(nicInfo->nicCore_ingress) << std::endl;
         
         break;
 
