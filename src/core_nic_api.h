@@ -540,10 +540,13 @@ int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {
 	*       calculate the index of recv_buf from the addr and calls free_recv_buf
 	*       (added layer of function for easier edit/debug)
 	*/
-	info("Free_recv_buf_addr: core_id= %d", core_id);
+
 	uint64_t buf_base = (uint64_t)(&(NICELEM.recv_buf[0]));
 	uint64_t offset = buf_addr - buf_base;
 	uint32_t head = (uint32_t)(offset / 64); //divide by size of buffer in bytes
+
+	info("Free_recv_buf_addr: core_id= %d, head= %d", core_id, head);
+
 	//TODO may need debug prints to check offset and head calculation
 	futex_lock(&nicInfo->nic_elem[core_id].rb_lock);
 	int retval = free_recv_buf(head, core_id);
