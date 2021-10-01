@@ -661,6 +661,9 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
             nicInfo->nic_init_done = true;
         }
         nicInfo->nicCore_ingress = (void*) cores[tid];
+
+        std::cout << "nicCoreIngress addr: " << (uint64_t)(nicInfo->nicCore_ingress) << std::endl;
+        
         break;
 
     case 0xC: //indicate app is nic_proxy_process (EGRESS)
