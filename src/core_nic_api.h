@@ -408,9 +408,11 @@ rcp_event* deq_rcp_eq(glob_nic_elements* nicInfo, uint32_t core_id) {
 /* 
 * similar to deq_cq_wr_event
 */
+	futex_lock(&nicInfo->nic_elem[core_id].rcp_lock);
 	assert(RCP_EQ != NULL);
 	rcp_event* ret = RCP_EQ;
 	RCP_EQ = RCP_EQ->next;
+	futex_unlock(&nicInfo->nic_elem[core_id].rcp_lock);
 	return ret;
 }
 
@@ -498,6 +500,8 @@ void enq_rcp_event(uint64_t q_cycle, uint64_t lbuf_addr, uint64_t lbuf_data, glo
 	rcp_e->q_cycle = q_cycle;
 	rcp_e->next = NULL;
 
+	futex_lock(&nicInfo->nic_elem[core_id].rcp_lock);
+
 	if (RCP_EQ == NULL) {
 		RCP_EQ = rcp_e;
 	}
@@ -508,6 +512,7 @@ void enq_rcp_event(uint64_t q_cycle, uint64_t lbuf_addr, uint64_t lbuf_data, glo
 		}
 		rcp_eq_tail->next = rcp_e;
 	}
+	futex_unlock(&nicInfo->nic_elem[core_id].rcp_lock);
 }
 
 int free_recv_buf(uint32_t head, uint32_t core_id) {
