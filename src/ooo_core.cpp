@@ -580,7 +580,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
             }
             else if ((nicInfo->nic_egress_pid == procIdx) && (nicInfo->nic_init_done)) {
                 //call egress routine
-                //nic_egress_routine(tid);
+                nic_egress_routine(tid);
             }
         }
         
@@ -646,7 +646,7 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
 
     case NOTIFY_WQ_WRITE://NOTIFY WQ WRITE from application
         //info("notify_wq_write")
-        nic_rgp_action(core_id, nicInfo);
+        //nic_rgp_action(core_id, nicInfo);
         break;
     case 0xB: //indicate app is nic_proxy_process (INGRESS)
         *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_ingress_proc_on));
@@ -799,8 +799,8 @@ int OOOCore::nic_egress_routine(THREADID tid) {
         }
         else if (nicInfo->nic_elem[core_iterator].wq_valid) {
             if (check_wq(core_iterator, nicInfo)) {
-                //wq_entry_t cur_wq_entry = deq_wq_entry(core_iterator, nicInfo);
-                //process_wq_entry(cur_wq_entry, core_iterator, nicInfo);
+                wq_entry_t cur_wq_entry = deq_wq_entry(core_iterator, nicInfo);
+                process_wq_entry(cur_wq_entry, core_iterator, nicInfo);
                 //ISSUE - dequeuing from WQ can have race condition with core. can't use mutex since APP is enqueueing wq?
                         //maybe not, since server and NIC don't WRITE to same structure
             }
