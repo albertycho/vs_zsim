@@ -798,15 +798,16 @@ int OOOCore::nic_egress_routine(THREADID tid) {
             empty_wq_count++;
         }
         else if (nicInfo->nic_elem[core_iterator].wq_valid) {
-            if (check_wq(core_iterator, nicInfo)) {
+            while (check_wq(core_iterator, nicInfo)) {
                 wq_entry_t cur_wq_entry = deq_wq_entry(core_iterator, nicInfo);
                 process_wq_entry(cur_wq_entry, core_iterator, nicInfo);
                 //ISSUE - dequeuing from WQ can have race condition with core. can't use mutex since APP is enqueueing wq?
                         //maybe not, since server and NIC don't WRITE to same structure
             }
-            else {
-                empty_wq_count++;
-            }
+            //else {
+             //   empty_wq_count++;
+            //}
+            empty_wq_count++;
         }
         else {
             empty_wq_count++;
