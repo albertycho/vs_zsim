@@ -688,7 +688,7 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
 		uint64_t nw_roundtrip_delay = 100;
 
 		// TODO - getcycles may not retrun precise cycle (could be in phase granularity). May want something more precise
-		uint64_t q_cycle = (OOOCore* (zinfo->cores[core_id]))->getCycles_forSynch();
+		uint64_t q_cycle = ((OOOCore*) (zinfo->cores[core_id]))->getCycles_forSynch();
 		uint64_t rcp_q_cycle = q_cycle + nw_roundtrip_delay;
 		uint64_t lbuf_addr = cur_wq_entry.buf_addr;
 		uint64_t lbuf_data = *((uint64_t*)lbuf_addr);
