@@ -794,7 +794,7 @@ int OOOCore::nic_egress_routine(THREADID tid) {
     uint32_t core_iterator = 0;
 
     while (empty_wq_count < (nicInfo->registered_core_count)) {
-        if (core->curCycle < ((OOOCore*)(zinfo->cores[core_iterator]))->getCycles_forSynch) {
+        if (core->curCycle < ((OOOCore*)(zinfo->cores[core_iterator]))->getCycles_forSynch()) {
             empty_wq_count++;
         }
         else if (nicInfo->nic_elem[core_iterator].wq_valid) {
@@ -818,5 +818,6 @@ int OOOCore::nic_egress_routine(THREADID tid) {
         }
     }
 
+    return 0;
  
 }
