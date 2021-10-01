@@ -535,6 +535,9 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         int srcId = getCid(tid);
         deq_dpq(srcId, core, &(core->cRec), core->l1d/*MemObject* dest*/);
     }
+    if ((nicInfo->nic_egress_pid == procIdx) && (nicInfo->nic_init_done)) {
+        nic_egress_routine(tid);
+    }
     
     // Simple synchronization mechanism for enforcing producer consumer order for NIC_Ingress and other cores
     if ((nicInfo->nic_ingress_pid != procIdx) && (nicInfo->nic_init_done)) {
@@ -578,10 +581,10 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                     
                 }
             }
-            else if ((nicInfo->nic_egress_pid == procIdx) && (nicInfo->nic_init_done)) {
-                //call egress routine
-                nic_egress_routine(tid);
-            }
+            //else if ((nicInfo->nic_egress_pid == procIdx) && (nicInfo->nic_init_done)) {
+            //    //call egress routine
+            //    nic_egress_routine(tid);
+            //}
         }
         
         uint32_t cid = getCid(tid);
