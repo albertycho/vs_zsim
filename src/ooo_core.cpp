@@ -578,7 +578,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                     
                 }
             }
-            else if ((nicInfo->nic_gress_pid == procIdx) && (nicInfo->nic_init_done)) {
+            else if ((nicInfo->nic_egress_pid == procIdx) && (nicInfo->nic_init_done)) {
                 //call egress routine
             }
         }

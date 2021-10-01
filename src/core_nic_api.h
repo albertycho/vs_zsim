@@ -326,7 +326,7 @@ int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uin
 }
 
 
-int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id, uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*MemObject* dest*/) {
+int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id, uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*MemObject* dest*/) {
 /*
 * inject_incoming_packet - takes necessary architectural AND microarchitectural actions to inject packet
 *				fetches next msg from load generator
@@ -367,8 +367,11 @@ int inject_incoming_packet(uint64_t cur_cycle, glob_nic_elements* nicInfo, void*
 		req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, cur_cycle, NULL, dummyState, srcId, MemReq::NORECORD };
 	}
 
-	//uint64_t reqSatisfiedCycle = core->l1d->getParent(recv_buf_addr >> lineBits)->access(req);
+
+	//I need to think through timing and clock cycle assignment/adjustment 
 	uint64_t reqSatisfiedCycle = l1d->getParent(rbuf_lineAddr)->access(req);
+
+	//TODO check what cycles need to be passed to recrod
 	cRec->record(cur_cycle, cur_cycle, reqSatisfiedCycle);
 	uint64_t ceq_cycle = (uint64_t)(((load_generator*)lg_p)->next_cycle);
 	create_CEQ_entry(recv_buf_addr, 0x7f, ceq_cycle, nicInfo, core_id);
