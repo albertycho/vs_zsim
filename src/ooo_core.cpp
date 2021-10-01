@@ -580,6 +580,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
             }
             else if ((nicInfo->nic_egress_pid == procIdx) && (nicInfo->nic_init_done)) {
                 //call egress routine
+                //nic_egress_routine(tid);
             }
         }
         
@@ -784,4 +785,38 @@ int OOOCore::nic_ingress_routine(THREADID tid) {
     }
 
     return 0;
+}
+
+int OOOCore::nic_egress_routine(THREADID tid) {
+    OOOCore* core = static_cast<OOOCore*>(cores[tid]);
+    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+    uint32_t empty_wq_count = 0;
+    uint32_t core_iterator = 0;
+
+    while (empty_wq_count < (nicInfo->registered_core_count)) {
+        if (core->curCycle < ((OOOCore*)(zinfo->cores[core_iterator]))->getCycles_forSynch) {
+            empty_wq_count++;
+        }
+        else if (nicInfo->nic_elem[core_iterator].wq_valid) {
+            if (check_wq(core_iterator, nicInfo)) {
+                //wq_entry_t cur_wq_entry = deq_wq_entry(core_iterator, nicInfo);
+                //process_wq_entry(cur_wq_entry, core_iterator, nicInfo);
+                //ISSUE - dequeuing from WQ can have race condition with core. can't use mutex since APP is enqueueing wq?
+                        //maybe not, since server and NIC don't WRITE to same structure
+            }
+            else {
+                empty_wq_count++;
+            }
+        }
+        else {
+            empty_wq_count++;
+        }
+
+        core_iterator++;
+        if (core_iterator >= zinfo->numCores) {
+            core_iterator = 0;
+        }
+    }
+
+ 
 }
