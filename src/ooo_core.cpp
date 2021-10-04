@@ -536,7 +536,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         deq_dpq(srcId, core, &(core->cRec), core->l1d/*MemObject* dest*/);
     }
     if ((nicInfo->nic_egress_pid == procIdx) && (nicInfo->nic_init_done)) {
-        nic_egress_routine(tid);
+        //nic_egress_routine(tid);
     }
     
     // Simple synchronization mechanism for enforcing producer consumer order for NIC_Ingress and other cores
@@ -649,7 +649,7 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
 
     case NOTIFY_WQ_WRITE://NOTIFY WQ WRITE from application
         //info("notify_wq_write")
-        //nic_rgp_action(core_id, nicInfo);
+        nic_rgp_action(core_id, nicInfo);
         break;
     case 0xB: //indicate app is nic_proxy_process (INGRESS)
         *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_ingress_proc_on));
