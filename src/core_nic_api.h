@@ -343,7 +343,7 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 
 	futex_lock(&nicInfo->nic_elem[core_id].rb_lock);
 	uint32_t rb_head = allocate_recv_buf(1, nicInfo, core_id);
-	info("allocate_recv_buf for core %d returned head = %d", core_id, rb_head);
+	//info("allocate_recv_buf for core %d returned head = %d", core_id, rb_head);
 	futex_unlock(&nicInfo->nic_elem[core_id].rb_lock);
 	if (rb_head > RECV_BUF_POOL_SIZE) {
 		info("core %d out of recv buffer, cycle %lu", core_id, cur_cycle);
@@ -556,7 +556,7 @@ int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {
 
 	//TODO may need debug prints to check offset and head calculation
 	futex_lock(&nicInfo->nic_elem[core_id].rb_lock);
-	info("Free_recv_buf_addr: core_id= %d, head= %d", core_id, head);
+	//info("Free_recv_buf_addr: core_id= %d, head= %d", core_id, head);
 	int retval = free_recv_buf(head, core_id);
 	futex_unlock(&nicInfo->nic_elem[core_id].rb_lock);
 	return retval;
