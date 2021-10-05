@@ -533,7 +533,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) {
         ///////////////CALL DEQ_DPQ//////////////////////
         int srcId = getCid(tid);
-        deq_dpq(srcId, core, &(core->cRec), core->l1d/*MemObject* dest*/);
+        deq_dpq(srcId, core, &(core->cRec), core->l1d/*MemObject* dest*/, core->curCycle);
     }
     if ((nicInfo->nic_egress_pid == procIdx) && (nicInfo->nic_init_done)) {
         //nic_egress_routine(tid);

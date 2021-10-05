@@ -625,7 +625,7 @@ int enq_dpq(uint64_t lbuf_addr, uint64_t end_time, uint64_t ptag) {
 	return 0;
 }
 
-int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*MemObject* dest*/) {
+int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*MemObject* dest*/, uint64_t core_cycle) {
 	/*
 	* deq_dpq - run by nic_core in bbl(). gets the packet latency info from tc_map
 	*			uarch access to memobject and record
@@ -654,14 +654,14 @@ int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*M
 		assert((!cRec->getEventRecorder()->hasRecord()));
 
 		if (nicInfo->record_nic_access) {
-			req = { lbuf_lineAddr, GETS, 0xDA0000, &dummyState, end_cycle, NULL, dummyState, srcId, 0 };
+			req = { lbuf_lineAddr, GETS, 0xDA0000, &dummyState, core_cycle, NULL, dummyState, srcId, 0 };
 		}
 		else {
-			req = { lbuf_lineAddr, GETS, 0xDA0000, &dummyState, end_cycle, NULL, dummyState, srcId, MemReq::NORECORD };
+			req = { lbuf_lineAddr, GETS, 0xDA0000, &dummyState, core_cycle, NULL, dummyState, srcId, MemReq::NORECORD };
 		}
 
 		uint64_t reqSatisfiedCycle = l1d->getParent(lbuf_lineAddr)->access(req);
-		cRec->record(end_cycle, end_cycle, reqSatisfiedCycle);
+		cRec->record(core_cycle, core_cycle, reqSatisfiedCycle);
 		*/
 
 		//////// get packet latency info from tag-starttime map //////
@@ -676,6 +676,9 @@ int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*M
 
 		futex_unlock(&lg_p->ptc_lock);
 
+		//uint64_t access_latency = reqSatisfiedCycle - core_cycle;
+		//uint64_t p_latency = end_cycle + access_latency - start_cycle;	
+	
 		uint64_t p_latency = end_cycle - start_cycle;
 		insert_latency_stat(p_latency);
 
