@@ -173,7 +173,7 @@ int update_loadgen(void* lg_p) {
 	return 0;
 }
 
-uint32_t allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t core_id) { // reusing(modifying) sim_nic.h function
+uint32_t allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t core_id) { 
 /*
 * allocate_recv_buf - finds free recv buffer from buffer pool and returns head index
 *				returns the index of allocated recv buffer, not the address!
@@ -653,11 +653,13 @@ int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*M
 		MESIState dummyState = MESIState::I;
 		assert((!cRec->getEventRecorder()->hasRecord()));
 
+
+		//TODO: using GETS causes crash... why? and is it okay to use GETX?
 		if (nicInfo->record_nic_access) {
-			req = { lbuf_lineAddr, GETS, 0xDA0000, &dummyState, core_cycle, NULL, dummyState, srcId, 0 };
+			req = { lbuf_lineAddr, GETX, 0xDA0000, &dummyState, core_cycle, NULL, dummyState, srcId, 0 };
 		}
 		else {
-			req = { lbuf_lineAddr, GETS, 0xDA0000, &dummyState, core_cycle, NULL, dummyState, srcId, MemReq::NORECORD };
+			req = { lbuf_lineAddr, GETX, 0xDA0000, &dummyState, core_cycle, NULL, dummyState, srcId, MemReq::NORECORD };
 		}
 
 		uint64_t reqSatisfiedCycle = l1d->getParent(lbuf_lineAddr)->access(req);
