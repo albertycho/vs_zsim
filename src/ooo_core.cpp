@@ -700,7 +700,7 @@ void cycle_increment_routine(uint64_t& curCycle) {
 *       Process entries that are due (by creating CQ_entries)
 */
 
-    getting core_id - this works for single threaded apps! ideally want to find a way to pass on tid to getCid func
+    //getting core_id - this works for single threaded apps! ideally want to find a way to pass on tid to getCid func
     uint64_t core_id = getCid(0); 
     
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
