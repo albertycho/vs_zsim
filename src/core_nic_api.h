@@ -136,6 +136,7 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 	rmc_cq_t* cq = nicInfo->nic_elem[core_id].cq;
 	uint64_t cq_head = nicInfo->nic_elem[core_id].cq_head;
 	if (cq->SR == cq->q[cq_head].SR) {
+		//info("cq for core %lu is full", core_id);
 		return -1;
 	}
 
@@ -294,12 +295,8 @@ int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycl
 
 	uint64_t ceq_delay = 100; //TODO: make this programmable
 	
-	uint32_t tid = lg_p->ptag;//TODO: put tid=lg_p->ptag
+	uint32_t tid = lg_p->ptag; //put tid=lg_p->ptag for packet latency tracking. For now, no issues using tid for ptag
 
-	//TODO - log incoming packet ptag & issue time
-	//p_time_card* ptc = gm_calloc<p_time_card>();
-	//ptc->issue_cycle = cur_cycle;
-	//ptc->ptag = lg_p->ptag;
 
 	//insert_time_card(lg_p->ptag, cur_cycle, lg_p);
 	if (success == 0x7f) {
@@ -313,10 +310,9 @@ int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycl
 	return 0;
 }
 
+//This function is pretty much replaced by inject incoming packet
 int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id) {
 	/*Wrapper for the whole RRPP routine*/
-
-	//TODO: rewrite this function around inject_incoming_packet
 
 	/*
 	if (!gm_isready()) return 0;
@@ -553,8 +549,6 @@ int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {
 
 
 
-
-	//TODO may need debug prints to check offset and head calculation
 	futex_lock(&nicInfo->nic_elem[core_id].rb_lock);
 	//info("Free_recv_buf_addr: core_id= %d, head= %d", core_id, head);
 	int retval = free_recv_buf(head, core_id);
@@ -696,10 +690,6 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
 	* process_wq_entry - handles the wq_entry by calling appropirate action based on OP
 	*/
 	if (cur_wq_entry.op == RMC_RECV) {
-		//TODO:rewrite free_recv_buf_addr for core_nic_api
-		//free_recv_buf_addr(cur_wq_entry.buf_addr, core_id);
-
-		//info("RMC_RECV from APP"); // for debug
 		free_recv_buf_addr(cur_wq_entry.buf_addr, core_id);
 		return;
 	}
@@ -709,7 +699,7 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
 		//TODO - define this somewhere else? decide how to handle nw_roundtrip_delay
 		uint64_t nw_roundtrip_delay = 100;
 
-		// TODO - getcycles may not retrun precise cycle (could be in phase granularity). May want something more precise
+		// using new func getCycles_forSynch, which returns the private cur_cycle of the core
 		uint64_t q_cycle = ((OOOCore*) (zinfo->cores[core_id]))->getCycles_forSynch();
 		uint64_t rcp_q_cycle = q_cycle + nw_roundtrip_delay;
 		uint64_t lbuf_addr = cur_wq_entry.buf_addr;

@@ -96,11 +96,12 @@ void TimingCore::storeAndRecord(Address addr) {
 void TimingCore::bblAndRecord(Address bblAddr, BblInfo* bblInfo) {
     instrs += bblInfo->instrs;
     curCycle += bblInfo->instrs;
+    //acho - Dead code - I don't think we'll ever use timingCore instead of OOO core for INDIE
     /*
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
     void* lg_p = static_cast<void*>(gm_get_lg_ptr());
     
-    //TODO: remove experiment code
+    
     info("curCycle:%ld", curCycle);
     info("instrs:%ld", bblInfo->instrs);
     if (nicInfo->nic_elem[0].cq->q[0].success == 3) {
@@ -117,7 +118,6 @@ void TimingCore::bblAndRecord(Address bblAddr, BblInfo* bblInfo) {
         nicInfo->nic_elem[0].cq->q[0].tid = 4;
     }
 
-    //TODO: find core number
     core_ceq_routine(curCycle, nicInfo, 0);
     RRPP_routine(curCycle, nicInfo, lg_p, 0);
     RCP_routine(curCycle, nicInfo, 0);
