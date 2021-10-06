@@ -700,7 +700,7 @@ void cycle_increment_routine(uint64_t& curCycle) {
 *       Process entries that are due (by creating CQ_entries)
 */
 
-    //TODO: getting core_id - this works for single threaded apps! ideally want to find a way to pass on tid to getCid func
+    getting core_id - this works for single threaded apps! ideally want to find a way to pass on tid to getCid func
     uint64_t core_id = getCid(0); 
     
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
@@ -755,7 +755,7 @@ int OOOCore::nic_ingress_routine(THREADID tid) {
                 core_iterator = 0;
             }
             drop_count++;
-            if (drop_count > 100) { // TODO 100 is arbitrary, set a better number
+            if (drop_count > (nicInfo->expected_core_count)) { 
                 std::cout << "other cores deregistered NIC" << std::endl;
                 break;
             }
