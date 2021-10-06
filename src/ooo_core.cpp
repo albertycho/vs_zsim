@@ -274,23 +274,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
                         reqSatisfiedCycle = l1d->load(addr, dispatchCycle) + L1D_LAT;
                         cRec.record(curCycle, dispatchCycle, reqSatisfiedCycle);
                         
-                        /*
-                        //TODO: remove experiment code
-                        if (addr == (Address)(&(nicInfo->nic_elem[0].cq->q[0].recv_buf_addr))) {
-                            if (nicInfo->nic_proc_on) {
-                                std::cout << "DA to rbuf_addr var has been made by NIC before" << std::endl;
-                            }
-                            std::cout << "recv_buf[0] access  time for APP:" << (reqSatisfiedCycle - dispatchCycle) << std::endl;
-                            std::cout << "procMask: " << procMask << std::endl;
-                        }
-                        if (addr == (Address)(&(nicInfo->nic_elem[1].cq->q[0].recv_buf_addr))) {
-                            if (nicInfo->nic_proc_on) {
-                                std::cout << "DA to rbuf_addr var has been made by NIC before" << std::endl;
-                            }
-                            std::cout << "recv_buf access[1]  time for APP:" << (reqSatisfiedCycle - dispatchCycle) << std::endl;
-                            std::cout << "procMask: " << procMask << std::endl;
-                        }
-                        */
+
                     }
                     
 
@@ -530,6 +514,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 
     //TODO check which nic (ingress or egress) should handle this
+    //as of now we stick with one NIC core doing both ingress and egress work
     if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) {
         ///////////////CALL DEQ_DPQ//////////////////////
         uint32_t srcId = getCid(tid);
@@ -605,14 +590,17 @@ void OOOCore::BranchFunc(THREADID tid, ADDRINT pc, BOOL taken, ADDRINT takenNpc,
 }
 
 void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
-    //TODO: fill this out with handlenicMagic from zsim.cpp
 
     uint64_t core_id = getCid(tid);
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 
     switch (field) {
     case 0://WQ
-        //nicInfo->nic_elem[procIdx].wq_valid=true;
+
+        if (NICELEM.wq_valid == true) {
+            info("duplicate WQ register for core %lu", core_id);
+        }
+
         *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(nicInfo->nic_elem[core_id].wq);
         NICELEM.wq->head = 0;
         NICELEM.wq->SR = 1;
@@ -624,8 +612,8 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
         NICELEM.wq_valid = true;
         break;
     case 1://CQ
-        //TODO: remove dbgprint
-        info("core %lu registered CQ", core_id);
+        
+        //info("core %lu registered CQ", core_id);
 
         NICELEM.cq->tail = 0;
         NICELEM.cq->SR = 1;
@@ -689,7 +677,8 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
         NICELEM.wq->head = 0;
         NICELEM.cq->tail = 0;
         //TODO - iterate for rb_dir len
-        for (int i = 0; i < 100; i++) {
+        //for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < RECV_BUF_POOL_SIZE; i++) {
             NICELEM.rb_dir[i].in_use = false;
             NICELEM.rb_dir[i].is_head = false;
             NICELEM.rb_dir[i].len = 0;

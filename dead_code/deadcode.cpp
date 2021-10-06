@@ -127,6 +127,26 @@ uint64_t ceq_cycle = (uint64_t)(((load_generator*)lg_p)->next_cycle);
 create_CEQ_entry(recv_buf_addr, 0x7f, ceq_cycle, nicInfo, core_iterator);
 */
 
+//checking recv_buf access from NIC and app, from:
+//ooo_core.cpp line 277
+/*
+//TODO: remove experiment code
+if (addr == (Address)(&(nicInfo->nic_elem[0].cq->q[0].recv_buf_addr))) {
+    if (nicInfo->nic_proc_on) {
+        std::cout << "DA to rbuf_addr var has been made by NIC before" << std::endl;
+    }
+    std::cout << "recv_buf[0] access  time for APP:" << (reqSatisfiedCycle - dispatchCycle) << std::endl;
+    std::cout << "procMask: " << procMask << std::endl;
+}
+if (addr == (Address)(&(nicInfo->nic_elem[1].cq->q[0].recv_buf_addr))) {
+    if (nicInfo->nic_proc_on) {
+        std::cout << "DA to rbuf_addr var has been made by NIC before" << std::endl;
+    }
+    std::cout << "recv_buf access[1]  time for APP:" << (reqSatisfiedCycle - dispatchCycle) << std::endl;
+    std::cout << "procMask: " << procMask << std::endl;
+}
+*/
+
 
 
 //CORE_NIC_API.H
