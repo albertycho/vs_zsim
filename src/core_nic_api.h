@@ -625,7 +625,7 @@ int enq_dpq(uint64_t lbuf_addr, uint64_t end_time, uint64_t ptag) {
 	return 0;
 }
 
-int deq_dpq(int srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*MemObject* dest*/, uint64_t core_cycle) {
+int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*MemObject* dest*/, uint64_t core_cycle) {
 	/*
 	* deq_dpq - run by nic_core in bbl(). gets the packet latency info from tc_map
 	*			uarch access to memobject and record
