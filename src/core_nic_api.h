@@ -169,7 +169,7 @@ int update_loadgen(void* lg_p) {
 	//TODO: will do something more sophisticated for setting next_cycle offset 
 	// calculate based on injection rate. interval = phaseLen / injection rate
 	uint64_t interval = (zinfo->phaseLength) / (nicInfo->packet_injection_rate);
-	info("interval: %lu", interval);
+	info("interval: %lu", interval); 
 	((load_generator*)lg_p)->next_cycle = ((load_generator*)lg_p)->next_cycle + interval; 
 
 	((load_generator*)lg_p)->ptag = ((load_generator*)lg_p)->ptag + 1;
