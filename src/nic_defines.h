@@ -203,6 +203,9 @@ struct glob_nic_elements {
 	//uint64_t* latencies_list;
 	//uint64_t latencies_list_capa;
 
+	uint32_t ceq_delay;
+	uint32_t nw_roundtrip_delay;
+
 	PAD();
 	nic_element nic_elem[MAX_NUM_CORES];
 	//adding additional elements to this struct below nic_elem causes segfault at gm_calloc for unknown reason

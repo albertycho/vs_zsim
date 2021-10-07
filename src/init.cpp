@@ -800,6 +800,13 @@ static void InitSystem(Config& config) {
     uint32_t hist_interval = config.get<uint32_t>("sim.hist_interval", 5000);
     nicInfo->hist_interval = hist_interval;
 
+    uint32_t ceq_delay = config.get<uint32_t>("sim.ceq_delay", 0);
+    nicInfo->ceq_delay= ceq_delay;
+
+    uint32_t nw_roundtrip_delay = config.get<uint32_t>("sim.nw_roundtrip_delay", 100);
+    nicInfo->nw_roundtrip_delay = nw_roundtrip_delay;
+
+
     load_generator* lgp;
     lgp=(load_generator*)gm_get_lg_ptr();
 

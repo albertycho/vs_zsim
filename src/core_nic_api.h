@@ -166,10 +166,9 @@ int update_loadgen(void* lg_p) {
 *					packet creation is done in RPCGEN::generatePackedRPC
 */
 		
-	//TODO: will do something more sophisticated for setting next_cycle offset 
 	// calculate based on injection rate. interval = phaseLen / injection rate
 	uint64_t interval = (zinfo->phaseLength) / (nicInfo->packet_injection_rate);
-	info("interval: %lu", interval); 
+	//info("interval: %lu", interval); 
 	((load_generator*)lg_p)->next_cycle = ((load_generator*)lg_p)->next_cycle + interval; 
 
 	((load_generator*)lg_p)->ptag = ((load_generator*)lg_p)->ptag + 1;
@@ -296,7 +295,7 @@ int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycl
 	}
 
 
-	uint64_t ceq_delay = 100; //TODO: make this programmable
+	uint64_t ceq_delay = nicInfo->ceq_delay; //TODO: make this programmable
 	
 	uint32_t tid = lg_p->ptag; //put tid=lg_p->ptag for packet latency tracking. For now, no issues using tid for ptag
 
@@ -700,7 +699,7 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
 	if (cur_wq_entry.op == RMC_SEND)
 	{
 		//TODO - define this somewhere else? decide how to handle nw_roundtrip_delay
-		uint64_t nw_roundtrip_delay = 100;
+		uint64_t nw_roundtrip_delay = nicInfo->nw_roundtrip_delay;
 
 		// using new func getCycles_forSynch, which returns the private cur_cycle of the core
 		uint64_t q_cycle = ((OOOCore*) (zinfo->cores[core_id]))->getCycles_forSynch();
