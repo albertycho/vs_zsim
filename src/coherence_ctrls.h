@@ -351,7 +351,7 @@ class MESICC : public CC {
 
         uint64_t processEviction(const MemReq& triggerReq, Address wbLineAddr, int32_t lineId, uint64_t startCycle) {
             bool lowerLevelWriteback = false;
-            bool no_record = ((triggerReq.flags) & (1 << 6)) != 0;
+            bool no_record = ((triggerReq.flags) & (MemReq::NORECORD)) != 0;
             uint64_t evCycle = tcc->processEviction(wbLineAddr, lineId, &lowerLevelWriteback, startCycle, triggerReq.srcId); //1. if needed, send invalidates/downgrades to lower level
             evCycle = bcc->processEviction(wbLineAddr, lineId, lowerLevelWriteback, evCycle, triggerReq.srcId, no_record); //2. if needed, write back line to upper level
             return evCycle;
@@ -475,7 +475,7 @@ class MESITerminalCC : public CC {
 
         uint64_t processEviction(const MemReq& triggerReq, Address wbLineAddr, int32_t lineId, uint64_t startCycle) {
             bool lowerLevelWriteback = false;
-            bool no_record = ((triggerReq.flags) & (1 << 6)) != 0;
+            bool no_record = ((triggerReq.flags) & (MemReq::NORECORD)) != 0;
             uint64_t endCycle = bcc->processEviction(wbLineAddr, lineId, lowerLevelWriteback, startCycle, triggerReq.srcId, no_record); //2. if needed, write back line to upper level
             return endCycle;  // critical path unaffected, but TimingCache needs it
         }

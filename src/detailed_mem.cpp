@@ -1101,7 +1101,7 @@ void MemControllerBase::TickScheduler(uint64_t sysCycle) {
 
 uint64_t MemControllerBase::access(MemReq& req) {
 
-    bool no_record = ((req.flags) & (1 << 6)) != 0;
+    bool no_record = ((req.flags) & (MemReq::NORECORD)) != 0;
 
     switch (req.type) {
         case PUTS:

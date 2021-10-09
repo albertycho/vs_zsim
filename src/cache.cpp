@@ -60,7 +60,7 @@ void Cache::initCacheStats(AggregateStat* cacheStat) {
 
 uint64_t Cache::access(MemReq& req) {
 
-    bool no_record = req.flags & (1 << 6) != 0;
+    bool no_record = req.flags & (MemReq::NORECORD) != 0;
 
     uint64_t respCycle = req.cycle;
     bool skipAccess = cc->startAccess(req); //may need to skip access due to races (NOTE: may change req.type!)

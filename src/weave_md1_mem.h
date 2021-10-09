@@ -65,7 +65,7 @@ class WeaveMD1Memory : public MD1Memory {
 
         uint64_t access(MemReq& req) {
             
-            bool no_record = ((req.flags) & (1 << 6)) != 0;
+            bool no_record = ((req.flags) & (MemReq::NORECORD)) != 0;
 
             uint64_t realRespCycle = MD1Memory::access(req);
             uint32_t realLatency = realRespCycle - req.cycle;

@@ -57,7 +57,7 @@ uint64_t MESIBottomCC::processEviction(Address wbLineAddr, uint32_t lineId, bool
 
     uint32_t norecord_flag = 0;
     if (no_record) {
-        norecord_flag = 1 << 6;
+        norecord_flag = MemReq::NORECORD;
     }
     MESIState* state = &array[lineId];
     if (lowerLevelWriteback) {

@@ -652,10 +652,10 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 
 		//TODO: using GETS causes crash... why? and is it okay to use GETX?
 		if (nicInfo->record_nic_access) {
-			req = { lbuf_lineAddr, GETX, 0xDA0000, &dummyState, core_cycle, NULL, dummyState, srcId, 0 };
+			req = { lbuf_lineAddr, GETX, 0xDA0000, &dummyState, core_cycle, NULL, dummyState, srcId, MemReq::PKTOUT };
 		}
 		else {
-			req = { lbuf_lineAddr, GETX, 0xDA0000, &dummyState, core_cycle, NULL, dummyState, srcId, MemReq::NORECORD };
+			req = { lbuf_lineAddr, GETX, 0xDA0000, &dummyState, core_cycle, NULL, dummyState, srcId, MemReq::NORECORD | MemReq::PKTOUT};
 		}
 
 		uint64_t reqSatisfiedCycle = l1d->getParent(lbuf_lineAddr)->access(req);

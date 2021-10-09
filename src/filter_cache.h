@@ -163,7 +163,7 @@ class FilterCache : public Cache {
             Address pLineAddr = procMask | vLineAddr;
             MESIState dummyState = MESIState::I;
             futex_lock(&filterLock);
-            uint32_t nr_flags = reqFlags | 1<<6; //NORECORD
+            uint32_t nr_flags = reqFlags | 1; //NORECORD
             MemReq req = { pLineAddr, isLoad ? GETS : GETX, 0, &dummyState, curCycle, &filterLock, dummyState, srcId, nr_flags};
             uint64_t respCycle = access(req);
 
