@@ -1,3 +1,7 @@
+/*
+ * RPCGenerator.cpp
+ */
+
 #include "RPCGenerator.hpp"
 #include <cstdlib>
 #include <cstdio>
@@ -18,6 +22,8 @@ int* get_random_permutation(unsigned int n, unsigned int clt_gid, uint64_t* seed
     for (i = 0; i < clt_gid * n; i++) {
         std::rand();
     }
+
+
 
 
     int* log = gm_calloc<int>(n);
