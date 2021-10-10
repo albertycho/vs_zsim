@@ -556,9 +556,11 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
 
                 /* check if cores finished their processes and exit if so */
                 if (nicInfo->registered_core_count == 0) {
-                    info("ooo_core.cpp - turn off nic proc");
-                    nicInfo->nic_ingress_proc_on = false;
-                    nicInfo->nic_egress_proc_on = false;
+                    if (nicInfo->nic_ingress_proc_on) {
+                        info("ooo_core.cpp - turn off nic proc");
+                        nicInfo->nic_ingress_proc_on = false;
+                        nicInfo->nic_egress_proc_on = false;
+                    }
                 }
                 else{
                     //Inject packets for this phase
