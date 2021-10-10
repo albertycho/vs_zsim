@@ -153,6 +153,7 @@ struct nic_element {
 	PAD();
 
 	cq_wr_event* cq_wr_event_q;
+	uint64_t ceq_size; //keep count for load balancing
 	rcp_event* rcp_eq;
 	lock_t rcp_lock;
 	lock_t ceq_lock;

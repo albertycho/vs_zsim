@@ -30,15 +30,17 @@ bool cq_wr_event_ready(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint64_t 
 
 cq_wr_event* deq_cq_wr_event(glob_nic_elements* nicInfo, uint64_t core_id)
 {
-/*
-* deq_cq_wr_event removes the head in CEQ and returns the entry to caller
-*/
+	/*
+	* deq_cq_wr_event removes the head in CEQ and returns the entry to caller
+	*/
 	futex_lock(&nicInfo->nic_elem[core_id].ceq_lock);
 	assert(CQ_WR_EV_Q != NULL);
 
 	cq_wr_event* ret = CQ_WR_EV_Q;
 
 	CQ_WR_EV_Q = CQ_WR_EV_Q->next;
+	assert(nicInfo->nic_elem[core_id].ceq_size > 0);
+	nicInfo->nic_elem[core_id].ceq_size--;
 	futex_unlock(&nicInfo->nic_elem[core_id].ceq_lock);
 
 	return ret;
@@ -279,6 +281,7 @@ void cq_event_enqueue(uint64_t q_cycle, cq_entry_t cqe, glob_nic_elements* nicIn
 		}
 		cq_wr_event_q_tail->next = cq_wr_e;
 	}
+	nicInfo->nic_elem[core_id].ceq_size++;
 	futex_unlock(&nicInfo->nic_elem[core_id].ceq_lock);
 }
 

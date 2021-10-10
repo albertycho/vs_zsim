@@ -747,6 +747,7 @@ int OOOCore::nic_ingress_routine(THREADID tid) {
             core_iterator = 0;
         }
 
+        //TODO:: load balancing for choosing core
         /* find next valid core that is still running */
         int drop_count = 0;
         while (!(nicInfo->nic_elem[core_iterator].cq_valid)) {
