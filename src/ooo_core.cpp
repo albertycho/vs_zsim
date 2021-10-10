@@ -734,6 +734,8 @@ int OOOCore::nic_ingress_routine(THREADID tid) {
 
     if (((load_generator*)lg_p)->next_cycle == 0) {
         ((load_generator*)lg_p)->next_cycle = core->curCycle;
+        nicInfo->sim_start_time = std::chrono::system_clock::now();
+
     }
     uint32_t core_iterator = 0;
 

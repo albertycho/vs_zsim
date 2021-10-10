@@ -11,6 +11,8 @@
 #include <map>
 #include <memory>
 
+#include <chrono>
+
 
 #ifndef _NIC_DEFINES_H_
 #define _NIC_DEFINES_H_
@@ -206,6 +208,9 @@ struct glob_nic_elements {
 
 	uint32_t ceq_delay;
 	uint32_t nw_roundtrip_delay;
+
+	std::chrono::system_clock::time_point sim_start_time;
+	std::chrono::system_clock::time_point sim_end_time;
 
 	PAD();
 	nic_element nic_elem[MAX_NUM_CORES];
