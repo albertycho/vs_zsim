@@ -507,7 +507,7 @@ int main(int argc, char *argv[]) {
 
     nicInfo->sim_end_time = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = (nicInfo->sim_end_time) - (nicInfo->sim_start_time);
-    std::cout << "sim elapsed time: " << elapsed_seconds << "s" << std::endl;
+    std::cout << "sim elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
 
     if (zinfo && zinfo->globalActiveProcs) warn("Unclean exit of %d children, termination stats were most likely not dumped", zinfo->globalActiveProcs);
     exit(exitCode);
