@@ -724,6 +724,41 @@ void cycle_increment_routine(uint64_t& curCycle) {
 
 }
 
+uint32_t assign_core(uint32_t in_core_iterator) {
+    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+    uint64_t min_ceq_size = RECV_BUF_POOL_SIZE; // assign some very large number
+    uint32_t ret_core_id = in_core_iterator;
+    uint32_t core_iterator = in_core_iterator;
+
+    uint32_t numCores = zinfo->numCores; //(nicInfo->expected_core_count + 2);
+    
+    for (uint32_t i = 0; i < numCores < i++) {
+        if (nicInfo->nic_elem[core_iterator].cq_valid == false) {
+
+        }
+        else {
+            if (nicInfo->nic_elem[core_iterator].ceq_size < min_ceq_size) {
+                ret_core_id = core_iterator;
+                min_ceq_size = nicInfo->nic_elem[core_iterator].ceq_size;
+                if (min_ceq_size == 0) {
+                    return ret_core_id;
+                }
+            }
+
+        }
+
+        core_iterator++;
+        if (core_iterator >= zinfo->numCores) {
+            core_iterator = 0;
+        }
+
+    }
+
+    return ret_core_id;
+
+
+}
+
 int OOOCore::nic_ingress_routine(THREADID tid) {
 
     OOOCore* core = static_cast<OOOCore*>(cores[tid]);
@@ -735,7 +770,7 @@ int OOOCore::nic_ingress_routine(THREADID tid) {
     if (((load_generator*)lg_p)->next_cycle == 0) {
         ((load_generator*)lg_p)->next_cycle = core->curCycle;
         nicInfo->sim_start_time = std::chrono::system_clock::now();
-        info("starting counting sim_time");
+        info("starting sim time count");
 
     }
     uint32_t core_iterator = 0;
