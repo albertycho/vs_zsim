@@ -632,10 +632,8 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
 
-	uint32_t deq_count = 0;
 
 	while (nicInfo->done_packet_q_head != NULL) {
-		deq_count++;
 
 		futex_lock(&(nicInfo->dpq_lock));
 		done_packet_info* dp = nicInfo->done_packet_q_head;
@@ -680,15 +678,14 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 
 		futex_unlock(&lg_p->ptc_lock);
 
-		//uint64_t access_latency = reqSatisfiedCycle - core_cycle;
-		//uint64_t p_latency = end_cycle + access_latency - start_cycle;	
-	
-		uint64_t p_latency = end_cycle - start_cycle;
+		uint64_t access_latency = reqSatisfiedCycle - core_cycle;
+		uint64_t p_latency = end_cycle + access_latency - start_cycle;	
+		//uint64_t p_latency = end_cycle - start_cycle;
+
 		insert_latency_stat(p_latency);
 
 
 	}
-	info("deq_dpq: deq_count: %d", deq_count);
 
 	return 0;
 }
