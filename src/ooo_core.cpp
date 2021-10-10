@@ -787,6 +787,7 @@ int OOOCore::nic_ingress_routine(THREADID tid) {
 
         //TODO:: load balancing for choosing core
         /* find next valid core that is still running */
+        /*
         int drop_count = 0;
         while (!(nicInfo->nic_elem[core_iterator].cq_valid)) {
             core_iterator++;
@@ -803,6 +804,9 @@ int OOOCore::nic_ingress_routine(THREADID tid) {
                 info("nic_ingress_routine (line803) - core_iterator out of bound: %d, cycle: %lu", core_iterator, core->curCycle);
             }
         }
+        */
+
+        core_iterator = assign_core(core_iterator);
 
         /* Inject packet (call core function) */
         uint32_t srcId = getCid(tid);
