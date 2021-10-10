@@ -741,7 +741,7 @@ uint32_t assign_core(uint32_t in_core_iterator) {
                 ret_core_id = core_iterator;
                 min_ceq_size = nicInfo->nic_elem[core_iterator].ceq_size;
                 if (min_ceq_size == 0) {
-                    info("ret_core_id: %d", ret_core_id);
+                    //info("ret_core_id: %d", ret_core_id);
                     return ret_core_id;
                 }
             }
@@ -754,7 +754,7 @@ uint32_t assign_core(uint32_t in_core_iterator) {
         }
 
     }
-    info("ret_core_id: %d, min_ceq_size: %lu", ret_core_id, min_ceq_size);
+    //info("ret_core_id: %d, min_ceq_size: %lu", ret_core_id, min_ceq_size);
     return ret_core_id;
 
 }
