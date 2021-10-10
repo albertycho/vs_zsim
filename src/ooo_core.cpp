@@ -726,7 +726,7 @@ void cycle_increment_routine(uint64_t& curCycle) {
 
 uint32_t assign_core(uint32_t in_core_iterator) {
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-    uint64_t min_ceq_size = RECV_BUF_POOL_SIZE; // assign some very large number
+    uint64_t min_ceq_size = ~0;//RECV_BUF_POOL_SIZE; // assign some very large number
     uint32_t ret_core_id = in_core_iterator;
     uint32_t core_iterator = in_core_iterator;
 
@@ -754,7 +754,7 @@ uint32_t assign_core(uint32_t in_core_iterator) {
         }
 
     }
-    info("ret_core_id: %d, min_ceq_size: %d", ret_core_id, min_ceq_size);
+    info("ret_core_id: %d, min_ceq_size: %lu", ret_core_id, min_ceq_size);
     return ret_core_id;
 
 }
