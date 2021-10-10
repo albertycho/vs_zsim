@@ -613,7 +613,7 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
         break;
     case 1://CQ
         
-        //info("core %lu registered CQ", core_id);
+        info("core %lu registered CQ", core_id);
 
         NICELEM.cq->tail = 0;
         NICELEM.cq->SR = 1;
