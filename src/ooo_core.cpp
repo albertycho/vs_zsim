@@ -732,7 +732,7 @@ uint32_t assign_core(uint32_t in_core_iterator) {
 
     uint32_t numCores = zinfo->numCores; //(nicInfo->expected_core_count + 2);
     
-    for (uint32_t i = 0; i < numCores < i++) {
+    for (uint32_t i = 0; i < numCores; i++) {
         if (nicInfo->nic_elem[core_iterator].cq_valid == false) {
 
         }
