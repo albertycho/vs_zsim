@@ -529,6 +529,7 @@ int main(int argc, char *argv[]) {
     latency_hist_file << "90-percentile : " << sorted_latencies[percentile_90_index] << std::endl;
     latency_hist_file << "99-percentile : " << sorted_latencies[percentile_99_index] << std::endl;
 
+    latency_hist_file << std::endl;
 
     for (uint64_t iii = 0; iii < hist_width; iii++) {
         latency_hist_file << iii * nicInfo->hist_interval << "," << hist_counters[iii] << "," << std::endl;
