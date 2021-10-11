@@ -493,18 +493,43 @@ int main(int argc, char *argv[]) {
         map_latency_file << nicInfo->latencies[iii] << std::endl;
         uint64_t tmp_index = (nicInfo->latencies[iii] / nicInfo->hist_interval);
         hist_counters[tmp_index]++;
+
+        bool insert_at_begin = true;
         for (uint64_t jjj = iii; jjj > 0; jjj--) {
             if (jjj == 0) {
                 info("jjj not supposed to be 0");
             }
-
+            if (sorted_latencies[jjj - 1] > nicInfo->latencies[iii]) {
+                sorted_latencies[jjj] = sorted_latencies[jjj - 1];
+            }
+            else {
+                sorted_latencies[jjj] = nicInfo->latencies[iii];
+                insert_at_begin = false;
+                break;
+            }
+        }
+        if (insert_at_begin) {
+            sorted_latencies[0] = nicInfo->latnecies[iii];
         }
 
     }
+
     map_latency_file.close();
 
     info("writing to latency_hist file");
     std::ofstream latency_hist_file("latency_hist.txt");
+
+    uint64_t median_index = (nicInfo->latencies_size) / 2;
+    uint64_t percentile_80_index = ((nicInfo->latencies_size) * 80) / 100;
+    uint64_t percentile_90_index = ((nicInfo->latencies_size) * 90) / 100;
+    uint64_t percentile_99_index = ((nicInfo->latencies_size) * 99) / 100;
+
+    latency_hist_file << "median        : " << sorted_latencies[median_index] << std::endl;
+    latency_hist_file << "80-percentile : " << sorted_latencies[percentile_80_index] << std::endl;
+    latency_hist_file << "90-percentile : " << sorted_latencies[percentile_90_index] << std::endl;
+    latency_hist_file << "99-percentile : " << sorted_latencies[percentile_99_index] << std::endl;
+
+
     for (uint64_t iii = 0; iii < hist_width; iii++) {
         latency_hist_file << iii * nicInfo->hist_interval << "," << hist_counters[iii] << "," << std::endl;
     }
