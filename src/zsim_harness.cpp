@@ -469,6 +469,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
 
     nicInfo->sim_end_time = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = (nicInfo->sim_end_time) - (nicInfo->sim_start_time);
@@ -477,7 +478,7 @@ int main(int argc, char *argv[]) {
     /// latency stat output
     info("writing to map_latency_file");
     std::ofstream map_latency_file("map_latency.txt");
-    glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
+
 
     assert(nicInfo->hist_interval != 0);
     uint64_t hist_width = ((nicInfo->max_latency) / (nicInfo->hist_interval)) + 1;
@@ -496,6 +497,7 @@ int main(int argc, char *argv[]) {
             if (jjj == 0) {
                 info("jjj not supposed to be 0");
             }
+
         }
 
     }
