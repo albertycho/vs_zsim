@@ -509,7 +509,7 @@ int main(int argc, char *argv[]) {
             }
         }
         if (insert_at_begin) {
-            sorted_latencies[0] = nicInfo->latnecies[iii];
+            sorted_latencies[0] = nicInfo->latencies[iii];
         }
 
     }
