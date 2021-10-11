@@ -469,6 +469,11 @@ int main(int argc, char *argv[]) {
         }
     }
 
+
+    nicInfo->sim_end_time = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = (nicInfo->sim_end_time) - (nicInfo->sim_start_time);
+    std::cout << "sim elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
+
     /// latency stat output
     info("writing to map_latency_file");
     std::ofstream map_latency_file("map_latency.txt");
@@ -477,6 +482,7 @@ int main(int argc, char *argv[]) {
     assert(nicInfo->hist_interval != 0);
     uint64_t hist_width = ((nicInfo->max_latency) / (nicInfo->hist_interval)) + 1;
     uint64_t* hist_counters = new uint64_t[hist_width];
+    uint64_t* sorted_latencies = new uint64_t[nicInfo->latencies_size];
     //gives me garbage if I don't clear
     for (uint64_t iii = 0; iii < hist_width; iii++) {
         hist_counters[iii] = 0;
@@ -486,6 +492,12 @@ int main(int argc, char *argv[]) {
         map_latency_file << nicInfo->latencies[iii] << std::endl;
         uint64_t tmp_index = (nicInfo->latencies[iii] / nicInfo->hist_interval);
         hist_counters[tmp_index]++;
+        for (uint64_t jjj = iii; jjj > 0; jjj--) {
+            if (jjj == 0) {
+                info("jjj not supposed to be 0");
+            }
+        }
+
     }
     map_latency_file.close();
 
@@ -505,9 +517,7 @@ int main(int argc, char *argv[]) {
         exitCode = 1;
     }
 
-    nicInfo->sim_end_time = std::chrono::system_clock::now();
-    std::chrono::duration<double> elapsed_seconds = (nicInfo->sim_end_time) - (nicInfo->sim_start_time);
-    std::cout << "sim elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
+
 
     if (zinfo && zinfo->globalActiveProcs) warn("Unclean exit of %d children, termination stats were most likely not dumped", zinfo->globalActiveProcs);
     exit(exitCode);
