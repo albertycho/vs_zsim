@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include "locks.h"
 #include "RPCGenerator.hpp"
+#include "libzsim/zsim_nic_defines.hpp"
 #include <map>
 #include <memory>
 
@@ -19,7 +20,7 @@
 
 #define MAX_NUM_CORES 64 //probably will support more
 
-#define MAX_NUM_WQ 8
+//#define MAX_NUM_WQ 8
 
 #define NICELEM 		nicInfo->nic_elem[core_id]
 #define NWQ_VAL 		nicInfo->nic_elem[core_id].wq_valid
@@ -50,6 +51,7 @@
 
 #define RCP_EQ			nicInfo->nic_elem[core_id].rcp_eq
 
+/*
 #define NOTIFY_WQ_WRITE 0xA
 
 #define RMC_READ                1
@@ -68,12 +70,15 @@
 #define RMC_INCOMING_SEND       (1<<SEND_OP_SHIFT) | (1<<INCOMING_SEND_SHIFT)
 #define RMC_INCOMING_RESP       (1<<SEND_OP_SHIFT) | (1<<INCOMING_RESP_SHIFT)
 #define RMC_INVAL               42
+*/
+
 
 #define RECV_BUF_POOL_SIZE 2000
 //#define RECV_BUF_POOL_SIZE 32000
 
-#define LAT_ARR_SIZE 60000
+#define LAT_ARR_SIZE 6000
 
+#if 0
 typedef struct wq_entry {
 	//first double-word (8 bytes)
 	uint32_t op;        //up to 64 soNUMA ops
@@ -108,6 +113,7 @@ typedef struct rmc_cq {
 	uint32_t tail;
 	bool SR;    //sense reverse bit
 } rmc_cq_t;
+#endif
 
 typedef struct recv_buf_dir {
 	bool in_use;

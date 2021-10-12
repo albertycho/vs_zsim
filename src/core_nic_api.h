@@ -1,4 +1,4 @@
-#include "nic_defines.h"
+//#include "nic_defines.h"
 #include "log.h"
 #include "ooo_core.h"
 #include "ooo_core_recorder.h"
@@ -73,8 +73,6 @@ int put_cq_entry(cq_entry_t ncq_entry, glob_nic_elements* nicInfo, uint64_t core
 	//separate out function that deals with the head/tail and SR
 	rmc_cq_t* cq = nicInfo->nic_elem[core_id].cq;
 	uint64_t cq_head = nicInfo->nic_elem[core_id].cq_head;
-	
-	
 	if (cq->SR == cq->q[cq_head].SR) {
 		info("FAILED cq->SR == cq->q[cq_head].SR check");
 		info("cq_head=%lu",cq_head);
@@ -137,6 +135,7 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 	//TODO check if cq entry is available
 	rmc_cq_t* cq = nicInfo->nic_elem[core_id].cq;
 	uint64_t cq_head = nicInfo->nic_elem[core_id].cq_head;
+
 	if (cq->SR == cq->q[cq_head].SR) {
 		//info("cq for core %lu is full", core_id);
 		return -1;
@@ -247,6 +246,8 @@ cq_entry_t generate_cqe(uint32_t success, uint32_t tid, uint64_t recv_buf_addr)
 /*
 * generate_cqe - builds a cq entry based on inputs
 */
+
+	//std::cout << "Generating cq entry with success code " << std::hex<<success << " and recv buff addr = " << recv_buf_addr << std::endl;
 	cq_entry_t cqe;
 	cqe.recv_buf_addr = recv_buf_addr;
 	cqe.success = success;
@@ -359,6 +360,8 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	((load_generator*) lg_p)->RPCGen->generatePackedRPC((char*)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head].line_seg[0])));
 	update_loadgen(lg_p);
 
+
+/*
 	MemReq req;
 	Address rbuf_lineAddr = recv_buf_addr >> lineBits;
 	MESIState dummyState = MESIState::I;
@@ -374,14 +377,25 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 
 	//I need to think through timing and clock cycle assignment/adjustment 
 	uint64_t reqSatisfiedCycle = l1d->getParent(rbuf_lineAddr)->access(req);
+*/
+
+	// marina: how to access multiple cache levels
+	// level decrease as you move closer to mem
+	// so for a 2-level cache hierarchy, we have l1:level 2, llc: level 1, mem: level 0
+	// specifiy the level after curCycle
+	// to access the private caches of other cores, change the lid[] index
+	// this example performs a GETX on the LLC 
+
+//	uint64_t reqSatisfiedCycle = core->l1d_caches[core_id]->store(recv_buf_addr, cur_cycle, 1, core_id);
+	uint64_t reqSatisfiedCycle = core->l1d_caches[srcId]->store(recv_buf_addr, cur_cycle, 1, srcId);
 
 	//TODO check what cycles need to be passed to recrod
 	cRec->record(cur_cycle, cur_cycle, reqSatisfiedCycle);
 	uint64_t ceq_cycle = (uint64_t)(((load_generator*)lg_p)->next_cycle);
-	create_CEQ_entry(recv_buf_addr, 0x7f, ceq_cycle, nicInfo, core_id);
+	create_CEQ_entry(recv_buf_addr, 0x7f, 10/*ceq_cycle*/, nicInfo, core_id);
 
 	//TODO may want to pass the reqSatisfiedcycle value back to the caller via updating an argument
-
+	//std::cout << "packet injection completed" << std::endl;
 	return 0;
 
 }
@@ -634,7 +648,6 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 
 
 	while (nicInfo->done_packet_q_head != NULL) {
-
 		futex_lock(&(nicInfo->dpq_lock));
 		done_packet_info* dp = nicInfo->done_packet_q_head;
 		nicInfo->done_packet_q_head = dp->next;
@@ -647,7 +660,7 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 
 		/// handle done packet - uarch mem access, lookup map to match ptag and log latency
 		///////////////// UARCH MEM ACCESS /////////////////////////
-		
+/*		
 		MemReq req;
 		Address lbuf_lineAddr = dp->lbuf_addr >> lineBits;
 		MESIState dummyState = MESIState::I;
@@ -663,6 +676,12 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 		}
 
 		uint64_t reqSatisfiedCycle = l1d->getParent(lbuf_lineAddr)->access(req);
+*/		
+
+		// GETS to LLC
+
+		uint64_t reqSatisfiedCycle = core->l1d_caches[srcId]->load(dp->lbuf_addr, core_cycle, 1, srcId);
+
 		cRec->record(core_cycle, core_cycle, reqSatisfiedCycle);
 		
 
@@ -678,10 +697,10 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 
 		futex_unlock(&lg_p->ptc_lock);
 
-		uint64_t access_latency = reqSatisfiedCycle - core_cycle;
-		uint64_t p_latency = end_cycle + access_latency - start_cycle;	
-		//uint64_t p_latency = end_cycle - start_cycle;
-
+		//uint64_t access_latency = reqSatisfiedCycle - core_cycle;
+		//uint64_t p_latency = end_cycle + access_latency - start_cycle;	
+	
+		uint64_t p_latency = end_cycle - start_cycle;
 		insert_latency_stat(p_latency);
 
 

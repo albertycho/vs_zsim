@@ -57,7 +57,14 @@
 #define ISSUES_PER_CYCLE 4
 #define RF_READS_PER_CYCLE 3
 
-OOOCore::OOOCore(FilterCache* _l1i, FilterCache* _l1d, uint32_t _domain, g_string& _name) : Core(_name), l1i(_l1i), l1d(_l1d), cRec(_domain, _name) {
+//OOOCore::OOOCore(FilterCache* _l1i, FilterCache* _l1d, int _core_id, uint32_t _domain, g_string& _name) : Core(_name), l1i(_l1i), l1d(_l1d), cRec(_domain, _name) {
+OOOCore::OOOCore(FilterCache* _l1i, FilterCache* _l1d, uint32_t _domain, g_string& _name, uint32_t _coreIdx, 
+                FilterCache* _l1i_caches[], FilterCache* _l1d_caches[],/* Cache* _l2_caches[], TimingCache* _llc_cache[], MemObject* _memory, */
+                uint32_t _no_cores/*, uint32_t _no_llc_banks, uint32_t _no_priv_levels*/) 
+: Core(_name), l1i(_l1i), l1d(_l1d), core_id(_coreIdx), cRec(_domain, _name) {
+ 
+    core_id = _coreIdx;
+    
     decodeCycle = DECODE_STAGE;  // allow subtracting from it
     curCycle = 0;
     phaseEndCycle = zinfo->phaseLength;
@@ -76,6 +83,34 @@ OOOCore::OOOCore(FilterCache* _l1i, FilterCache* _l1d, uint32_t _domain, g_strin
     instrs = uops = bbls = approxInstrs = mispredBranches = 0;
 
     for (uint32_t i = 0; i < FWD_ENTRIES; i++) fwdArray[i].set((Address)(-1L), 0);
+
+    /* Accessing different caches / memory banks
+        private cache of core i: l1i_caches[i], l1d_caches[i], l2_caches[i] (if private l2 present)
+        bank i of shared last level cache: llc_cache[i]
+        memory: mem
+        * Note * in a 2-level hierarchy, access the l2 through the llc_cache structure
+    */
+
+    for (uint32_t i=0; i<_no_cores; i++) {        
+        l1d_caches[i] = _l1d_caches[i];
+    }
+/*
+    for (uint32_t i=0; i<_no_cores; i++) {
+        l1i_caches[i] = _l1i_caches[i];
+    }
+
+    if(_no_priv_levels > 1) {
+        for (uint32_t i=0; i<_no_cores; i++) {
+            l2_caches[i] = _l2_caches[i];
+        }
+    }    
+
+    for (uint32_t i=0; i<_no_llc_banks; i++ ) {
+        llc_cache[i] = _llc_cache[i];
+    }
+ 
+    memory = dynamic_cast<SimpleMemory*>(_memory);
+*/
 }
 
 void OOOCore::initStats(AggregateStat* parentStat) {
@@ -194,7 +229,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
 #endif
             curCycleIssuedUops = 0;
             curCycleRFReads = 0;
-            for (uint32_t i = 0; i < cdDiff; i++) insWindow.advancePos(curCycle);
+            for (uint32_t i = 0; i < cdDiff; i++) insWindow.advancePos(curCycle, core_id);
         }
         prevDecCycle = uop->decCycle;
         uopQueue.markLeave(curCycle);
@@ -207,7 +242,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
             // info("Advancing due to uop issue width");
             curCycleIssuedUops = 0;
             curCycleRFReads = 0;
-            insWindow.advancePos(curCycle);
+            insWindow.advancePos(curCycle, core_id);
         }
         curCycleIssuedUops++;
 
@@ -224,7 +259,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
         if (curCycleRFReads > RF_READS_PER_CYCLE) {
             curCycleRFReads -= RF_READS_PER_CYCLE;
             curCycleIssuedUops = 0;  // or 1? that's probably a 2nd-order detail
-            insWindow.advancePos(curCycle);
+            insWindow.advancePos(curCycle, core_id);
         }
 
         uint64_t c2 = rob.minAllocCycle();
@@ -237,7 +272,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
 
         // info("IW 0x%lx %d %ld %ld %x", bblAddr, i, c2, dispatchCycle, uop->portMask);
         // NOTE: Schedule can adjust both cur and dispatch cycles
-        insWindow.schedule(curCycle, dispatchCycle, uop->portMask, uop->extraSlots);
+        insWindow.schedule(curCycle, dispatchCycle, uop->portMask, uop->extraSlots, core_id);
 
         // If we have advanced, we need to reset the curCycle counters
         if (curCycle > c3) {
@@ -260,7 +295,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
                     uint64_t lqCycle = loadQueue.minAllocCycle();
                     if (lqCycle > dispatchCycle) {
 #ifdef LSU_IW_BACKPRESSURE
-                        insWindow.poisonRange(curCycle, lqCycle, 0x4 /*PORT_2, loads*/);
+                        insWindow.poisonRange(curCycle, lqCycle, 0x4 /*PORT_2, loads*/, core_id);
 #endif
                         dispatchCycle = lqCycle;
                     }
@@ -302,7 +337,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
                     uint64_t sqCycle = storeQueue.minAllocCycle();
                     if (sqCycle > dispatchCycle) {
 #ifdef LSU_IW_BACKPRESSURE
-                        insWindow.poisonRange(curCycle, sqCycle, 0x10 /*PORT_4, stores*/);
+                        insWindow.poisonRange(curCycle, sqCycle, 0x10 /*PORT_4, stores*/, core_id);
 #endif
                         dispatchCycle = sqCycle;
                     }
@@ -431,10 +466,11 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
         // Do not model fetch throughput limit here, decoder-generated stalls already include it
         // We always call fetches with curCycle to avoid upsetting the weave
         // models (but we could move to a fetch-centric recorder to avoid this)
+       
         uint64_t fetchLat = l1i->load(fetchAddr, curCycle) - curCycle;
         cRec.record(curCycle, curCycle, curCycle + fetchLat);
         fetchCycle += fetchLat;
-    }
+    } 
 
     // If fetch rules, take into account delay between fetch and decode;
     // If decode rules, different BBLs make the decoders skip a cycle
@@ -478,7 +514,7 @@ void OOOCore::cSimEnd() {
 void OOOCore::advance(uint64_t targetCycle) {
     assert(targetCycle > curCycle);
     decodeCycle += targetCycle - curCycle;
-    insWindow.longAdvance(curCycle, targetCycle);
+    insWindow.longAdvance(curCycle, targetCycle, core_id);
     curCycleRFReads = 0;
     curCycleIssuedUops = 0;
     assert(targetCycle == curCycle);
@@ -505,10 +541,17 @@ void OOOCore::PredStoreFunc(THREADID tid, ADDRINT addr, BOOL pred) {
     else core->predFalseMemOp();
 }
 
+int flag = 1;
 
 void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     OOOCore* core = static_cast<OOOCore*>(cores[tid]);
-    //uint64_t core_id = getCid(tid); // using processID to identify nicCore for now
+    
+	//dbgprint for checking proc to core mapping
+	//uint64_t core_id = getCid(tid); // using processID to identify nicCore for now
+	//if(nicInfo->nic_init_done){
+	//	info("pid: %d, cid: %d", procIdx, core_id);
+	//}
+
     core->bbl(bblAddr, bblInfo);
     
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
@@ -612,6 +655,7 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
         }
         NICELEM.wq_tail = 0;
         NICELEM.wq_valid = true;
+        info("core %d registered WQ at addrs %lld", core_id, nicInfo->nic_elem[core_id].wq);
         break;
     case 1://CQ
         
@@ -632,9 +676,11 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
                 nicInfo->nic_init_done = true;
             }
         }
+        info("core %d registered CQ at addrs %lld", core_id, nicInfo->nic_elem[core_id].cq);
         break;
     case 2: // lbuf
         *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_elem[core_id].lbuf[0]));
+        info("core %d registered LBUF at addrs %lld", core_id, nicInfo->nic_elem[core_id].lbuf);
         break;
 
     case NOTIFY_WQ_WRITE://NOTIFY WQ WRITE from application
@@ -695,15 +741,14 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
     return;
 }
 
-void cycle_increment_routine(uint64_t& curCycle) {
+int aggr = 0;
+
+void cycle_increment_routine(uint64_t& curCycle, int core_id) {
 /*
 * cycle_increment_routine
 *       checks CEQ and RCP-EQ every cycle
 *       Process entries that are due (by creating CQ_entries)
 */
-
-    //getting core_id - this works for single threaded apps! ideally want to find a way to pass on tid to getCid func
-    uint64_t core_id = getCid(0); 
     
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 

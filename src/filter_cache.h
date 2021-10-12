@@ -63,8 +63,8 @@ class FilterCache : public Cache {
 
     public:
         FilterCache(uint32_t _numSets, uint32_t _numLines, CC* _cc, CacheArray* _array,
-                ReplPolicy* _rp, uint32_t _accLat, uint32_t _invLat, g_string& _name)
-            : Cache(_numLines, _cc, _array, _rp, _accLat, _invLat, _name)
+                ReplPolicy* _rp, uint32_t _accLat, uint32_t _invLat, g_string& _name, int _level)
+            : Cache(_numLines, _cc, _array, _rp, _accLat, _invLat, _name, _level)
         {
             numSets = _numSets;
             setMask = numSets - 1;
@@ -99,33 +99,46 @@ class FilterCache : public Cache {
             parentStat->append(cacheStat);
         }
 
-        inline uint64_t load(Address vAddr, uint64_t curCycle) {
+        inline uint64_t load(Address vAddr, uint64_t curCycle, int lvl = 8, uint32_t source = 1742) {
+            //info("In filter cache load, core id = %d, my level is %d, input level is %d",source,level,lvl);
             Address vLineAddr = vAddr >> lineBits;
             uint32_t idx = vLineAddr & setMask;
             uint64_t availCycle = filterArray[idx].availCycle; //read before, careful with ordering to avoid timing races
-            if (vLineAddr == filterArray[idx].rdAddr) {
-                fGETSHit++;
-                return MAX(curCycle, availCycle);
-            } else {
-                return replace(vLineAddr, idx, true, curCycle);
+            if ((lvl == 8) || (lvl == level)) {
+                if (vLineAddr == filterArray[idx].rdAddr) {
+                    fGETSHit++;
+                    return MAX(curCycle, availCycle);
+                } 
             }
+
+            if (source == 1742)
+                return replace(vLineAddr, idx, false, curCycle, srcId, 0, 0, (lvl == 8) ? level : lvl);
+            else 
+                return replace(vLineAddr, idx, false, curCycle, source, MAX_CACHE_CHILDREN+1, MemReq::DDIO, (lvl == 8) ? level : lvl); 
         }
 
-        inline uint64_t store(Address vAddr, uint64_t curCycle) {
+        inline uint64_t store(Address vAddr, uint64_t curCycle, int lvl = 8, uint32_t source = 1742) {
+            //info("In filter cache load, my level is %d, input level is %d",level,lvl);
+
             Address vLineAddr = vAddr >> lineBits;
             uint32_t idx = vLineAddr & setMask;
             uint64_t availCycle = filterArray[idx].availCycle; //read before, careful with ordering to avoid timing races
-            if (vLineAddr == filterArray[idx].wrAddr) {
-                fGETXHit++;
-                //NOTE: Stores don't modify availCycle; we'll catch matches in the core
-                //filterArray[idx].availCycle = curCycle; //do optimistic store-load forwarding
-                return MAX(curCycle, availCycle);
-            } else {
-                return replace(vLineAddr, idx, false, curCycle);
+            if ((lvl == 8) || (lvl == level)) {
+                if (vLineAddr == filterArray[idx].wrAddr) {
+                    fGETXHit++;
+                    //NOTE: Stores don't modify availCycle; we'll catch matches in the core
+                    //filterArray[idx].availCycle = curCycle; //do optimistic store-load forwarding
+                    return MAX(curCycle, availCycle);
+                } 
             }
+            
+            if (source == 1742)
+                return replace(vLineAddr, idx, true, curCycle, srcId, 0, 0, (lvl == 8) ? level : lvl);
+            else 
+                return replace(vLineAddr, idx, true, curCycle, source, MAX_CACHE_CHILDREN+1, MemReq::DDIO, (lvl == 8) ? level : lvl);
         }
 
-        uint64_t replace(Address vLineAddr, uint32_t idx, bool isLoad, uint64_t curCycle) {
+        uint64_t replace(Address vLineAddr, uint32_t idx, bool isLoad, uint64_t curCycle, uint32_t source, uint32_t childId, uint32_t flags, int lvl) {
             Address procMask_f = procMask;
             //Don't apply mask if it's a NIC related address
             Address gm_base_addr = 0x00ABBA000000; // defined in galloc.cpp
@@ -139,11 +152,13 @@ class FilterCache : public Cache {
             Address pLineAddr = procMask_f | vLineAddr;
             MESIState dummyState = MESIState::I;
             futex_lock(&filterLock);
-            MemReq req = {pLineAddr, isLoad? GETS : GETX, 0, &dummyState, curCycle, &filterLock, dummyState, srcId, reqFlags};
+            MemReq req = {pLineAddr, isLoad? GETS : GETX, childId, &dummyState, curCycle, &filterLock, dummyState, source, reqFlags | (lvl << 16) | flags};
+            
             uint64_t respCycle  = access(req);
 
             //Due to the way we do the locking, at this point the old address might be invalidated, but we have the new address guaranteed until we release the lock
 
+            if (lvl == 8) {
             //Careful with this order
             Address oldAddr = filterArray[idx].rdAddr;
             filterArray[idx].wrAddr = isLoad? -1L : vLineAddr;
@@ -153,7 +168,7 @@ class FilterCache : public Cache {
             //(e.g., st to x, ld from x+8) and we implement store-load forwarding at the core.
             //So if this is a load, it always sets availCycle; if it is a store hit, it doesn't
             if (oldAddr != vLineAddr) filterArray[idx].availCycle = respCycle;
-
+            }
             futex_unlock(&filterLock);
             return respCycle;
         }

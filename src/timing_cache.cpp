@@ -79,8 +79,8 @@ class ReplAccessEvent : public TimingEvent {
 };
 
 TimingCache::TimingCache(uint32_t _numLines, CC* _cc, CacheArray* _array, ReplPolicy* _rp,
-        uint32_t _accLat, uint32_t _invLat, uint32_t mshrs, uint32_t _tagLat, uint32_t _ways, uint32_t _cands, uint32_t _domain, const g_string& _name)
-    : Cache(_numLines, _cc, _array, _rp, _accLat, _invLat, _name), numMSHRs(mshrs), tagLat(_tagLat), ways(_ways), cands(_cands)
+        uint32_t _accLat, uint32_t _invLat, uint32_t mshrs, uint32_t _tagLat, uint32_t _ways, uint32_t _cands, uint32_t _domain, const g_string& _name, int _level)
+    : Cache(_numLines, _cc, _array, _rp, _accLat, _invLat, _name, _level), numMSHRs(mshrs), tagLat(_tagLat), ways(_ways), cands(_cands)
 {
     lastFreeCycle = 0;
     lastAccCycle = 0;
@@ -113,6 +113,13 @@ void TimingCache::initStats(AggregateStat* parentStat) {
 // TODO(dsm): This is copied verbatim from Cache. We should split Cache into different methods, then call those.
 uint64_t TimingCache::access(MemReq& req) {
 
+    int req_level = req.flags >> 16;
+    if (req.type == PUTS || req.type == PUTX) {
+        req_level = level;
+    }
+    bool correct_level = (req_level == level);
+    int32_t lineId = -1;
+    //info("In cache access, req type is %s, my level is %d, input level is %d, childId is %d",AccessTypeName(req.type),level,req_level, req.childId);
     bool no_record = ((req.flags) & (MemReq::NORECORD)) != 0;
 
     EventRecorder* evRec = zinfo->eventRecorders[req.srcId];
@@ -126,8 +133,12 @@ uint64_t TimingCache::access(MemReq& req) {
     uint64_t respCycle = req.cycle;
     bool skipAccess = cc->startAccess(req); //may need to skip access due to races (NOTE: may change req.type!)
     if (likely(!skipAccess)) {
+        if (correct_level) {
+            //info("Correct level, do work");
+            int temp = req_level - 1;
+            req.flags  = (req.flags & 0xff) | (temp << 16);
         bool updateReplacement = (req.type == GETS) || (req.type == GETX);
-        int32_t lineId = array->lookup(req.lineAddr, &req, updateReplacement);
+        lineId = array->lookup(req.lineAddr, &req, updateReplacement);
         respCycle += accLat;
 
         if (lineId == -1 /*&& cc->shouldAllocate(req)*/) {
@@ -147,8 +158,20 @@ uint64_t TimingCache::access(MemReq& req) {
             if (evRec->hasRecord()) writebackRecord = evRec->popRecord();
         }
 
+        // set LLC flag so that the request doesn't propagate to memory
+        uint32_t tmp = req.flags;
+        if(req.is(MemReq::DDIO)) {
+            req.set(MemReq::LLC);
+        }
+
         uint64_t getDoneCycle = respCycle;
-        respCycle = cc->processAccess(req, lineId, respCycle, &getDoneCycle);
+        respCycle = cc->processAccess(req, lineId, respCycle, correct_level, &getDoneCycle);
+
+        // clear the LLC flag
+        if(req.is(MemReq::DDIO)) {
+            req.clear(MemReq::LLC);
+        }
+        assert(tmp == req.flags);
 
         if (no_record) {
             assert(!(evRec->hasRecord()));
@@ -169,6 +192,7 @@ uint64_t TimingCache::access(MemReq& req) {
                 tr.startEvent = tr.endEvent = ev;
             }
             else {
+                //getDoneCycle = respCycle;
                 assert_msg(getDoneCycle == respCycle, "gdc %ld rc %ld", getDoneCycle, respCycle);
 
                 // Miss events:
@@ -271,7 +295,11 @@ uint64_t TimingCache::access(MemReq& req) {
             evRec->pushRecord(tr);
         }
     }
-
+    
+        else {
+            respCycle = cc->processAccess(req, lineId, respCycle, correct_level);
+        }
+    }
     cc->endAccess(req);
 
     assert_msg(respCycle >= req.cycle, "[%s] resp < req? 0x%lx type %s childState %s, respCycle %ld reqCycle %ld",

@@ -30,8 +30,8 @@
 #include "timing_event.h"
 #include "zsim.h"
 
-Cache::Cache(uint32_t _numLines, CC* _cc, CacheArray* _array, ReplPolicy* _rp, uint32_t _accLat, uint32_t _invLat, const g_string& _name)
-    : cc(_cc), array(_array), rp(_rp), numLines(_numLines), accLat(_accLat), invLat(_invLat), name(_name) {}
+Cache::Cache(uint32_t _numLines, CC* _cc, CacheArray* _array, ReplPolicy* _rp, uint32_t _accLat, uint32_t _invLat, const g_string& _name, int _level)
+    : cc(_cc), array(_array), rp(_rp), numLines(_numLines), accLat(_accLat), invLat(_invLat), name(_name), level(_level) {}
 
 const char* Cache::getName() {
     return name.c_str();
@@ -62,11 +62,23 @@ uint64_t Cache::access(MemReq& req) {
 
     bool no_record = req.flags & (MemReq::NORECORD) != 0;
 
+    int req_level = req.flags >> 16;
+    if (req.type == PUTS || req.type == PUTX) {
+        req_level = level;
+    }
+    bool correct_level = (req_level == level);
+    int32_t lineId = -1;
+    //info("In cache access, req type is %s, my level is %d, input level is %d",AccessTypeName(req.type),level,req_level);
+
     uint64_t respCycle = req.cycle;
     bool skipAccess = cc->startAccess(req); //may need to skip access due to races (NOTE: may change req.type!)
     if (likely(!skipAccess)) {
+        if (correct_level) {
+            //info("Correct level, do work");
+            int temp = req_level - 1;
+            req.flags  = (req.flags & 0xff) | (temp << 16);
         bool updateReplacement = (req.type == GETS) || (req.type == GETX);
-        int32_t lineId = array->lookup(req.lineAddr, &req, updateReplacement);
+        lineId = array->lookup(req.lineAddr, &req, updateReplacement);
         respCycle += accLat;
 
         if (lineId == -1 && cc->shouldAllocate(req)) {
@@ -94,8 +106,8 @@ uint64_t Cache::access(MemReq& req) {
         if (unlikely(evRec && evRec->hasRecord())) {
             wbAcc = evRec->popRecord();
         }
-
-        respCycle = cc->processAccess(req, lineId, respCycle);
+        
+        respCycle = cc->processAccess(req, lineId, respCycle, correct_level);
 
         if (no_record) {
             assert(!evRec->hasRecord());
@@ -129,6 +141,10 @@ uint64_t Cache::access(MemReq& req) {
                     evRec->pushRecord(acc);
                 }
             }
+        }
+        }
+        else {
+            respCycle = cc->processAccess(req, lineId, respCycle, correct_level);
         }
     }
 

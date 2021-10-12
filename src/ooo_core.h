@@ -35,13 +35,17 @@
 #include "ooo_core_recorder.h"
 #include "pad.h"
 
-#include "nic_defines.h"
+#include "mem_ctrls.h"
+#include "timing_cache.h"
+
+#include "zsim.h"
 //#include "core_nic_api.h"
 
 // Uncomment to enable stall stats
 // #define OOO_STALL_STATS
 
-void cycle_increment_routine(uint64_t& curCycle);
+        void cycle_increment_routine(uint64_t& curCycle, int core_id);
+
 
 
 class FilterCache;
@@ -136,17 +140,17 @@ class WindowStructure {
         }
 
 
-        void schedule(uint64_t& curCycle, uint64_t& schedCycle, uint8_t portMask, uint32_t extraSlots = 0) {
+        void schedule(uint64_t& curCycle, uint64_t& schedCycle, uint8_t portMask, uint32_t extraSlots = 0, int core_id = 0  ) {
             if (!extraSlots) {
-                scheduleInternal<true, false>(curCycle, schedCycle, portMask);
+                scheduleInternal<true, false>(curCycle, schedCycle, portMask, core_id);
             } else {
-                scheduleInternal<true, true>(curCycle, schedCycle, portMask);
+                scheduleInternal<true, true>(curCycle, schedCycle, portMask, core_id);
                 uint64_t extraSlotCycle = schedCycle+1;
                 uint8_t extraSlotPortMask = 1 << lastPort;
                 // This is not entirely accurate, as an instruction may have been scheduled already
                 // on this port and we'll have a non-contiguous allocation. In practice, this is rare.
                 for (uint32_t i = 0; i < extraSlots; i++) {
-                    scheduleInternal<false, false>(curCycle, extraSlotCycle, extraSlotPortMask);
+                    scheduleInternal<false, false>(curCycle, extraSlotCycle, extraSlotPortMask, core_id);
                     // info("extra slot %d allocated on cycle %ld", i, extraSlotCycle);
                     extraSlotCycle++;
                 }
@@ -154,13 +158,13 @@ class WindowStructure {
             assert(occupancy <= WSZ);
         }
 
-        inline void advancePos(uint64_t& curCycle) {
+        inline void advancePos(uint64_t& curCycle, int core_id) {
             occupancy -= curWin[curPos].count;
             curWin[curPos].set(0, 0);
             curPos++;
             curCycle++;
             /*NIC logic triggers*/
-            cycle_increment_routine(curCycle);
+            cycle_increment_routine(curCycle, core_id);
 
             
 
@@ -185,12 +189,12 @@ class WindowStructure {
             }
         }
 
-        void longAdvance(uint64_t& curCycle, uint64_t targetCycle) {
+        void longAdvance(uint64_t& curCycle, uint64_t targetCycle, int core_id) {
             assert(curCycle <= targetCycle);
 
             // Drain IW
             while (occupancy && curCycle < targetCycle) {
-                advancePos(curCycle);
+                advancePos(curCycle, core_id);
             }
 
             if (occupancy) {
@@ -204,11 +208,11 @@ class WindowStructure {
         }
 
         // Poisons a range of cycles; used by the LSU to apply backpressure to the IW
-        void poisonRange(uint64_t curCycle, uint64_t targetCycle, uint8_t portMask) {
+        void poisonRange(uint64_t curCycle, uint64_t targetCycle, uint8_t portMask, int core_id) {
             uint64_t startCycle = curCycle;  // curCycle should not be modified...
             uint64_t poisonCycle = curCycle;
             while (poisonCycle < targetCycle) {
-                scheduleInternal<false, false>(curCycle, poisonCycle, portMask);
+                scheduleInternal<false, false>(curCycle, poisonCycle, portMask, core_id);
             }
             // info("Poisoned port mask %x from %ld to %ld (tgt %ld)", portMask, curCycle, poisonCycle, targetCycle);
             assert(startCycle == curCycle);
@@ -216,10 +220,10 @@ class WindowStructure {
 
     private:
         template <bool touchOccupancy, bool recordPort>
-        void scheduleInternal(uint64_t& curCycle, uint64_t& schedCycle, uint8_t portMask) {
+        void scheduleInternal(uint64_t& curCycle, uint64_t& schedCycle, uint8_t portMask, int core_id) {
             // If the window is full, advance curPos until it's not
             while (touchOccupancy && occupancy == WSZ) {
-                advancePos(curCycle);
+                advancePos(curCycle, core_id);
             }
 
             uint32_t delay = (schedCycle > curCycle)? (schedCycle - curCycle) : 0;
@@ -369,10 +373,22 @@ class CycleQueue {
 
 struct BblInfo;
 
+typedef vector<vector<BaseCache*>> CacheGroup;
+
 class OOOCore : public Core {
     private:
         FilterCache* l1i;
         FilterCache* l1d;
+
+        int core_id;
+        /*
+            did i try to dynamically allocate these? yes
+            did c++ like it? not at all
+        */
+
+        Cache* l2_caches[256];
+        TimingCache* llc_cache[256];
+        SimpleMemory* memory;
 
         uint64_t phaseEndCycle; //next stopping point
 
@@ -445,7 +461,9 @@ class OOOCore : public Core {
         OOOCoreRecorder cRec;
 
     public:
-        OOOCore(FilterCache* _l1i, FilterCache* _l1d, uint32_t domain, g_string& _name);
+        OOOCore(FilterCache* _l1i, FilterCache* _l1d, uint32_t _domain, g_string& _name, uint32_t _coreIdx, 
+                FilterCache* _l1i_caches[], FilterCache* _l1d_caches[], /*Cache* _l2_caches[], TimingCache* _llc_cache[], MemObject* _memory, */
+                uint32_t _no_cores/*, uint32_t _no_llc_banks, uint32_t _no_priv_levels*/);
 
         void initStats(AggregateStat* parentStat);
 
@@ -467,6 +485,9 @@ class OOOCore : public Core {
         inline EventRecorder* getEventRecorder() {return cRec.getEventRecorder();}
         void cSimStart();
         void cSimEnd();
+
+        FilterCache* l1i_caches[256];
+        FilterCache* l1d_caches[256];
 
     private:
         inline void load(Address addr);

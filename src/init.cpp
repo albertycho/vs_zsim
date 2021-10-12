@@ -82,7 +82,7 @@ extern void EndOfPhaseActions(); //in zsim.cpp
  * follow the layout of zinfo, top-down.
  */
 
-BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, uint32_t bankSize, bool isTerminal, uint32_t domain) {
+BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, uint32_t bankSize, bool isTerminal, uint32_t domain, int level) {
     string type = config.get<const char*>(prefix + "type", "Simple");
     // Shortcut for TraceDriven type
     if (type == "TraceDriven") {
@@ -270,12 +270,12 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
     rp->setCC(cc);
     if (!isTerminal) {
         if (type == "Simple") {
-            cache = new Cache(numLines, cc, array, rp, accLat, invLat, name);
+            cache = new Cache(numLines, cc, array, rp, accLat, invLat, name, level);
         } else if (type == "Timing") {
             uint32_t mshrs = config.get<uint32_t>(prefix + "mshrs", 16);
             uint32_t tagLat = config.get<uint32_t>(prefix + "tagLat", 5);
             uint32_t timingCandidates = config.get<uint32_t>(prefix + "timingCandidates", candidates);
-            cache = new TimingCache(numLines, cc, array, rp, accLat, invLat, mshrs, tagLat, ways, timingCandidates, domain, name);
+            cache = new TimingCache(numLines, cc, array, rp, accLat, invLat, mshrs, tagLat, ways, timingCandidates, domain, name, level);
         } else if (type == "Tracing") {
             g_string traceFile = config.get<const char*>(prefix + "traceFile","");
             if (traceFile.empty()) traceFile = g_string(zinfo->outputDir) + "/" + name + ".trace";
@@ -287,7 +287,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
         //Filter cache optimization
         if (type != "Simple") panic("Terminal cache %s can only have type == Simple", name.c_str());
         if (arrayType != "SetAssoc" || hashType != "None" || replType != "LRU") panic("Invalid FilterCache config %s", name.c_str());
-        cache = new FilterCache(numSets, numLines, cc, array, rp, accLat, invLat, name);
+        cache = new FilterCache(numSets, numLines, cc, array, rp, accLat, invLat, name, level);
     }
 
 #if 0
@@ -371,7 +371,7 @@ MemObject* BuildMemoryController(Config& config, uint32_t lineSize, uint32_t fre
 
 typedef vector<vector<BaseCache*>> CacheGroup;
 
-CacheGroup* BuildCacheGroup(Config& config, const string& name, bool isTerminal) {
+CacheGroup* BuildCacheGroup(Config& config, const string& name, bool isTerminal, int level) {
     CacheGroup* cgp = new CacheGroup;
     CacheGroup& cg = *cgp;
 
@@ -412,7 +412,7 @@ CacheGroup* BuildCacheGroup(Config& config, const string& name, bool isTerminal)
             }
             g_string bankName(ss.str().c_str());
             uint32_t domain = (i*banks + j)*zinfo->numDomains/(caches*banks); //(banks > 1)? nextDomain() : (i*banks + j)*zinfo->numDomains/(caches*banks);
-            cg[i][j] = BuildCacheBank(config, prefix, bankName, bankSize, isTerminal, domain);
+            cg[i][j] = BuildCacheBank(config, prefix, bankName, bankSize, isTerminal, domain, level);
         }
     }
 
@@ -478,6 +478,9 @@ static void InitSystem(Config& config) {
     unordered_map<string, CacheGroup*> cMap;
     list<string> fringe;  // FIFO
     fringe.push_back(llc);
+    list<int> lvls;
+    lvls.push_back(1);
+    int level;
     
     /*
     auto fringe_front = fringe.begin();
@@ -490,10 +493,14 @@ static void InitSystem(Config& config) {
     while (!fringe.empty()) {
         string group = fringe.front();
         fringe.pop_front();
-        //std::cout << "group:" << group << std::endl; 
+        level = lvls.front();
+        lvls.pop_front();
         if (cMap.count(group)) panic("The cache 'tree' has a loop at %s", group.c_str());
-        cMap[group] = BuildCacheGroup(config, group, isTerminal(group));
-        for (auto& childVec : childMap[group]) fringe.insert(fringe.end(), childVec.begin(), childVec.end());
+        cMap[group] = BuildCacheGroup(config, group, isTerminal(group), level);
+        for (auto& childVec : childMap[group]) {
+            fringe.insert(fringe.end(), childVec.begin(), childVec.end());
+            lvls.insert(lvls.end(), childVec.size(), level+1);
+        }
     }
 
     //Check single LLC
@@ -673,6 +680,35 @@ static void InitSystem(Config& config) {
                     CacheGroup& igroup = *cMap[icache];
                     CacheGroup& dgroup = *cMap[dcache];
 
+                    uint32_t no_cores = igroup.size();
+
+                    FilterCache* l1i_caches[no_cores];
+                    for (uint32_t i=0; i<no_cores; i++ ) {
+                        l1i_caches[i] = dynamic_cast<FilterCache*>(igroup[i][0]);
+                    }
+
+                    FilterCache* l1d_caches[no_cores];
+                    for (uint32_t i=0; i<no_cores; i++ ) {
+                        l1d_caches[i] = dynamic_cast<FilterCache*>(dgroup[i][0]);
+                    }
+/*
+                    Cache* l2_caches[no_cores];
+                    uint32_t no_priv_levels = cMap.size() - 2;
+
+                    if(no_priv_levels > 1) {
+                        assert(no_priv_levels == 2);
+                        for (uint32_t i=0; i<no_cores; i++ ) {
+                            l2_caches[i] = dynamic_cast<Cache*>((*cMap["l2"])[i][0]);
+                        }
+                    }
+
+                    uint32_t no_llc_banks = (*cMap[llc])[0].size();
+
+                    TimingCache* llc_cache[no_llc_banks];
+                    for (uint32_t i=0; i<no_llc_banks; i++ ) {
+                        llc_cache[i] = dynamic_cast<TimingCache*>((*cMap[llc])[0][i]);
+                    }
+*/
                     if (assignedCaches[icache] >= igroup.size()) {
                         panic("%s: icache group %s (%ld caches) is fully used, can't connect more cores to it", name.c_str(), icache.c_str(), igroup.size());
                     }
@@ -702,7 +738,7 @@ static void InitSystem(Config& config) {
                     } else {
                         assert(type == "OOO");
                         uint32_t domain = j * zinfo->numDomains / cores;
-                        OOOCore* ocore = new (&oooCores[j]) OOOCore(ic, dc, domain, name);
+                        OOOCore* ocore = new (&oooCores[j]) OOOCore(ic, dc, domain, name, coreIdx, l1i_caches, l1d_caches,/* l2_caches, llc_cache, mems[0],*/ no_cores/*, no_llc_banks, no_priv_levels*/);
                         zinfo->eventRecorders[coreIdx] = ocore->getEventRecorder();
                         zinfo->eventRecorders[coreIdx]->setSourceId(coreIdx);
                         core = ocore;
