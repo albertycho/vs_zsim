@@ -263,6 +263,9 @@ void cq_event_enqueue(uint64_t q_cycle, cq_entry_t cqe, glob_nic_elements* nicIn
 * cq_event_enqueue - takes in a cq entry and its scheduled cycle
 *			creqtes a CEQ entry and enqueues it
 */
+
+	info("in cq_event_enqueue");
+
 	cq_wr_event* cq_wr_e = gm_calloc<cq_wr_event>();
 	cq_wr_e->cqe = cqe;
 	cq_wr_e->q_cycle = q_cycle;
