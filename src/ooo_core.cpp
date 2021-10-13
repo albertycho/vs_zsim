@@ -810,6 +810,9 @@ int OOOCore::nic_ingress_routine(THREADID tid) {
 
     OOOCore* core = static_cast<OOOCore*>(cores[tid]);
 
+    //dbgprint
+    info("in nic_ingress routine");
+
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
     void* lg_p = static_cast<void*>(gm_get_lg_ptr());
     uint64_t packet_rate = nicInfo->packet_injection_rate;
