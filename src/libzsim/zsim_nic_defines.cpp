@@ -43,6 +43,8 @@ int reg_cq(rmc_cq_t **cq){
 
 
 successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
+
+	std::cout<<"in rmc_check_cq"<<std::endl;
 	successStruct ret;
 
 	uint32_t tid;
