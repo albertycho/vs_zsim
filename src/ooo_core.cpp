@@ -714,34 +714,6 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
 
 int aggr = 0;
 
-void cycle_increment_routine(uint64_t& curCycle, int core_id) {
-/*
-* cycle_increment_routine
-*       checks CEQ and RCP-EQ every cycle
-*       Process entries that are due (by creating CQ_entries)
-*/
-    
-    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-
-    /* if statement is for preventing crash at the end of simulation */
-    if (core_id > ((zinfo->numCores) - 1)) {
-        return;  
-    }
-
-    if (!(nicInfo->nic_elem[core_id].cq_valid)) {
-        return;
-    }
-
-    nic_ingress_routine_per_cycle(core_id);
-
-    core_ceq_routine(curCycle, nicInfo, core_id);
-
-    RCP_routine(curCycle, nicInfo, core_id);
-    
-    return;
-
-
-}
 
 uint32_t assign_core(uint32_t in_core_iterator=0) {
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
@@ -856,6 +828,37 @@ int OOOCore::nic_ingress_routine(THREADID tid) {
     }
 
     return 0;
+}
+
+
+
+void cycle_increment_routine(uint64_t& curCycle, int core_id) {
+/*
+* cycle_increment_routine
+*       checks CEQ and RCP-EQ every cycle
+*       Process entries that are due (by creating CQ_entries)
+*/
+    
+    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+
+    /* if statement is for preventing crash at the end of simulation */
+    if (core_id > ((zinfo->numCores) - 1)) {
+        return;  
+    }
+
+    if (!(nicInfo->nic_elem[core_id].cq_valid)) {
+        return;
+    }
+
+    nic_ingress_routine_per_cycle(core_id);
+
+    core_ceq_routine(curCycle, nicInfo, core_id);
+
+    RCP_routine(curCycle, nicInfo, core_id);
+    
+    return;
+
+
 }
 
 
