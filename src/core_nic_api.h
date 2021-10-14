@@ -168,9 +168,8 @@ int update_loadgen(void* lg_p) {
 */
 		
 	// calculate based on injection rate. interval = phaseLen / injection rate
-	uint64_t interval = (zinfo->phaseLength) / (nicInfo->packet_injection_rate);
-	info("interval: %lu", interval); 
-	info("lg_p->interval: %d", lg_p->interval);
+	uint64_t interval = ((load_generator*)lg_p)->interval;
+	
 	((load_generator*)lg_p)->next_cycle = ((load_generator*)lg_p)->next_cycle + interval; 
 
 	((load_generator*)lg_p)->ptag = ((load_generator*)lg_p)->ptag + 1;
