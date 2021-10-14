@@ -147,6 +147,27 @@ if (addr == (Address)(&(nicInfo->nic_elem[1].cq->q[0].recv_buf_addr))) {
 }
 */
 
+        //TODO:: load balancing for choosing core
+        /* find next valid core that is still running */
+        /*
+        int drop_count = 0;
+        while (!(nicInfo->nic_elem[core_iterator].cq_valid)) {
+            core_iterator++;
+            if (core_iterator >= zinfo->numCores) {
+                core_iterator = 0;
+            }
+            drop_count++;
+            if (drop_count > (nicInfo->expected_core_count)) { 
+                std::cout << "other cores deregistered NIC" << std::endl;
+                break;
+            }
+            //DBG code
+            if (core_iterator >= zinfo->numCores) {
+                info("nic_ingress_routine (line803) - core_iterator out of bound: %d, cycle: %lu", core_iterator, core->curCycle);
+            }
+        }
+        */
+
 
 
 //CORE_NIC_API.H
@@ -169,6 +190,43 @@ int RRPP_routine_backup(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg
     return 0;
 }
 */
+
+
+/*
+	MemReq req;
+	Address rbuf_lineAddr = recv_buf_addr >> lineBits;
+	MESIState dummyState = MESIState::I;
+	assert((!cRec->getEventRecorder()->hasRecord()));
+
+	if (nicInfo->record_nic_access) {
+		req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, cur_cycle, NULL, dummyState, srcId, MemReq::PKTIN };
+	}
+	else {
+		req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, cur_cycle, NULL, dummyState, srcId, MemReq::NORECORD | MemReq::PKTIN };
+	}
+
+
+
+	uint64_t reqSatisfiedCycle = l1d->getParent(rbuf_lineAddr)->access(req);
+*/
+
+/*		
+		MemReq req;
+		Address lbuf_lineAddr = dp->lbuf_addr >> lineBits;
+		MESIState dummyState = MESIState::I;
+		assert((!cRec->getEventRecorder()->hasRecord()));
+
+
+		//TODO: using GETS causes crash... why? and is it okay to use GETX?
+		if (nicInfo->record_nic_access) {
+			req = { lbuf_lineAddr, GETX, 0xDA0000, &dummyState, core_cycle, NULL, dummyState, srcId, MemReq::PKTOUT };
+		}
+		else {
+			req = { lbuf_lineAddr, GETX, 0xDA0000, &dummyState, core_cycle, NULL, dummyState, srcId, MemReq::NORECORD | MemReq::PKTOUT};
+		}
+
+		uint64_t reqSatisfiedCycle = l1d->getParent(lbuf_lineAddr)->access(req);
+*/		
 
 
 //QP_TEST.CPP

@@ -236,6 +236,7 @@ typedef struct p_time_card {
 
 struct load_generator {
 	int next_cycle;
+	int interval;
 	int message; //may replace this to appropriate type
 	uint64_t ptag;
 	p_time_card* ptc_head; // this linked list packet_time_card is not used, 

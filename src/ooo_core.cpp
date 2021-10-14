@@ -777,6 +777,28 @@ uint32_t assign_core(uint32_t in_core_iterator) {
 
 }
 
+int OOOCore::nic_ingress_routine_per_cycle(THREADID tid) {
+    OOOCore* core = static_cast<OOOCore*>(cores[tid]);
+    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+
+    if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) {
+        if (nicInfo->registered_core_count == 0) {
+            if (nicInfo->nic_ingress_proc_on) {
+                info("ooo_core.cpp - turn off nic proc");
+                nicInfo->nic_ingress_proc_on = false;
+                nicInfo->nic_egress_proc_on = false;
+            }
+        }
+        else{
+            //Inject packets for this phase
+            nic_ingress_routine(tid);
+            
+        }        
+    }
+
+    return 0;
+}
+
 int OOOCore::nic_ingress_routine(THREADID tid) {
 
     OOOCore* core = static_cast<OOOCore*>(cores[tid]);
@@ -802,27 +824,6 @@ int OOOCore::nic_ingress_routine(THREADID tid) {
         if (core_iterator >= zinfo->numCores) {
             core_iterator = 0;
         }
-
-        //TODO:: load balancing for choosing core
-        /* find next valid core that is still running */
-        /*
-        int drop_count = 0;
-        while (!(nicInfo->nic_elem[core_iterator].cq_valid)) {
-            core_iterator++;
-            if (core_iterator >= zinfo->numCores) {
-                core_iterator = 0;
-            }
-            drop_count++;
-            if (drop_count > (nicInfo->expected_core_count)) { 
-                std::cout << "other cores deregistered NIC" << std::endl;
-                break;
-            }
-            //DBG code
-            if (core_iterator >= zinfo->numCores) {
-                info("nic_ingress_routine (line803) - core_iterator out of bound: %d, cycle: %lu", core_iterator, core->curCycle);
-            }
-        }
-        */
 
         core_iterator = assign_core(core_iterator);
 

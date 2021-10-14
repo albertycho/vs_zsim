@@ -169,7 +169,7 @@ int update_loadgen(void* lg_p) {
 		
 	// calculate based on injection rate. interval = phaseLen / injection rate
 	uint64_t interval = (zinfo->phaseLength) / (nicInfo->packet_injection_rate);
-	//info("interval: %lu", interval); 
+	info("interval: %lu", interval); 
 	((load_generator*)lg_p)->next_cycle = ((load_generator*)lg_p)->next_cycle + interval; 
 
 	((load_generator*)lg_p)->ptag = ((load_generator*)lg_p)->ptag + 1;
@@ -358,23 +358,7 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	update_loadgen(lg_p);
 
 
-/*
-	MemReq req;
-	Address rbuf_lineAddr = recv_buf_addr >> lineBits;
-	MESIState dummyState = MESIState::I;
-	assert((!cRec->getEventRecorder()->hasRecord()));
-
-	if (nicInfo->record_nic_access) {
-		req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, cur_cycle, NULL, dummyState, srcId, MemReq::PKTIN };
-	}
-	else {
-		req = { rbuf_lineAddr, GETX, 0xDA0000, &dummyState, cur_cycle, NULL, dummyState, srcId, MemReq::NORECORD | MemReq::PKTIN };
-	}
-
-
-	//I need to think through timing and clock cycle assignment/adjustment 
-	uint64_t reqSatisfiedCycle = l1d->getParent(rbuf_lineAddr)->access(req);
-*/
+	//acho: I need to think through timing and clock cycle assignment/adjustment 
 
 	// marina: how to access multiple cache levels
 	// level decrease as you move closer to mem
@@ -655,23 +639,6 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 
 		/// handle done packet - uarch mem access, lookup map to match ptag and log latency
 		///////////////// UARCH MEM ACCESS /////////////////////////
-/*		
-		MemReq req;
-		Address lbuf_lineAddr = dp->lbuf_addr >> lineBits;
-		MESIState dummyState = MESIState::I;
-		assert((!cRec->getEventRecorder()->hasRecord()));
-
-
-		//TODO: using GETS causes crash... why? and is it okay to use GETX?
-		if (nicInfo->record_nic_access) {
-			req = { lbuf_lineAddr, GETX, 0xDA0000, &dummyState, core_cycle, NULL, dummyState, srcId, MemReq::PKTOUT };
-		}
-		else {
-			req = { lbuf_lineAddr, GETX, 0xDA0000, &dummyState, core_cycle, NULL, dummyState, srcId, MemReq::NORECORD | MemReq::PKTOUT};
-		}
-
-		uint64_t reqSatisfiedCycle = l1d->getParent(lbuf_lineAddr)->access(req);
-*/		
 
 		// GETS to LLC
 

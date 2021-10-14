@@ -828,6 +828,8 @@ static void InitSystem(Config& config) {
     
     uint32_t update_fraction = config.get<uint32_t>("sim.update_fraction", 10);
     lgp->RPCGen->set_update_fraction(update_fraction);
+    lgp->interval = (zinfo->phaseLength) / (nicInfo->packet_injection_rate);
+    info("INIT interval: %lu", lgp->interval);
 
     info("Initialized system");
 }
