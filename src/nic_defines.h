@@ -156,7 +156,8 @@ struct nic_element {
 	//uint64_t recv_buf[RECV_BUF_POOL_SIZE];
 	z_cacheline recv_buf[RECV_BUF_POOL_SIZE];
 	//uint64_t lbuf[RECV_BUF_POOL_SIZE];
-	z_cacheline lbuf[RECV_BUF_POOL_SIZE];
+	//z_cacheline lbuf[RECV_BUF_POOL_SIZE];
+	z_cacheline *lbuf;
 	recv_buf_dir_t rb_dir[RECV_BUF_POOL_SIZE];
 	PAD();
 

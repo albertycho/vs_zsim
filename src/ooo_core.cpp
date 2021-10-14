@@ -676,6 +676,11 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
         *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_elem[core_id].lbuf[0]));
         info("core %d registered LBUF at addrs %lld", core_id, nicInfo->nic_elem[core_id].lbuf);
         break;
+    
+    case 3: //get buf_size for lbuf. Is called before case 2 (but this was coded later)
+        int numcline = (((uint64_t)(val)) / (sizeof(z_cacheline))) + 1; //+1 in case remainder..
+        NICELEM.lbuf = gm_calloc<z_cacheline>(numcline);
+        break;
 
     case NOTIFY_WQ_WRITE://NOTIFY WQ WRITE from application
         //info("notify_wq_write")
