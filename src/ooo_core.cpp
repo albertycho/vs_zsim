@@ -626,8 +626,6 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
         info("core %d registered WQ at addrs %lld", core_id, nicInfo->nic_elem[core_id].wq);
         break;
     case 1://CQ
-        
-        info("core %lu registered CQ", core_id);
 
         NICELEM.cq->tail = 0;
         NICELEM.cq->SR = 1;

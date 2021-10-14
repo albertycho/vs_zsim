@@ -113,6 +113,8 @@ int process_cq_wr_event(cq_wr_event* cq_wr, glob_nic_elements* nicInfo, uint64_t
 	}
 	*/
 
+	info("in process_cq_wr_event - calling put cq entry");
+
 	int put_cq_entry_success = put_cq_entry(ncq_entry, nicInfo, core_id);
 	if (put_cq_entry_success == -1)
 	{
