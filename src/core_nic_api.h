@@ -121,6 +121,8 @@ int process_cq_wr_event(cq_wr_event* cq_wr, glob_nic_elements* nicInfo, uint64_t
 		return -1;
 	}
 
+	info("in process_cq_wr_event - put cq entry was successful");
+
 
 	gm_free(cq_wr);
 	return 0;
