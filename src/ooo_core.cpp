@@ -849,8 +849,12 @@ void cycle_increment_routine(uint64_t& curCycle, int core_id) {
     if (!(nicInfo->nic_elem[core_id].cq_valid)) {
         return;
     }
+    
+    if(procIdx==nicInfo->nic_ingress_pid){
+        std::cout<<"procIdx avaiable in cycle_increment routine"<<std::endl;
+    }
 
-    nic_ingress_routine_per_cycle(core_id);
+    //nic_ingress_routine_per_cycle(core_id);
 
     core_ceq_routine(curCycle, nicInfo, core_id);
 
