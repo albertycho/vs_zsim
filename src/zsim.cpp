@@ -97,6 +97,8 @@ GlobSimInfo* zinfo;
 
 glob_nic_elements* nicInfo;
 
+FilterCache** l1d_caches;
+
 
 /* Per-process variables */
 

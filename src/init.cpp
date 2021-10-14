@@ -627,6 +627,8 @@ static void InitSystem(Config& config) {
     unordered_map<string, uint32_t> assignedCaches;
     for (const char* grp : cacheGroupNames) if (isTerminal(grp)) assignedCaches[grp] = 0;
 
+    int app_cores;
+
     if (!zinfo->traceDriven) {
         //Instantiate the cores
         vector<const char*> coreGroupNames;
@@ -680,35 +682,10 @@ static void InitSystem(Config& config) {
                     CacheGroup& igroup = *cMap[icache];
                     CacheGroup& dgroup = *cMap[dcache];
 
-                    uint32_t no_cores = igroup.size();
-
-                    FilterCache* l1i_caches[no_cores];
-                    for (uint32_t i=0; i<no_cores; i++ ) {
-                        l1i_caches[i] = dynamic_cast<FilterCache*>(igroup[i][0]);
+                    if (config.get<uint32_t>(prefix + "app_core", 0) == 1) {
+                            l1d_caches[j+2] = dynamic_cast<FilterCache*>(dgroup[j][0]);
                     }
 
-                    FilterCache* l1d_caches[no_cores];
-                    for (uint32_t i=0; i<no_cores; i++ ) {
-                        l1d_caches[i] = dynamic_cast<FilterCache*>(dgroup[i][0]);
-                    }
-/*
-                    Cache* l2_caches[no_cores];
-                    uint32_t no_priv_levels = cMap.size() - 2;
-
-                    if(no_priv_levels > 1) {
-                        assert(no_priv_levels == 2);
-                        for (uint32_t i=0; i<no_cores; i++ ) {
-                            l2_caches[i] = dynamic_cast<Cache*>((*cMap["l2"])[i][0]);
-                        }
-                    }
-
-                    uint32_t no_llc_banks = (*cMap[llc])[0].size();
-
-                    TimingCache* llc_cache[no_llc_banks];
-                    for (uint32_t i=0; i<no_llc_banks; i++ ) {
-                        llc_cache[i] = dynamic_cast<TimingCache*>((*cMap[llc])[0][i]);
-                    }
-*/
                     if (assignedCaches[icache] >= igroup.size()) {
                         panic("%s: icache group %s (%ld caches) is fully used, can't connect more cores to it", name.c_str(), icache.c_str(), igroup.size());
                     }
@@ -738,7 +715,7 @@ static void InitSystem(Config& config) {
                     } else {
                         assert(type == "OOO");
                         uint32_t domain = j * zinfo->numDomains / cores;
-                        OOOCore* ocore = new (&oooCores[j]) OOOCore(ic, dc, domain, name, coreIdx, l1i_caches, l1d_caches,/* l2_caches, llc_cache, mems[0],*/ no_cores/*, no_llc_banks, no_priv_levels*/);
+                        OOOCore* ocore = new (&oooCores[j]) OOOCore(ic, dc, domain, name, coreIdx);
                         zinfo->eventRecorders[coreIdx] = ocore->getEventRecorder();
                         zinfo->eventRecorders[coreIdx]->setSourceId(coreIdx);
                         core = ocore;
@@ -971,6 +948,8 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     //nicInfo->latencies_list = gm_calloc<uint64_t>(LAT_ARR_SIZE);
     nicInfo->latencies_capa = LAT_ARR_SIZE;
     //nicInfo->latencies_list_capa = LAT_ARR_SIZE;
+
+    l1d_caches = gm_calloc<FilterCache*>(256);
 
     Config config(configFile);
 

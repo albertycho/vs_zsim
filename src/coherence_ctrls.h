@@ -150,7 +150,7 @@ class MESIBottomCC : public GlobAlloc {
 
         uint64_t passToNext(Address lineAddr, AccessType type, uint32_t childId, uint32_t srcId, uint32_t flags, uint64_t cycle);
 
-        uint64_t processAccess(Address lineAddr, uint32_t lineId, AccessType type, uint64_t cycle, uint32_t srcId, uint32_t flags);
+        uint64_t processAccess(Address lineAddr, int32_t lineId, AccessType type, uint64_t cycle, uint32_t srcId, uint32_t flags);
 
         void processWritebackOnAccess(Address lineAddr, uint32_t lineId, AccessType type);
 
@@ -232,7 +232,7 @@ class MESITopCC : public GlobAlloc {
 
         uint64_t processEviction(Address wbLineAddr, uint32_t lineId, bool* reqWriteback, uint64_t cycle, uint32_t srcId);
 
-        uint64_t processAccess(Address lineAddr, uint32_t lineId, AccessType type, uint32_t childId, bool haveExclusive,
+        uint64_t processAccess(Address lineAddr, int32_t lineId, AccessType type, uint32_t childId, bool haveExclusive,
                 MESIState* childState, bool* inducedWriteback, uint64_t cycle, uint32_t srcId, uint32_t flags);
 
         uint64_t processInval(Address lineAddr, uint32_t lineId, InvType type, bool* reqWriteback, uint64_t cycle, uint32_t srcId);
@@ -368,7 +368,7 @@ class MESICC : public CC {
             //but if we do proper NI/EX mid-level caches backed by directories, this may start becoming more common (and it is perfectly acceptable to
             //upgrade without any interaction with the parent... the child had the permissions!)
             if (correct_level) {
-            if (lineId == -1 || (((req.type == PUTS) || (req.type == PUTX)) && !bcc->isValid(lineId))) { //can only be a non-inclusive wback
+            if ((lineId == -1 && !(req.flags & MemReq::PKTOUT)) || (((req.type == PUTS) || (req.type == PUTX)) && !bcc->isValid(lineId))) { //can only be a non-inclusive wback
                 assert(nonInclusiveHack);
                 assert((req.type == PUTS) || (req.type == PUTX));
                 respCycle = bcc->processNonInclusiveWriteback(req.lineAddr, req.type, startCycle, req.state, req.srcId, req.flags);

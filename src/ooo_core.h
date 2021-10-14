@@ -461,9 +461,7 @@ class OOOCore : public Core {
         OOOCoreRecorder cRec;
 
     public:
-        OOOCore(FilterCache* _l1i, FilterCache* _l1d, uint32_t _domain, g_string& _name, uint32_t _coreIdx, 
-                FilterCache* _l1i_caches[], FilterCache* _l1d_caches[], /*Cache* _l2_caches[], TimingCache* _llc_cache[], MemObject* _memory, */
-                uint32_t _no_cores/*, uint32_t _no_llc_banks, uint32_t _no_priv_levels*/);
+        OOOCore(FilterCache* _l1i, FilterCache* _l1d, uint32_t _domain, g_string& _name, uint32_t _coreIdx);
 
         void initStats(AggregateStat* parentStat);
 
@@ -485,9 +483,6 @@ class OOOCore : public Core {
         inline EventRecorder* getEventRecorder() {return cRec.getEventRecorder();}
         void cSimStart();
         void cSimEnd();
-
-        FilterCache* l1i_caches[256];
-        FilterCache* l1d_caches[256];
 
     private:
         inline void load(Address addr);

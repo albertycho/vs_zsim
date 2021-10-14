@@ -58,9 +58,7 @@
 #define RF_READS_PER_CYCLE 3
 
 //OOOCore::OOOCore(FilterCache* _l1i, FilterCache* _l1d, int _core_id, uint32_t _domain, g_string& _name) : Core(_name), l1i(_l1i), l1d(_l1d), cRec(_domain, _name) {
-OOOCore::OOOCore(FilterCache* _l1i, FilterCache* _l1d, uint32_t _domain, g_string& _name, uint32_t _coreIdx, 
-                FilterCache* _l1i_caches[], FilterCache* _l1d_caches[],/* Cache* _l2_caches[], TimingCache* _llc_cache[], MemObject* _memory, */
-                uint32_t _no_cores/*, uint32_t _no_llc_banks, uint32_t _no_priv_levels*/) 
+OOOCore::OOOCore(FilterCache* _l1i, FilterCache* _l1d, uint32_t _domain, g_string& _name, uint32_t _coreIdx) 
 : Core(_name), l1i(_l1i), l1d(_l1d), core_id(_coreIdx), cRec(_domain, _name) {
  
     core_id = _coreIdx;
@@ -84,33 +82,6 @@ OOOCore::OOOCore(FilterCache* _l1i, FilterCache* _l1d, uint32_t _domain, g_strin
 
     for (uint32_t i = 0; i < FWD_ENTRIES; i++) fwdArray[i].set((Address)(-1L), 0);
 
-    /* Accessing different caches / memory banks
-        private cache of core i: l1i_caches[i], l1d_caches[i], l2_caches[i] (if private l2 present)
-        bank i of shared last level cache: llc_cache[i]
-        memory: mem
-        * Note * in a 2-level hierarchy, access the l2 through the llc_cache structure
-    */
-
-    for (uint32_t i=0; i<_no_cores; i++) {        
-        l1d_caches[i] = _l1d_caches[i];
-    }
-/*
-    for (uint32_t i=0; i<_no_cores; i++) {
-        l1i_caches[i] = _l1i_caches[i];
-    }
-
-    if(_no_priv_levels > 1) {
-        for (uint32_t i=0; i<_no_cores; i++) {
-            l2_caches[i] = _l2_caches[i];
-        }
-    }    
-
-    for (uint32_t i=0; i<_no_llc_banks; i++ ) {
-        llc_cache[i] = _llc_cache[i];
-    }
- 
-    memory = dynamic_cast<SimpleMemory*>(_memory);
-*/
 }
 
 void OOOCore::initStats(AggregateStat* parentStat) {
@@ -633,6 +604,7 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
     uint64_t core_id = getCid(tid);
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 
+	uint64_t num_cline=0;
     switch (field) {
     case 0://WQ
 
@@ -678,8 +650,8 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
         break;
     
     case 3: //get buf_size for lbuf. Is called before case 2 (but this was coded later)
-        int numcline = (((uint64_t)(val)) / (sizeof(z_cacheline))) + 1; //+1 in case remainder..
-        NICELEM.lbuf = gm_calloc<z_cacheline>(numcline);
+        num_cline = (((UINT64)(val)) / (sizeof(z_cacheline))) + 1; //+1 in case remainder..
+        NICELEM.lbuf = gm_calloc<z_cacheline>(num_cline);
         break;
 
     case NOTIFY_WQ_WRITE://NOTIFY WQ WRITE from application
@@ -856,7 +828,9 @@ int OOOCore::nic_ingress_routine(THREADID tid) {
 
         /* Inject packet (call core function) */
         uint32_t srcId = getCid(tid);
-        int inj_attempt = inject_incoming_packet(core->curCycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), core->l1d);
+        uint64_t injection_cycle = core->curCycle;
+        int inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), l1d_caches[core_iterator]);
+
         if (inj_attempt == -1) {
             //core out of recv buffer. stop injecting for this phase
             inject_fail_counter++;

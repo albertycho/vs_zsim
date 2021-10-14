@@ -66,8 +66,8 @@ RPCGenerator::set_num_keys(size_t i_num_keys) {
 
 void
 RPCGenerator::generatePackedRPC(char* userBuffer) const {
-    //bool is_update = true; //(std::rand() % 100) < (int)update_fraction ? true : false;
-    bool is_update = (std::rand() % 100) < (int)update_fraction ? true : false;
+    bool is_update = true; //(std::rand() % 100) < (int)update_fraction ? true : false;
+    //bool is_update = (std::rand() % 100) < (int)update_fraction ? true : false;
     int key_i = std::rand() % num_keys;
 
     struct mica_op req;

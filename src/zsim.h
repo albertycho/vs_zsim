@@ -52,6 +52,7 @@ class PortVirtualizer;
 class VectorCounter;
 class AccessTraceWriter;
 class TraceDriver;
+class FilterCache;
 template <typename T> class g_vector;
 
 struct ClockDomainInfo {
@@ -189,6 +190,7 @@ struct GlobSimInfo {
     // Trace-driven simulation (no cores)
     bool traceDriven;
     TraceDriver* traceDriver;
+
 };
 
 
@@ -202,6 +204,8 @@ extern uint64_t procMask;
 extern GlobSimInfo* zinfo;
 
 extern glob_nic_elements* nicInfo;
+
+extern FilterCache** l1d_caches;
 
 //Process-wide functions, defined in zsim.cpp
 uint32_t getCid(uint32_t tid);

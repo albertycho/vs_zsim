@@ -29,7 +29,6 @@
 #include "zsim.h"
 
 uint64_t SimpleMemory::access(MemReq& req) {
-    //info("In memory");
     switch (req.type) {
         case PUTS:
         case PUTX:

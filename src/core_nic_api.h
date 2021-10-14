@@ -345,17 +345,14 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 
 	futex_lock(&nicInfo->nic_elem[core_id].rb_lock);
 	uint32_t rb_head = allocate_recv_buf(1, nicInfo, core_id);
-	//info("allocate_recv_buf for core %d returned head = %d", core_id, rb_head);
 	futex_unlock(&nicInfo->nic_elem[core_id].rb_lock);
 	if (rb_head > RECV_BUF_POOL_SIZE) {
 		info("core %d out of recv buffer, cycle %lu", core_id, cur_cycle);
 		//info("((zinfo->numCores) - 1)=%d", ((zinfo->numCores) - 1));
 		return -1;
 	}
-	//std::cout << "allocate_recv_buf returned :" << std::dec << rb_head << ", core_id: " << core_id << std::endl;
 
 	uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head]));
-
 	// write message to recv buffer via load generator/RPCGen
 	((load_generator*) lg_p)->RPCGen->generatePackedRPC((char*)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head].line_seg[0])));
 	update_loadgen(lg_p);
@@ -385,8 +382,7 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	// specifiy the level after curCycle
 	// to access the private caches of other cores, change the lid[] index
 	// this example performs a GETX on the LLC 
-
-	uint64_t reqSatisfiedCycle = core->l1d_caches[srcId]->store(recv_buf_addr, cur_cycle, 1, srcId);
+	uint64_t reqSatisfiedCycle = l1d->store(recv_buf_addr, cur_cycle, 1, srcId, MemReq::PKTIN);
 
 	//TODO check what cycles need to be passed to recrod
 	cRec->record(cur_cycle, cur_cycle, reqSatisfiedCycle);
@@ -394,7 +390,7 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	create_CEQ_entry(recv_buf_addr, 0x7f, 10/*ceq_cycle*/, nicInfo, core_id);
 
 	//TODO may want to pass the reqSatisfiedcycle value back to the caller via updating an argument
-	//std::cout << "packet injection completed" << std::endl;
+	std::cout << "packet injection completed at " << reqSatisfiedCycle << std::endl;
 	return 0;
 
 }
@@ -679,7 +675,8 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 
 		// GETS to LLC
 
-		uint64_t reqSatisfiedCycle = core->l1d_caches[srcId]->load(dp->lbuf_addr, core_cycle, 1, srcId);
+		info("starting deq_dpq at cycle %lld", core_cycle);
+		uint64_t reqSatisfiedCycle = l1d->load(dp->lbuf_addr, core_cycle, 1, srcId, MemReq::PKTOUT);
 
 		cRec->record(core_cycle, core_cycle, reqSatisfiedCycle);
 		

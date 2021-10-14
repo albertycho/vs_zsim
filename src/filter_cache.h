@@ -99,8 +99,9 @@ class FilterCache : public Cache {
             parentStat->append(cacheStat);
         }
 
-        inline uint64_t load(Address vAddr, uint64_t curCycle, int lvl = 8, uint32_t source = 1742) {
-            //info("In filter cache load, core id = %d, my level is %d, input level is %d",source,level,lvl);
+        // source: the id of the core issuing the request, used to signify which recorder is used
+
+        inline uint64_t load(Address vAddr, uint64_t curCycle, int lvl = 8, uint32_t source = 1742, uint32_t flags = 0) {
             Address vLineAddr = vAddr >> lineBits;
             uint32_t idx = vLineAddr & setMask;
             uint64_t availCycle = filterArray[idx].availCycle; //read before, careful with ordering to avoid timing races
@@ -112,14 +113,12 @@ class FilterCache : public Cache {
             }
 
             if (source == 1742)
-                return replace(vLineAddr, idx, false, curCycle, srcId, 0, 0, (lvl == 8) ? level : lvl);
+                return replace(vLineAddr, idx, true, curCycle, srcId, 0, flags, (lvl == 8) ? level : lvl);
             else 
-                return replace(vLineAddr, idx, false, curCycle, source, MAX_CACHE_CHILDREN+1, MemReq::DDIO, (lvl == 8) ? level : lvl); 
+                return replace(vLineAddr, idx, true, curCycle, source, MAX_CACHE_CHILDREN+1, flags, (lvl == 8) ? level : lvl); 
         }
 
-        inline uint64_t store(Address vAddr, uint64_t curCycle, int lvl = 8, uint32_t source = 1742) {
-            //info("In filter cache load, my level is %d, input level is %d",level,lvl);
-
+        inline uint64_t store(Address vAddr, uint64_t curCycle, int lvl = 8, uint32_t source = 1742, uint32_t flags = 0) {
             Address vLineAddr = vAddr >> lineBits;
             uint32_t idx = vLineAddr & setMask;
             uint64_t availCycle = filterArray[idx].availCycle; //read before, careful with ordering to avoid timing races
@@ -133,9 +132,9 @@ class FilterCache : public Cache {
             }
             
             if (source == 1742)
-                return replace(vLineAddr, idx, true, curCycle, srcId, 0, 0, (lvl == 8) ? level : lvl);
+                return replace(vLineAddr, idx, false, curCycle, srcId, 0, flags, (lvl == 8) ? level : lvl);
             else 
-                return replace(vLineAddr, idx, true, curCycle, source, MAX_CACHE_CHILDREN+1, MemReq::DDIO, (lvl == 8) ? level : lvl);
+                return replace(vLineAddr, idx, false, curCycle, source, MAX_CACHE_CHILDREN+1, flags, (lvl == 8) ? level : lvl);
         }
 
         uint64_t replace(Address vLineAddr, uint32_t idx, bool isLoad, uint64_t curCycle, uint32_t source, uint32_t childId, uint32_t flags, int lvl) {

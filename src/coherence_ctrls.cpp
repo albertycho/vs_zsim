@@ -96,16 +96,13 @@ uint64_t MESIBottomCC::passToNext( Address lineAddr, AccessType type, uint32_t c
     return parents[parentId]->access(req);
 }
 
-uint64_t MESIBottomCC::processAccess(Address lineAddr, uint32_t lineId, AccessType type, uint64_t cycle, uint32_t srcId, uint32_t flags) {
+uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessType type, uint64_t cycle, uint32_t srcId, uint32_t flags) {
     uint64_t respCycle = cycle;
-    MESIState* state = &array[lineId];
-
-    //dbgprint
-    /*
-    std::cout << "processaccess: parents.size()=" << parents.size() << std::endl;
-    std::cout << "parentId=" << getParentId(lineAddr) << std::endl;
-    std::cout << "parent:" << parents[getParentId(lineAddr)]->getName() << std::endl;
-    */
+    MESIState* state;
+    if (lineId != -1)
+        state = &array[lineId];
+    else
+        state = nullptr;
 
     switch (type) {
         // A PUTS/PUTX does nothing w.r.t. higher coherence levels --- it dies here
@@ -131,30 +128,23 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, uint32_t lineId, AccessTy
                 profGETNetLat.inc(netLat);
                 respCycle += nextLevelLat + netLat;
                 profGETSMiss.inc();
-                assert(*state == S || *state == E);
+                assert(*state == S || *state == E || (!(*state) && (req.flags & MemReq::PKTOUT)));
             } else {
                 profGETSHit.inc();
             }
             break;
         case GETX:
             if (*state == I || *state == S) {
-                if((flags & MemReq::DDIO) && (flags & MemReq::LLC)) {
-                    if (*state == I) profGETXMissIM.inc();
-                    else profGETXMissSM.inc();
-                    *state = M;               
-                }
-                else {
                 //Profile before access, state changes
-                    if (*state == I) profGETXMissIM.inc();
-                    else profGETXMissSM.inc();
-                    uint32_t parentId = getParentId(lineAddr);
-                    MemReq req = {lineAddr, GETX, selfId, state, cycle, &ccLock, *state, srcId, flags};
-                    uint32_t nextLevelLat = parents[parentId]->access(req) - cycle;
-                    uint32_t netLat = parentRTTs[parentId];
-                    profGETNextLevelLat.inc(nextLevelLat);
-                    profGETNetLat.inc(netLat);
-                    respCycle += nextLevelLat + netLat;
-                }
+                if (*state == I) profGETXMissIM.inc();
+                else profGETXMissSM.inc();
+                uint32_t parentId = getParentId(lineAddr);
+                MemReq req = {lineAddr, GETX, selfId, state, cycle, &ccLock, *state, srcId, flags};
+                uint32_t nextLevelLat = parents[parentId]->access(req) - cycle;
+                uint32_t netLat = parentRTTs[parentId];
+                profGETNextLevelLat.inc(nextLevelLat);
+                profGETNetLat.inc(netLat);
+                respCycle += nextLevelLat + netLat;
             } else {
                 if (*state == E) {
                     // Silent transition
@@ -286,9 +276,14 @@ uint64_t MESITopCC::processEviction(Address wbLineAddr, uint32_t lineId, bool* r
     }
 }
 
-uint64_t MESITopCC::processAccess(Address lineAddr, uint32_t lineId, AccessType type, uint32_t childId, bool haveExclusive,
+uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType type, uint32_t childId, bool haveExclusive,
                                   MESIState* childState, bool* inducedWriteback, uint64_t cycle, uint32_t srcId, uint32_t flags) {
-    Entry* e = &array[lineId];
+    Entry* e; 
+    if (lineId != -1)
+        e = &array[lineId];
+    else
+        e = nullptr;
+
     uint64_t respCycle = cycle;
     switch (type) {
         case PUTX:
@@ -308,7 +303,7 @@ uint64_t MESITopCC::processAccess(Address lineAddr, uint32_t lineId, AccessType 
             break;
         case GETS:
             // should a GETS from the NIC modify any cache state? I think not (unless it finds an invalid line, which we deal with in bcc)
-            if(!(flags & MemReq::DDIO)) {
+            if(!(flags & MemReq::PKTOUT)) {
                 if (e->isEmpty() && haveExclusive && !(flags & MemReq::NOEXCL)) {
                     //Give in E state
                     e->exclusive = true;
@@ -337,7 +332,7 @@ uint64_t MESITopCC::processAccess(Address lineAddr, uint32_t lineId, AccessType 
             assert(haveExclusive); //the current cache better have exclusive access to this line
 
             // if we write directly to the l2/llc, we want all children to be invalidated
-            if (childId < MAX_CACHE_CHILDREN) {
+            if (!((flags & MemReq::PKTIN) && childId > MAX_CACHE_CHILDREN)) {
                 // If child is in sharers list (this is an upgrade miss), take it out
                 if (e->sharers[childId]) {
                     assert_msg(!e->isExclusive(), "Spurious GETX, childId=%d numSharers=%d isExcl=%d excl=%d", childId, e->numSharers, e->isExclusive(), e->exclusive);
@@ -368,7 +363,7 @@ uint64_t MESITopCC::processAccess(Address lineAddr, uint32_t lineId, AccessType 
             
             e->exclusive = true;
 
-            if (childId < MAX_CACHE_CHILDREN) {
+            if (!((flags & MemReq::PKTIN) && childId > MAX_CACHE_CHILDREN)) {
                 // Set current sharer, mark exclusive
                 e->sharers[childId] = true;
                 e->numSharers++;
