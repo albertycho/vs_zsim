@@ -90,12 +90,12 @@ int main(int argc, char* argv[]) {
 			std::cout << "INCORRECT HERD OPCODE" << std::endl;
 		}
 		//san check code
-		/*
+		
 		else {
-			if (mp->opcode == HERD_OP_PUT) std::cout << "HERD_OP_PUT" << std::endl;
-			if (mp->opcode == HERD_OP_GET) std::cout << "HERD_OP_GET" << std::endl;
+			if (mp->opcode == HERD_OP_PUT) std::cout << "HERD_OP_PUT, send serviced:"<<send_serviced << std::endl;
+			if (mp->opcode == HERD_OP_GET) std::cout << "HERD_OP_GE, Tsend serviced:"<<send_serviced << std::endl;
 		}
-		*/
+		
 		uint32_t target_node = recv_completion.tid;
 
 		//calcualte lbuf_ptr address

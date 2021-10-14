@@ -383,7 +383,7 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	create_CEQ_entry(recv_buf_addr, 0x7f, reqSatisfiedCycle, nicInfo, core_id);
 
 	//TODO may want to pass the reqSatisfiedcycle value back to the caller via updating an argument
-	std::cout << "packet injection completed at " << reqSatisfiedCycle << std::endl;
+	//std::cout << "packet injection completed at " << reqSatisfiedCycle << std::endl;
 	return 0;
 
 }
