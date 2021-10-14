@@ -557,6 +557,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     while (core->curCycle > core->phaseEndCycle) {
         core->phaseEndCycle += zinfo->phaseLength;
 
+        //RESIDUE of batch injection per phase. 
+        //  Keeping code until we get confidence with per-cycle injection
         // if (core->curCycle <= core->phaseEndCycle) {
         //     /* Do the nic remote packet injection routine once a phase */
         //     /* execute this code only for the NIC process && nic init is done */
