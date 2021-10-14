@@ -343,6 +343,13 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 		info("inject_incoming_packet - core_id out of bound: %d", core_id);
 	}
 
+	if(procIdx==nicInfo->nic_ingress_pid){
+		std::cout<<"I CAN SEE PROCIDX!"<<std::endl;
+	}
+	else{
+		std::cout<<"I CAN SEE PROCIDX! but doesn't match nic_ingess_pid"<<std::endl;
+	}
+
 	futex_lock(&nicInfo->nic_elem[core_id].rb_lock);
 	uint32_t rb_head = allocate_recv_buf(1, nicInfo, core_id);
 	futex_unlock(&nicInfo->nic_elem[core_id].rb_lock);
