@@ -557,30 +557,30 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     while (core->curCycle > core->phaseEndCycle) {
         core->phaseEndCycle += zinfo->phaseLength;
 
-        if (core->curCycle <= core->phaseEndCycle) {
-            /* Do the nic remote packet injection routine once a phase */
-            /* execute this code only for the NIC process && nic init is done */
-            if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) {
+        // if (core->curCycle <= core->phaseEndCycle) {
+        //     /* Do the nic remote packet injection routine once a phase */
+        //     /* execute this code only for the NIC process && nic init is done */
+        //     if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) {
 
-                /* check if cores finished their processes and exit if so */
-                if (nicInfo->registered_core_count == 0) {
-                    if (nicInfo->nic_ingress_proc_on) {
-                        info("ooo_core.cpp - turn off nic proc");
-                        nicInfo->nic_ingress_proc_on = false;
-                        nicInfo->nic_egress_proc_on = false;
-                    }
-                }
-                else{
-                    //Inject packets for this phase
-                    nic_ingress_routine(tid);
+        //         /* check if cores finished their processes and exit if so */
+        //         if (nicInfo->registered_core_count == 0) {
+        //             if (nicInfo->nic_ingress_proc_on) {
+        //                 info("ooo_core.cpp - turn off nic proc");
+        //                 nicInfo->nic_ingress_proc_on = false;
+        //                 nicInfo->nic_egress_proc_on = false;
+        //             }
+        //         }
+        //         else{
+        //             //Inject packets for this phase
+        //             nic_ingress_routine(tid);
                     
-                }
-            }
-            //else if ((nicInfo->nic_egress_pid == procIdx) && (nicInfo->nic_init_done)) {
-            //    //call egress routine
-            //    nic_egress_routine(tid);
-            //}
-        }
+        //         }
+        //     }
+        //     //else if ((nicInfo->nic_egress_pid == procIdx) && (nicInfo->nic_init_done)) {
+        //     //    //call egress routine
+        //     //    nic_egress_routine(tid);
+        //     //}
+        // }
         
         uint32_t cid = getCid(tid);
         // NOTE: TakeBarrier may take ownership of the core, and so it will be used by some other thread. If TakeBarrier context-switches us,
@@ -732,6 +732,7 @@ void cycle_increment_routine(uint64_t& curCycle, int core_id) {
         return;
     }
 
+    nic_ingress_routine_per_cycle(core_id);
 
     core_ceq_routine(curCycle, nicInfo, core_id);
 
@@ -774,11 +775,13 @@ uint32_t assign_core(uint32_t in_core_iterator=0) {
 
 }
 
-int OOOCore::nic_ingress_routine_per_cycle(THREADID tid) {
-    OOOCore* core = static_cast<OOOCore*>(cores[tid]);
+//int OOOCore::nic_ingress_routine_per_cycle(THREADID tid) {
+int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
+    //OOOCore* core = static_cast<OOOCore*>(cores[tid]);
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
     void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
     load_generator* lg_p = (load_generator*) lg_p_vp;
+    OOOCore* core = static_cast<OOOCore*>(nicInfo->nicCore_ingress);
 
     if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) { //only run for nic_core
         if (nicInfo->registered_core_count == 0) { // we're done, don't do anything
@@ -799,7 +802,7 @@ int OOOCore::nic_ingress_routine_per_cycle(THREADID tid) {
             uint64_t injection_cycle = core->curCycle;
             if(lg_p->next_cycle <= injection_cycle){
                 uint32_t core_iterator = assign_core(core_iterator);
-                uint32_t srcId = getCid(tid);
+                //uint32_t srcId = getCid(tid);
                 int inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), l1d_caches[core_iterator]);
                 return inj_attempt;
             }
@@ -855,6 +858,8 @@ int OOOCore::nic_ingress_routine(THREADID tid) {
     return 0;
 }
 
+
+//we didn't go with a separate egress nic core, so unused for
 int OOOCore::nic_egress_routine(THREADID tid) {
     OOOCore* core = static_cast<OOOCore*>(cores[tid]);
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
