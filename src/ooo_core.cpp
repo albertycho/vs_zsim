@@ -545,13 +545,7 @@ int flag = 1;
 
 void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     OOOCore* core = static_cast<OOOCore*>(cores[tid]);
-    
-	//dbgprint for checking proc to core mapping
-	//uint64_t core_id = getCid(tid); // using processID to identify nicCore for now
-	//if(nicInfo->nic_init_done){
-	//	info("pid: %d, cid: %d", procIdx, core_id);
-	//}
-
+    //uint64_t core_id = getCid(tid); // using processID to identify nicCore for now
     core->bbl(bblAddr, bblInfo);
     
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
@@ -684,7 +678,7 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
         break;
 
     case NOTIFY_WQ_WRITE://NOTIFY WQ WRITE from application
-        info("notify_wq_write")
+        //info("notify_wq_write")
         nic_rgp_action(core_id, nicInfo);
         break;
     case 0xB: //indicate app is nic_proxy_process (INGRESS)
@@ -809,9 +803,6 @@ uint32_t assign_core(uint32_t in_core_iterator) {
 int OOOCore::nic_ingress_routine(THREADID tid) {
 
     OOOCore* core = static_cast<OOOCore*>(cores[tid]);
-
-    //dbgprint
-    info("in nic_ingress routine");
 
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
     void* lg_p = static_cast<void*>(gm_get_lg_ptr());

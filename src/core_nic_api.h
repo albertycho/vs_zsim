@@ -263,26 +263,18 @@ void cq_event_enqueue(uint64_t q_cycle, cq_entry_t cqe, glob_nic_elements* nicIn
 * cq_event_enqueue - takes in a cq entry and its scheduled cycle
 *			creqtes a CEQ entry and enqueues it
 */
-
-	info("in cq_event_enqueue");
-
 	cq_wr_event* cq_wr_e = gm_calloc<cq_wr_event>();
 	cq_wr_e->cqe = cqe;
 	cq_wr_e->q_cycle = q_cycle;
 	cq_wr_e->next = NULL;
 	
-	std::cout<<"gm_calloc cq_wr_event done"<<std::endl;
-
 	futex_lock(&nicInfo->nic_elem[core_id].ceq_lock);
-	std::cout<<"futex lock"<<std::endl;
 	if (nicInfo->nic_elem[core_id].cq_wr_event_q == NULL)
 	{
-		std::cout<<"if CEQ NULL"<<std::endl;
 		nicInfo->nic_elem[core_id].cq_wr_event_q = cq_wr_e;
 	}
 	else
 	{
-		std::cout<<"if CEQ NOT NULL"<<std::endl;
 		cq_wr_event* cq_wr_event_q_tail = CQ_WR_EV_Q;
 		while (cq_wr_event_q_tail->next != NULL)
 		{
@@ -292,7 +284,6 @@ void cq_event_enqueue(uint64_t q_cycle, cq_entry_t cqe, glob_nic_elements* nicIn
 	}
 	nicInfo->nic_elem[core_id].ceq_size++;
 	futex_unlock(&nicInfo->nic_elem[core_id].ceq_lock);
-
 }
 
 
@@ -395,7 +386,6 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	// to access the private caches of other cores, change the lid[] index
 	// this example performs a GETX on the LLC 
 
-//	uint64_t reqSatisfiedCycle = core->l1d_caches[core_id]->store(recv_buf_addr, cur_cycle, 1, core_id);
 	uint64_t reqSatisfiedCycle = core->l1d_caches[srcId]->store(recv_buf_addr, cur_cycle, 1, srcId);
 
 	//TODO check what cycles need to be passed to recrod
