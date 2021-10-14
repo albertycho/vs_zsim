@@ -742,7 +742,7 @@ void cycle_increment_routine(uint64_t& curCycle, int core_id) {
 
 }
 
-uint32_t assign_core(uint32_t in_core_iterator) {
+uint32_t assign_core(uint32_t in_core_iterator=0) {
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
     uint64_t min_ceq_size = ~0;//RECV_BUF_POOL_SIZE; // assign some very large number
     uint32_t ret_core_id = in_core_iterator;
@@ -751,10 +751,7 @@ uint32_t assign_core(uint32_t in_core_iterator) {
     uint32_t numCores = zinfo->numCores; //(nicInfo->expected_core_count + 2);
     
     for (uint32_t i = 0; i < numCores; i++) {
-        if (nicInfo->nic_elem[core_iterator].cq_valid == false) {
-
-        }
-        else {
+        if (nicInfo->nic_elem[core_iterator].cq_valid == true) {
             if (nicInfo->nic_elem[core_iterator].ceq_size < min_ceq_size) {
                 ret_core_id = core_iterator;
                 min_ceq_size = nicInfo->nic_elem[core_iterator].ceq_size;
@@ -780,9 +777,11 @@ uint32_t assign_core(uint32_t in_core_iterator) {
 int OOOCore::nic_ingress_routine_per_cycle(THREADID tid) {
     OOOCore* core = static_cast<OOOCore*>(cores[tid]);
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+    void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
+    load_generator* lg_p = (load_generator*) lg_p_vp;
 
-    if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) {
-        if (nicInfo->registered_core_count == 0) {
+    if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) { //only run for nic_core
+        if (nicInfo->registered_core_count == 0) { // we're done, don't do anything
             if (nicInfo->nic_ingress_proc_on) {
                 info("ooo_core.cpp - turn off nic proc");
                 nicInfo->nic_ingress_proc_on = false;
@@ -790,10 +789,20 @@ int OOOCore::nic_ingress_routine_per_cycle(THREADID tid) {
             }
         }
         else{
-            //Inject packets for this phase
-            nic_ingress_routine(tid);
-            
-        }        
+            //Inject packets if next packet is due according to loadgen->next_cycle
+            if (lg_p->next_cycle == 0) {
+                lg_p->next_cycle = core->curCycle;
+                nicInfo->sim_start_time = std::chrono::system_clock::now();
+                info("starting sim time count");
+            }
+
+            uint64_t injection_cycle = core->curCycle;
+            if(lg_p->next_cycle <= injection_cycle){
+                uint32_t srcId = getCid(tid);
+                int inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), l1d_caches[core_iterator]);
+                return inj_attempt;
+            }
+        }    
     }
 
     return 0;

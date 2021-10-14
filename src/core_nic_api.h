@@ -370,8 +370,9 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 
 	//TODO check what cycles need to be passed to recrod
 	cRec->record(cur_cycle, cur_cycle, reqSatisfiedCycle);
-	uint64_t ceq_cycle = (uint64_t)(((load_generator*)lg_p)->next_cycle);
-	create_CEQ_entry(recv_buf_addr, 0x7f, 10/*ceq_cycle*/, nicInfo, core_id);
+	//uint64_t ceq_cycle = (uint64_t)(((load_generator*)lg_p)->next_cycle);
+	//create_CEQ_entry(recv_buf_addr, 0x7f, 10/*ceq_cycle*/, nicInfo, core_id);
+	create_CEQ_entry(recv_buf_addr, 0x7f, reqSatisfiedCycle, nicInfo, core_id);
 
 	//TODO may want to pass the reqSatisfiedcycle value back to the caller via updating an argument
 	std::cout << "packet injection completed at " << reqSatisfiedCycle << std::endl;
