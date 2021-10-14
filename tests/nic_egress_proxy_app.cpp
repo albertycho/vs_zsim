@@ -12,7 +12,7 @@ using namespace std;
 
 int main() {
 
-	const int core_id = 0;
+	const int core_id = 1;
 
 	const pid_t pid = getpid();
 //	const pid_t pid = gettid();
@@ -30,9 +30,13 @@ int main() {
 
 	CPU_SET(core_id, &cpuset);
 
-	//int setresult = sched_setaffinity(pid, sizeof(cpuset), &cpuset);
+	int setresult = sched_setaffinity(pid, sizeof(cpuset), &cpuset);
 
-	std::cout<<"pid: "<<pid<<std::endl;
+	if(setresult!=0){
+		std::cout<<"nic_egress_proxy_app - sched_setaffinity failed"<<std::endl;
+	}
+
+
 
 	//int setresult = pthread_setaffinity_np(pid, sizeof(cpuset), &cpuset);
 

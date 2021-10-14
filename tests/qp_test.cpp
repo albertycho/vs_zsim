@@ -8,25 +8,29 @@
 
 using namespace std;
 
-int main() {
+int main(int argc, char* argv[]) {
 
-	//pid_t pid = getpid();
+	int core_id = 2;
 
-	//cpu_set_t cpuset;
-	//CPU_ZERO(&cpuset);
-	//std::cout<<"calling getaffinity"<<std::endl;
-	////int getaffinity_result = pthread_getaffinity_np(pid, sizeof(cpuset), &cpuset);
-	//int getaffinity_result = sched_getaffinity(pid, sizeof(cpuset), &cpuset);
+	if(argc>1){
+		core_id=atoi(argv[1]);
+	}
+	else{
+		std::cout<<"qp_test: no core_id specified"<<std::endl;
+	}
 
-	//if(getaffinity_result!=0) {
-	//	std::cout<<"getaffinity_result failed: "<<getaffinity_result<<std::endl;
-	//}
-	//
-	//for(int i=0; i<64;i++){
-	//	if(CPU_ISSET(i, &cpuset)){
-	//		std::cout<<"cpu "<<i<<" is set"<<std::endl;
-	//	}
-	//}
+	pid_t pid = getpid();
+
+	cpu_set_t cpuset;
+	CPU_ZERO(&cpuset);
+	
+	CPU_SET(core_id, &cpuset);
+
+	int setresult = sched_setaffinity(pid, sizeof(cpuset), &cpuset);
+
+	if(setresult!=0){
+		std::cout<<"nic_egress_proxy_app - sched_setaffinity failed"<<std::endl;
+	}
 
 	rmc_wq_t * wq;
 	rmc_cq_t * cq;
@@ -35,6 +39,7 @@ int main() {
 	uint32_t * lbuf_ptr;
 	//register lbuf_base
 
+	register_buffer((void*)1024, (void*) 3);
 	register_buffer((void*) (&lbuf_base), (void*) 2);
 	register_buffer((void*) (&wq), (void*) 0);
 	register_buffer((void*) (&cq), (void*) 1);

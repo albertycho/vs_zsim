@@ -30,9 +30,11 @@ int main() {
 
 	CPU_SET(core_id, &cpuset);
 
-	//int setresult = sched_setaffinity(pid, sizeof(cpuset), &cpuset);
+	int setresult = sched_setaffinity(pid, sizeof(cpuset), &cpuset);
+	if(setresult!=0){
+		std::cout<<"nic_proxy_app - sched_setaffinity failed"<<std::endl;
+	}
 
-	std::cout<<"pid: "<<pid<<std::endl;
 
 	//int setresult = pthread_setaffinity_np(pid, sizeof(cpuset), &cpuset);
 
