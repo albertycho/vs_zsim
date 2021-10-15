@@ -131,11 +131,15 @@ int main(int argc, char* argv[]) {
 
 		//calcualte lbuf_ptr address
 
+		std::cout<<"TOY APP: dbgprint 134"<<std::endl;
+
 		int send_ret;
 		//FIXME: figure out what to do with msg_entry_size
 		uint64_t msg_entry_size=1;
+		std::cout<<"TOY APP: dbgprint 139"<<std::endl;
+
 		lbuf_ptr=lbuf_base+send_count;
-		//std::cout<<"APP: lbuf_Ptr="<<lbuf_ptr<<std::endl;
+		std::cout<<"TOY APP: lbuf_Ptr="<<lbuf_ptr<<std::endl;
 		*lbuf_ptr=0xabcd00+send_count;
 		//dbgprint
 		std::cout << "before rmc_hw_send in toy app" << std::endl;
