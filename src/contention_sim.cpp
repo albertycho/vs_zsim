@@ -150,7 +150,7 @@ void ContentionSim::simulatePhase(uint64_t limit) {
     this->limit = limit;
     assert(limit >= lastLimit);
 
-    //info("simulatePhase limit %ld", limit);
+    info("simulatePhase limit %ld", limit);
     for (uint32_t i = 0; i < zinfo->numCores; i++) {
         TimingCore* tcore = dynamic_cast<TimingCore*>(zinfo->cores[i]);
         if (tcore) tcore->cSimStart();
