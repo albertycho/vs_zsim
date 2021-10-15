@@ -521,6 +521,9 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 
+    //dbgprint
+    info("dumb print to show that bblfun gets called");
+
     //TODO check which nic (ingress or egress) should handle this
     //as of now we stick with one NIC core doing both ingress and egress work
     if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) {
