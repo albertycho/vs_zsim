@@ -4,7 +4,9 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <pthread.h>
-#include "zsim_nic_defines.hpp"
+#include "../src/libzsim/zsim_nic_defines.hpp"
+//#include "zsim_nic_defines.hpp"
+
 
 using namespace std;
 
@@ -29,7 +31,7 @@ int main(int argc, char* argv[]) {
 	int setresult = sched_setaffinity(pid, sizeof(cpuset), &cpuset);
 
 	if(setresult!=0){
-		std::cout<<"nic_egress_proxy_app - sched_setaffinity failed"<<std::endl;
+		std::cout<<"qp_test - sched_setaffinity failed"<<std::endl;
 	}
 
 	rmc_wq_t * wq;
