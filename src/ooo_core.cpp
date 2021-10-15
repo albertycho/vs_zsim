@@ -598,7 +598,11 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         // It may happen that we had an intervening context-switch and we are now back to the same core.
         // This is fine, since the loop looks at core values directly and there are no locals involved,
         // so we should just advance as needed and move on.
-        if (newCid != cid) break;  /*context-switch, we do not own this context anymore*/
+        //if (newCid != cid) break;  /*context-switch, we do not own this context anymore*/
+        if (newCid != cid){
+            info("newCid!=cid");
+            break;
+        } 
     }
 }
 
