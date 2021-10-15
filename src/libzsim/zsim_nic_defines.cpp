@@ -51,7 +51,7 @@ successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
 
 	ret.success=1;
 	ret.op=RMC_INVAL;
-
+	std::cout << "inside rmc_check_cq, before any while loop" << std::endl;
 	wq_entry_t raw_wqe;
 	do{
 		//dbgprint
