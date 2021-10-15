@@ -137,12 +137,19 @@ int main(int argc, char* argv[]) {
 		lbuf_ptr=lbuf_base+send_count;
 		//std::cout<<"APP: lbuf_Ptr="<<lbuf_ptr<<std::endl;
 		*lbuf_ptr=0xabcd00+send_count;
+		//dbgprint
+		std::cout << "before rmc_hw_send in toy app" << std::endl;
+		
 		do{
 			send_ret=rmc_hw_send(wq, ctx_id, lbuf_ptr, msg_entry_size, target_node);
 		} while (send_ret);
+
+		std::cout << "after rmc_hw_send in toy app, before rmc_hw_recv" << std::endl;
+
 		send_count++;
 		//std::cout<<"APP: send_count="<<send_count<<std::endl;
 		rmc_hw_recv(wq, ctx_id, (void*) recv_completion.recv_buf_addr, msg_entry_size);
+		std::cout << "after rmc_hw_recv" << std::endl;
 	}
 
 	uint64_t put_req_ratio = put_req_count * 100 / send_count;
