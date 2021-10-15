@@ -19,6 +19,19 @@
 #define MICA_MAX_VALUE \
   (64 - (sizeof(struct mica_key) + sizeof(uint8_t) + sizeof(uint8_t)))
 
+struct mica_key {
+	unsigned long long __unused : 64;
+	unsigned int bkt : 32;
+	unsigned int server : 16;
+	unsigned int tag : 16;
+};
+
+struct mica_op {
+	struct mica_key key; /* This must be the 1st field and 16B aligned */
+	uint8_t opcode;
+	uint8_t val_len;
+	uint8_t value[MICA_MAX_VALUE];
+};
 
 
 using namespace std;
