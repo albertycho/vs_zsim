@@ -357,6 +357,9 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 
 	futex_lock(&nicInfo->nic_elem[core_id].rb_lock);
 	uint32_t rb_head = allocate_recv_buf(1, nicInfo, core_id);
+	//dbgprint
+	info("allocate_recv_buf - rb_head = %d", rb_head);
+
 	futex_unlock(&nicInfo->nic_elem[core_id].rb_lock);
 	if (rb_head > RECV_BUF_POOL_SIZE) {
 		info("core %d out of recv buffer, cycle %lu", core_id, cur_cycle);
@@ -544,7 +547,7 @@ int free_recv_buf(uint32_t head, uint32_t core_id) {
 	}
 
 	//dbg print
-	//info("free_recv_buf - finished freeing");
+	info("free_recv_buf - finished freeing");
 	return 0;
 }
 
