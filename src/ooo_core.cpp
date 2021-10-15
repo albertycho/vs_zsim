@@ -471,12 +471,15 @@ void OOOCore::leave() {
 }
 
 void OOOCore::cSimStart() {
+    //dbgprint
+    info("CSimStart called");
     uint64_t targetCycle = cRec.cSimStart(curCycle);
     assert(targetCycle >= curCycle);
     if (targetCycle > curCycle) advance(targetCycle);
 }
 
 void OOOCore::cSimEnd() {
+    info("CSimEnd called");
     uint64_t targetCycle = cRec.cSimEnd(curCycle);
     assert(targetCycle >= curCycle);
     if (targetCycle > curCycle) advance(targetCycle);
