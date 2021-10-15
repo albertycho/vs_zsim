@@ -60,6 +60,8 @@ int main(int argc, char* argv[]) {
 		std::cout<<"qp_test - sched_setaffinity failed"<<std::endl;
 	}
 
+	std::cout << "qp_test - core_id = " << core_id << std::endl;
+
 	rmc_wq_t * wq;
 	rmc_cq_t * cq;
 
@@ -87,6 +89,7 @@ int main(int argc, char* argv[]) {
 	{
 		successStruct recv_completion;
 		do{
+			std::cout << "calling rmc check" << std::endl;
 			recv_completion = rmc_check_cq(wq,cq);
 			//debug print
 			//NOTE - adding this dbg print causes hang at the end of test.. why?
