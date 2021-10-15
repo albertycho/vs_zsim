@@ -544,6 +544,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
             // Sometime this check gets stuck at the end of the phase, adding safety break
             int safety_counter = 0;
             while (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch())) {
+                info("while loop for core timing sync in bbl");
             //while (core->curCycle > ((((OOOCore*)(nicInfo->nicCore_ingress))->getCycles()) + 50) ) { 
                 // +50this could be a performance optmiziation, not sure how significant correctness hazard is
                 //info("thisCore curCycle = %lu, nicCore curcycle = %lu", core->curCycle, ((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch());
@@ -558,6 +559,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
 
 
     while (core->curCycle > core->phaseEndCycle) {
+        info("while loop for phase sync in bbl");
         core->phaseEndCycle += zinfo->phaseLength;
 
         //RESIDUE of batch injection per phase. 
