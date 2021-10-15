@@ -7,6 +7,19 @@
 #include "../src/libzsim/zsim_nic_defines.hpp"
 //#include "zsim_nic_defines.hpp"
 
+///////////MICA HERD defines////////////
+/* Fixed-size 16 byte keys */
+
+#define MICA_OP_GET 111
+#define MICA_OP_PUT 112
+#define HERD_MICA_OFFSET 10
+#define HERD_OP_PUT (MICA_OP_PUT + HERD_MICA_OFFSET)
+#define HERD_OP_GET (MICA_OP_GET + HERD_MICA_OFFSET)
+#define HERD_VALUE_SIZE 32
+#define MICA_MAX_VALUE \
+  (64 - (sizeof(struct mica_key) + sizeof(uint8_t) + sizeof(uint8_t)))
+
+
 
 using namespace std;
 
