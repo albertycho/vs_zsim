@@ -536,7 +536,7 @@ int free_recv_buf(uint32_t head, uint32_t core_id) {
 	assert(NICELEM.rb_dir[head].is_head);
 	assert(NICELEM.rb_dir[head].in_use);
 	//dbg print
-	//info("free_recv_buf - core_id = %d, head = %d", core_id, head);
+	info("free_recv_buf - core_id = %d, head = %d", core_id, head);
 
 	uint32_t blen = NICELEM.rb_dir[head].len;
 
