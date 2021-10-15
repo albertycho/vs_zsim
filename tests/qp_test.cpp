@@ -138,7 +138,7 @@ int main(int argc, char* argv[]) {
 		uint64_t msg_entry_size=1;
 		std::cout<<"TOY APP: dbgprint 139"<<std::endl;
 
-		lbuf_ptr=lbuf_base+send_count;
+		lbuf_ptr=lbuf_base+(send_count % 16);
 		std::cout<<"TOY APP: lbuf_Ptr="<<lbuf_ptr<<std::endl;
 		*lbuf_ptr=0xabcd00+send_count;
 		//dbgprint
