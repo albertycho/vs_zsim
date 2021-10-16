@@ -51,11 +51,11 @@ successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
 
 	ret.success=1;
 	ret.op=RMC_INVAL;
-	std::cout << "inside rmc_check_cq, before any while loop" << std::endl;
+	//std::cout << "inside rmc_check_cq, before any while loop" << std::endl;
 	wq_entry_t raw_wqe;
 	do{
 		//dbgprint
-		std::cout << "inside rmc_check_cq, first while loop" << std::endl;
+		//std::cout << "inside rmc_check_cq, first while loop" << std::endl;
 		raw_wqe=wq->q[wq->head];
 
 		cq_entry_t raw_cqe_entry = cq->q[cq_tail];
@@ -64,7 +64,7 @@ successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
 		while((tail_SR==cq->SR) && (ret.success!=0))
 		{
 			//dbgprint
-			std::cout << "inside rmc_check_cq, second while loop" << std::endl;
+			//std::cout << "inside rmc_check_cq, second while loop" << std::endl;
 			//FIXME: okay to unset cq valid here?
 			cq->q[cq_tail].valid=0;
 			cq->tail = cq->tail + 1;

@@ -89,7 +89,7 @@ int main(int argc, char* argv[]) {
 	{
 		successStruct recv_completion;
 		do{
-			std::cout << "calling rmc check" << std::endl;
+			//std::cout << "calling rmc check" << std::endl;
 			recv_completion = rmc_check_cq(wq,cq);
 			//debug print
 			//NOTE - adding this dbg print causes hang at the end of test.. why?
@@ -122,38 +122,38 @@ int main(int argc, char* argv[]) {
 		}
 		//san check code
 		
-		else {
-			if (mp->opcode == HERD_OP_PUT) std::cout << "HERD_OP_PUT, send serviced:"<<send_serviced << std::endl;
-			if (mp->opcode == HERD_OP_GET) std::cout << "HERD_OP_GE, Tsend serviced:"<<send_serviced << std::endl;
-		}
+		//else {
+		//	if (mp->opcode == HERD_OP_PUT) std::cout << "HERD_OP_PUT, send serviced:"<<send_serviced << std::endl;
+		//	if (mp->opcode == HERD_OP_GET) std::cout << "HERD_OP_GE, Tsend serviced:"<<send_serviced << std::endl;
+		//}
 		
 		uint32_t target_node = recv_completion.tid;
 
 		//calcualte lbuf_ptr address
 
-		std::cout<<"TOY APP: dbgprint 134"<<std::endl;
+		//std::cout<<"TOY APP: dbgprint 134"<<std::endl;
 
 		int send_ret;
 		//FIXME: figure out what to do with msg_entry_size
 		uint64_t msg_entry_size=1;
-		std::cout<<"TOY APP: dbgprint 139"<<std::endl;
+		//std::cout<<"TOY APP: dbgprint 139"<<std::endl;
 
 		lbuf_ptr=lbuf_base+(send_count % 16);
-		std::cout<<"TOY APP: lbuf_Ptr="<<lbuf_ptr<<std::endl;
+		//std::cout<<"TOY APP: lbuf_Ptr="<<lbuf_ptr<<std::endl;
 		*lbuf_ptr=0xabcd00+send_count;
 		//dbgprint
-		std::cout << "before rmc_hw_send in toy app" << std::endl;
+		//std::cout << "before rmc_hw_send in toy app" << std::endl;
 		
 		do{
 			send_ret=rmc_hw_send(wq, ctx_id, lbuf_ptr, msg_entry_size, target_node);
 		} while (send_ret);
 
-		std::cout << "after rmc_hw_send in toy app, before rmc_hw_recv" << std::endl;
+		//std::cout << "after rmc_hw_send in toy app, before rmc_hw_recv" << std::endl;
 
 		send_count++;
 		//std::cout<<"APP: send_count="<<send_count<<std::endl;
 		rmc_hw_recv(wq, ctx_id, (void*) recv_completion.recv_buf_addr, msg_entry_size);
-		std::cout << "after rmc_hw_recv" << std::endl;
+		//std::cout << "after rmc_hw_recv" << std::endl;
 	}
 
 	uint64_t put_req_ratio = put_req_count * 100 / send_count;
