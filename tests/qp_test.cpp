@@ -161,7 +161,8 @@ int main(int argc, char* argv[]) {
 
 	uint64_t put_req_ratio = put_req_count * 100 / send_count;
 
-	std::cout << "APP - SUM = " << std::dec << sum << std::endl;
+	std::cout << "APP: SUM = " << std::dec << sum << std::endl;
+	std::cout << "APP: serviced = " << std::dec << send_serviced << std::endl;
 	std::cout << "APP - PUT REQ Ratio: " << std::dec << put_req_ratio << "%" << std::endl;
 
 	register_buffer((void*) 0, (void*) 0xdead);
