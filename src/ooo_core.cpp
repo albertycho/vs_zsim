@@ -693,6 +693,13 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
         }
         nicInfo->nicCore_egress = (void*)cores[tid];
         break;
+
+    case 0xD: //send all client_done boolean to the server app to monitor for termination condition
+        void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
+        load_generator* lg_p = (load_generator*)lg_p_vp;
+        *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(lg_p->all_packets_sent));
+        break;
+
     case 0xdead: //invalidate entries after test app terminates
         nicInfo->registered_core_count = nicInfo->registered_core_count - 1;
 

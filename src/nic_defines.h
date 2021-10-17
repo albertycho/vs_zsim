@@ -238,8 +238,10 @@ struct load_generator {
 	int next_cycle;
 	int interval;
 	int message; //may replace this to appropriate type
-	uint64_t last_core;
+	bool all_packets_sent;
 	uint64_t target_packet_count;
+	//uint64_t sent_packets;
+	uint64_t last_core;
 	uint64_t ptag;
 	p_time_card* ptc_head; // this linked list packet_time_card is not used, 
 	lock_t ptc_lock;	   // keeping code for DBG/Comparison purpose

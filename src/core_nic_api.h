@@ -178,6 +178,13 @@ int update_loadgen(void* lg_p) {
 
 	((load_generator*)lg_p)->ptag = ((load_generator*)lg_p)->ptag + 1;
 
+	/*
+	((load_generator*)lg_p)->sent_packets = ((load_generator*)lg_p)->sent_packets + 1;
+	
+	if (((load_generator*)lg_p)->sent_packets == ((load_generator*)lg_p)->target_packet_count) {
+		((load_generator*)lg_p)->all_packets_sent = true;
+	}
+	*/
 	return 0;
 }
 
@@ -590,6 +597,7 @@ int resize_latencies_arr() {
 
 int insert_latency_stat(uint64_t p_latency) {
 	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
+	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
 
 	if (nicInfo->latencies_size >= nicInfo->latencies_capa) {
 		resize_latencies_arr();
@@ -600,6 +608,11 @@ int insert_latency_stat(uint64_t p_latency) {
 
 	if (p_latency > nicInfo->max_latency) {
 		nicInfo->max_latency = p_latency;
+	}
+
+	/* stop sending after target number of requests are sent and completed */
+	if (nicInfo->latencies_size == lg_p->target_packet_count) {
+		lg_p->all_packets_sent = true;
 	}
 
 	return 0;
