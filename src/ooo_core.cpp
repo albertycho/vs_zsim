@@ -831,7 +831,9 @@ int OOOCore::nic_ingress_routine(THREADID tid) {
 
              uint64_t injection_cycle = core->curCycle;
              if(lg_p->next_cycle <= injection_cycle){
-                 uint32_t core_iterator = assign_core(core_iterator);
+                 //uint32_t core_iterator = assign_core(core_iterator);
+                 uint32_t core_iterator = assign_core(((load_generator*)lg_p)->last_core);
+                 ((load_generator*)lg_p)->last_core = core_iterator;
                  //uint32_t srcId = getCid(tid);
                  int inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), l1d_caches[core_iterator]);
                  return inj_attempt;
