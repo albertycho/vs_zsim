@@ -482,8 +482,13 @@ int main(int argc, char *argv[]) {
 
     assert(nicInfo->hist_interval != 0);
     uint64_t hist_width = ((nicInfo->max_latency) / (nicInfo->hist_interval)) + 1;
-    uint64_t* hist_counters = new uint64_t[hist_width];
-    uint64_t* sorted_latencies = new uint64_t[nicInfo->latencies_size];
+    //uint64_t* hist_counters = new uint64_t[hist_width];
+    //uint64_t* sorted_latencies = new uint64_t[nicInfo->latencies_size];
+    //using new or normal calloc causes segfault when going over 10000 packets with herd. using gm_calloc again..
+    uint64_t* hist_counters = gm_calloc<uint64_t>(hist_width);
+    uint64_t * sorted_latencies = gm_calloc<uint64_t>(nicInfo->latencies_size);
+
+
     //gives me garbage if I don't clear
     for (uint64_t iii = 0; iii < hist_width; iii++) {
         hist_counters[iii] = 0;
@@ -537,6 +542,8 @@ int main(int argc, char *argv[]) {
     latency_hist_file.close();
 
 
+    gm_free(hist_counters);
+    gm_free(sorted_latencies)
     uint32_t exitCode = 0;
     if (termStatus == OK) {
         info("All children done, exiting");
