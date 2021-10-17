@@ -785,8 +785,8 @@ int OOOCore::nic_ingress_routine(THREADID tid) {
             core_iterator = 0;
         }
 
-        core_iterator = assign_core(core_iterator);
-
+        core_iterator = assign_core(((load_generator*)lg_p)->last_core);
+        ((load_generator*)lg_p)->last_core = core_iterator;
         /* Inject packet (call core function) */
         uint32_t srcId = getCid(tid);
         uint64_t injection_cycle = core->curCycle;

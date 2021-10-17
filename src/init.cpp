@@ -829,7 +829,10 @@ static void InitSystem(Config& config) {
     uint32_t update_fraction = config.get<uint32_t>("sim.update_fraction", 10);
     lgp->RPCGen->set_update_fraction(update_fraction);
     lgp->interval = (zinfo->phaseLength) / (nicInfo->packet_injection_rate);
-    info("INIT interval: %lu", lgp->interval);
+    uint32_t target_pacekt_count = config.get<uint32_t>("sim.packet_count", 100000);
+    lgp->target_packet_count = (uint64_t) target_pacekt_count;
+    lgp->last_core = 0;
+    
 
     info("Initialized system");
 }
