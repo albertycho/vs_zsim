@@ -734,6 +734,12 @@ uint32_t assign_core(uint32_t in_core_iterator=0) {
 
     uint32_t numCores = zinfo->numCores; //(nicInfo->expected_core_count + 2);
     
+    //increment it once at beginning for round-robin fairness
+    core_iterator++;
+    if (core_iterator >= numCores) {
+        core_iterator = 0;
+    }
+
     for (uint32_t i = 0; i < numCores; i++) {
         if (nicInfo->nic_elem[core_iterator].cq_valid == true) {
             if (nicInfo->nic_elem[core_iterator].ceq_size < min_ceq_size) {
@@ -748,7 +754,7 @@ uint32_t assign_core(uint32_t in_core_iterator=0) {
         }
 
         core_iterator++;
-        if (core_iterator >= zinfo->numCores) {
+        if (core_iterator >= numCores) {
             core_iterator = 0;
         }
 
