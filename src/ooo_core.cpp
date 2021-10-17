@@ -616,6 +616,8 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
 
     uint64_t core_id = getCid(tid);
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+    void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
+    load_generator* lg_p = (load_generator*)lg_p_vp;
 
 	uint64_t num_cline=0;
     switch (field) {
@@ -695,8 +697,6 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
         break;
 
     case 0xD: //send all client_done boolean to the server app to monitor for termination condition
-        void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
-        load_generator* lg_p = (load_generator*)lg_p_vp;
         *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(lg_p->all_packets_sent));
         break;
 
