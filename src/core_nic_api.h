@@ -616,6 +616,9 @@ int insert_latency_stat(uint64_t p_latency) {
 		lg_p->all_packets_sent = true;
 	}
 
+	//dbgprint
+	info("latencies gathered: %d", nicInfo->latencies_size);
+
 	return 0;
 }
 
