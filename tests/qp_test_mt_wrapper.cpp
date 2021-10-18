@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
 		numthreads=atoi(argv[1]);
 	}
 
-	thread_arr = (pthread_t*)malloc(numthreads * sizeof(pthread_t));
+	pthread_t *thread_arr = (pthread_t*)malloc(numthreads * sizeof(pthread_t));
 
 	int i;
 	for (i = 0; i < numthreads; i++) {
