@@ -39,7 +39,7 @@ using namespace std;
 
 int qp_test(void* inarg) {
 
-	thread_params* casted_inarg = (thread params*) inarg;
+	thread_params* casted_inarg = (thread_params*) inarg;
 	int core_id = 2;
 
 	core_id = casted_inarg->core_id;

@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
 	for (i = 0; i < numthreads; i++) {
 		tpa[i].core_id = i + 2;
 		//int core_id = i + 2;
-		int err = pthread_create(&thread_arr[i], NULL, qp_test, &tpa[i]);
+		int err = pthread_create(&thread_arr[i], NULL, qp_test, (void*)&tpa[i]);
 		if (err != 0) std::cout << "pthread_create failed" << std::endl;
 	}
 
