@@ -7,6 +7,9 @@
 #include "qp_test_thread_ver.hpp"
 //#include "zsim_nic_defines.hpp"
 
+struct thread_params {
+	int core_id;
+};
 
 int main(int argc, char* argv[]) {
 
@@ -17,10 +20,14 @@ int main(int argc, char* argv[]) {
 
 	pthread_t *thread_arr = (pthread_t*)malloc(numthreads * sizeof(pthread_t));
 
+	struct thread_params* tpa;
+	tpa = (struct thread_params*)malloc(numthreads * sizeof(struct thread_params));
+
 	int i;
 	for (i = 0; i < numthreads; i++) {
-		int core_id = i + 2;
-		int err = pthread_create(&thread_arr[i], NULL, qp_test, &core_id);
+		tpa[i].core_id = i + 2;
+		//int core_id = i + 2;
+		int err = pthread_create(&thread_arr[i], NULL, qp_test, &tpa[i]);
 		if (err != 0) std::cout << "pthread_create failed" << std::endl;
 	}
 
