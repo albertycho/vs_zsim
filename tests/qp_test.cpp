@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
 
 	uint64_t msgs_per_node = 256;
 	uint64_t msg_size = 512;
-	uint_64_t buf_size = msgs_per_node * msg_size;
+	uint64_t buf_size = msgs_per_node * msg_size;
 
 	register_buffer((void*)buf_size, (void*) 3);
 	register_buffer((void*) (&lbuf_base), (void*) 2);
