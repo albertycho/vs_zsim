@@ -1,3 +1,5 @@
 
-
-int qp_test(int in_cid);
+struct thread_params {
+	int core_id;
+};
+int qp_test(void* inarg);

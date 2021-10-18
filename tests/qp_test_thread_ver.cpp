@@ -37,11 +37,12 @@ struct mica_op {
 
 using namespace std;
 
-int qp_test(int in_cid) {
+int qp_test(void* inarg) {
 
+	thread_params* casted_inarg = (thread params*) inarg;
 	int core_id = 2;
 
-	core_id = in_cid;
+	core_id = casted_inarg->core_id;
 
 	//if(argc>1){
 	//	core_id=atoi(argv[1]);

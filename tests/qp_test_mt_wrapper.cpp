@@ -7,9 +7,7 @@
 #include "qp_test_thread_ver.hpp"
 //#include "zsim_nic_defines.hpp"
 
-struct thread_params {
-	int core_id;
-};
+
 
 int main(int argc, char* argv[]) {
 
