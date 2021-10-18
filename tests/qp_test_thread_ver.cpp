@@ -150,7 +150,10 @@ void* qp_test(void* inarg) {
 
 		//lbuf_ptr=lbuf_base+(send_count % 16);
 		lbuf_ptr = lbuf_base + ((send_count % msgs_per_node) * msg_size);
-		std::cout << "TOY APP: count = " << send_count << "lbuf_Ptr = " << lbuf_ptr << std::endl;
+
+		uint64_t offset = ((send_count % msgs_per_node) * msg_size);
+		
+		std::cout << "TOY APP: count = " << send_count << ", offset: " << offset << ", lbuf_Ptr = " << lbuf_ptr << ", lbuf_base = "<<lbuf_base << std::endl;
 		
 		*lbuf_ptr=0xabcd00+send_count;
 		//dbgprint
