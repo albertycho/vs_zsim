@@ -37,7 +37,7 @@ struct mica_op {
 
 using namespace std;
 
-int qp_test(void* inarg) {
+void* qp_test(void* inarg) {
 
 	thread_params* casted_inarg = (thread_params*) inarg;
 	int core_id = 2;
@@ -171,7 +171,7 @@ int qp_test(void* inarg) {
 
 	register_buffer((void*) 0, (void*) 0xdead);
 	std::cout<<"APP - terminating"<<std::endl;
-    return 0;
+    return NULL;
 }
 
 

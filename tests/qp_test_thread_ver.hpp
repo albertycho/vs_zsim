@@ -2,4 +2,4 @@
 struct thread_params {
 	int core_id;
 };
-int qp_test(void* inarg);
+void* qp_test(void* inarg);
