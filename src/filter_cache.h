@@ -106,6 +106,8 @@ class FilterCache : public Cache {
             uint32_t idx = vLineAddr & setMask;
             uint64_t availCycle = filterArray[idx].availCycle; //read before, careful with ordering to avoid timing races
             if ((lvl == 8) || (lvl == level)) {
+				//if ideal case
+				//if vLineAddr in recv_buf range for this core
                 if (vLineAddr == filterArray[idx].rdAddr) {
                     fGETSHit++;
                     return MAX(curCycle, availCycle);
