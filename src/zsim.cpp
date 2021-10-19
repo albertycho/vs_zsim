@@ -584,11 +584,10 @@ VOID Instruction(INS ins) {
         }
 
         // Instrument only conditional branches
-		//FIXME: commenting this out is a temporary WA
-        //if (INS_Category(ins) == XED_CATEGORY_COND_BR) {
-        //    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) IndirectRecordBranch, IARG_FAST_ANALYSIS_CALL, IARG_THREAD_ID,
-        //            IARG_INST_PTR, IARG_BRANCH_TAKEN, IARG_BRANCH_TARGET_ADDR, IARG_FALLTHROUGH_ADDR, IARG_END);
-        //}
+		if (INS_Category(ins) == XED_CATEGORY_COND_BR) {
+            INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) IndirectRecordBranch, IARG_FAST_ANALYSIS_CALL, IARG_THREAD_ID,
+                    IARG_INST_PTR, IARG_BRANCH_TAKEN, IARG_BRANCH_TARGET_ADDR, IARG_FALLTHROUGH_ADDR, IARG_END);
+        }
     }
 
 	if (INS_IsXchg(ins) && INS_OperandReg(ins, 0) == REG_RBX && INS_OperandReg(ins, 1) == REG_RBX) {
