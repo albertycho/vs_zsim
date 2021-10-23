@@ -47,9 +47,9 @@ cq_wr_event* deq_cq_wr_event(glob_nic_elements* nicInfo, uint64_t core_id)
 }
 
 //int add_time_card(p_time_card* ptc, load_generator* lg_p) {
-int tc_map_insert(uint64_t ptag, uint64_t issue_cycle) {
+int tc_map_insert(uint64_t in_ptag, uint64_t issue_cycle) {
 
-
+	uint16_t ptag = (uint16_t) in_ptag;
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
 	futex_lock(&lg_p->ptc_lock);
 	//info("ptc insert to map");
