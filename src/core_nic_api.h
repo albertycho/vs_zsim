@@ -723,6 +723,8 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 		uint64_t p_latency = end_cycle - start_cycle;
 		insert_latency_stat(p_latency);
 
+		std::cout << "Packet Tag: " << ptag << ", start_cycle: " << start_cycle << ", end_cycle: " << end_cycle << ", p_latency: " << p_latency << std::endl;
+
 
 	}
 
