@@ -542,6 +542,57 @@ int main(int argc, char *argv[]) {
     latency_hist_file.close();
 
 
+
+	info("start writing to service time file");
+    std::ofstream service_time_file("service_times.txt");
+    std::ofstream st_stat_file("service_times_stats.txt");
+
+
+	for(uint64_t kkk = 2; kkk<nicInfo->expected_core_count+2;kkk++){
+		service_time_file << "CORE " << kkk-1 << std::endl;
+		st_stat_file << "CORE " << kkk-1 << std::endl;
+		
+		uint32_t sorted_service_time[65000]; //fixed number for now
+		for (uint64_t lll = 0; lll<nicInfo->nic_elem[kkk].st_size+10;lll++){
+			sorted_service_time[lll] = 0;
+		}
+
+	    for (uint64_t iii = 0; iii < nicInfo->nic_elem[kkk].st_size; iii++){
+			service_time_file << nicInfo->nic_elem[kkk].service_times[iii]<<std::endl;
+
+			bool insert_at_begin = true;
+        	for (uint64_t jjj = iii; jjj > 0; jjj--) {
+        	    if (jjj == 0) {
+        	        info("jjj not supposed to be 0");
+        	    }
+        	    if (sorted_service_time[jjj - 1] > nicInfo->nic_elem[kkk].service_times[iii]) {
+        	        sorted_service_time[jjj] = sorted_service_time[jjj - 1];
+        	    }
+        	    else {
+        	        sorted_service_time[jjj] = nicInfo->nic_elem[kkk].service_times[iii];
+        	        insert_at_begin = false;
+        	        break;
+        	    }
+        	}
+        	if (insert_at_begin) {
+        	    sorted_service_time[0] = nicInfo->nic_elem[kkk].service_times[iii];
+        	}
+		}
+		int med_index = nicInfo->nic_elem[kkk].st_size / 2;
+		int index_80 = nicInfo->nic_elem[kkk].st_size * 80 / 100;
+		int index_90 = nicInfo->nic_elem[kkk].st_size * 90 / 100;
+		st_stat_file << "median: " << sorted_service_time[med_index] << std::endl;
+		st_stat_file << "80perc: " << sorted_service_time[index_80] << std::endl;
+		st_stat_file << "90perc: " << sorted_service_time[index_90] << std::endl;
+
+	}
+	service_time_file.close();
+	st_stat_file.close();
+	
+//	for (uint64_t iii = 0; iii < nicInfo->latencies_size; iii++) {
+//        map_latency_file << nicInfo->latencies[iii] << std::endl;
+
+
     gm_free(hist_counters);
     gm_free(sorted_latencies);
     uint32_t exitCode = 0;

@@ -619,6 +619,8 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
     void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
     load_generator* lg_p = (load_generator*)lg_p_vp;
 
+    OOOCore* core = static_cast<OOOCore*>(cores[tid]);
+
 	uint64_t num_cline=0;
     switch (field) {
     case 0://WQ
@@ -700,6 +702,19 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
     case 0xD: //send all client_done boolean to the server app to monitor for termination condition
         *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(lg_p->all_packets_sent));
         break;
+
+	case 0xE:
+		assert(nicInfo->nic_elem[core_id].service_in_progress==false);
+		nicInfo->nic_elem[core_id].service_in_progress=true;
+		nicInfo->nic_elem[core_id].cur_service_start_time=core->curCycle;
+		break;
+	case 0xF:
+		assert(nicInfo->nic_elem[core_id].service_in_progress==true);
+		nicInfo->nic_elem[core_id].service_times[(nicInfo->nic_elem[core_id].st_size)]=
+			(core->curCycle) - (nicInfo->nic_elem[core_id].cur_service_start_time);
+		nicInfo->nic_elem[core_id].st_size = nicInfo->nic_elem[core_id].st_size + 1;
+		nicInfo->nic_elem[core_id].service_in_progress=false;
+		break;
 
     case 0xdead: //invalidate entries after test app terminates
         nicInfo->registered_core_count = nicInfo->registered_core_count - 1;

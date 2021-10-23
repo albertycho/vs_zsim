@@ -364,13 +364,13 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	// }
 
 	futex_lock(&nicInfo->nic_elem[core_id].rb_lock);
-	uint32_t rb_head = allocate_recv_buf(1, nicInfo, core_id);
+	uint32_t rb_head = allocate_recv_buf(8, nicInfo, core_id);
 	//dbgprint
 	//info("allocate_recv_buf - rb_head = %d", rb_head);
 
 	futex_unlock(&nicInfo->nic_elem[core_id].rb_lock);
 	if (rb_head > RECV_BUF_POOL_SIZE) {
-		info("core %d out of recv buffer, cycle %lu", core_id, cur_cycle);
+		//info("core %d out of recv buffer, cycle %lu", core_id, cur_cycle);
 		//info("((zinfo->numCores) - 1)=%d", ((zinfo->numCores) - 1));
 		return -1;
 	}
@@ -389,12 +389,35 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	// specifiy the level after curCycle
 	// to access the private caches of other cores, change the lid[] index
 	// this example performs a GETX on the LLC 
-	uint64_t reqSatisfiedCycle = l1d->store(recv_buf_addr, cur_cycle, 1, srcId, MemReq::PKTIN);
 
-	//TODO check what cycles need to be passed to recrod
-	cRec->record(cur_cycle, cur_cycle, reqSatisfiedCycle);
-	//uint64_t ceq_cycle = (uint64_t)(((load_generator*)lg_p)->next_cycle);
-	//create_CEQ_entry(recv_buf_addr, 0x7f, 10/*ceq_cycle*/, nicInfo, core_id);
+	uint64_t reqSatisfiedCycle;
+//	uint64_t reqSatisfiedCycle = l1d->store(recv_buf_addr, cur_cycle, 0, srcId, MemReq::PKTIN);
+//
+//	//TODO check what cycles need to be passed to recrod
+//	cRec->record(cur_cycle, cur_cycle, reqSatisfiedCycle);
+	
+	//testing ideal case. will rewrite once other policies are ready
+	switch (nicInfo->pp_policy){
+		case 0: //ideal
+			info("ideal");
+			reqSatisfiedCycle = cur_cycle;
+			break;
+		case 1: //LLC
+			info("LLC");
+			reqSatisfiedCycle = l1d->store(recv_buf_addr, cur_cycle, 1, srcId, MemReq::PKTIN);
+			cRec->record(cur_cycle, cur_cycle, reqSatisfiedCycle);
+			break;
+		case 2: //DMA
+			info("DMA");
+			reqSatisfiedCycle = l1d->store(recv_buf_addr, cur_cycle, 0, srcId, MemReq::PKTIN);
+			cRec->record(cur_cycle, cur_cycle, reqSatisfiedCycle);
+			break;
+		default:
+			reqSatisfiedCycle = cur_cycle;
+			break;
+	}
+	
+	
 	create_CEQ_entry(recv_buf_addr, 0x7f, reqSatisfiedCycle, nicInfo, core_id);
 
 	//TODO may want to pass the reqSatisfiedcycle value back to the caller via updating an argument

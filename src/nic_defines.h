@@ -169,6 +169,16 @@ struct nic_element {
 	lock_t rb_lock;
 	PAD();
 
+	//uint64_t* service_times;
+	uint32_t service_times[65000]; //as of now, I can't run more than 60k packets :(
+	uint64_t st_size;
+	//uint64_t st_capa;
+	uint32_t cur_service_start_time;
+	bool service_in_progress;
+	PAD();
+
+
+
 };
 
 typedef struct done_packet_info {
@@ -215,6 +225,8 @@ struct glob_nic_elements {
 
 	uint32_t ceq_delay;
 	uint32_t nw_roundtrip_delay;
+
+	uint32_t pp_policy;
 
 	std::chrono::system_clock::time_point sim_start_time;
 	std::chrono::system_clock::time_point sim_end_time;

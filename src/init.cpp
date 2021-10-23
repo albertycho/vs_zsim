@@ -119,6 +119,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
     // Power of two sets check; also compute setBits, will be useful later
     uint32_t numSets = numLines/ways;
     uint32_t setBits = 31 - __builtin_clz(numSets);
+	info("NUMSETS: %d", numSets);
     if ((1u << setBits) != numSets) panic("%s: Number of sets must be a power of two (you specified %d sets)", name.c_str(), numSets);
 
     //Hash function
@@ -803,6 +804,10 @@ static void InitSystem(Config& config) {
     nicInfo->packet_injection_rate = (uint64_t) packet_injection_rate;
     bool record_nic_access = config.get<bool>("sim.record_nic_access", true);
     nicInfo->record_nic_access = record_nic_access;
+
+
+    uint32_t pp_policy = config.get<uint32_t>("sim.pp_policy", 0);
+	nicInfo->pp_policy = pp_policy;
 
     //uint32_t num_cores_serving_nw = config.get<uint32_t>("sim.num_cores_serving_nw", (zinfo->numCores - 1));
     uint32_t num_cores_serving_nw = config.get<uint32_t>("sim.num_cores_serving_nw", (zinfo->numCores - 2));

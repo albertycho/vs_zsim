@@ -106,8 +106,30 @@ class FilterCache : public Cache {
             uint32_t idx = vLineAddr & setMask;
             uint64_t availCycle = filterArray[idx].availCycle; //read before, careful with ordering to avoid timing races
             if ((lvl == 8) || (lvl == level)) {
-				//if ideal case
-				//if vLineAddr in recv_buf range for this core
+				
+				glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());	
+				uint64_t rbuf_base = (uint64_t) (&(nicInfo->nic_elem[srcId].recv_buf[0]));
+				uint64_t rbuf_top = (uint64_t) (&(nicInfo->nic_elem[srcId].recv_buf[RECV_BUF_POOL_SIZE-1]));
+				if(nicInfo->pp_policy==0){ // if ideal case
+					if((vAddr >= rbuf_base) && (vAddr<=rbuf_top)){
+					//info("core fetching packet in ideal case");
+						return curCycle;
+					}
+				}
+
+				//also assume cq and wq return immediately
+				uint64_t wq_base = (uint64_t) (nicInfo->nic_elem[srcId].wq);
+				uint64_t wq_top = wq_base + sizeof(rmc_wq_t);
+				uint64_t cq_base = (uint64_t) (nicInfo->nic_elem[srcId].cq);
+				uint64_t cq_top = cq_base + sizeof(rmc_cq_t);
+
+				if((vAddr >= wq_base) && (vAddr<=wq_top)){
+					return curCycle;
+				}
+				if((vAddr >= cq_base) && (vAddr<=cq_top)){
+					return curCycle;
+				}
+
                 if (vLineAddr == filterArray[idx].rdAddr) {
                     fGETSHit++;
                     return MAX(curCycle, availCycle);
