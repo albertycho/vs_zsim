@@ -562,8 +562,9 @@ int main(int argc, char *argv[]) {
 		service_time_file << "CORE " << kkk-1 << std::endl;
 		st_stat_file << "CORE " << kkk-1 << std::endl;
 		cq_spin_stat_file << "CORE " << kkk-1 << std::endl;
-		cq_spin_stat_file << nicInfo->nic_elem[kkk].cq_check_spin_count<<std::endl;
-		cq_spin_stat_file << "(ret.success==0 count) "<< nicInfo->nic_elem[kkk].ret_succ_0_count<<std::endl;
+		cq_spin_stat_file << "rmc_checkcq_spin: "<<nicInfo->nic_elem[kkk].cq_check_spin_count << std::endl;
+		cq_spin_stat_file << "inner_loop_spin : "<< nicInfo->nic_elem[kkk].cq_check_inner_loop_count<<std::endl;
+        cq_spin_stat_file << "outer_loop_spin : " << nicInfo->nic_elem[kkk].cq_check_outer_loop_count << std::endl;
 		
 		uint32_t sorted_service_time[65000]; //fixed number for now
 		for (uint64_t lll = 0; lll<nicInfo->nic_elem[kkk].st_size+10;lll++){

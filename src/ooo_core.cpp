@@ -753,12 +753,16 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 		nicInfo->nic_elem[core_id].service_in_progress=false;
 		break;
 	case 0x10:
-		nicInfo->nic_elem[core_id].ret_succ_0_count+=(uint64_t)val;
+		nicInfo->nic_elem[core_id].cq_check_inner_loop_count+=(uint64_t)val;
 		break;
 
 	case 0x11:
 		nicInfo->nic_elem[core_id].cq_check_spin_count+=(uint64_t)val;
 		break;
+
+    case 0x12:
+        nicInfo->nic_elem[core_id].cq_check_outer_loop_count += (uint64_t)val;
+        break;
 
     case 0xdead: //invalidate entries after test app terminates
         nicInfo->registered_core_count = nicInfo->registered_core_count - 1;

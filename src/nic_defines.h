@@ -161,7 +161,8 @@ struct nic_element {
 	recv_buf_dir_t rb_dir[RECV_BUF_POOL_SIZE];
 	uint32_t rb_iterator;
 	uint64_t cq_check_spin_count;
-	uint64_t ret_succ_0_count;
+	uint64_t cq_check_inner_loop_count;
+	uint64_t cq_check_outer_loop_count;
 	PAD();
 
 	cq_wr_event* cq_wr_event_q;
