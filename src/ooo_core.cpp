@@ -140,7 +140,7 @@ void OOOCore::contextSwitch(int32_t gid) {
 
 
 //InstrFuncPtrs OOOCore::GetFuncPtrs() {return {LoadFunc, StoreFunc, BblFunc, BranchFunc, PredLoadFunc, PredStoreFunc, FPTR_ANALYSIS, {0}};}
-InstrFuncPtrs OOOCore::GetFuncPtrs() { return { LoadFunc, StoreFunc, BblFunc, BranchFunc, PredLoadFunc, PredStoreFunc, NicMagicFunc, FPTR_ANALYSIS}; }
+InstrFuncPtrs OOOCore::GetFuncPtrs() { return { LoadFunc, StoreFunc, BblFunc, BranchFunc, PredLoadFunc, PredStoreFunc, NicMagicFuncWrapper, FPTR_ANALYSIS}; }
 
 inline void OOOCore::load(Address addr) {
     loadAddrs[loads++] = addr;
@@ -170,6 +170,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
         prevBbl = bblInfo;
         // Kill lingering ops from previous BBL
         loads = stores = 0;
+		magic_ops=0;
         return;
     }
 
@@ -181,6 +182,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
 
     uint32_t loadIdx = 0;
     uint32_t storeIdx = 0;
+	uint32_t magicOpIdx = 0;
 
     uint32_t prevDecCycle = 0;
     uint64_t lastCommitCycle = 0;  // used to find misprediction penalty
@@ -334,8 +336,20 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
                 lastStoreAddrCommitCycle = MAX(lastStoreAddrCommitCycle, commitCycle);
                 break;
 
+			case UOP_NIC_MAGIC:
+				{
+				commitCycle = dispatchCycle;
+				uint64_t m_core_id = magic_core_ids[magicOpIdx];
+				OOOCore* m_core = magic_cores[magicOpIdx];
+				ADDRINT val = magic_vals[magicOpIdx];
+				ADDRINT field = magic_fields[magicOpIdx];
+				NicMagicFunc(m_core_id, m_core, val, field);
+				magicOpIdx++;
+				break;
+				}
             //case UOP_FENCE:  //make gcc happy
-            default:
+            
+			default:
                 assert((UopType) uop->type == UOP_FENCE);
                 commitCycle = dispatchCycle + uop->lat;
                 // info("%d %ld %ld", uop->lat, lastStoreAddrCommitCycle, lastStoreCommitCycle);
@@ -370,6 +384,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
     assert_msg(loadIdx == loads, "%s: loadIdx(%d) != loads (%d)", name.c_str(), loadIdx, loads);
     assert_msg(storeIdx == stores, "%s: storeIdx(%d) != stores (%d)", name.c_str(), storeIdx, stores);
     loads = stores = 0;
+	magic_ops = 0;
 
 
     /* Simulate frontend for branch pred + fetch of this BBL
@@ -612,14 +627,32 @@ void OOOCore::BranchFunc(THREADID tid, ADDRINT pc, BOOL taken, ADDRINT takenNpc,
     static_cast<OOOCore*>(cores[tid])->branch(pc, taken, takenNpc, notTakenNpc);
 }
 
-void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
 
-    uint64_t core_id = getCid(tid);
+void OOOCore::NicMagicFuncWrapper(THREADID tid, ADDRINT val, ADDRINT field) {
+	//info("NicMagicFuncWrapper");
+	static_cast<OOOCore*>(cores[tid])->NicMagicFunc_on_trigger(tid, val, field);
+}
+
+inline void OOOCore::NicMagicFunc_on_trigger(THREADID tid, ADDRINT val, ADDRINT field) {
+	//info("NicMagicFunc_on_trigger");
+	magic_core_ids[magic_ops] = getCid(tid);
+	magic_fields[magic_ops] = field;
+	magic_vals[magic_ops] = val;
+	magic_cores[magic_ops] = static_cast<OOOCore*>(cores[tid]);
+	magic_ops++;
+	//info("NicMagicFunc_on_trigger done");
+	return;
+}
+
+//void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
+void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT field) {
+
+    //uint64_t core_id = getCid(tid);
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
     void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
     load_generator* lg_p = (load_generator*)lg_p_vp;
 
-    OOOCore* core = static_cast<OOOCore*>(cores[tid]);
+    //OOOCore* core = static_cast<OOOCore*>(cores[tid]);
 
 	uint64_t num_cline=0;
     switch (field) {
@@ -671,7 +704,7 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
         break;
 
     case NOTIFY_WQ_WRITE://NOTIFY WQ WRITE from application
-        info("notify_wq_write")
+        //info("notify_wq_write")
         nic_rgp_action(core_id, nicInfo);
         break;
     case 0xB: //indicate app is nic_proxy_process (INGRESS)
@@ -683,7 +716,8 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
         if (nicInfo->registered_core_count == nicInfo->expected_core_count) {
             nicInfo->nic_init_done = true;
         }
-        nicInfo->nicCore_ingress = (void*) cores[tid];
+        //nicInfo->nicCore_ingress = (void*) cores[tid];
+        nicInfo->nicCore_ingress = (void*) core;
 
         
         break;
@@ -696,11 +730,14 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
         if (nicInfo->registered_core_count == nicInfo->expected_core_count) {
             nicInfo->nic_init_done = true;
         }
-        nicInfo->nicCore_egress = (void*)cores[tid];
+        //nicInfo->nicCore_egress = (void*)cores[tid];
+        nicInfo->nicCore_egress = (void*)cores;
         break;
 
     case 0xD: //send all client_done boolean to the server app to monitor for termination condition
+		info("before handling monitor_client_done");
         *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(lg_p->all_packets_sent));
+		info("after handling monitor_client_done");
         break;
 
 	case 0xE:
@@ -714,6 +751,13 @@ void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
 			(core->curCycle) - (nicInfo->nic_elem[core_id].cur_service_start_time);
 		nicInfo->nic_elem[core_id].st_size = nicInfo->nic_elem[core_id].st_size + 1;
 		nicInfo->nic_elem[core_id].service_in_progress=false;
+		break;
+	case 0x10:
+		nicInfo->nic_elem[core_id].ret_succ_0_count+=(uint64_t)val;
+		break;
+
+	case 0x11:
+		nicInfo->nic_elem[core_id].cq_check_spin_count+=(uint64_t)val;
 		break;
 
     case 0xdead: //invalidate entries after test app terminates

@@ -78,6 +78,8 @@ int main(int argc, char* argv[]) {
 	register_buffer((void*) (&wq), (void*) 0);
 	register_buffer((void*) (&cq), (void*) 1);
 
+	std::cout<<"APP: buffer register done"<<std::endl;
+
 	uint64_t send_count=0;
 	uint64_t send_serviced=0;
 
@@ -91,9 +93,12 @@ int main(int argc, char* argv[]) {
 	bool* client_done;
 	register_buffer((void*)(&client_done), (void*)0xD);
 
+	std::cout<<"APP: before entering while loop"<<std::endl;
+
 	while (!(*client_done))
 	//while (send_count <= 4000)
 	{
+		std::cout<<"APP: In while loop"<<std::endl;
 		successStruct recv_completion;
 		do{
 			//std::cout << "calling rmc check" << std::endl;

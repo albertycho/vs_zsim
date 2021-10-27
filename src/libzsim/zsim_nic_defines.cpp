@@ -19,7 +19,7 @@ int register_buffer(void * val, void* field)
 //			 size of WQ/CQ
 //can distinguish the type of variable depending on value of rbx?
 	int dummy;
-	asm(
+	asm volatile (
 		"movq %1, %%rbx;"
 		"movq %2, %%rcx;"
 		"xchg %%rbx, %%rbx;"
@@ -53,7 +53,15 @@ successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
 	ret.op=RMC_INVAL;
 	//std::cout << "inside rmc_check_cq, before any while loop" << std::endl;
 	wq_entry_t raw_wqe;
+
+	int outer_loop_count=0;
 	do{
+		outer_loop_count++;
+		if(outer_loop_count>1){
+			//increment innterloop count for zsim stat
+			register_buffer((void*)1, (void*)0x12);
+		}
+
 		//dbgprint
 		//std::cout << "inside rmc_check_cq, first while loop" << std::endl;
 		raw_wqe=wq->q[wq->head];
@@ -61,8 +69,14 @@ successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
 		cq_entry_t raw_cqe_entry = cq->q[cq_tail];
 		bool tail_SR=raw_cqe_entry.SR;
 
+		int inner_loop_count=0;
 		while((tail_SR==cq->SR) && (ret.success!=0))
 		{
+			inner_loop_count++;
+			if(inner_loop_count>1){
+				//increment innterloop count for zsim stat
+				register_buffer((void*)1, (void*)0x11);
+			}
 			//dbgprint
 			//std::cout << "inside rmc_check_cq, second while loop" << std::endl;
 			//FIXME: okay to unset cq valid here?
@@ -80,6 +94,9 @@ successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
 				ret.recv_buf_addr =  raw_cqe_entry.recv_buf_addr;
 				ret.op = RMC_INCOMING_SEND;
 				ret.tid = raw_cqe_entry.tid;
+				if((outer_loop_count>1)||(inner_loop_count>1)){
+					std::cout<<"rmc_check_cq returning with 0x7F, innerLoop_count= "<<inner_loop_count<<", outer_loop_count= "<<outer_loop_count<<std::endl;
+				}
 				return ret;		
 			}
 			if (raw_cqe_entry.success == 1) {
@@ -87,6 +104,9 @@ successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
 				ret.recv_buf_addr = raw_cqe_entry.recv_buf_addr;
 				ret.op = RMC_INCOMING_RESP;
 				ret.tid = raw_cqe_entry.tid;
+				if((inner_loop_count > 1) || (outer_loop_count > 1)){
+					std::cout<<"rmc_check_cq returning with 0x01, innerLoop_count= "<<inner_loop_count<<", outer_loop_count= "<<outer_loop_count<<std::endl;
+				}
 				return ret;
 			}
 
@@ -115,13 +135,15 @@ successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
 			tail_SR = raw_cqe_entry.SR;
 	
 	
-			}
-
+		}
+	//std::cout<<"rmc_check_cq: innerLoopCount: "<<inner_loop_count<<std::endl;
 
 	}while (raw_wqe.valid && (ret.success != 0));
 
+	//std::cout<<"rmc_check_cq: outerLoopCount: "<<outer_loop_count<<std::endl;
 	//std::cout<<"rmc_check_cq - ret.op:"<<std::hex<<ret.op<<std::endl;
 
+	register_buffer((void*)1, (void*)0x11);
 
 	return ret;
 }

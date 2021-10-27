@@ -953,6 +953,9 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
         futex_init(&nicInfo->nic_elem[i].rb_lock);
         futex_init(&nicInfo->nic_elem[i].ceq_lock);
         futex_init(&nicInfo->nic_elem[i].rcp_lock);
+		nicInfo->nic_elem[i].rb_iterator=0;
+		nicInfo->nic_elem[i].cq_check_spin_count=0;
+		nicInfo->nic_elem[i].ret_succ_0_count=0;
     }
     nicInfo->latencies = gm_calloc<uint64_t>(LAT_ARR_SIZE);
     //nicInfo->latencies_list = gm_calloc<uint64_t>(LAT_ARR_SIZE);

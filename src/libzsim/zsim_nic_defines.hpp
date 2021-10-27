@@ -168,23 +168,23 @@ typedef struct wq_entry{
 
 typedef struct cq_entry{
     volatile bool SR;     //sense reverse bit
-	  volatile bool valid;
-    uint32_t success; /* Success bit/type */
+	volatile bool valid;
+    volatile uint32_t success; /* Success bit/type */
     //volatile unsigned int tid; /* Uses tid to specify incoming send id and qp */
-    uint32_t tid; /* Uses tid to specify incoming send id and qp */
-    uint64_t recv_buf_addr; /* Incoming recv buf block address (42 bits) */
+    volatile uint32_t tid; /* Uses tid to specify incoming send id and qp */
+    volatile uint64_t recv_buf_addr; /* Incoming recv buf block address (42 bits) */
 } cq_entry_t;
 
 typedef struct rmc_wq {
     wq_entry_t q[MAX_NUM_WQ];
     uint32_t head;
-    bool SR ;    //sense reverse bit
+    volatile bool SR ;    //sense reverse bit
 } rmc_wq_t;
 
 typedef struct rmc_cq {
     cq_entry_t q[MAX_NUM_WQ];
     uint32_t tail;
-    bool SR ;    //sense reverse bit
+    volatile bool SR ;    //sense reverse bit
     //uint32_t SR ;    //sense reverse bit
 } rmc_cq_t;
 

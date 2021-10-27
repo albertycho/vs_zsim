@@ -54,6 +54,8 @@ int tc_map_insert(uint64_t in_ptag, uint64_t issue_cycle) {
 	futex_lock(&lg_p->ptc_lock);
 	//info("ptc insert to map");
 	//(lg_p->tc_map)[ptag] = issue_time;
+	//assert((lg_p->tc_map->find(ptag)) == (lg_p->tc_map->end()));
+	assert((lg_p->tc_map->count(ptag)) == 0);
 	lg_p->tc_map->insert(std::make_pair(ptag, issue_cycle));
 	//info("ptc insert to map successful, map size : %d", lg_p->tc_map->size());
 	futex_unlock(&lg_p->ptc_lock);
@@ -113,7 +115,7 @@ int process_cq_wr_event(cq_wr_event* cq_wr, glob_nic_elements* nicInfo, uint64_t
 	}
 	*/
 
-	info("in process_cq_wr_event - calling put cq entry");
+	//info("in process_cq_wr_event - calling put cq entry");
 
 	int put_cq_entry_success = put_cq_entry(ncq_entry, nicInfo, core_id);
 	if (put_cq_entry_success == -1)
@@ -121,7 +123,7 @@ int process_cq_wr_event(cq_wr_event* cq_wr, glob_nic_elements* nicInfo, uint64_t
 		return -1;
 	}
 
-	info("in process_cq_wr_event - put cq entry was successful");
+	//info("in process_cq_wr_event - put cq entry was successful");
 
 
 	gm_free(cq_wr);
@@ -151,7 +153,7 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 		
 		cq_wr_event* cqwrev = deq_cq_wr_event(nicInfo, core_id);
 		//dbgprint
-		info("CEQ_size:%d", nicInfo->nic_elem[core_id].ceq_size);
+		//info("CEQ_size:%d", nicInfo->nic_elem[core_id].ceq_size);
 
 		if (process_cq_wr_event(cqwrev, nicInfo, core_id) != 0)
 		{
@@ -195,7 +197,8 @@ uint32_t allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t c
 *				returns the index of allocated recv buffer, not the address!
 */
 	
-	uint32_t head = 0;
+	//uint32_t head = 0;
+	uint32_t head = nicInfo->nic_elem[core_id].rb_iterator;
 	while (head < RECV_BUF_POOL_SIZE)
 	{
 		if (NICELEM.rb_dir[head].in_use == false)
@@ -204,6 +207,7 @@ uint32_t allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t c
 			for (uint32_t i = head; i < head + blen; i++)
 			{
 				if (i >= RECV_BUF_POOL_SIZE) {
+					NICELEM.rb_iterator = 0; //reset iteartor
 					return RECV_BUF_POOL_SIZE + 1;
 				}
 				if (NICELEM.rb_dir[i].in_use == true)
@@ -230,6 +234,7 @@ uint32_t allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t c
 				{
 					NICELEM.rb_dir[i].in_use = true;
 				}
+				NICELEM.rb_iterator = head+blen;
 
 				return head;
 			}
@@ -249,6 +254,7 @@ uint32_t allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t c
 
 	}
 
+	NICELEM.rb_iterator = 0; //reset iteartor
 	return RECV_BUF_POOL_SIZE + 1; // indicate that we didn't find a fit
 
 }
@@ -307,7 +313,7 @@ int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycl
 	load_generator* lg_p = (load_generator * )gm_get_lg_ptr();
 	
 	if (core_id > ((zinfo->numCores) - 1)) {
-		info("create_ceq_entry - core_id out of bound: %d", core_id);
+		//info("create_ceq_entry - core_id out of bound: %d", core_id);
 	}
 
 
@@ -399,16 +405,13 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	//testing ideal case. will rewrite once other policies are ready
 	switch (nicInfo->pp_policy){
 		case 0: //ideal
-			info("ideal");
 			reqSatisfiedCycle = cur_cycle;
 			break;
 		case 1: //LLC
-			info("LLC");
 			reqSatisfiedCycle = l1d->store(recv_buf_addr, cur_cycle, 1, srcId, MemReq::PKTIN);
 			cRec->record(cur_cycle, cur_cycle, reqSatisfiedCycle);
 			break;
 		case 2: //DMA
-			info("DMA");
 			reqSatisfiedCycle = l1d->store(recv_buf_addr, cur_cycle, 0, srcId, MemReq::PKTIN);
 			cRec->record(cur_cycle, cur_cycle, reqSatisfiedCycle);
 			break;
@@ -418,7 +421,8 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	}
 	
 	
-	create_CEQ_entry(recv_buf_addr, 0x7f, reqSatisfiedCycle, nicInfo, core_id);
+//	create_CEQ_entry(recv_buf_addr, 0x7f, reqSatisfiedCycle, nicInfo, core_id);
+	create_CEQ_entry(recv_buf_addr, 0x7f, cur_cycle, nicInfo, core_id);
 
 	//TODO may want to pass the reqSatisfiedcycle value back to the caller via updating an argument
 	//std::cout << "packet injection completed at " << reqSatisfiedCycle << std::endl;
@@ -567,7 +571,7 @@ int free_recv_buf(uint32_t head, uint32_t core_id) {
 	assert(NICELEM.rb_dir[head].is_head);
 	assert(NICELEM.rb_dir[head].in_use);
 	//dbg print
-	info("free_recv_buf - core_id = %d, head = %d", core_id, head);
+	//info("free_recv_buf - core_id = %d, head = %d", core_id, head);
 
 	uint32_t blen = NICELEM.rb_dir[head].len;
 
@@ -578,7 +582,7 @@ int free_recv_buf(uint32_t head, uint32_t core_id) {
 	}
 
 	//dbg print
-	info("free_recv_buf - finished freeing");
+	//info("free_recv_buf - finished freeing");
 	return 0;
 }
 
@@ -699,7 +703,7 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 
 		// GETS to LLC
 
-		info("starting deq_dpq at cycle %lld", core_cycle);
+		//info("starting deq_dpq at cycle %lld", core_cycle);
 		uint64_t reqSatisfiedCycle = l1d->load(dp->lbuf_addr, core_cycle, 1, srcId, MemReq::PKTOUT);
 
 		cRec->record(core_cycle, core_cycle, reqSatisfiedCycle);

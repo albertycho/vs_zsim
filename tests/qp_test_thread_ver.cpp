@@ -81,6 +81,8 @@ void* qp_test(void* inarg) {
 	register_buffer((void*) (&wq), (void*) 0);
 	register_buffer((void*) (&cq), (void*) 1);
 
+
+	std::cout << "qp_test - QP register done " << core_id << std::endl;
 	uint64_t send_count=0;
 	uint64_t send_serviced=0;
 
@@ -94,12 +96,15 @@ void* qp_test(void* inarg) {
 	bool* client_done;
 	register_buffer((void*)(&client_done), (void*)0xD);
 
+	std::cout << "qp_test - before entering while loop " << core_id << std::endl;
+
 	while (!(*client_done))
 	//while (send_count <= 4000)
 	{
+		std::cout << "qp_test - inside while loop " << core_id << std::endl;
 		successStruct recv_completion;
 		do{
-			//std::cout << "calling rmc check" << std::endl;
+			std::cout << "calling rmc check" << std::endl;
 			recv_completion = rmc_check_cq(wq,cq);
 			//debug print
 			//NOTE - adding this dbg print causes hang at the end of test.. why?
@@ -111,7 +116,7 @@ void* qp_test(void* inarg) {
 
 		} while (recv_completion.op != (RMC_INCOMING_SEND));
 
-		//std::cout<<"APP - recv_completion.op="<<recv_completion.op<<std::endl;
+		std::cout<<"APP - recv_completion.op="<<recv_completion.op<<std::endl;
 
 		send_serviced++;
 		
@@ -120,7 +125,7 @@ void* qp_test(void* inarg) {
 			std::cout << "incorrect recv_buf_addr" << std::endl;
 		}
 		
-		//std::cout << "APP: recvd incoming msg.              recv_count:"<<std::dec << send_serviced << ", rbuf_addr:" <<std::hex<< recv_completion.recv_buf_addr << ", rbuf_val:" << *(uint64_t*)(recv_completion.recv_buf_addr) << std::endl;
+		std::cout << "APP: recvd incoming msg.              recv_count:"<<std::dec << send_serviced << ", rbuf_addr:" <<std::hex<< recv_completion.recv_buf_addr << ", rbuf_val:" << *(uint64_t*)(recv_completion.recv_buf_addr) << std::endl;
 		sum += *(uint64_t*)(recv_completion.recv_buf_addr);
 
 		mica_op* mp = (mica_op*)recv_completion.recv_buf_addr;
@@ -157,18 +162,18 @@ void* qp_test(void* inarg) {
 		
 		*lbuf_ptr=0xabcd00+send_count;
 		//dbgprint
-		//std::cout << "before rmc_hw_send in toy app" << std::endl;
+		std::cout << "before rmc_hw_send in toy app" << std::endl;
 		
 		do{
 			send_ret=rmc_hw_send(wq, ctx_id, lbuf_ptr, msg_entry_size, target_node);
 		} while (send_ret);
 
-		//std::cout << "after rmc_hw_send in toy app, before rmc_hw_recv" << std::endl;
+		std::cout << "after rmc_hw_send in toy app, before rmc_hw_recv" << std::endl;
 
 		send_count++;
-		//std::cout<<"APP: send_count="<<send_count<<std::endl;
+		std::cout<<"APP: send_count="<<send_count<<std::endl;
 		rmc_hw_recv(wq, ctx_id, (void*) recv_completion.recv_buf_addr, msg_entry_size);
-		//std::cout << "after rmc_hw_recv" << std::endl;
+		std::cout << "after rmc_hw_recv" << std::endl;
 	}
 
 	uint64_t put_req_ratio = put_req_count * 100 / send_count;

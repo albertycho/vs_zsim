@@ -488,6 +488,10 @@ int main(int argc, char *argv[]) {
     uint64_t* hist_counters = gm_calloc<uint64_t>(hist_width);
     uint64_t * sorted_latencies = gm_calloc<uint64_t>(nicInfo->latencies_size);
 
+	uint64_t latency_sum=0;
+	uint64_t service_time_sum=0;
+
+    uint64_t * sorted_service_time_all = gm_calloc<uint64_t>(nicInfo->latencies_size);
 
     //gives me garbage if I don't clear
     for (uint64_t iii = 0; iii < hist_width; iii++) {
@@ -516,10 +520,12 @@ int main(int argc, char *argv[]) {
         if (insert_at_begin) {
             sorted_latencies[0] = nicInfo->latencies[iii];
         }
-
+		latency_sum+=nicInfo->latencies[iii];
     }
 
     map_latency_file.close();
+
+	uint64_t latency_mean = latency_sum / (nicInfo->latencies_size);
 
     info("writing to latency_hist file");
     std::ofstream latency_hist_file("latency_hist.txt");
@@ -527,11 +533,14 @@ int main(int argc, char *argv[]) {
     uint64_t median_index = (nicInfo->latencies_size) / 2;
     uint64_t percentile_80_index = ((nicInfo->latencies_size) * 80) / 100;
     uint64_t percentile_90_index = ((nicInfo->latencies_size) * 90) / 100;
+    uint64_t percentile_95_index = ((nicInfo->latencies_size) * 95) / 100;
     uint64_t percentile_99_index = ((nicInfo->latencies_size) * 99) / 100;
 
+    latency_hist_file << "mean        : " << latency_mean << std::endl;
     latency_hist_file << "median        : " << sorted_latencies[median_index] << std::endl;
     latency_hist_file << "80-percentile : " << sorted_latencies[percentile_80_index] << std::endl;
     latency_hist_file << "90-percentile : " << sorted_latencies[percentile_90_index] << std::endl;
+    latency_hist_file << "95-percentile : " << sorted_latencies[percentile_95_index] << std::endl;
     latency_hist_file << "99-percentile : " << sorted_latencies[percentile_99_index] << std::endl;
 
     latency_hist_file << std::endl;
@@ -546,11 +555,15 @@ int main(int argc, char *argv[]) {
 	info("start writing to service time file");
     std::ofstream service_time_file("service_times.txt");
     std::ofstream st_stat_file("service_times_stats.txt");
+    std::ofstream cq_spin_stat_file("cq_check_spin_count.txt");
 
-
+	uint64_t total_iter_count=0;
 	for(uint64_t kkk = 2; kkk<nicInfo->expected_core_count+2;kkk++){
 		service_time_file << "CORE " << kkk-1 << std::endl;
 		st_stat_file << "CORE " << kkk-1 << std::endl;
+		cq_spin_stat_file << "CORE " << kkk-1 << std::endl;
+		cq_spin_stat_file << nicInfo->nic_elem[kkk].cq_check_spin_count<<std::endl;
+		cq_spin_stat_file << "(ret.success==0 count) "<< nicInfo->nic_elem[kkk].ret_succ_0_count<<std::endl;
 		
 		uint32_t sorted_service_time[65000]; //fixed number for now
 		for (uint64_t lll = 0; lll<nicInfo->nic_elem[kkk].st_size+10;lll++){
@@ -577,6 +590,28 @@ int main(int argc, char *argv[]) {
         	if (insert_at_begin) {
         	    sorted_service_time[0] = nicInfo->nic_elem[kkk].service_times[iii];
         	}
+
+        	bool insert_at_begin_for_all = true;
+        	for (uint64_t jjj = total_iter_count; jjj > 0; jjj--) {
+        	    if (jjj == 0) {
+        	        info("jjj not supposed to be 0");
+        	    }
+        	    if (sorted_service_time_all[jjj - 1] > nicInfo->nic_elem[kkk].service_times[iii]) {
+        	        sorted_service_time_all[jjj] = sorted_service_time_all[jjj - 1];
+        	    }
+        	    else {
+        	        sorted_service_time_all[jjj] = nicInfo->nic_elem[kkk].service_times[iii];
+        	        insert_at_begin_for_all = false;
+        	        break;
+        	    }
+        	}
+        	if (insert_at_begin_for_all) {
+        	    sorted_service_time_all[0] = nicInfo->nic_elem[kkk].service_times[iii];
+        	}
+
+
+			total_iter_count++;
+			service_time_sum+=nicInfo->nic_elem[kkk].service_times[iii];
 		}
 		int med_index = nicInfo->nic_elem[kkk].st_size / 2;
 		int index_80 = nicInfo->nic_elem[kkk].st_size * 80 / 100;
@@ -586,8 +621,26 @@ int main(int argc, char *argv[]) {
 		st_stat_file << "90perc: " << sorted_service_time[index_90] << std::endl;
 
 	}
+	int med_index = total_iter_count / 2 ;
+	int index_80 = total_iter_count * 80 / 100 ;
+	int index_90 = total_iter_count * 90 / 100 ;
+	int index_95 = total_iter_count * 95 / 100 ;
+	int index_99 = total_iter_count * 99 / 100 ;
+
+	uint64_t service_time_mean = service_time_sum / total_iter_count;
+
+	st_stat_file << "ALL CORE STAT" << std::endl;
+	st_stat_file << "mean: " << service_time_mean << std::endl;
+	st_stat_file << "median: " << sorted_service_time_all[med_index] << std::endl;
+	st_stat_file << "80perc: " << sorted_service_time_all[index_80] << std::endl;
+	st_stat_file << "90perc: " << sorted_service_time_all[index_90] << std::endl;
+	st_stat_file << "95perc: " << sorted_service_time_all[index_95] << std::endl;
+	st_stat_file << "99perc: " << sorted_service_time_all[index_99] << std::endl;
+
+
 	service_time_file.close();
 	st_stat_file.close();
+	cq_spin_stat_file.close();
 	
 //	for (uint64_t iii = 0; iii < nicInfo->latencies_size; iii++) {
 //        map_latency_file << nicInfo->latencies[iii] << std::endl;

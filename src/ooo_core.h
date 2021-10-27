@@ -397,6 +397,14 @@ class OOOCore : public Core {
 
         BblInfo* prevBbl;
 
+		//record parameters for magic op
+		uint64_t magic_core_ids[256];
+		ADDRINT  magic_fields[256];
+		ADDRINT  magic_vals[256];
+		OOOCore * magic_cores[256];
+		uint32_t magic_ops;
+
+
         //Record load and store addresses
         Address loadAddrs[256];
         Address storeAddrs[256];
@@ -489,6 +497,7 @@ class OOOCore : public Core {
         inline void load(Address addr);
         inline void store(Address addr);
 
+        inline void NicMagicFunc_on_trigger(THREADID tid, ADDRINT val, ADDRINT field);
         /* NOTE: Analysis routines cannot touch curCycle directly, must use
          * advance() for long jumps or insWindow.advancePos() for 1-cycle
          * jumps.
@@ -514,7 +523,8 @@ class OOOCore : public Core {
         static void BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo);
         static void BranchFunc(THREADID tid, ADDRINT pc, BOOL taken, ADDRINT takenNpc, ADDRINT notTakenNpc);
         
-        static void NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field);
+        static void NicMagicFuncWrapper(THREADID tid, ADDRINT val, ADDRINT field);
+        static void NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT field);
         
         static int  nic_ingress_routine(THREADID tid);
         static int  nic_egress_routine(THREADID tid);

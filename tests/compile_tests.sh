@@ -4,7 +4,7 @@
 
 echo "compile_tests.sh: rebuild tests"
 rm qp_test
-g++ -g qp_test.cpp ../src/libzsim/zsim_nic_defines.cpp -std=c++11  -o qp_test -pthread
+g++ -g qp_test.cpp ../src/libzsim/zsim_nic_defines.cpp -std=c++11 -O3 -o qp_test -pthread
 
 rm nic_proxy_app
 g++ -g nic_proxy_app.cpp ../src/libzsim/zsim_nic_defines.cpp -std=c++11 -o nic_proxy_app -pthread
@@ -13,7 +13,7 @@ rm nic_egress_proxy_app
 g++ -g nic_egress_proxy_app.cpp ../src/libzsim/zsim_nic_defines.cpp -std=c++11 -o nic_egress_proxy_app -pthread
  
 
-g++ -g qp_test_mt_wrapper.cpp qp_test_thread_ver.cpp ../src/libzsim/zsim_nic_defines.cpp -std=c++11 -o qp_test_thread_ver -pthread
+g++ -g qp_test_mt_wrapper.cpp qp_test_thread_ver.cpp ../src/libzsim/zsim_nic_defines.cpp -std=c++11 -O3 -Wall -o qp_test_thread_ver -pthread
 
 #rm ma_uarch_check
 #g++ memaccess_uarch_check.cpp zsim_nic_defines.cpp -std=c++11 -o ma_uarch_check

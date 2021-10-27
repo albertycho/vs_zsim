@@ -118,6 +118,20 @@ void Decoder::reportUnhandledCase(Instr& instr, const char* desc) {
             instr.numOutRegs, regsToString(instr.outRegs, instr.numOutRegs).c_str());
 }
 
+void Decoder::emitNicMagic(Instr& instr, DynUopVec& uops){
+    DynUop uop;
+    uop.clear();
+    uop.rs[0] = 0;
+    uop.rs[1] = 0;
+    uop.rd[0] = 0;
+    uop.rd[1] = 0;
+    uop.lat = 1;
+
+	uop.type = UOP_NIC_MAGIC;
+    uop.portMask = PORT_2;
+    uops.push_back(uop); //FIXME: The interface should support in-place grow...
+}
+
 void Decoder::emitLoad(Instr& instr, uint32_t idx, DynUopVec& uops, uint32_t destReg) {
     assert(idx < instr.numLoads);
     uint32_t op = instr.loadOps[idx];
@@ -255,6 +269,8 @@ void Decoder::emitXchg(Instr& instr, DynUopVec& uops) {
                 info("outRegs[%d] = %d", i, instr.outRegs[i]);
             }
             */
+			//EMIT UOP_NIC_MAGIC
+			emitNicMagic(instr, uops);
         }
 
         else {
