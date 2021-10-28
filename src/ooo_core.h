@@ -44,9 +44,9 @@
 // Uncomment to enable stall stats
 // #define OOO_STALL_STATS
 
-        void cycle_increment_routine(uint64_t& curCycle, int core_id);
+void cycle_increment_routine(uint64_t& curCycle, int core_id);
 
-
+#define L1D_LAT 4  // fixed, and FilterCache does not include L1 delay
 
 class FilterCache;
 
@@ -378,17 +378,8 @@ typedef vector<vector<BaseCache*>> CacheGroup;
 class OOOCore : public Core {
     private:
         FilterCache* l1i;
-        FilterCache* l1d;
 
         int core_id;
-        /*
-            did i try to dynamically allocate these? yes
-            did c++ like it? not at all
-        */
-
-        Cache* l2_caches[256];
-        TimingCache* llc_cache[256];
-        SimpleMemory* memory;
 
         uint64_t phaseEndCycle; //next stopping point
 
@@ -469,7 +460,9 @@ class OOOCore : public Core {
         OOOCoreRecorder cRec;
 
     public:
-        OOOCore(FilterCache* _l1i, FilterCache* _l1d, uint32_t _domain, g_string& _name, uint32_t _coreIdx);
+        OOOCore(FilterCache* _l1i, FilterCache* _l1d, uint32_t _domain, g_string& _name, uint32_t _coreIdx, string ingr, string egr);
+
+        FilterCache* l1d;
 
         void initStats(AggregateStat* parentStat);
 
@@ -492,6 +485,8 @@ class OOOCore : public Core {
         void cSimStart();
         void cSimEnd();
         static int  nic_ingress_routine_per_cycle(uint32_t srcId);
+
+        uint16_t ingr_type, egr_type, egr_inval;
 
     private:
         inline void load(Address addr);

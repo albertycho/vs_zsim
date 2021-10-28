@@ -119,7 +119,6 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
     // Power of two sets check; also compute setBits, will be useful later
     uint32_t numSets = numLines/ways;
     uint32_t setBits = 31 - __builtin_clz(numSets);
-	info("NUMSETS: %d", numSets);
     if ((1u << setBits) != numSets) panic("%s: Number of sets must be a power of two (you specified %d sets)", name.c_str(), numSets);
 
     //Hash function
@@ -165,7 +164,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
         rp = new NRUReplPolicy(numLines, candidates);
     } else if (replType == "Rand") {
         rp = new RandReplPolicy(candidates);
-    } else if (replType == "WayPart" || replType == "Vantage" || replType == "IdealLRUPart") {
+    } else if (replType == "WayPart" || replType == "Vantage" || replType == "IdealLRUPart" || replType == "DDIOPart") {
         if (replType == "WayPart" && arrayType != "SetAssoc") panic("WayPart replacement requires SetAssoc array");
 
         //Partition mapper
@@ -184,7 +183,10 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
             pm = new InstrDataProcessPartMapper(zinfo->numProcs);
         } else if (partMapper == "ProcessGroup") {
             pm = new ProcessGroupPartMapper();
-        } else {
+        } else if (partMapper == "DDIO") {
+            pm = new DDIOPartMapper();
+        } 
+        else {
             panic("Invalid repl.partMapper %s on %s", partMapper.c_str(), name.c_str());
         }
 
@@ -209,6 +211,10 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
             prp = new WayPartReplPolicy(mon, pm, numLines, ways, testMode);
         } else if (replType == "IdealLRUPart") {
             prp = new IdealLRUPartReplPolicy(mon, pm, numLines, buckets);
+        } else if (replType == "DDIOPart") {
+            bool testMode = config.get<bool>(prefix + "repl.testMode", false);
+            uint32_t ddio_ways = config.get<uint32_t>(prefix + "repl.ddio_ways", 0);
+            prp = new DDIOPartReplPolicy(mon, pm, numLines, ways, testMode, ddio_ways);
         } else { //Vantage
             uint32_t assoc = (arrayType == "Z")? candidates : ways;
             allocPortion = .85;
@@ -217,13 +223,16 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
         }
         rp = prp;
 
-        // Partitioner
-        // TODO: Depending on partitioner type, we want one per bank or one per cache.
-        Partitioner* p = new LookaheadPartitioner(prp, pm->getNumPartitions(), buckets, 1, allocPortion);
+        if (replType != "DDIOPart") {
 
-        //Schedule its tick
-        uint32_t interval = config.get<uint32_t>(prefix + "repl.interval", 5000); //phases
-        zinfo->eventQueue->insert(new Partitioner::PartitionEvent(p, interval));
+            // Partitioner
+            // TODO: Depending on partitioner type, we want one per bank or one per cache.
+            Partitioner* p = new LookaheadPartitioner(prp, pm->getNumPartitions(), buckets, 1, allocPortion);
+
+            //Schedule its tick
+            uint32_t interval = config.get<uint32_t>(prefix + "repl.interval", 5000); //phases
+            zinfo->eventQueue->insert(new Partitioner::PartitionEvent(p, interval));
+        }
     } else {
         panic("%s: Invalid replacement type %s", name.c_str(), replType.c_str());
     }
@@ -527,6 +536,16 @@ static void InitSystem(Config& config) {
         mems[i] = BuildMemoryController(config, zinfo->lineSize, zinfo->freqMHz, domain, name);
     }
 
+/*
+    //FIXME MARINA TO WORK WITH ALL KINDS OF MEM
+    g_vector<BaseCache*> childrenVecMem;
+    for (BaseCache* llcBank : (*cMap[llc])[0]) {
+        childrenVecMem.push_back(llcBank);
+    }
+    for (MemObject* mem_obj : mems) {
+        ((DDRMemory*)mem_obj)->setChildrenMem(childrenVecMem, network);
+    }
+*/
     if (memControllers > 1) {
         bool splitAddrs = config.get<bool>("sys.mem.splitAddrs", true);
         if (splitAddrs) {
@@ -716,7 +735,10 @@ static void InitSystem(Config& config) {
                     } else {
                         assert(type == "OOO");
                         uint32_t domain = j * zinfo->numDomains / cores;
-                        OOOCore* ocore = new (&oooCores[j]) OOOCore(ic, dc, domain, name, coreIdx);
+                        string ingr,egr;
+                        ingr = config.get<const char*>(prefix + "ingress", "mem");        // choices are: l1, l2, llc, mem, ideal
+                        egr = config.get<const char*>(prefix + "egress", "mem");        // choices are: llc, mem, ideal
+                        OOOCore* ocore = new (&oooCores[j]) OOOCore(ic, dc, domain, name, coreIdx, ingr, egr);
                         zinfo->eventRecorders[coreIdx] = ocore->getEventRecorder();
                         zinfo->eventRecorders[coreIdx]->setSourceId(coreIdx);
                         core = ocore;
@@ -804,10 +826,6 @@ static void InitSystem(Config& config) {
     nicInfo->packet_injection_rate = (uint64_t) packet_injection_rate;
     bool record_nic_access = config.get<bool>("sim.record_nic_access", true);
     nicInfo->record_nic_access = record_nic_access;
-
-
-    uint32_t pp_policy = config.get<uint32_t>("sim.pp_policy", 0);
-	nicInfo->pp_policy = pp_policy;
 
     //uint32_t num_cores_serving_nw = config.get<uint32_t>("sim.num_cores_serving_nw", (zinfo->numCores - 1));
     uint32_t num_cores_serving_nw = config.get<uint32_t>("sim.num_cores_serving_nw", (zinfo->numCores - 2));

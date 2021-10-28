@@ -33,6 +33,7 @@
 #include "event_recorder.h"
 #include "timing_event.h"
 #include "zsim.h"
+#include "network.h"
 
 //#define DEBUG(args...) info(args)
 #define DEBUG(args...)
@@ -239,7 +240,20 @@ void DDRMemory::initStats(AggregateStat* parentStat) {
 }
 
 /* Bound phase interface */
-
+/*
+void DDRMemory::setChildrenMem(g_vector<BaseCache*>& children, Network* network) {
+    if (children.size() > MAX_CACHE_CHILDREN) {
+        panic("[%s] Children size (%d) > MAX_CACHE_CHILDREN (%d)", getName(), (uint32_t)children.size(), MAX_CACHE_CHILDREN);
+    }
+    children_caches.resize(children.size());
+    childrenRTTs.resize(children.size());
+    for (uint32_t c = 0; c < children_caches.size(); c++) {
+        children_caches[c] = children[c];
+        childrenRTTs[c] = (network)? network->getRTT(getName(), children_caches[c]->getName()) : 0;
+    }
+    return;
+}
+*/
 uint64_t DDRMemory::access(MemReq& req) {
     
     bool no_record = ((req.flags) & (MemReq::NORECORD)) != 0;
@@ -253,7 +267,25 @@ uint64_t DDRMemory::access(MemReq& req) {
             *req.state = req.is(MemReq::NOEXCL)? S : E;
             break;
         case GETX:
-            *req.state = M;
+            if(req.flags & MemReq::PKTIN || req.flags & MemReq::PKTOUT) {
+                /*info("PKTIN request in memory");
+                uint32_t numChildren = children_caches.size();
+                uint32_t sentInvs = 0;
+                uint64_t maxCycle = req.cycle;
+                for (uint32_t c = 0; c < numChildren; c++) {
+                    info("Sending invalidation from mem");
+                    bool reqWriteback;
+                    InvReq req = {req.lineAddr, INV, &reqWriteback, req.cycle, 1742};
+                    uint64_t respCycle = children_caches[c]->invalidate(req);
+                    respCycle += childrenRTTs[c];
+                    maxCycle = MAX(respCycle, maxCycle);
+                    sentInvs++;
+                }
+                */
+            }
+            else {
+                *req.state = M;
+            }
             break;
 
         default: panic("!?");

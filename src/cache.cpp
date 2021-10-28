@@ -62,7 +62,7 @@ uint64_t Cache::access(MemReq& req) {
 
     bool no_record = req.flags & (MemReq::NORECORD) != 0;
 
-    int req_level = req.flags >> 16;
+    uint32_t req_level = req.flags >> 16;
     if (req.type == PUTS || req.type == PUTX) {
         req_level = level;
     }
@@ -74,7 +74,7 @@ uint64_t Cache::access(MemReq& req) {
     bool skipAccess = cc->startAccess(req); //may need to skip access due to races (NOTE: may change req.type!)
     if (likely(!skipAccess)) {
         if (correct_level) {
-            int temp = req_level - 1;
+            uint32_t temp = req_level - 1;
             req.flags  = (req.flags & 0xffff) | (temp << 16);
             bool updateReplacement = (req.type == GETS) || (req.type == GETX);
             lineId = array->lookup(req.lineAddr, &req, updateReplacement);
@@ -160,11 +160,17 @@ void Cache::startInvalidate() {
 
 uint64_t Cache::finishInvalidate(const InvReq& req) {
     int32_t lineId = array->lookup(req.lineAddr, nullptr, false);
-    assert_msg(lineId != -1, "[%s] Invalidate on non-existing address 0x%lx type %s lineId %d, reqWriteback %d", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback);
-    uint64_t respCycle = req.cycle + invLat;
-    trace(Cache, "[%s] Invalidate start 0x%lx type %s lineId %d, reqWriteback %d", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback);
-    respCycle = cc->processInv(req, lineId, respCycle); //send invalidates or downgrades to children, and adjust our own state
-    trace(Cache, "[%s] Invalidate end 0x%lx type %s lineId %d, reqWriteback %d, latency %ld", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback, respCycle - req.cycle);
-
+    uint64_t respCycle = req.cycle;
+    if (lineId == -1) {
+        assert_msg(req.srcId != 1742, "[%s] Invalidate on non-existing address 0x%lx type %s lineId %d, reqWriteback %d", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback);
+        cc->finishInv();
+    }
+    else {
+        assert_msg(lineId != -1, "[%s] Invalidate on non-existing address 0x%lx type %s lineId %d, reqWriteback %d", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback);
+        respCycle = req.cycle + invLat;
+        trace(Cache, "[%s] Invalidate start 0x%lx type %s lineId %d, reqWriteback %d", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback);
+        respCycle = cc->processInv(req, lineId, respCycle); //send invalidates or downgrades to children, and adjust our own state
+        trace(Cache, "[%s] Invalidate end 0x%lx type %s lineId %d, reqWriteback %d, latency %ld", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback, respCycle - req.cycle);
+    }
     return respCycle;
 }

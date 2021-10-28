@@ -35,6 +35,7 @@
  */
 class CacheArray : public GlobAlloc {
     public:
+
         /* Returns tag's ID if present, -1 otherwise. If updateReplacement is set, call the replacement policy's update() on the line accessed*/
         virtual int32_t lookup(const Address lineAddr, const MemReq* req, bool updateReplacement) = 0;
 
@@ -51,13 +52,20 @@ class CacheArray : public GlobAlloc {
         virtual void initStats(AggregateStat* parent) {}
 };
 
+typedef struct CacheLine_strct {
+    Address addr;
+    NICType nicType;
+    LastUser lastUSer;
+} CacheLine;
+
 class ReplPolicy;
 class HashFamily;
 
 /* Set-associative cache array */
 class SetAssocArray : public CacheArray {
     protected:
-        Address* array;
+        //Address* array;
+        CacheLine* array;
         ReplPolicy* rp;
         HashFamily* hf;
         uint32_t numLines;

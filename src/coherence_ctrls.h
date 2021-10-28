@@ -56,6 +56,7 @@ class CC : public GlobAlloc {
         //Inv methods
         virtual void startInv() = 0;
         virtual uint64_t processInv(const InvReq& req, int32_t lineId, uint64_t startCycle) = 0;
+        virtual void finishInv() = 0;
 
         //Repl policy interface
         virtual uint32_t numSharers(uint32_t lineId) = 0;
@@ -368,36 +369,37 @@ class MESICC : public CC {
             //but if we do proper NI/EX mid-level caches backed by directories, this may start becoming more common (and it is perfectly acceptable to
             //upgrade without any interaction with the parent... the child had the permissions!)
             if (correct_level) {
-            if ((lineId == -1 && !(req.flags & MemReq::PKTOUT)) || (((req.type == PUTS) || (req.type == PUTX)) && !bcc->isValid(lineId))) { //can only be a non-inclusive wback
-                assert(nonInclusiveHack);
-                assert((req.type == PUTS) || (req.type == PUTX));
-                respCycle = bcc->processNonInclusiveWriteback(req.lineAddr, req.type, startCycle, req.state, req.srcId, req.flags);
-            } else {
-                //Prefetches are side requests and get handled a bit differently
-                bool isPrefetch = req.flags & MemReq::PREFETCH;
-                assert(!isPrefetch || req.type == GETS);
-                uint32_t flags = req.flags & ~MemReq::PREFETCH; //always clear PREFETCH, this flag cannot propagate up
+                if ((lineId == -1 && !(req.flags & MemReq::PKTOUT)) || (((req.type == PUTS) || (req.type == PUTX)) && !bcc->isValid(lineId))) { //can only be a non-inclusive wback
+                    assert(nonInclusiveHack);
+                    assert((req.type == PUTS) || (req.type == PUTX));
+                    respCycle = bcc->processNonInclusiveWriteback(req.lineAddr, req.type, startCycle, req.state, req.srcId, req.flags);
+                } else {
+                    //Prefetches are side requests and get handled a bit differently
+                    bool isPrefetch = req.flags & MemReq::PREFETCH;
+                    assert(!isPrefetch || req.type == GETS);
+                    uint32_t flags = req.flags & ~MemReq::PREFETCH; //always clear PREFETCH, this flag cannot propagate up
 
-                //if needed, fetch line or upgrade miss from upper level
-                respCycle = bcc->processAccess(req.lineAddr, lineId, req.type, startCycle, req.srcId, flags);
-                if (getDoneCycle) *getDoneCycle = respCycle;
-                if (!isPrefetch) { //prefetches only touch bcc; the demand request from the core will pull the line to lower level
-                    //At this point, the line is in a good state w.r.t. upper levels
-                    bool lowerLevelWriteback = false;
-                    //change directory info, invalidate other children if needed, tell requester about its state
-                    respCycle = tcc->processAccess(req.lineAddr, lineId, req.type, req.childId, bcc->isExclusive(lineId), req.state,
-                            &lowerLevelWriteback, respCycle, req.srcId, flags);
-                    if (lowerLevelWriteback) {
-                        //Essentially, if tcc induced a writeback, bcc may need to do an E->M transition to reflect that the cache now has dirty data
-                        bcc->processWritebackOnAccess(req.lineAddr, lineId, req.type);
+                    //if needed, fetch line or upgrade miss from upper level
+                    respCycle = bcc->processAccess(req.lineAddr, lineId, req.type, startCycle, req.srcId, flags);
+                    if (getDoneCycle) *getDoneCycle = respCycle;
+                    if (!isPrefetch) { //prefetches only touch bcc; the demand request from the core will pull the line to lower level
+                        //At this point, the line is in a good state w.r.t. upper levels
+                        bool lowerLevelWriteback = false;
+                        //change directory info, invalidate other children if needed, tell requester about its state
+                        respCycle = tcc->processAccess(req.lineAddr, lineId, req.type, req.childId, bcc->isExclusive(lineId), req.state,
+                                &lowerLevelWriteback, respCycle, req.srcId, flags);
+                        if (lowerLevelWriteback) {
+                            //Essentially, if tcc induced a writeback, bcc may need to do an E->M transition to reflect that the cache now has dirty data
+                            bcc->processWritebackOnAccess(req.lineAddr, lineId, req.type);
+                        }
                     }
                 }
-            }
             }           
             else {
-                //info("Passing to next cache");
-                respCycle = bcc->passToNext(req.lineAddr, req.type, req.childId, req.srcId, req.flags, startCycle);
+            //info("Passing to next cache");
+               respCycle = bcc->passToNext(req.lineAddr, req.type, req.childId, req.srcId, req.flags, startCycle);
             }
+
             return respCycle;
         }
 
@@ -422,6 +424,10 @@ class MESICC : public CC {
 
             bcc->unlock();
             return respCycle;
+        }
+
+        void finishInv() {
+            bcc->unlock();
         }
 
         //Repl policy interface
@@ -491,15 +497,15 @@ class MESITerminalCC : public CC {
 
         uint64_t processAccess(const MemReq& req, int32_t lineId, uint64_t startCycle, bool correct_level, uint64_t* getDoneCycle = nullptr) {
             if (correct_level) {
-            assert(lineId != -1);
-            assert(!getDoneCycle);
-            //if needed, fetch line or upgrade miss from upper level
-            uint64_t respCycle = bcc->processAccess(req.lineAddr, lineId, req.type, startCycle, req.srcId, req.flags);
-            //at this point, the line is in a good state w.r.t. upper levels
-            return respCycle;
+                assert(lineId != -1);
+                assert(!getDoneCycle);
+                //if needed, fetch line or upgrade miss from upper level
+                uint64_t respCycle = bcc->processAccess(req.lineAddr, lineId, req.type, startCycle, req.srcId, req.flags);
+                //at this point, the line is in a good state w.r.t. upper levels
+                return respCycle;
             }
             else {
-                //info("Passing to next cache");
+                //info("passing to next cache");
                 return bcc->passToNext(req.lineAddr, req.type, req.childId, req.srcId, req.flags , startCycle);
             }
         }
@@ -521,6 +527,10 @@ class MESITerminalCC : public CC {
             bcc->processInval(req.lineAddr, lineId, req.type, req.writeback); //adjust our own state
             bcc->unlock();
             return startCycle; //no extra delay in terminal caches
+        }
+
+        void finishInv() {
+            bcc->unlock();
         }
 
         //Repl policy interface

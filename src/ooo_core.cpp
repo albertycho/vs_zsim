@@ -52,13 +52,13 @@
 #define ISSUE_STAGE 7
 #define DISPATCH_STAGE 13  // RAT + ROB + RS, each is easily 2 cycles
 
-#define L1D_LAT 4  // fixed, and FilterCache does not include L1 delay
+//#define L1D_LAT 4  // fixed, and FilterCache does not include L1 delay
 #define FETCH_BYTES_PER_CYCLE 16
 #define ISSUES_PER_CYCLE 4
 #define RF_READS_PER_CYCLE 3
 
 //OOOCore::OOOCore(FilterCache* _l1i, FilterCache* _l1d, int _core_id, uint32_t _domain, g_string& _name) : Core(_name), l1i(_l1i), l1d(_l1d), cRec(_domain, _name) {
-OOOCore::OOOCore(FilterCache* _l1i, FilterCache* _l1d, uint32_t _domain, g_string& _name, uint32_t _coreIdx) 
+OOOCore::OOOCore(FilterCache* _l1i, FilterCache* _l1d, uint32_t _domain, g_string& _name, uint32_t _coreIdx, string ingr, string egr) 
 : Core(_name), l1i(_l1i), l1d(_l1d), core_id(_coreIdx), cRec(_domain, _name) {
  
     core_id = _coreIdx;
@@ -81,6 +81,40 @@ OOOCore::OOOCore(FilterCache* _l1i, FilterCache* _l1d, uint32_t _domain, g_strin
     instrs = uops = bbls = approxInstrs = mispredBranches = 0;
 
     for (uint32_t i = 0; i < FWD_ENTRIES; i++) fwdArray[i].set((Address)(-1L), 0);
+
+    if (ingr == "l1") {
+        ingr_type = 3;
+    } else if (ingr == "l2") {
+        ingr_type = 2;
+    }
+    else if (ingr == "llc") {
+        ingr_type = 1;
+    }
+    else if (ingr == "mem") {
+        ingr_type = 0;
+    }
+    else if (ingr == "ideal") {
+        ingr_type = 42;
+    }
+    else {
+        panic("Wrong ingress placement type");
+    }
+
+    if (egr == "llc_inval") {
+        egr_type = 1;
+        egr_inval = 1;
+    } else if (egr == "llc_non_inval") {
+        egr_type = 1;
+        egr_inval = 0;
+    } else if (egr == "mem") {
+        egr_type = 0;
+    }
+    else if (egr == "ideal") {
+        egr_type = 42;
+    }
+    else {
+        panic("Wrong egress placement type");
+    }
 
 }
 
@@ -279,10 +313,12 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
                     Address addr = loadAddrs[loadIdx++];
                     uint64_t reqSatisfiedCycle = dispatchCycle;
                     if (addr != ((Address)-1L)) {
-                        reqSatisfiedCycle = l1d->load(addr, dispatchCycle) + L1D_LAT;
-                        cRec.record(curCycle, dispatchCycle, reqSatisfiedCycle);
-                        
+                        if (ingr_type == 42) //ideal ingress, app core should always hit in l1 for nic-relate data
+                            reqSatisfiedCycle = l1d->load(addr, dispatchCycle, ingr_type) + L1D_LAT;
+                        else
+                            reqSatisfiedCycle = l1d->load(addr, dispatchCycle) + L1D_LAT;
 
+                        cRec.record(curCycle, dispatchCycle, reqSatisfiedCycle);
                     }
                     
 
@@ -348,8 +384,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
 				break;
 				}
             //case UOP_FENCE:  //make gcc happy
-            
-			default:
+            default:
                 assert((UopType) uop->type == UOP_FENCE);
                 commitCycle = dispatchCycle + uop->lat;
                 // info("%d %ld %ld", uop->lat, lastStoreAddrCommitCycle, lastStoreCommitCycle);
@@ -547,7 +582,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) {
         ///////////////CALL DEQ_DPQ//////////////////////
         uint32_t srcId = getCid(tid);
-        deq_dpq(srcId, core, &(core->cRec), core->l1d/*MemObject* dest*/, core->curCycle);
+        assert(srcId == 0);
+        deq_dpq(srcId, core, &(core->cRec), core->l1d/*MemObject* dest*/, core->curCycle, core->egr_type);
     }
     if ((nicInfo->nic_egress_pid == procIdx) && (nicInfo->nic_init_done)) {
         //nic_egress_routine(tid);
@@ -652,8 +688,6 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
     void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
     load_generator* lg_p = (load_generator*)lg_p_vp;
 
-    //OOOCore* core = static_cast<OOOCore*>(cores[tid]);
-
 	uint64_t num_cline=0;
     switch (field) {
     case 0://WQ
@@ -735,7 +769,6 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
         break;
 
     case 0xD: //send all client_done boolean to the server app to monitor for termination condition
-		info("before handling monitor_client_done");
         *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(lg_p->all_packets_sent));
 		info("after handling monitor_client_done");
         break;
@@ -867,7 +900,7 @@ int OOOCore::nic_ingress_routine(THREADID tid) {
         /* Inject packet (call core function) */
         uint32_t srcId = getCid(tid);
         uint64_t injection_cycle = core->curCycle;
-        int inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), l1d_caches[core_iterator]);
+        int inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), l1d_caches[core_iterator], core->ingr_type);
 
         if (inj_attempt == -1) {
             //core out of recv buffer. stop injecting for this phase
@@ -891,6 +924,7 @@ int OOOCore::nic_ingress_routine(THREADID tid) {
      OOOCore* core = static_cast<OOOCore*>(nicInfo->nicCore_ingress);
 
      if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) { //only run for nic_core
+         //assert(srcId == 0);
          if (nicInfo->registered_core_count == 0) { // we're done, don't do anything
              if (nicInfo->nic_ingress_proc_on) {
                  info("ooo_core.cpp - turn off nic proc");
@@ -913,7 +947,12 @@ int OOOCore::nic_ingress_routine(THREADID tid) {
                  //info("core_iterator returned %d", core_iterator);
                  ((load_generator*)lg_p)->last_core = core_iterator;
                  //uint32_t srcId = getCid(tid);
-                 int inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), l1d_caches[core_iterator]);
+                 int inj_attempt;
+                 if (core->ingr_type < 2)
+                    inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), core->l1d, core->ingr_type);
+                else
+                    inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), l1d_caches[core_iterator], core->ingr_type);
+
                  return inj_attempt;
              }
          }    

@@ -86,6 +86,13 @@ class ProcessGroupPartMapper : public PartMapper {
         virtual uint32_t getPartition(const MemReq& req);
 };
 
+class DDIOPartMapper : public PartMapper {
+    public:
+        DDIOPartMapper() {}
+        virtual uint32_t getNumPartitions();
+        virtual uint32_t getPartition(const MemReq& req);
+};
+
 #endif  // PARTITION_MAPPER_H_
 
 

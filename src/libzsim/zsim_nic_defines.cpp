@@ -58,7 +58,7 @@ successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
 	do{
 		outer_loop_count++;
 		if(outer_loop_count>1){
-			//increment innterloop count for zsim stat
+			//increment outterloop count for zsim stat
 			register_buffer((void*)1, (void*)0x12);
 		}
 
@@ -74,7 +74,7 @@ successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
 		{
 			inner_loop_count++;
 			if(inner_loop_count>1){
-				//increment innterloop count for zsim stat
+				//increment innerloop count for zsim stat
 				register_buffer((void*)1, (void*)0x11);
 			}
 			//dbgprint
@@ -94,9 +94,6 @@ successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
 				ret.recv_buf_addr =  raw_cqe_entry.recv_buf_addr;
 				ret.op = RMC_INCOMING_SEND;
 				ret.tid = raw_cqe_entry.tid;
-				if((outer_loop_count>1)||(inner_loop_count>1)){
-					std::cout<<"rmc_check_cq returning with 0x7F, innerLoop_count= "<<inner_loop_count<<", outer_loop_count= "<<outer_loop_count<<std::endl;
-				}
 				return ret;		
 			}
 			if (raw_cqe_entry.success == 1) {
@@ -104,9 +101,6 @@ successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
 				ret.recv_buf_addr = raw_cqe_entry.recv_buf_addr;
 				ret.op = RMC_INCOMING_RESP;
 				ret.tid = raw_cqe_entry.tid;
-				if((inner_loop_count > 1) || (outer_loop_count > 1)){
-					std::cout<<"rmc_check_cq returning with 0x01, innerLoop_count= "<<inner_loop_count<<", outer_loop_count= "<<outer_loop_count<<std::endl;
-				}
 				return ret;
 			}
 
@@ -135,12 +129,11 @@ successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
 			tail_SR = raw_cqe_entry.SR;
 	
 	
-		}
-	//std::cout<<"rmc_check_cq: innerLoopCount: "<<inner_loop_count<<std::endl;
+			}
+
 
 	}while (raw_wqe.valid && (ret.success != 0));
 
-	//std::cout<<"rmc_check_cq: outerLoopCount: "<<outer_loop_count<<std::endl;
 	//std::cout<<"rmc_check_cq - ret.op:"<<std::hex<<ret.op<<std::endl;
 
 	register_buffer((void*)1, (void*)0x11);

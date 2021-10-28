@@ -83,7 +83,7 @@ uint64_t MESIBottomCC::processEviction(Address wbLineAddr, uint32_t lineId, bool
             }
             break;
 
-        default: panic("!?");
+        default: panic("!?, lineId %d",lineId);
     }
     assert_msg(*state == I, "Wrong final state %s on eviction", MESIStateName(*state));
     return respCycle;
@@ -101,9 +101,10 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
     MESIState* state;
     if (lineId != -1)
         state = &array[lineId];
-    else
-        state = nullptr;
-
+    else {
+        state = (MESIState*)malloc(sizeof(MESIState));
+        *state = I;
+    }
     switch (type) {
         // A PUTS/PUTX does nothing w.r.t. higher coherence levels --- it dies here
         case PUTS: //Clean writeback, nothing to do (except profiling)
@@ -121,42 +122,66 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
         case GETS:
             if (*state == I) {
                 uint32_t parentId = getParentId(lineAddr);
-                MemReq req = {lineAddr, GETS, selfId, state, cycle, &ccLock, *state, srcId, flags};
+                MemReq req = {lineAddr, GETS, selfId, state, cycle, &ccLock, *state, srcId, flags};    
                 uint32_t nextLevelLat = parents[parentId]->access(req) - cycle;
                 uint32_t netLat = parentRTTs[parentId];
                 profGETNextLevelLat.inc(nextLevelLat);
                 profGETNetLat.inc(netLat);
                 respCycle += nextLevelLat + netLat;
                 profGETSMiss.inc();
-                assert(*state == S || *state == E || (!(*state) && (req.flags & MemReq::PKTOUT)));
+                assert(*state == S || *state == E || (*state == I && (req.flags & MemReq::PKTOUT)));
             } else {
                 profGETSHit.inc();
             }
             break;
         case GETX:
-            if (*state == I || *state == S) {
-                //Profile before access, state changes
-                if (*state == I) profGETXMissIM.inc();
-                else profGETXMissSM.inc();
-                uint32_t parentId = getParentId(lineAddr);
-                MemReq req = {lineAddr, GETX, selfId, state, cycle, &ccLock, *state, srcId, flags};
-                uint32_t nextLevelLat = parents[parentId]->access(req) - cycle;
-                uint32_t netLat = parentRTTs[parentId];
-                profGETNextLevelLat.inc(nextLevelLat);
-                profGETNetLat.inc(netLat);
-                respCycle += nextLevelLat + netLat;
-            } else {
-                if (*state == E) {
-                    // Silent transition
-                    // NOTE: When do we silent-transition E->M on an ML hierarchy... on a GETX, or on a PUTX?
-                    /* Actually, on both: on a GETX b/c line's going to be modified anyway, and must do it if it is the L1 (it's OK not
-                     * to transition if L2+, we'll TX on the PUTX or invalidate, but doing it this way minimizes the differences between
-                     * L1 and L2+ controllers); and on a PUTX, because receiving a PUTX while we're in E indicates the child did a silent
-                     * transition and now that it is evictiong, it's our turn to maintain M info.
-                     */
-                    *state = M;
+            if (flags & MemReq::PKTOUT) { // this is an eggress access directed to the LLC that also invalidates
+                assert(flags >> 16 == 0);
+                if (*state == S || *state == E || *state == M) { // data is present in the core's cache hierarchy, invalidate them
+                    *state = I;
                 }
-                profGETXHit.inc();
+                else {  // go to memory 
+                    uint32_t parentId = getParentId(lineAddr);
+                    MemReq req = {lineAddr, GETX, selfId, state, cycle, &ccLock, *state, srcId, flags};  // we have reached the correct level for ingress, the following requests downwards should have the pktin flag set
+                    uint32_t nextLevelLat = parents[parentId]->access(req) - cycle;
+                    uint32_t netLat = parentRTTs[parentId];
+                    profGETNextLevelLat.inc(nextLevelLat);
+                    profGETNetLat.inc(netLat);
+                    respCycle += nextLevelLat + netLat;
+                }
+                assert(*state == I);
+            } else {
+                if (*state == I || *state == S) {
+                    //Profile before access, state changes
+                    
+                    if (*state == I) profGETXMissIM.inc();
+                    else profGETXMissSM.inc();
+
+                    if ((flags & MemReq::PKTIN) && (flags >> 16 == 0)) {    // this is an ingress packed that is directed to the LLC and it missed, so we don't go to memory
+                        info("ddio ingress missed in llc, don't go to mem");
+                        *state = M;
+                    } else {
+                        uint32_t parentId = getParentId(lineAddr);
+                        MemReq req = {lineAddr, GETX, selfId, state, cycle, &ccLock, *state, srcId, flags & ~MemReq::PKTIN};  // we have reached the correct level for ingress, the following requests downwards should have the pktin flag set
+                        uint32_t nextLevelLat = parents[parentId]->access(req) - cycle;
+                        uint32_t netLat = parentRTTs[parentId];
+                        profGETNextLevelLat.inc(nextLevelLat);
+                        profGETNetLat.inc(netLat);
+                        respCycle += nextLevelLat + netLat;
+                    }
+                } else {
+                    if (*state == E) {
+                        // Silent transition
+                        // NOTE: When do we silent-transition E->M on an ML hierarchy... on a GETX, or on a PUTX?
+                        /* Actually, on both: on a GETX b/c line's going to be modified anyway, and must do it if it is the L1 (it's OK not
+                        * to transition if L2+, we'll TX on the PUTX or invalidate, but doing it this way minimizes the differences between
+                        * L1 and L2+ controllers); and on a PUTX, because receiving a PUTX while we're in E indicates the child did a silent
+                        * transition and now that it is evictiong, it's our turn to maintain M info.
+                        */
+                        *state = M;
+                    }
+                    profGETXHit.inc();
+                }
             }
             assert_msg(*state == M, "Wrong final state on GETX, lineId %d numLines %d, finalState %s", lineId, numLines, MESIStateName(*state));
             break;
@@ -178,7 +203,10 @@ void MESIBottomCC::processWritebackOnAccess(Address lineAddr, uint32_t lineId, A
 
 void MESIBottomCC::processInval(Address lineAddr, uint32_t lineId, InvType type, bool* reqWriteback) {
     MESIState* state = &array[lineId];
-    assert(*state != I);
+    //assert(*state != I);
+    if (*state == I) {
+        return;
+    }
     switch (type) {
         case INVX: //lose exclusivity
             //Hmmm, do we have to propagate loss of exclusivity down the tree? (nah, topcc will do this automatically -- it knows the final state, always!)
@@ -230,7 +258,6 @@ void MESITopCC::init(const g_vector<BaseCache*>& _children, Network* network, co
 uint64_t MESITopCC::sendInvalidates(Address lineAddr, uint32_t lineId, InvType type, bool* reqWriteback, uint64_t cycle, uint32_t srcId) {
     //Send down downgrades/invalidates
     Entry* e = &array[lineId];
-
     //TODO acho: determine if this is okay with direct access
     //Don't propagate downgrades if sharers are not exclusive.
     if (type == INVX && !e->isExclusive()) {
@@ -265,7 +292,7 @@ uint64_t MESITopCC::sendInvalidates(Address lineAddr, uint32_t lineId, InvType t
 }
 
 
-uint64_t MESITopCC::processEviction(Address wbLineAddr, uint32_t lineId, bool* reqWriteback, uint64_t cycle, uint32_t srcId) {
+uint64_t MESITopCC::processEviction(Address wbLineAddr, uint32_t lineId, bool* reqWriteback, uint64_t cycle, uint32_t srcId) {  
     if (nonInclusiveHack) {
         // Don't invalidate anything, just clear our entry
         array[lineId].clear();
@@ -279,10 +306,12 @@ uint64_t MESITopCC::processEviction(Address wbLineAddr, uint32_t lineId, bool* r
 uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType type, uint32_t childId, bool haveExclusive,
                                   MESIState* childState, bool* inducedWriteback, uint64_t cycle, uint32_t srcId, uint32_t flags) {
     Entry* e; 
+    assert(lineId != -1);
     if (lineId != -1)
         e = &array[lineId];
-    else
-        e = nullptr;
+    else {
+        e = nullptr; //(Entry*)malloc(sizeof(Entry));
+    }
 
     uint64_t respCycle = cycle;
     switch (type) {
@@ -302,6 +331,7 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
             *childState = I;
             break;
         case GETS:
+        assert(!(flags & MemReq::PKTIN));
             // should a GETS from the NIC modify any cache state? I think not (unless it finds an invalid line, which we deal with in bcc)
             if(!(flags & MemReq::PKTOUT)) {
                 if (e->isEmpty() && haveExclusive && !(flags & MemReq::NOEXCL)) {
@@ -329,8 +359,7 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
             }
             break;
         case GETX:
-            assert(haveExclusive); //the current cache better have exclusive access to this line
-
+            assert((flags & MemReq::PKTOUT) || haveExclusive); //the current cache better have exclusive access to this line
             // if we write directly to the l2/llc, we want all children to be invalidated
             if (!((flags & MemReq::PKTIN) && childId > MAX_CACHE_CHILDREN)) {
                 // If child is in sharers list (this is an upgrade miss), take it out
@@ -361,7 +390,10 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
                 // Invalidate all other copies
             respCycle = sendInvalidates(lineAddr, lineId, INV, inducedWriteback, cycle, srcId);
             
-            e->exclusive = true;
+            if (flags & MemReq::PKTOUT)
+                e->exclusive = false;       // this is an egress access that invalidates the LLC too
+            else
+                e->exclusive = true;
 
             if (!((flags & MemReq::PKTIN) && childId > MAX_CACHE_CHILDREN)) {
                 // Set current sharer, mark exclusive
@@ -383,6 +415,7 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
                 *childState = M; //give in M directly
 */
             }
+
             break;
 
         default: panic("!?");

@@ -30,7 +30,13 @@
 /* Set-associative array implementation */
 
 SetAssocArray::SetAssocArray(uint32_t _numLines, uint32_t _assoc, ReplPolicy* _rp, HashFamily* _hf) : rp(_rp), hf(_hf), numLines(_numLines), assoc(_assoc)  {
-    array = gm_calloc<Address>(numLines);
+    //array = gm_calloc<Address>(numLines);
+    array = gm_calloc<CacheLine>(numLines);
+    for(int i=0; i<numLines; i++) {
+        array[i].addr = 0;
+        array[i].nicType = DATA;
+        array[i].lastUSer = NONE;
+    }
     numSets = numLines/assoc;
     setMask = numSets - 1;
     assert_msg(isPow2(numSets), "must have a power of 2 # sets, but you specified %d", numSets);
@@ -40,7 +46,17 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
     uint32_t set = hf->hash(0, lineAddr) & setMask;
     uint32_t first = set*assoc;
     for (uint32_t id = first; id < first + assoc; id++) {
-        if (array[id] ==  lineAddr) {
+        if (array[id].addr ==  lineAddr) {
+            if (req != nullptr) {
+                if (req->srcId > 1) //  comming from app core
+                    array[id].lastUSer = APP;
+                else                // coming from NIC
+                    array[id].lastUSer = NIC;
+                if (req->flags & MemReq::NETRELATED)
+                array[id].nicType = NETWORK;
+                else
+                    array[id].nicType = DATA;
+            }
             if (updateReplacement) rp->update(id, req);
             return id;
         }
@@ -53,14 +69,24 @@ uint32_t SetAssocArray::preinsert(const Address lineAddr, const MemReq* req, Add
     uint32_t first = set*assoc;
 
     uint32_t candidate = rp->rankCands(req, SetAssocCands(first, first+assoc));
-
-    *wbLineAddr = array[candidate];
+    //info("eviction candidate is %lld, with index %ld", array[candidate], candidate);
+    *wbLineAddr = array[candidate].addr;
     return candidate;
 }
 
 void SetAssocArray::postinsert(const Address lineAddr, const MemReq* req, uint32_t candidate) {
     rp->replaced(candidate);
-    array[candidate] = lineAddr;
+    array[candidate].addr = lineAddr;
+    if (req != nullptr) {
+        if (req->srcId > 1) //  comming from app core
+            array[candidate].lastUSer = APP;
+        else                // coming from NIC
+            array[candidate].lastUSer = NIC;
+        if (req->flags & MemReq::NETRELATED)
+            array[candidate].nicType = NETWORK;
+        else
+            array[candidate].nicType = DATA;
+    }
     rp->update(candidate, req);
 }
 

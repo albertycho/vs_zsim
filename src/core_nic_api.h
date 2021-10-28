@@ -54,7 +54,6 @@ int tc_map_insert(uint64_t in_ptag, uint64_t issue_cycle) {
 	futex_lock(&lg_p->ptc_lock);
 	//info("ptc insert to map");
 	//(lg_p->tc_map)[ptag] = issue_time;
-	//assert((lg_p->tc_map->find(ptag)) == (lg_p->tc_map->end()));
 	assert((lg_p->tc_map->count(ptag)) == 0);
 	lg_p->tc_map->insert(std::make_pair(ptag, issue_cycle));
 	//info("ptc insert to map successful, map size : %d", lg_p->tc_map->size());
@@ -347,9 +346,14 @@ int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uin
 	return 0;
 }
 
+/* 	core_id: destination core (that will receive the packet)
+	srcId: should always be 0 (nic ingress coreId)
+	core: ingress nic core handle
+	cRec: ingress nic core recorder handle
+	l1d: l1d of destination core
+*/
 
-
-int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id, uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*MemObject* dest*/) {
+int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id, uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d, uint16_t level) {
 /*
 * inject_incoming_packet - takes necessary architectural AND microarchitectural actions to inject packet
 *				fetches next msg from load generator
@@ -395,34 +399,19 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	// specifiy the level after curCycle
 	// to access the private caches of other cores, change the lid[] index
 	// this example performs a GETX on the LLC 
-
 	uint64_t reqSatisfiedCycle;
-//	uint64_t reqSatisfiedCycle = l1d->store(recv_buf_addr, cur_cycle, 0, srcId, MemReq::PKTIN);
-//
-//	//TODO check what cycles need to be passed to recrod
-//	cRec->record(cur_cycle, cur_cycle, reqSatisfiedCycle);
-	
-	//testing ideal case. will rewrite once other policies are ready
-	switch (nicInfo->pp_policy){
-		case 0: //ideal
-			reqSatisfiedCycle = cur_cycle;
-			break;
-		case 1: //LLC
-			reqSatisfiedCycle = l1d->store(recv_buf_addr, cur_cycle, 1, srcId, MemReq::PKTIN);
-			cRec->record(cur_cycle, cur_cycle, reqSatisfiedCycle);
-			break;
-		case 2: //DMA
-			reqSatisfiedCycle = l1d->store(recv_buf_addr, cur_cycle, 0, srcId, MemReq::PKTIN);
-			cRec->record(cur_cycle, cur_cycle, reqSatisfiedCycle);
-			break;
-		default:
-			reqSatisfiedCycle = cur_cycle;
-			break;
+	if (level == 42) {	// ideal ingress
+		reqSatisfiedCycle = cur_cycle+1;
 	}
-	
-	
-//	create_CEQ_entry(recv_buf_addr, 0x7f, reqSatisfiedCycle, nicInfo, core_id);
-	create_CEQ_entry(recv_buf_addr, 0x7f, cur_cycle, nicInfo, core_id);
+	else {
+		reqSatisfiedCycle = l1d->store(recv_buf_addr, cur_cycle, level, srcId, MemReq::PKTIN) + (level == 3 ? 1 : 0) * L1D_LAT;
+		//TODO check what cycles need to be passed to recrod
+		cRec->record(cur_cycle, cur_cycle, reqSatisfiedCycle);
+	}
+
+	uint64_t ceq_cycle = (uint64_t)(((load_generator*)lg_p)->next_cycle);
+	create_CEQ_entry(recv_buf_addr, 0x7f, cur_cycle/*ceq_cycle*/, nicInfo, core_id);
+	//create_CEQ_entry(recv_buf_addr, 0x7f, 10/*ceq_cycle*/, nicInfo, core_id);
 
 	//TODO may want to pass the reqSatisfiedcycle value back to the caller via updating an argument
 	//std::cout << "packet injection completed at " << reqSatisfiedCycle << std::endl;
@@ -678,7 +667,7 @@ int enq_dpq(uint64_t lbuf_addr, uint64_t end_time, uint64_t ptag) {
 	return 0;
 }
 
-int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*MemObject* dest*/, uint64_t core_cycle) {
+int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*MemObject* dest*/, uint64_t core_cycle, uint16_t level, uint16_t inval = 0) {
 	/*
 	* deq_dpq - run by nic_core in bbl(). gets the packet latency info from tc_map
 	*			uarch access to memobject and record
@@ -703,12 +692,18 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 
 		// GETS to LLC
 
-		//info("starting deq_dpq at cycle %lld", core_cycle);
-		uint64_t reqSatisfiedCycle = l1d->load(dp->lbuf_addr, core_cycle, 1, srcId, MemReq::PKTOUT);
-
-		cRec->record(core_cycle, core_cycle, reqSatisfiedCycle);
+		info("starting deq_dpq at cycle %lld", core_cycle);
+		uint64_t reqSatisfiedCycle;
+		if (level == 42) {
+			reqSatisfiedCycle = core_cycle+1;
+		} else if (level == 1 && inval == 1) { 	// non-ddio config of modern intel cpus: they snoop the cache for a packet, but also invalidate, so use a GETX and inval the LLC
+			reqSatisfiedCycle = l1d->store(dp->lbuf_addr, core_cycle, level, srcId, MemReq::PKTOUT);
+			cRec->record(core_cycle, core_cycle, reqSatisfiedCycle);
+		} else {// ddio: we snoop the cache for the data, but don't invalidate (GETS) + all other cases
+			reqSatisfiedCycle = l1d->load(dp->lbuf_addr, core_cycle, level, srcId, MemReq::PKTOUT) + (level == 3 ? 1 : 0) * L1D_LAT;
+			cRec->record(core_cycle, core_cycle, reqSatisfiedCycle);
+		}
 		
-
 		//////// get packet latency info from tag-starttime map //////
 		uint64_t ptag = dp->tag;
 		

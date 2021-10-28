@@ -120,7 +120,7 @@ uint64_t TimingCache::access(MemReq& req) {
     bool correct_level = (req_level == level);
     int32_t lineId = -1;
     //info("In cache access, req type is %s, my level is %d, input level is %d, childId is %d",AccessTypeName(req.type),level,req_level, req.childId);
-    bool no_record = ((req.flags) & (MemReq::NORECORD)) != 0;
+    bool no_record = 0;//((req.flags) & (MemReq::NORECORD)) != 0;
 
     EventRecorder* evRec = zinfo->eventRecorders[req.srcId];
     assert_msg(evRec, "TimingCache is not connected to TimingCore");
@@ -141,13 +141,13 @@ uint64_t TimingCache::access(MemReq& req) {
             lineId = array->lookup(req.lineAddr, &req, updateReplacement);
             respCycle += accLat;
 
-            if (lineId == -1 /*&& cc->shouldAllocate(req)*/ && !(req.flags & MemReq::PKTOUT)) {     // a NIC read that misses in the LLC should not allocate a line
+            if (lineId == -1 /*&& cc->shouldAllocate(req)*/ && !(req.flags & MemReq::PKTOUT)) {     // a NIC egress access that misses in the LLC should not allocate a line
                 assert(cc->shouldAllocate(req)); //dsm: for now, we don't deal with non-inclusion in TimingCache
 
                 //Make space for new line
                 Address wbLineAddr;
                 lineId = array->preinsert(req.lineAddr, &req, &wbLineAddr); //find the lineId to replace
-                trace(Cache, "[%s] Evicting 0x%lx", name.c_str(), wbLineAddr);
+                //info("[%s] Evicting 0x%lx", name.c_str(), wbLineAddr);
 
                 //Evictions are not in the critical path in any sane implementation -- we do not include their delays
                 //NOTE: We might be "evicting" an invalid line for all we know. Coherence controllers will know what to do
@@ -287,7 +287,13 @@ uint64_t TimingCache::access(MemReq& req) {
         }
     
         else {
+            //info("passing to mem");
             respCycle = cc->processAccess(req, lineId, respCycle, correct_level);
+            if(req.type == GETX) {  //dma write, might need to invalidate self/upper levels
+                bool reqWriteback;
+                InvReq req = {req.lineAddr, INV, &reqWriteback, req.cycle, 1742};
+                respCycle = MAX(this->finishInvalidate(req),respCycle);
+            }
         }
     }
     cc->endAccess(req);

@@ -101,52 +101,68 @@ class FilterCache : public Cache {
 
         // source: the id of the core issuing the request, used to signify which recorder is used
 
-        inline uint64_t load(Address vAddr, uint64_t curCycle, int lvl = 8, uint32_t source = 1742, uint32_t flags = 0) {
+        inline uint64_t load(Address vAddr, uint64_t curCycle, uint16_t lvl = 8, uint32_t source = 1742, uint32_t flags = 0) {
             Address vLineAddr = vAddr >> lineBits;
             uint32_t idx = vLineAddr & setMask;
             uint64_t availCycle = filterArray[idx].availCycle; //read before, careful with ordering to avoid timing races
             if ((lvl == 8) || (lvl == level)) {
-				
-				glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());	
-				uint64_t rbuf_base = (uint64_t) (&(nicInfo->nic_elem[srcId].recv_buf[0]));
-				uint64_t rbuf_top = (uint64_t) (&(nicInfo->nic_elem[srcId].recv_buf[RECV_BUF_POOL_SIZE-1]));
-				if(nicInfo->pp_policy==0){ // if ideal case
-					if((vAddr >= rbuf_base) && (vAddr<=rbuf_top)){
-					//info("core fetching packet in ideal case");
-						return curCycle;
-					}
-				}
-
-				//also assume cq and wq return immediately
-				uint64_t wq_base = (uint64_t) (nicInfo->nic_elem[srcId].wq);
-				uint64_t wq_top = wq_base + sizeof(rmc_wq_t);
-				uint64_t cq_base = (uint64_t) (nicInfo->nic_elem[srcId].cq);
-				uint64_t cq_top = cq_base + sizeof(rmc_cq_t);
-
-				if((vAddr >= wq_base) && (vAddr<=wq_top)){
-					return curCycle;
-				}
-				if((vAddr >= cq_base) && (vAddr<=cq_top)){
-					return curCycle;
-				}
-
+				//if ideal case
+				//if vLineAddr in recv_buf range for this core
+		glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());	
+		//assume cq and wq return immediately
+		uint64_t wq_base = (uint64_t) (nicInfo->nic_elem[srcId].wq);
+		uint64_t wq_top = wq_base + sizeof(rmc_wq_t);
+		uint64_t cq_base = (uint64_t) (nicInfo->nic_elem[srcId].cq);
+		uint64_t cq_top = cq_base + sizeof(rmc_cq_t);
+		if((vAddr >= wq_base) && (vAddr<=wq_top)){
+			return curCycle;
+		}
+		if((vAddr >= cq_base) && (vAddr<=cq_top)){
+			return curCycle;
+		}
                 if (vLineAddr == filterArray[idx].rdAddr) {
                     fGETSHit++;
                     return MAX(curCycle, availCycle);
                 } 
             }
 
+            if (lvl == 42) {       // ideal ingress coming from app core, if the data is nic-related return 0 latency
+                Address gm_base_addr = 0x00ABBA000000; // defined in galloc.cpp
+                Address gm_seg_size = 1<<30; //TODO: just use default? or wire it from init
+                Address nicLineAddr_bot = gm_base_addr >> lineBits;
+                Address nicLineAddr_top = (gm_base_addr + gm_seg_size) >> lineBits;
+                if (vLineAddr >= nicLineAddr_bot && vLineAddr <= nicLineAddr_top) {
+                    return curCycle;
+                }
+                else {
+                    lvl = level;
+                }
+            }
+
             if (source == 1742)
                 return replace(vLineAddr, idx, true, curCycle, srcId, 0, flags, (lvl == 8) ? level : lvl);
-            else 
+            else {
                 return replace(vLineAddr, idx, true, curCycle, source, MAX_CACHE_CHILDREN+1, flags, (lvl == 8) ? level : lvl); 
+            }
         }
 
-        inline uint64_t store(Address vAddr, uint64_t curCycle, int lvl = 8, uint32_t source = 1742, uint32_t flags = 0) {
+        inline uint64_t store(Address vAddr, uint64_t curCycle, uint16_t lvl = 8, uint32_t source = 1742, uint32_t flags = 0) {
             Address vLineAddr = vAddr >> lineBits;
             uint32_t idx = vLineAddr & setMask;
             uint64_t availCycle = filterArray[idx].availCycle; //read before, careful with ordering to avoid timing races
             if ((lvl == 8) || (lvl == level)) {
+		glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());	
+		//assume cq and wq return immediately
+		uint64_t wq_base = (uint64_t) (nicInfo->nic_elem[srcId].wq);
+		uint64_t wq_top = wq_base + sizeof(rmc_wq_t);
+		uint64_t cq_base = (uint64_t) (nicInfo->nic_elem[srcId].cq);
+		uint64_t cq_top = cq_base + sizeof(rmc_cq_t);
+		if((vAddr >= wq_base) && (vAddr<=wq_top)){
+			return curCycle;
+		}
+		if((vAddr >= cq_base) && (vAddr<=cq_top)){
+			return curCycle;
+		}
                 if (vLineAddr == filterArray[idx].wrAddr) {
                     fGETXHit++;
                     //NOTE: Stores don't modify availCycle; we'll catch matches in the core
@@ -157,8 +173,9 @@ class FilterCache : public Cache {
             
             if (source == 1742)
                 return replace(vLineAddr, idx, false, curCycle, srcId, 0, flags, (lvl == 8) ? level : lvl);
-            else 
+            else {
                 return replace(vLineAddr, idx, false, curCycle, source, MAX_CACHE_CHILDREN+1, flags, (lvl == 8) ? level : lvl);
+            }
         }
 
         uint64_t replace(Address vLineAddr, uint32_t idx, bool isLoad, uint64_t curCycle, uint32_t source, uint32_t childId, uint32_t flags, int lvl) {
@@ -169,8 +186,9 @@ class FilterCache : public Cache {
             Address nicLineAddr_bot = gm_base_addr >> lineBits;
             Address nicLineAddr_top = (gm_base_addr + gm_seg_size) >> lineBits;
             if (vLineAddr >= nicLineAddr_bot && vLineAddr <= nicLineAddr_top) {
-                //std::cout << "app accessing nic element " << std::hex << vLineAddr << std::endl;
+            //    //std::cout << "app accessing nic element " << std::hex << vLineAddr << std::endl;
                 procMask_f = 0;
+                flags = flags | MemReq::NETRELATED;
             }
             Address pLineAddr = procMask_f | vLineAddr;
             MESIState dummyState = MESIState::I;
@@ -181,16 +199,16 @@ class FilterCache : public Cache {
 
             //Due to the way we do the locking, at this point the old address might be invalidated, but we have the new address guaranteed until we release the lock
 
-            if (lvl == 8) {
-            //Careful with this order
-            Address oldAddr = filterArray[idx].rdAddr;
-            filterArray[idx].wrAddr = isLoad? -1L : vLineAddr;
-            filterArray[idx].rdAddr = vLineAddr;
+            if (lvl == level) {
+                //Careful with this order
+                Address oldAddr = filterArray[idx].rdAddr;
+                filterArray[idx].wrAddr = isLoad? -1L : vLineAddr;
+                filterArray[idx].rdAddr = vLineAddr;
 
-            //For LSU simulation purposes, loads bypass stores even to the same line if there is no conflict,
-            //(e.g., st to x, ld from x+8) and we implement store-load forwarding at the core.
-            //So if this is a load, it always sets availCycle; if it is a store hit, it doesn't
-            if (oldAddr != vLineAddr) filterArray[idx].availCycle = respCycle;
+                //For LSU simulation purposes, loads bypass stores even to the same line if there is no conflict,
+                //(e.g., st to x, ld from x+8) and we implement store-load forwarding at the core.
+                //So if this is a load, it always sets availCycle; if it is a store hit, it doesn't
+                if (oldAddr != vLineAddr) filterArray[idx].availCycle = respCycle;
             }
             futex_unlock(&filterLock);
             return respCycle;

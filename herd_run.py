@@ -10,6 +10,7 @@ import argparse
 
 # this is your base zsim directory
 home = '/nethome/acho44/zsim/zSim'
+#home = '/nethome/acho44/zsim/1027_zSim'
 herd_path = '/nethome/acho44/zsim/herd-sonuma-zsim/build/herd'
 
 # parse cmd args

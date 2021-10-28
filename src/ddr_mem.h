@@ -33,6 +33,7 @@
 #include "memory_hierarchy.h"
 #include "pad.h"
 #include "stats.h"
+#include "coherence_ctrls.h"
 
 
 /* Helper data structures */
@@ -276,6 +277,11 @@ class DDRMemory : public MemObject {
         // Scheduling event interface
         uint64_t tick(uint64_t sysCycle);
         void recycleEvent(SchedEvent* ev);
+
+        //void setChildrenMem(g_vector<BaseCache*>& children, Network* network);
+
+        //g_vector<BaseCache*> children_caches;
+        //g_vector<uint32_t> childrenRTTs;
 
     private:
         AddrLoc mapLineAddr(Address lineAddr);
