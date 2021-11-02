@@ -420,7 +420,7 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	futex_lock(&nicInfo->nic_elem[core_id].rb_lock);
 	uint32_t rb_head = allocate_recv_buf(8, nicInfo, core_id);
 	//dbgprint
-	info("allocate_recv_buf - rb_head = %d", rb_head);
+	//info("allocate_recv_buf - rb_head = %d", rb_head);
 
 	futex_unlock(&nicInfo->nic_elem[core_id].rb_lock);
 	if (rb_head > RECV_BUF_POOL_SIZE) {
@@ -612,7 +612,7 @@ int free_recv_buf(uint32_t head, uint32_t core_id) {
 
 	uint32_t blen = NICELEM.rb_dir[head].len;
 
-	info("free_recv_buf - core_id = %d, head = %d, block_len = %d", core_id, head, blen);
+	//info("free_recv_buf - core_id = %d, head = %d, block_len = %d", core_id, head, blen);
 
 	for (uint32_t i = head; i < head + blen; i++) {
 		NICELEM.rb_dir[i].in_use = false;
