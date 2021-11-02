@@ -971,7 +971,7 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
             }
 			if(nicInfo->send_in_loop){
             	uint64_t injection_cycle = core->curCycle;
-				for(int ii=3; ii<(nicInfo->registered_core_count+2); ii++){
+				for(int ii=3; ii<(nicInfo->registered_core_count+3); ii++){
 					if(!(nicInfo->nic_elem[ii].packet_pending)){
                         futex_lock(&nicInfo->nic_elem[ii].packet_pending_lock);
 						nicInfo->nic_elem[ii].packet_pending = true;
