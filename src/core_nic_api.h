@@ -225,7 +225,7 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle) {
 	return 0;
 }
 
-uint32_t allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t core_id) { 
+uint32_t allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t core_id, bool wrap_around=false) { 
 /*
 * allocate_recv_buf - finds free recv buffer from buffer pool and returns head index
 *				returns the index of allocated recv buffer, not the address!
@@ -242,7 +242,12 @@ uint32_t allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t c
 			{
 				if (i >= RECV_BUF_POOL_SIZE) {
 					NICELEM.rb_iterator = 0; //reset iteartor
-					return RECV_BUF_POOL_SIZE + 1;
+					if (!wrap_around) {
+						return allocate_revc_buf(blen, nicInfo, core_id, true);
+					}
+					else {
+						return RECV_BUF_POOL_SIZE + 1;
+					}
 				}
 				if (NICELEM.rb_dir[i].in_use == true)
 				{
@@ -289,6 +294,10 @@ uint32_t allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t c
 	}
 
 	NICELEM.rb_iterator = 0; //reset iteartor
+	if (!wrap_around) {
+		return allocate_revc_buf(blen, nicInfo, core_id, true);
+	}
+
 	return RECV_BUF_POOL_SIZE + 1; // indicate that we didn't find a fit
 
 }
