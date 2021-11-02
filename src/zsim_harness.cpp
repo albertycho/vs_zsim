@@ -663,6 +663,9 @@ int aggr=0;
             int temp1=0;
             for (int j=0; j<nicInfo->nic_elem[i].ts_nic_idx; j++) {
                 if(j%2==0){
+                    if (j > 2) {//add phases
+                        f<< nicInfo->nic_elem[i].phase_queue[(j - 2) / 2] << " ";
+                    }
                     f << "\nrequest " << temp1 << ": ";
                     temp1++;
                 }
