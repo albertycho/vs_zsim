@@ -162,7 +162,7 @@ uint64_t Cache::finishInvalidate(const InvReq& req) {
     int32_t lineId = array->lookup(req.lineAddr, nullptr, false);
     uint64_t respCycle = req.cycle;
     if (lineId == -1) {
-        assert_msg(req.srcId != 1742, "[%s] Invalidate on non-existing address 0x%lx type %s lineId %d, reqWriteback %d", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback);
+        assert_msg(req.srcId == 1742, "[%s] Invalidate on non-existing address 0x%lx type %s lineId %d, reqWriteback %d, srcId %d", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback, req.srcId);
         cc->finishInv();
     }
     else {

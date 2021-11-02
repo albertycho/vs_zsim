@@ -11,6 +11,7 @@
 #include "libzsim/zsim_nic_defines.hpp"
 #include <map>
 #include <memory>
+#include <queue>
 
 #include <chrono>
 
@@ -174,22 +175,28 @@ struct nic_element {
 	PAD();
 
 	//uint64_t* service_times;
-	uint32_t service_times[65000]; //as of now, I can't run more than 60k packets :(
+	uint32_t service_times[100000]; //as of now, I can't run more than 60k packets :(
 	uint64_t st_size;
 	//uint64_t st_capa;
 	uint32_t cur_service_start_time;
 	bool service_in_progress;
 	PAD();
 
+	uint32_t ts_queue[100000];
+	uint32_t ts_nic_queue[100000];
+	uint32_t phase_queue[100000];
+	int ts_idx = 0, ts_nic_idx = 0;
 
-
+	bool packet_pending;
+	PAD();
 };
 
 typedef struct done_packet_info {
 	uint64_t end_cycle;
 	uint64_t lbuf_addr;
 	uint64_t  tag;
-	
+	uint64_t len;
+	uint32_t ending_phase;
 	done_packet_info* next;
 	done_packet_info* prev;
 } done_packet_info;
@@ -232,6 +239,8 @@ struct glob_nic_elements {
 
 	uint32_t pp_policy;
 
+	bool send_in_loop;
+
 	std::chrono::system_clock::time_point sim_start_time;
 	std::chrono::system_clock::time_point sim_end_time;
 
@@ -253,6 +262,10 @@ typedef struct p_time_card {
 struct load_generator {
 	int next_cycle;
 	int interval;
+	int prev_cycle;
+	//dbg
+	uint64_t sum_interval;
+
 	int message; //may replace this to appropriate type
 	bool all_packets_sent;
 	uint64_t target_packet_count;
@@ -263,6 +276,9 @@ struct load_generator {
 	lock_t ptc_lock;	   // keeping code for DBG/Comparison purpose
 	//std::map<uint64_t, uint64_t> * tc_map;
 	std::shared_ptr<std::map<uint64_t, uint64_t>> tc_map;
+	std::shared_ptr<std::map<uint64_t, uint64_t>> tc_map_core;
+	std::shared_ptr<std::map<uint64_t, uint64_t>> tc_map_phase;
+	//std::shared_ptr<std::map<uint64_t, std::pair<uint64_t,uint64_t>>> tc_map;
 	RPCGenerator* RPCGen;
 };
 

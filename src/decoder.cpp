@@ -128,7 +128,7 @@ void Decoder::emitNicMagic(Instr& instr, DynUopVec& uops){
     uop.lat = 1;
 
 	uop.type = UOP_NIC_MAGIC;
-    uop.portMask = PORT_2;
+    uop.portMask = PORTS_015;
     uops.push_back(uop); //FIXME: The interface should support in-place grow...
 }
 

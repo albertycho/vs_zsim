@@ -13,21 +13,15 @@
 #include <errno.h>
 
 
-int register_buffer(void * val, void* field)
+void register_buffer(void * val, void* field)
 {
 //variables: start addr of WQ/CQ
 //			 size of WQ/CQ
 //can distinguish the type of variable depending on value of rbx?
-	int dummy;
-	asm volatile (
-		"movq %1, %%rbx;"
-		"movq %2, %%rcx;"
+	__asm__ __volatile__(
 		"xchg %%rbx, %%rbx;"
-		:"=r" (dummy)
-		:"r"(val), "r"(field)
-		:"%rbx","%rcx" //clobbered registers
+		::"b"((uint64_t)val),"c"((uint64_t)field) //clobbered registers
 	);
-	return 0;
 }
 
 
@@ -142,7 +136,7 @@ successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
 }
 
 //FIXME check data address datatype
-int rmc_hw_send(rmc_wq_t *wq, uint32_t ctx_id, void *data_address, uint64_t length, int nid)
+int rmc_hw_send(rmc_wq_t *wq, uint32_t ctx_id, void *data_address, uint64_t length, uint64_t nid)
 {
 	uint32_t wq_head = wq->head;
 
@@ -156,7 +150,7 @@ int rmc_hw_send(rmc_wq_t *wq, uint32_t ctx_id, void *data_address, uint64_t leng
 	length += CACHE_BLOCK_SIZE - 1;
 	length >>= CACHE_BLOCK_BITS;  //number of cache lines
 
-	 create_wq_entry(RMC_SEND, wq->SR, (uint32_t)ctx_id, (uint32_t)nid, (uint64_t)data_address, 0, length, (uint64_t)&(wq->q[wq_head]));
+	create_wq_entry(RMC_SEND, wq->SR, (uint32_t)ctx_id, nid, (uint64_t)data_address, 0, length, (uint64_t)&(wq->q[wq_head]));
 
 	wq->head =  wq->head + 1;
   	// check if WQ reached its end
@@ -168,7 +162,7 @@ int rmc_hw_send(rmc_wq_t *wq, uint32_t ctx_id, void *data_address, uint64_t leng
 	return 0;
 }
 
-void create_wq_entry(uint32_t op, bool SR, uint32_t cid, uint32_t nid,
+void create_wq_entry(uint32_t op, bool SR, uint32_t cid, uint64_t nid,
             uint64_t buf_addr, uint64_t offset, uint64_t length,
             uint64_t wq_entry_addr) {
 	

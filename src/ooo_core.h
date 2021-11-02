@@ -464,6 +464,8 @@ class OOOCore : public Core {
 
         FilterCache* l1d;
 
+        //int ts_idx = 0;
+        
         void initStats(AggregateStat* parentStat);
 
         uint64_t getInstrs() const;
@@ -519,7 +521,7 @@ class OOOCore : public Core {
         static void BranchFunc(THREADID tid, ADDRINT pc, BOOL taken, ADDRINT takenNpc, ADDRINT notTakenNpc);
         
         static void NicMagicFuncWrapper(THREADID tid, ADDRINT val, ADDRINT field);
-        static void NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT field);
+        void NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT field);
         
         static int  nic_ingress_routine(THREADID tid);
         static int  nic_egress_routine(THREADID tid);

@@ -151,18 +151,18 @@ class FilterCache : public Cache {
             uint32_t idx = vLineAddr & setMask;
             uint64_t availCycle = filterArray[idx].availCycle; //read before, careful with ordering to avoid timing races
             if ((lvl == 8) || (lvl == level)) {
-		glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());	
-		//assume cq and wq return immediately
-		uint64_t wq_base = (uint64_t) (nicInfo->nic_elem[srcId].wq);
-		uint64_t wq_top = wq_base + sizeof(rmc_wq_t);
-		uint64_t cq_base = (uint64_t) (nicInfo->nic_elem[srcId].cq);
-		uint64_t cq_top = cq_base + sizeof(rmc_cq_t);
-		if((vAddr >= wq_base) && (vAddr<=wq_top)){
-			return curCycle;
-		}
-		if((vAddr >= cq_base) && (vAddr<=cq_top)){
-			return curCycle;
-		}
+                glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());	
+                //assume cq and wq return immediately
+                uint64_t wq_base = (uint64_t) (nicInfo->nic_elem[srcId].wq);
+                uint64_t wq_top = wq_base + sizeof(rmc_wq_t);
+                uint64_t cq_base = (uint64_t) (nicInfo->nic_elem[srcId].cq);
+                uint64_t cq_top = cq_base + sizeof(rmc_cq_t);
+                if((vAddr >= wq_base) && (vAddr<=wq_top)){
+                    return curCycle;
+                }
+                if((vAddr >= cq_base) && (vAddr<=cq_top)){
+                    return curCycle;
+                }
                 if (vLineAddr == filterArray[idx].wrAddr) {
                     fGETXHit++;
                     //NOTE: Stores don't modify availCycle; we'll catch matches in the core

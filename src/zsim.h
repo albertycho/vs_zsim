@@ -36,7 +36,6 @@
 #include "nic_defines.h"
 
 
-
 class Core;
 class Scheduler;
 class AggregateStat;

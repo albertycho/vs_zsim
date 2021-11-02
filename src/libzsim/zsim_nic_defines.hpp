@@ -160,7 +160,7 @@ typedef struct wq_entry{
 	volatile bool valid;    //set with a new WQ entry, unset when entry completed. Required for pipelining async ops
 	uint64_t buf_addr;
 	uint32_t cid;
-	uint32_t nid;
+	uint64_t nid;
 	//second double-word (8 bytes)
 	uint64_t offset;
 	uint64_t length;
@@ -201,16 +201,15 @@ typedef struct rpcArgument {
 typedef void (async_handler)(uint8_t tid, wq_entry_t *head, void *owner);
 typedef void (receiveCallback)(uint8_t* rawRecvBufferPtr, rpcArg_t* argPointer);
 
-
-int register_buffer(void * val, void* field);
+void register_buffer(void * val, void* field);
 int reg_wq(rmc_wq_t ** wq);
 int reg_cq(rmc_cq_t **cq);
 
 
 successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq);
-int rmc_hw_send(rmc_wq_t *wq, uint32_t ctx_id, void *data_address, uint64_t length, int nid);
+int rmc_hw_send(rmc_wq_t *wq, uint32_t ctx_id, void *data_address, uint64_t length, uint64_t nid);
 
-void create_wq_entry(uint32_t op, bool SR, uint32_t cid, uint32_t nid,
+void create_wq_entry(uint32_t op, bool SR, uint32_t cid, uint64_t nid,
             uint64_t buf_addr, uint64_t offset, uint64_t length,
             uint64_t wq_entry_addr);
 int rmc_hw_recv(rmc_wq_t *wq, uint32_t ctx_id, void *recv_buf, uint64_t length);

@@ -74,7 +74,6 @@
 #include "virt/port_virtualizer.h"
 #include "weave_md1_mem.h" //validation, could be taken out...
 #include "zsim.h"
-
 extern void EndOfPhaseActions(); //in zsim.cpp
 
 /* zsim should be initialized in a deterministic and logical order, to avoid re-reading config vars
@@ -828,7 +827,8 @@ static void InitSystem(Config& config) {
     nicInfo->record_nic_access = record_nic_access;
 
     //uint32_t num_cores_serving_nw = config.get<uint32_t>("sim.num_cores_serving_nw", (zinfo->numCores - 1));
-    uint32_t num_cores_serving_nw = config.get<uint32_t>("sim.num_cores_serving_nw", (zinfo->numCores - 2));
+    uint32_t num_cores_serving_nw = config.get<uint32_t>("sim.num_cores_serving_nw", (zinfo->numCores - 3));
+	info("num server cores: %d\n", num_cores_serving_nw);
     nicInfo->expected_core_count = num_cores_serving_nw;
     nicInfo->registered_core_count = 0;
     nicInfo->nic_init_done = false;
@@ -842,6 +842,8 @@ static void InitSystem(Config& config) {
     uint32_t nw_roundtrip_delay = config.get<uint32_t>("sim.nw_roundtrip_delay", 100);
     nicInfo->nw_roundtrip_delay = nw_roundtrip_delay;
 
+    bool send_in_loop = config.get<bool>("sim.send_in_loop", false);
+	nicInfo->send_in_loop = send_in_loop;
 
     load_generator* lgp;
     lgp=(load_generator*)gm_get_lg_ptr();
@@ -855,6 +857,7 @@ static void InitSystem(Config& config) {
     uint32_t target_pacekt_count = config.get<uint32_t>("sim.packet_count", 10000);
     lgp->target_packet_count = (uint64_t) target_pacekt_count;
     lgp->last_core = 0;
+	lgp->sum_interval=0;
     
 
     info("Initialized system");
@@ -954,7 +957,12 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     ((load_generator*)lgp)->ptc_head = NULL;
     //((load_generator*)lgp)->tc_map = new std::map<uint64_t, uint64_t>();
     auto tmp_tcmap = std::shared_ptr<map<uint64_t, uint64_t>>(new ::map<uint64_t, uint64_t>());
+    auto tmp_tcmap1 = std::shared_ptr<map<uint64_t, uint64_t>>(new ::map<uint64_t, uint64_t>());
+    auto tmp_tcmap2 = std::shared_ptr<map<uint64_t, uint64_t>>(new ::map<uint64_t, uint64_t>());
+    //auto tmp_tcmap = std::shared_ptr<map<uint64_t, std::pair<uint64_t,uint64_t>>>(new ::map<uint64_t, std::pair<uint64_t,uint64_t>>);
     ((load_generator*)lgp)->tc_map = tmp_tcmap;
+    ((load_generator*)lgp)->tc_map_core = tmp_tcmap1;
+    ((load_generator*)lgp)->tc_map_phase = tmp_tcmap2;
     futex_init(&(((load_generator*)lgp)->ptc_lock));
     gm_set_lg_ptr(lgp);
 
@@ -965,7 +973,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     nicInfo->done_packet_q_head = NULL;
     nicInfo->done_packet_q_tail = NULL;
     //nicInfo->RPCGen = new RPCGenerator(100, 10);
-    for (uint64_t i = 0; i < MAX_THREADS; i++) {
+    for (uint64_t i = 0; i < MAX_NUM_CORES; i++) {
         nicInfo->nic_elem[i].wq = gm_calloc<rmc_wq_t>();
         nicInfo->nic_elem[i].cq = gm_calloc<rmc_cq_t>();
         futex_init(&nicInfo->nic_elem[i].rb_lock);
@@ -975,6 +983,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 		nicInfo->nic_elem[i].cq_check_spin_count=0;
 		nicInfo->nic_elem[i].cq_check_inner_loop_count =0;
         nicInfo->nic_elem[i].cq_check_outer_loop_count = 0;
+        nicInfo->nic_elem[i].packet_pending = false;
     }
     nicInfo->latencies = gm_calloc<uint64_t>(LAT_ARR_SIZE);
     //nicInfo->latencies_list = gm_calloc<uint64_t>(LAT_ARR_SIZE);

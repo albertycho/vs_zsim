@@ -551,14 +551,14 @@ int main(int argc, char *argv[]) {
     latency_hist_file.close();
 
 
-
+/*
 	info("start writing to service time file");
     std::ofstream service_time_file("service_times.txt");
     std::ofstream st_stat_file("service_times_stats.txt");
     std::ofstream cq_spin_stat_file("cq_check_spin_count.txt");
 
 	uint64_t total_iter_count=0;
-	for(uint64_t kkk = 2; kkk<nicInfo->expected_core_count+2;kkk++){
+	for(uint64_t kkk = 3; kkk<nicInfo->expected_core_count+3;kkk++){
 		service_time_file << "CORE " << kkk-1 << std::endl;
 		st_stat_file << "CORE " << kkk-1 << std::endl;
 		cq_spin_stat_file << "CORE " << kkk-1 << std::endl;
@@ -622,6 +622,7 @@ int main(int argc, char *argv[]) {
 		st_stat_file << "90perc: " << sorted_service_time[index_90] << std::endl;
 
 	}
+
 	int med_index = total_iter_count / 2 ;
 	int index_80 = total_iter_count * 80 / 100 ;
 	int index_90 = total_iter_count * 90 / 100 ;
@@ -642,7 +643,46 @@ int main(int argc, char *argv[]) {
 	service_time_file.close();
 	st_stat_file.close();
 	cq_spin_stat_file.close();
+*/
+int aggr=0;
+    for(int i=0; i<MAX_NUM_CORES; i++) {
+        if(nicInfo->nic_elem[i].ts_idx) {
+            //assert(nicInfo->nic_elem[i].ts_idx/4 == nicInfo->nic_elem[i].ts_nic_idx/2);
+            std::ofstream f("timestamps_core_"+std::to_string(i)+".txt");
+            int temp=0;
+            for (int j=0; j<nicInfo->nic_elem[i].ts_idx; j++) {
+                if(j%4==0){
+                    f << "\nrequest " << temp << ": ";
+                    temp++;
+                }
+                f << nicInfo->nic_elem[i].ts_queue[j] << " ";
+            }
+            f.close();
+
+            f.open("timestamps_nic_core_"+std::to_string(i)+".txt");
+            int temp1=0;
+            for (int j=0; j<nicInfo->nic_elem[i].ts_nic_idx; j++) {
+                if(j%2==0){
+                    f << "\nrequest " << temp1 << ": ";
+                    temp1++;
+                }
+                f << nicInfo->nic_elem[i].ts_nic_queue[j] << " ";
+            }
+            f.close();
+
+            //assert(temp == temp1);
+        }
+        info("%d",nicInfo->nic_elem[i].ts_nic_idx);
+        aggr += nicInfo->nic_elem[i].ts_nic_idx;
+    }
+
+    info("%d",aggr);
+
 	
+	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
+	uint64_t average_interval = (lg_p->sum_interval) / (nicInfo->latencies_size);
+	std::cout<<"average interval: "<<average_interval<<std::endl;
+
 //	for (uint64_t iii = 0; iii < nicInfo->latencies_size; iii++) {
 //        map_latency_file << nicInfo->latencies[iii] << std::endl;
 

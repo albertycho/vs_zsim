@@ -64,7 +64,7 @@ RPCGenerator::set_num_keys(size_t i_num_keys) {
     key_arr = get_random_permutation(num_keys, 1 /*clt id*/, &srand_seed);
 }
 
-void
+int
 RPCGenerator::generatePackedRPC(char* userBuffer) const {
     bool is_update = true; //(std::rand() % 100) < (int)update_fraction ? true : false;
     //bool is_update = (std::rand() % 100) < (int)update_fraction ? true : false;
@@ -89,7 +89,7 @@ RPCGenerator::generatePackedRPC(char* userBuffer) const {
 
     //printf("Generated packet with opcode %d, val_len %d, key %llx\n", req.opcode, req.val_len, hval);
 
-    return;
+    return sizeof(req);
 }
 
 uint32_t
