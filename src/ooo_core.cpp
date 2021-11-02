@@ -974,7 +974,7 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
             	uint64_t injection_cycle = core->curCycle;
 				for(int ii=3; ii<(nicInfo->registered_core_count+3); ii++){
 					if(!(nicInfo->nic_elem[ii].packet_pending)){
-                        info("if packet_pending: ooo_core.cpp line 977");
+                        info("if !packet_pending: ooo_core.cpp line 977");
                         futex_lock(&nicInfo->nic_elem[ii].packet_pending_lock);
 						nicInfo->nic_elem[ii].packet_pending = true;
                         futex_unlock(&nicInfo->nic_elem[ii].packet_pending_lock);
@@ -987,7 +987,7 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
                     else {
                         info("if inj_attempt: ooo_core.cpp line 987");
                         inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, ii, srcId, core, &(core->cRec), l1d_caches[ii], core->ingr_type);
-                        info("after inj_attempt: ooo_core.cpp line 989");
+                        info("after inj_attempt: ooo_core.cpp line 989, inj_attempt = %d", inj_attempt);
                     }
 					
 					}
