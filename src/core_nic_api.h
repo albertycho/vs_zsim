@@ -812,6 +812,7 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
 	if (cur_wq_entry.op == RMC_SEND)
 	{
 		if(nicInfo->send_in_loop){
+			info("process_wq_entry if send_in_loop, ptag = %d", cur_wq_entry.nid);
 			assert(nicInfo->nic_elem[core_id].packet_pending==true);
 			futex_lock(&nicInfo->nic_elem[core_id].packet_pending_lock);
 			nicInfo->nic_elem[core_id].packet_pending=false;

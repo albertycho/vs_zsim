@@ -740,7 +740,7 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
         break;
 
     case NOTIFY_WQ_WRITE://NOTIFY WQ WRITE from application
-        //info("notify_wq_write")
+        info("notify_wq_write")
         nic_rgp_action(core_id, nicInfo);
         break;
     case 0xB: //indicate app is nic_proxy_process (INGRESS)
@@ -970,7 +970,7 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
                 info("starting sim time count");
             }
 			if(nicInfo->send_in_loop){
-                info("if send_in_loop: ooo_core.cpp line 973");
+                //info("if send_in_loop: ooo_core.cpp line 973");
             	uint64_t injection_cycle = core->curCycle;
 				for(int ii=3; ii<(nicInfo->registered_core_count+3); ii++){
 					if(!(nicInfo->nic_elem[ii].packet_pending)){
