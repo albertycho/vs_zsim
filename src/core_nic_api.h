@@ -815,16 +815,13 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
 	* process_wq_entry - handles the wq_entry by calling appropirate action based on OP
 	*/
 	if (cur_wq_entry.op == RMC_RECV) {
-		info("RMC_RECV");
 		free_recv_buf_addr(cur_wq_entry.buf_addr, core_id);
 		return;
 	}
 
 	if (cur_wq_entry.op == RMC_SEND)
 	{
-		info("process_wq_entry if RMC_SEND, ptag = %d", cur_wq_entry.nid);
 		if(nicInfo->send_in_loop){
-			info("process_wq_entry if send_in_loop, ptag = %d", cur_wq_entry.nid);
 			assert(nicInfo->nic_elem[core_id].packet_pending==true);
 			futex_lock(&nicInfo->nic_elem[core_id].packet_pending_lock);
 			nicInfo->nic_elem[core_id].packet_pending=false;
