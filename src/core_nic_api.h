@@ -198,7 +198,7 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle) {
 	
 	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
 	if(nicInfo->send_in_loop){
-		info("send_in_loop");
+		//info("send_in_loop");
 		if(!(lg_p->prev_cycle==0)){
 			lg_p->sum_interval = lg_p->sum_interval + (cur_cycle-(lg_p->prev_cycle));
 		}
