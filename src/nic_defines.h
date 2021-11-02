@@ -188,6 +188,7 @@ struct nic_element {
 	int ts_idx = 0, ts_nic_idx = 0;
 
 	bool packet_pending;
+	lock_t packet_pending_lock;
 	PAD();
 };
 

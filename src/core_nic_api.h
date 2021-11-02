@@ -791,7 +791,7 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 		uint64_t p_latency = end_cycle - start_cycle;
 		insert_latency_stat(p_latency);
 
-		std::cout << "Packet Tag: " << ptag << ", start_cycle: " << start_cycle << ", end_cycle: " << end_cycle << ", p_latency: " << p_latency << std::endl;
+		std::cout << "Packet Tag: " << ptag << ", core "<<core_id << ", start_cycle: " << start_cycle << ", end_cycle: " << end_cycle << ", p_latency: " << p_latency << std::endl;
 
 
 	}
@@ -813,7 +813,9 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
 	{
 		if(nicInfo->send_in_loop){
 			assert(nicInfo->nic_elem[core_id].packet_pending==true);
+			futex_lock(&nicInfo->nic_elem[core_id].packet_pending);
 			nicInfo->nic_elem[core_id].packet_pending=false;
+			futex_unlock(&nicInfo->nic_elem[core_id].packet_pending);
 		}
 
 		//TODO - define this somewhere else? decide how to handle nw_roundtrip_delay

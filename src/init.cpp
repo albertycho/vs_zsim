@@ -984,6 +984,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 		nicInfo->nic_elem[i].cq_check_inner_loop_count =0;
         nicInfo->nic_elem[i].cq_check_outer_loop_count = 0;
         nicInfo->nic_elem[i].packet_pending = false;
+        futex_init(&nicInfo->nic_elem[i].packet_pending_lock);
     }
     nicInfo->latencies = gm_calloc<uint64_t>(LAT_ARR_SIZE);
     //nicInfo->latencies_list = gm_calloc<uint64_t>(LAT_ARR_SIZE);
