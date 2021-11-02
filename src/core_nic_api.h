@@ -243,7 +243,7 @@ uint32_t allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t c
 				if (i >= RECV_BUF_POOL_SIZE) {
 					NICELEM.rb_iterator = 0; //reset iteartor
 					if (!wrap_around) {
-						return allocate_revc_buf(blen, nicInfo, core_id, true);
+						return allocate_recv_buf(blen, nicInfo, core_id, true);
 					}
 					else {
 						return RECV_BUF_POOL_SIZE + 1;
@@ -295,7 +295,7 @@ uint32_t allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t c
 
 	NICELEM.rb_iterator = 0; //reset iteartor
 	if (!wrap_around) {
-		return allocate_revc_buf(blen, nicInfo, core_id, true);
+		return allocate_recv_buf(blen, nicInfo, core_id, true);
 	}
 
 	return RECV_BUF_POOL_SIZE + 1; // indicate that we didn't find a fit
