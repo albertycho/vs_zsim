@@ -166,7 +166,9 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 			panic("cq_entry write failed");
 			return -1;
 		}
-		nicInfo->nic_elem[core_id].ceq2cq_ts[(nicInfo->nic_elem[core_id].ceq2cq_idx++)] = cur_cycle;
+		if (cqwrev->cqe.success == 0x7f) {
+			nicInfo->nic_elem[core_id].ceq2cq_ts[(nicInfo->nic_elem[core_id].ceq2cq_idx++)] = cur_cycle;
+		}
 	}
 	return 0;
 }

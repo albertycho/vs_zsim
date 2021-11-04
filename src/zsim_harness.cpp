@@ -678,7 +678,7 @@ int aggr=0;
                     temp1++;
                 }
                 else {
-                    f << nicInfo->nic_elem[i].ceq2cq_ts[(j / 2)] << " ";
+                    f << nicInfo->nic_elem[i].ceq2cq_ts[((j-1) / 2)] << " ";
                 }
                 f << nicInfo->nic_elem[i].ts_nic_queue[j] << " ";
             }
