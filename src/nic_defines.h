@@ -185,7 +185,8 @@ struct nic_element {
 	uint32_t ts_queue[100000];
 	uint32_t ts_nic_queue[100000];
 	uint32_t phase_queue[100000];
-	int ts_idx = 0, ts_nic_idx = 0;
+	uint32_t ceq2cq_ts[100000];
+	int ts_idx = 0, ts_nic_idx = 0, ceq2cq_idx = 0;
 
 	bool packet_pending;
 	lock_t packet_pending_lock;

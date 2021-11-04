@@ -149,7 +149,7 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 	uint64_t cq_head = nicInfo->nic_elem[core_id].cq_head;
 
 	if (cq->SR == cq->q[cq_head].SR) {
-		//info("cq for core %lu is full", core_id);
+		info("cq for core %lu is full", core_id);
 		return -1;
 	}
 
@@ -166,6 +166,7 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 			panic("cq_entry write failed");
 			return -1;
 		}
+		nicInfo->nic_elem[core_id].ceq2cq_ts[(nicInfo->nic_elem[core_id].ceq2cq_idx++)] = cur_cycle;
 	}
 	return 0;
 }

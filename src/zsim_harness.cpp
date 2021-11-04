@@ -677,6 +677,9 @@ int aggr=0;
                     f << "\nrequest " << temp1 << ": ";
                     temp1++;
                 }
+                else {
+                    f << nicInfo->nic_elem[i].ceq2cq_ts[(j / 2)] << " ";
+                }
                 f << nicInfo->nic_elem[i].ts_nic_queue[j] << " ";
             }
             f << nicInfo->nic_elem[i].phase_queue[((nicInfo->nic_elem[i].ts_nic_idx) - 2) / 2] << " ";
