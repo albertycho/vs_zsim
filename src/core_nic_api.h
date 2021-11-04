@@ -160,15 +160,16 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 		cq_wr_event* cqwrev = deq_cq_wr_event(nicInfo, core_id);
 		//dbgprint
 		//info("CEQ_size:%d", nicInfo->nic_elem[core_id].ceq_size);
+		if (cqwrev->cqe.success == 0x7f) {
+			nicInfo->nic_elem[core_id].ceq2cq_ts[(nicInfo->nic_elem[core_id].ceq2cq_idx++)] = cur_cycle;
+		}
 
 		if (process_cq_wr_event(cqwrev, nicInfo, core_id) != 0)
 		{
 			panic("cq_entry write failed");
 			return -1;
 		}
-		if (cqwrev->cqe.success == 0x7f) {
-			nicInfo->nic_elem[core_id].ceq2cq_ts[(nicInfo->nic_elem[core_id].ceq2cq_idx++)] = cur_cycle;
-		}
+
 	}
 	return 0;
 }
