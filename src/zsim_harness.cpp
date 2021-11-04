@@ -530,6 +530,13 @@ int main(int argc, char *argv[]) {
     info("writing to latency_hist file");
     std::ofstream latency_hist_file("latency_hist.txt");
 
+	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
+	uint64_t average_interval = (lg_p->sum_interval) / (nicInfo->latencies_size);
+	std::cout<<"average interval: "<<average_interval<<std::endl;
+
+	latency_hist_file <<"average interval: "<<average_interval<<std::endl;
+
+
     uint64_t median_index = (nicInfo->latencies_size) / 2;
     uint64_t percentile_80_index = ((nicInfo->latencies_size) * 80) / 100;
     uint64_t percentile_90_index = ((nicInfo->latencies_size) * 90) / 100;
@@ -542,6 +549,7 @@ int main(int argc, char *argv[]) {
     latency_hist_file << "90-percentile : " << sorted_latencies[percentile_90_index] << std::endl;
     latency_hist_file << "95-percentile : " << sorted_latencies[percentile_95_index] << std::endl;
     latency_hist_file << "99-percentile : " << sorted_latencies[percentile_99_index] << std::endl;
+
 
     latency_hist_file << std::endl;
 
@@ -683,10 +691,6 @@ int aggr=0;
     info("%d",aggr);
 
 	
-	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
-	uint64_t average_interval = (lg_p->sum_interval) / (nicInfo->latencies_size);
-	std::cout<<"average interval: "<<average_interval<<std::endl;
-
 //	for (uint64_t iii = 0; iii < nicInfo->latencies_size; iii++) {
 //        map_latency_file << nicInfo->latencies[iii] << std::endl;
 
