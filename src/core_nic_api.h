@@ -82,7 +82,7 @@ int put_cq_entry(cq_entry_t ncq_entry, glob_nic_elements* nicInfo, uint64_t core
 	rmc_cq_t* cq = nicInfo->nic_elem[core_id].cq;
 	uint64_t cq_head = nicInfo->nic_elem[core_id].cq_head;
 	//if (cq->SR == cq->q[cq_head].SR) {
-	if ((cq->tail == cq_head) && (cq.SR != nicinfo->nic_elem[core_id].ncq_SR)) {
+	if ((cq->tail == cq_head) && (cq.SR != nicInfo->nic_elem[core_id].ncq_SR)) {
 		info("FAILED cq->SR == cq->q[cq_head].SR check");
 		info("cq_head=%lu",cq_head);
 		return -1;
@@ -150,7 +150,7 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 	uint64_t cq_head = nicInfo->nic_elem[core_id].cq_head;
 
 	//if (cq->SR == cq->q[cq_head].SR) {
-	if( (cq->tail==cq_head) && (cq.SR!=nicinfo->nic_elem[core_id].ncq_SR) ){
+	if( (cq->tail==cq_head) && (cq.SR!=nicInfo->nic_elem[core_id].ncq_SR) ){
 		info("cq for core %lu is full, curcycle: %lu", core_id, cur_cycle);
 		return -1;
 	}
