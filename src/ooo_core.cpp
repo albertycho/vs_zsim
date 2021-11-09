@@ -834,7 +834,7 @@ int aggr = 0;
 
 uint32_t assign_core(uint32_t in_core_iterator=0) {
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-    uint64_t min_ceq_size = ~0;//RECV_BUF_POOL_SIZE; // assign some very large number
+    uint64_t min_q_size = ~0;//RECV_BUF_POOL_SIZE; // assign some very large number
     uint32_t ret_core_id = in_core_iterator;
     uint32_t core_iterator = in_core_iterator;
 
@@ -848,10 +848,16 @@ uint32_t assign_core(uint32_t in_core_iterator=0) {
 
     for (uint32_t i = 0; i < numCores; i++) {
         if (nicInfo->nic_elem[core_iterator].cq_valid == true) {
-            if (nicInfo->nic_elem[core_iterator].ceq_size < min_ceq_size) {
+            uint32_t cq_head = nicInfo->nic_elem[core_iterator].cq_head;
+            uint32_t cq_tail = nicInfo->nic_elem[core_iterator].cq->tail;
+            if (cq_head < cq_tail) {
+                cq_head += MAX_NUM_WQ;
+            }
+            uint32_t cq_size = cq_head - cq_tail;
+            if ((nicInfo->nic_elem[core_iterator].ceq_size + cq_size) < min_q_size) {
                 ret_core_id = core_iterator;
-                min_ceq_size = nicInfo->nic_elem[core_iterator].ceq_size;
-                if (min_ceq_size == 0) {
+                min_q_size = nicInfo->nic_elem[core_iterator].ceq_size + cq_size;
+                if (min_q_size == 0) {
                     //info("ret_core_id: %d", ret_core_id);
                     return ret_core_id;
                 }
