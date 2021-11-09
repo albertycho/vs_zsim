@@ -182,10 +182,10 @@ struct nic_element {
 	bool service_in_progress;
 	PAD();
 
-	uint32_t ts_queue[100000];
-	uint32_t ts_nic_queue[100000];
+	uint32_t ts_queue[1000000];
+	uint32_t ts_nic_queue[1000000];
 	uint32_t phase_queue[100000];
-	uint32_t ceq2cq_ts[100000];
+	uint32_t ceq2cq_ts[1000000];
 	int ts_idx = 0, ts_nic_idx = 0, ceq2cq_idx = 0;
 
 	bool packet_pending;
