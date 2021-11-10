@@ -136,6 +136,8 @@ class FilterCache : public Cache {
             }
 
             if (lvl == 42) {       // ideal ingress coming from app core, if the data is nic-related return 0 latency
+                //dbg
+                info("filter cache %d: code gets to ideal ingr");
                 Address gm_base_addr = 0x00ABBA000000; // defined in galloc.cpp
                 Address gm_seg_size = 1<<30; //TODO: just use default? or wire it from init
                 Address nicLineAddr_bot = gm_base_addr >> lineBits;
