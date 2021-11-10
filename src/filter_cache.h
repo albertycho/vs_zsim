@@ -145,12 +145,13 @@ class FilterCache : public Cache {
                 uint64_t lb_top = (uint64_t) (&(nicInfo->nic_elem[srcId].lbuf[nicInfo->nic_elem[srcId].num_lbuf]));
 
                 //dbg
-                if(nicInfo->nic_init_done){
+                load_generator * lg_p = (load_generator*) static_cast<void*>(gm_get_lg_ptr());
+                if(lg_p->ready_to_inject==0xabcd){
                 Address nicAddr_bot = gm_base_addr;
                 Address nicAddr_top = gm_base_addr + gm_seg_size;
                 std::cout<<std::hex<<"nic_base: "<<nicAddr_bot<<", nic_top: "<<nicAddr_top<<", rb_base: "<<rb_base<<", rb_top: "<<rb_top<<", lb_base: "<<lb_base<<", lb_top: "<<lb_top<<std::endl;
                 }
-                
+
 
                 if((vAddr >= rb_base) && (vAddr<=rb_top)){
                     return curCycle;
