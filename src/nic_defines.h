@@ -159,6 +159,7 @@ struct nic_element {
 	//uint64_t lbuf[RECV_BUF_POOL_SIZE];
 	//z_cacheline lbuf[RECV_BUF_POOL_SIZE];
 	z_cacheline *lbuf;
+	uint64_t num_lbuf;
 	recv_buf_dir_t rb_dir[RECV_BUF_POOL_SIZE];
 	uint32_t rb_iterator;
 	uint64_t cq_check_spin_count;
