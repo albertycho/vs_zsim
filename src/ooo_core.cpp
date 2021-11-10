@@ -535,6 +535,12 @@ void OOOCore::cSimEnd() {
     uint64_t targetCycle = cRec.cSimEnd(curCycle);
     assert(targetCycle >= curCycle);
     if (targetCycle > curCycle) advance(targetCycle);
+
+	//void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
+    //load_generator* lg_p = (load_generator*)lg_p_vp;
+	//if (lg_p->ready_to_inject==0x1234){
+	//	lg_p->ready_to_inject=0xabcd;
+	//}
 }
 
 void OOOCore::advance(uint64_t targetCycle) {
@@ -771,6 +777,11 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
     case 0xD: //send all client_done boolean to the server app to monitor for termination condition
         *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(lg_p->all_packets_sent));
 		info("after handling monitor_client_done");
+		lg_p->server_ready_count++;
+		if(lg_p->server_ready_count==nicInfo->expected_core_count){
+			lg_p->inject_start_phase = (zinfo->numPhases + 2);
+			lg_p->ready_to_inject=0x1234;
+		}
         break;
 
 	case 0xE:
@@ -871,7 +882,7 @@ uint32_t assign_core(uint32_t in_core_iterator=0) {
         }
 
     }
-    //info("ret_core_id: %d, min_ceq_size: %lu", ret_core_id, min_ceq_size);
+    info("ret_core_id: %d, min_cq_size: %lu, min_ceq_size:%lu", ret_core_id, min_q_size-nicInfo->nic_elem[ret_core_id].ceq_size, nicInfo->nic_elem[ret_core_id].ceq_size);
     return ret_core_id;
 
 }
@@ -975,6 +986,9 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
                 nicInfo->sim_start_time = std::chrono::system_clock::now();
                 info("starting sim time count");
             }
+			if(lg_p->sent_packets==0){
+                lg_p->next_cycle = core->curCycle;
+			}
 			if(nicInfo->send_in_loop){
                 //info("if send_in_loop: ooo_core.cpp line 973");
             	uint64_t injection_cycle = core->curCycle;
@@ -998,7 +1012,17 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
 
             	uint64_t injection_cycle = core->curCycle;
             	uint32_t idle_core = find_idle_core(((load_generator*)lg_p)->last_core);
-            	if(lg_p->next_cycle <= injection_cycle && idle_core > 1){
+				//dbg
+				if(idle_core < 2){
+					info("idle_core < 2, not injecting");
+				}
+
+            	if(lg_p->next_cycle <= injection_cycle && idle_core > 1 &&
+						(lg_p->ready_to_inject==0xabcd)){
+					uint64_t server3_curcycle = ((OOOCore*)(zinfo->cores[4]))->getCycles_forSynch();
+					if((core->curCycle < server3_curcycle)  && ((server3_curcycle - (core->curCycle))> 100) ){
+						info("nicIngress @ injection: clock skew is large: serverClock - nicClock = %lu", (server3_curcycle - (core->curCycle)));
+					}
             	    //uint32_t core_iterator = assign_core(core_iterator);
             	    uint32_t core_iterator = assign_core(((load_generator*)lg_p)->last_core);
             	    //info("core_iterator returned %d", core_iterator);
@@ -1012,6 +1036,11 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
 
             	    return inj_attempt;
             	}
+				else if(lg_p->ready_to_inject==0x1234){
+					if(lg_p->inject_start_phase <= zinfo->numPhases){
+						lg_p->ready_to_inject=0xabcd;
+					}
+				}
 			}
         }    
     }

@@ -270,8 +270,11 @@ struct load_generator {
 
 	int message; //may replace this to appropriate type
 	bool all_packets_sent;
+	uint32_t ready_to_inject=0;
+	uint64_t inject_start_phase=0;
+	int server_ready_count=0;
 	uint64_t target_packet_count;
-	//uint64_t sent_packets;
+	uint64_t sent_packets=0;
 	uint64_t last_core;
 	uint64_t ptag;
 	p_time_card* ptc_head; // this linked list packet_time_card is not used, 

@@ -114,6 +114,15 @@ class FilterCache : public Cache {
 		uint64_t wq_top = wq_base + sizeof(rmc_wq_t);
 		uint64_t cq_base = (uint64_t) (nicInfo->nic_elem[srcId].cq);
 		uint64_t cq_top = cq_base + sizeof(rmc_cq_t);
+		
+		uint64_t rb_base = (uint64_t) (&(nicInfo->nic_elem[srcId].recv_buf[0]));
+		uint64_t rb_top = (uint64_t) (&(nicInfo->nic_elem[srcId].recv_buf[RECV_BUF_POOL_SIZE]));
+
+		if((vAddr >= rb_base) && (vAddr<=rb_top)){
+			return curCycle;
+		}
+
+
 		if((vAddr >= wq_base) && (vAddr<=wq_top)){
 			return curCycle;
 		}
@@ -157,6 +166,14 @@ class FilterCache : public Cache {
                 uint64_t wq_top = wq_base + sizeof(rmc_wq_t);
                 uint64_t cq_base = (uint64_t) (nicInfo->nic_elem[srcId].cq);
                 uint64_t cq_top = cq_base + sizeof(rmc_cq_t);
+		
+			uint64_t rb_base = (uint64_t) (&(nicInfo->nic_elem[srcId].recv_buf[0]));
+			uint64_t rb_top = (uint64_t) (&(nicInfo->nic_elem[srcId].recv_buf[RECV_BUF_POOL_SIZE]));
+
+			if((vAddr >= rb_base) && (vAddr<=rb_top)){
+				return curCycle;
+			}
+
                 if((vAddr >= wq_base) && (vAddr<=wq_top)){
                     return curCycle;
                 }
