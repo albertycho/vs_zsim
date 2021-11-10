@@ -141,7 +141,7 @@ class FilterCache : public Cache {
                 uint64_t rb_base = (uint64_t) (&(nicInfo->nic_elem[srcId].recv_buf[0]));
                 uint64_t rb_top = (uint64_t) (&(nicInfo->nic_elem[srcId].recv_buf[RECV_BUF_POOL_SIZE]));
 
-                uint64_t lb_base = (uint64_t) (nicInfo->nic_elem[srcId].lbuf);
+                uint64_t lb_base = (uint64_t) (&(nicInfo->nic_elem[srcId].lbuf[0]));
                 uint64_t lb_top = (uint64_t) (&(nicInfo->nic_elem[srcId].lbuf[nicInfo->nic_elem[srcId].num_lbuf]));
 
                 //dbg
