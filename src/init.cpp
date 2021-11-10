@@ -738,7 +738,8 @@ static void InitSystem(Config& config) {
                         ingr = config.get<const char*>(prefix + "ingress", "mem");        // choices are: l1, l2, llc, mem, ideal
                         egr = config.get<const char*>(prefix + "egress", "mem");        // choices are: llc, mem, ideal
                         //dbg
-                        info("%s ingress:%s, egress:%s", ingr, egr);
+                        info("%s ingress:%s, egress:%s", prefix, ingr, egr);
+                        //std::cout<<
                         OOOCore* ocore = new (&oooCores[j]) OOOCore(ic, dc, domain, name, coreIdx, ingr, egr);
                         zinfo->eventRecorders[coreIdx] = ocore->getEventRecorder();
                         zinfo->eventRecorders[coreIdx]->setSourceId(coreIdx);
