@@ -593,7 +593,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     
 	glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 
-    if ((nicInfo->nic_ingress_pid == procIdx){
+    if (nicInfo->nic_ingress_pid == procIdx){
         nicInfo->nic_phase_trans=false;
     }
     //dbgprint
@@ -639,6 +639,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
 				//if( ((((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch()) % zinfo->phaseLength) < 710){
                 if(nicInfo->nic_phase_trans==true){
 
+                    info("doesthis happen?")
                 //if (safety_counter > 1000000000000) { // >2 seems to work in current env. May need to be adjusted when running on different machine
                     nicInfo->clock_sync_count++;
                     break;
@@ -651,7 +652,9 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     while (core->curCycle > core->phaseEndCycle) {
         //info("while loop for phase sync in bbl");
         core->phaseEndCycle += zinfo->phaseLength;
-        nicInfo->nic_phase_trans=true;
+        if (nicInfo->nic_ingress_pid == procIdx){
+            nicInfo->nic_phase_trans=true;
+        }
 
         //RESIDUE of batch injection per phase. 
         //  Keeping code until we get confidence with per-cycle injection
