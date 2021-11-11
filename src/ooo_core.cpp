@@ -622,25 +622,21 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         else {
             // Sometime this check gets stuck at the end of the phase, adding safety break
             uint64_t safety_counter = 0;
-			uint64_t dummy=0xdead;
             while (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch())) {
             //while (core->curCycle > ((((OOOCore*)(nicInfo->nicCore_ingress))->getCycles()) + 50) ) { 
                 // +50this could be a performance optmiziation, not sure how significant correctness hazard is
                 //info("thisCore curCycle = %lu, nicCore curcycle = %lu", core->curCycle, ((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch());
-                //usleep(10); // short delay seems to work sufficient
+                usleep(1); // short delay seems to work sufficient
                 safety_counter++;
-				//dummy=dummy*dummy;
-				//dummy=dummy/(0xfc);
-				//dummy=dummy^0xbeef;
 				//std::cout<<"nic_ingress_clock: "<<(((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch()) <<", serverclock: "<<core->curCycle<<", phaseEndCycle: "<<core->phaseEndCycle  <<std::endl;
 				//info("nicClk: %lu, coreClk: %lu, phasEndCycle: %lu", (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch()), core->curCycle, core->phaseEndCycle);
-				//if(core->curCycle > core->phaseEndCycle){
+				if(core->curCycle > core->phaseEndCycle){
 				//if( (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch())  > ((OOOCore*)(nicInfo->nicCore_ingress))->phaseEndCycle){
 				//if( ((((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch()) % zinfo->phaseLength) < 710){
-                if(nicInfo->nic_phase_trans==true){
+                //if(nicInfo->nic_phase_trans==true){
 
-                    info("doesthis happen?")
-                    info("nicClk: %lu, coreClk: %lu, phasEndCycle: %lu, cid: %lu", (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch()), core->curCycle, core->phaseEndCycle, getCid(tid));
+                    //info("doesthis happen?")
+                    //info("nicClk: %lu, coreClk: %lu, phasEndCycle: %lu, cid: %lu", (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch()), core->curCycle, core->phaseEndCycle, getCid(tid));
                 //if (safety_counter > 1000000000000) { // >2 seems to work in current env. May need to be adjusted when running on different machine
                     nicInfo->clock_sync_count++;
                     break;

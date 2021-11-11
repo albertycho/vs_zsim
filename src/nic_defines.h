@@ -247,7 +247,6 @@ struct glob_nic_elements {
 
 	uint64_t clock_sync_count=0;
 	uint64_t nic_largest_bbl = 0;
-	bool nic_phase_trans=false;
 
 	std::chrono::system_clock::time_point sim_start_time;
 	std::chrono::system_clock::time_point sim_end_time;
