@@ -357,11 +357,12 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
                     dispatchCycle = MAX(lastStoreAddrCommitCycle+1, dispatchCycle);
 
                     Address addr = storeAddrs[storeIdx++];
+                    uint64_t reqSatisfiedCycle;
                     if (ingr_type == 42){ //ideal ingress, app core should always hit in l1 for nic-relate data
                             reqSatisfiedCycle = l1d->store(addr, dispatchCycle, ingr_type) + L1D_LAT;
                     }
                     else{
-                        uint64_t reqSatisfiedCycle = l1d->store(addr, dispatchCycle) + L1D_LAT;
+                        reqSatisfiedCycle = l1d->store(addr, dispatchCycle) + L1D_LAT;
                     }
                     cRec.record(curCycle, dispatchCycle, reqSatisfiedCycle);
 
