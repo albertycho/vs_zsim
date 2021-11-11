@@ -615,9 +615,9 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
             //while (core->curCycle > ((((OOOCore*)(nicInfo->nicCore_ingress))->getCycles()) + 50) ) { 
                 // +50this could be a performance optmiziation, not sure how significant correctness hazard is
                 //info("thisCore curCycle = %lu, nicCore curcycle = %lu", core->curCycle, ((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch());
-                usleep(10); // short delay seems to work sufficient
+                //usleep(10); // short delay seems to work sufficient
                 safety_counter++;
-                if (safety_counter > 2) { // >2 seems to work in current env. May need to be adjusted when running on different machine
+                if (safety_counter > 100) { // >2 seems to work in current env. May need to be adjusted when running on different machine
                     break;
                 }
             }
