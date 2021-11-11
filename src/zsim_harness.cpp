@@ -476,6 +476,7 @@ int main(int argc, char *argv[]) {
     std::cout << "sim elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
 
     std::cout<<"clock_sync timeout count: "<<std::dec<<nicInfo->clock_sync_count<<std::endl;
+	std::cout<<"NIC's largest BBL size(cycles): "<<nicInfo->nic_largest_bbl<<std::endl;
 
     /// latency stat output
     info("writing to map_latency_file");

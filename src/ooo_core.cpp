@@ -584,9 +584,14 @@ int flag = 1;
 void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     OOOCore* core = static_cast<OOOCore*>(cores[tid]);
     //uint64_t core_id = getCid(tid); // using processID to identify nicCore for now
+	uint64_t prev_bbl_cycle = core->curCycle;
     core->bbl(bblAddr, bblInfo);
     
-    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+	uint64_t after_bbl_cycle = core->curCycle;
+	uint64_t bbl_cycle = after_bbl_cycle - prev_bbl_cycle;
+	//TODO remove prev_bbl_cycle, after_bbl_cycle and bbl_cycle. These were for testing values
+    
+	glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 
     //dbgprint
     //info("dumb print to show that bblfun gets called");
@@ -594,6 +599,9 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     //TODO check which nic (ingress or egress) should handle this
     //as of now we stick with one NIC core doing both ingress and egress work
     if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) {
+		if(bbl_cycle > nicInfo->nic_largest_bbl){
+			nicInfo->nic_largest_bbl = bbl_cycle;
+		}
         ///////////////CALL DEQ_DPQ//////////////////////
         uint32_t srcId = getCid(tid);
         assert(srcId == 0);
@@ -610,14 +618,24 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         }
         else {
             // Sometime this check gets stuck at the end of the phase, adding safety break
-            int safety_counter = 0;
+            uint64_t safety_counter = 0;
+			uint64_t dummy=0xdead;
             while (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch())) {
             //while (core->curCycle > ((((OOOCore*)(nicInfo->nicCore_ingress))->getCycles()) + 50) ) { 
                 // +50this could be a performance optmiziation, not sure how significant correctness hazard is
                 //info("thisCore curCycle = %lu, nicCore curcycle = %lu", core->curCycle, ((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch());
-                //usleep(10); // short delay seems to work sufficient
+                usleep(10); // short delay seems to work sufficient
                 safety_counter++;
-                if (safety_counter > 100) { // >2 seems to work in current env. May need to be adjusted when running on different machine
+				//dummy=dummy*dummy;
+				//dummy=dummy/(0xfc);
+				//dummy=dummy^0xbeef;
+				//std::cout<<"nic_ingress_clock: "<<(((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch()) <<", serverclock: "<<core->curCycle<<", phaseEndCycle: "<<core->phaseEndCycle  <<std::endl;
+				//info("nicClk: %lu, coreClk: %lu, phasEndCycle: %lu", (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch()), core->curCycle, core->phaseEndCycle);
+				//if(core->curCycle > core->phaseEndCycle){
+				//if( (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch())  > ((OOOCore*)(nicInfo->nicCore_ingress))->phaseEndCycle){
+				if( (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch()) % zinfo->phaseLength < 200){
+
+                //if (safety_counter > 1000000000000) { // >2 seems to work in current env. May need to be adjusted when running on different machine
                     nicInfo->clock_sync_count++;
                     break;
                 }
