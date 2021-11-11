@@ -633,7 +633,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
 				//info("nicClk: %lu, coreClk: %lu, phasEndCycle: %lu", (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch()), core->curCycle, core->phaseEndCycle);
 				//if(core->curCycle > core->phaseEndCycle){
 				//if( (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch())  > ((OOOCore*)(nicInfo->nicCore_ingress))->phaseEndCycle){
-				if( (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch()) % zinfo->phaseLength < 700){
+				if( (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch()) % zinfo->phaseLength < 710){
 
                 //if (safety_counter > 1000000000000) { // >2 seems to work in current env. May need to be adjusted when running on different machine
                     nicInfo->clock_sync_count++;
