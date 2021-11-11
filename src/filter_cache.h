@@ -205,6 +205,22 @@ class FilterCache : public Cache {
                     return MAX(curCycle, availCycle);
                 } 
             }
+                        
+            if (lvl == 42) {       // ideal ingress coming from app core, if the data is nic-related return 0 latency
+
+                Address gm_base_addr = 0x00ABBA000000; // defined in galloc.cpp
+                Address gm_seg_size = 1<<30; //TODO: just use default? or wire it from init
+                Address nicLineAddr_bot = gm_base_addr >> lineBits;
+                Address nicLineAddr_top = (gm_base_addr + gm_seg_size) >> lineBits;
+                if (vLineAddr >= nicLineAddr_bot && vLineAddr <= nicLineAddr_top) {
+                    return curCycle;
+                }
+
+                else {
+                    lvl = level;
+                }
+            }
+
             
             if (source == 1742)
                 return replace(vLineAddr, idx, false, curCycle, srcId, 0, flags, (lvl == 8) ? level : lvl);

@@ -357,7 +357,12 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
                     dispatchCycle = MAX(lastStoreAddrCommitCycle+1, dispatchCycle);
 
                     Address addr = storeAddrs[storeIdx++];
-                    uint64_t reqSatisfiedCycle = l1d->store(addr, dispatchCycle) + L1D_LAT;
+                    if (ingr_type == 42){ //ideal ingress, app core should always hit in l1 for nic-relate data
+                            reqSatisfiedCycle = l1d->store(addr, dispatchCycle, ingr_type) + L1D_LAT;
+                    }
+                    else{
+                        uint64_t reqSatisfiedCycle = l1d->store(addr, dispatchCycle) + L1D_LAT;
+                    }
                     cRec.record(curCycle, dispatchCycle, reqSatisfiedCycle);
 
                     // Fill the forwarding table
@@ -743,6 +748,7 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
         num_cline = (((UINT64)(val)) / (sizeof(z_cacheline))) + 1; //+1 in case remainder..
         num_cline = num_cline * 4;
         NICELEM.lbuf = gm_calloc<z_cacheline>(num_cline);
+        NICELEM.num_lbuf = num_cline;
         break;
 
     case NOTIFY_WQ_WRITE://NOTIFY WQ WRITE from application
