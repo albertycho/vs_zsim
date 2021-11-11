@@ -475,6 +475,8 @@ int main(int argc, char *argv[]) {
     std::chrono::duration<double> elapsed_seconds = (nicInfo->sim_end_time) - (nicInfo->sim_start_time);
     std::cout << "sim elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
 
+    std::cout<<"clock_sync timeout count: "<<std::dec<<nicInfo->clock_sync_count<<std::endl;
+
     /// latency stat output
     info("writing to map_latency_file");
     std::ofstream map_latency_file("map_latency.txt");

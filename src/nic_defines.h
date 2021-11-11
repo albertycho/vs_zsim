@@ -165,6 +165,7 @@ struct nic_element {
 	uint64_t cq_check_spin_count;
 	uint64_t cq_check_inner_loop_count;
 	uint64_t cq_check_outer_loop_count;
+
 	PAD();
 
 	cq_wr_event* cq_wr_event_q;
@@ -243,6 +244,8 @@ struct glob_nic_elements {
 	uint32_t pp_policy;
 
 	bool send_in_loop;
+
+	uint64_t clock_sync_count=0;
 
 	std::chrono::system_clock::time_point sim_start_time;
 	std::chrono::system_clock::time_point sim_end_time;

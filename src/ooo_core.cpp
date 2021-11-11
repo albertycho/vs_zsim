@@ -618,6 +618,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 //usleep(10); // short delay seems to work sufficient
                 safety_counter++;
                 if (safety_counter > 100) { // >2 seems to work in current env. May need to be adjusted when running on different machine
+                    nicInfo->clock_sync_count++;
                     break;
                 }
             }
