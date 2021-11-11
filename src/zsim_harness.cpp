@@ -702,8 +702,8 @@ int aggr=0;
 //        map_latency_file << nicInfo->latencies[iii] << std::endl;
 
 
-    gm_free(hist_counters);
-    gm_free(sorted_latencies);
+    //gm_free(hist_counters);
+    //gm_free(sorted_latencies);
     uint32_t exitCode = 0;
     if (termStatus == OK) {
         info("All children done, exiting");
