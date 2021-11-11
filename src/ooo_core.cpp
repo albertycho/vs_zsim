@@ -640,6 +640,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                 if(nicInfo->nic_phase_trans==true){
 
                     info("doesthis happen?")
+                    info("nicClk: %lu, coreClk: %lu, phasEndCycle: %lu", (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch()), core->curCycle, core->phaseEndCycle);
                 //if (safety_counter > 1000000000000) { // >2 seems to work in current env. May need to be adjusted when running on different machine
                     nicInfo->clock_sync_count++;
                     break;
