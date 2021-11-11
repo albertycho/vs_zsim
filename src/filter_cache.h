@@ -138,28 +138,28 @@ class FilterCache : public Cache {
                     return curCycle;
                 }
 
-                uint64_t rb_base = (uint64_t) (&(nicInfo->nic_elem[srcId].recv_buf[0]));
-                uint64_t rb_top = (uint64_t) (&(nicInfo->nic_elem[srcId].recv_buf[RECV_BUF_POOL_SIZE]));
-
-                uint64_t lb_base = (uint64_t) (&(nicInfo->nic_elem[srcId].lbuf[0]));
-                uint64_t lb_top = (uint64_t) (&(nicInfo->nic_elem[srcId].lbuf[nicInfo->nic_elem[srcId].num_lbuf]));
-
-                //dbg
-                // load_generator * lg_p = (load_generator*) static_cast<void*>(gm_get_lg_ptr());
-                // if(lg_p->ready_to_inject==0xabcd){
-                // Address nicAddr_bot = gm_base_addr;
-                // Address nicAddr_top = gm_base_addr + gm_seg_size;
-                // std::cout<<std::hex<<"nic_base: "<<nicAddr_bot<<", nic_top: "<<nicAddr_top<<", rb_base: "<<rb_base<<", rb_top: "<<rb_top<<", lb_base: "<<lb_base<<", lb_top: "<<lb_top<<std::endl;
-                // }
-
-
-                if((vAddr >= rb_base) && (vAddr<=rb_top)){
-                    return curCycle;
-                }
-                if((vAddr >= lb_base) && (vAddr<=lb_top)){
-                    return curCycle;
-                }
-
+//                uint64_t rb_base = (uint64_t) (&(nicInfo->nic_elem[srcId].recv_buf[0]));
+//                uint64_t rb_top = (uint64_t) (&(nicInfo->nic_elem[srcId].recv_buf[RECV_BUF_POOL_SIZE]));
+//
+//                uint64_t lb_base = (uint64_t) (&(nicInfo->nic_elem[srcId].lbuf[0]));
+//                uint64_t lb_top = (uint64_t) (&(nicInfo->nic_elem[srcId].lbuf[nicInfo->nic_elem[srcId].num_lbuf]));
+//
+//                //dbg
+//                // load_generator * lg_p = (load_generator*) static_cast<void*>(gm_get_lg_ptr());
+//                // if(lg_p->ready_to_inject==0xabcd){
+//                // Address nicAddr_bot = gm_base_addr;
+//                // Address nicAddr_top = gm_base_addr + gm_seg_size;
+//                // std::cout<<std::hex<<"nic_base: "<<nicAddr_bot<<", nic_top: "<<nicAddr_top<<", rb_base: "<<rb_base<<", rb_top: "<<rb_top<<", lb_base: "<<lb_base<<", lb_top: "<<lb_top<<std::endl;
+//                // }
+//
+//
+//                if((vAddr >= rb_base) && (vAddr<=rb_top)){
+//                    return curCycle;
+//                }
+//                if((vAddr >= lb_base) && (vAddr<=lb_top)){
+//                    return curCycle;
+//                }
+//
 
                 else {
                     lvl = level;
@@ -184,13 +184,13 @@ class FilterCache : public Cache {
                 uint64_t wq_top = wq_base + sizeof(rmc_wq_t);
                 uint64_t cq_base = (uint64_t) (nicInfo->nic_elem[srcId].cq);
                 uint64_t cq_top = cq_base + sizeof(rmc_cq_t);
-		
-			uint64_t rb_base = (uint64_t) (&(nicInfo->nic_elem[srcId].recv_buf[0]));
-			uint64_t rb_top = (uint64_t) (&(nicInfo->nic_elem[srcId].recv_buf[RECV_BUF_POOL_SIZE]));
+		//
+		//	uint64_t rb_base = (uint64_t) (&(nicInfo->nic_elem[srcId].recv_buf[0]));
+		//	uint64_t rb_top = (uint64_t) (&(nicInfo->nic_elem[srcId].recv_buf[RECV_BUF_POOL_SIZE]));
 
-			if((vAddr >= rb_base) && (vAddr<=rb_top)){
-				return curCycle;
-			}
+		//	if((vAddr >= rb_base) && (vAddr<=rb_top)){
+		//		return curCycle;
+		//	}
 
                 if((vAddr >= wq_base) && (vAddr<=wq_top)){
                     return curCycle;
