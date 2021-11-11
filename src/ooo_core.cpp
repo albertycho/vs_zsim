@@ -1050,7 +1050,7 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
 
             	if(lg_p->next_cycle <= injection_cycle && idle_core > 1 &&
 						(lg_p->ready_to_inject==0xabcd)){
-					uint64_t server3_curcycle = ((OOOCore*)(zinfo->cores[4]))->getCycles_forSynch();
+					uint64_t server3_curcycle = ((OOOCore*)(zinfo->cores[3]))->getCycles_forSynch();
 					if((core->curCycle < server3_curcycle)  && ((server3_curcycle - (core->curCycle))> 100) ){
 						info("nicIngress @ injection: clock skew is large: serverClock - nicClock = %lu", (server3_curcycle - (core->curCycle)));
 					}

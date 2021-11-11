@@ -478,6 +478,7 @@ int main(int argc, char *argv[]) {
     std::cout<<"clock_sync timeout count: "<<std::dec<<nicInfo->clock_sync_count<<std::endl;
 	std::cout<<"NIC's largest BBL size(cycles): "<<nicInfo->nic_largest_bbl<<std::endl;
 
+/*
     /// latency stat output
     info("writing to map_latency_file");
     std::ofstream map_latency_file("map_latency.txt");
@@ -560,7 +561,7 @@ int main(int argc, char *argv[]) {
         latency_hist_file << iii * nicInfo->hist_interval << "," << hist_counters[iii] << "," << std::endl;
     }
     latency_hist_file.close();
-
+*/
 
 /*
 	info("start writing to service time file");
