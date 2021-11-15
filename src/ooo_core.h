@@ -489,7 +489,7 @@ class OOOCore : public Core {
         //static int  nic_ingress_routine_per_cycle(uint32_t srcId);
         int  nic_ingress_routine_per_cycle(uint32_t srcId);
         uint16_t ingr_type, egr_type, egr_inval;
-        uint32_t cycle_adj_queue[100000]; // curCycle at start of cSimStart() and at end of cSimEnd()
+        uint32_t cycle_adj_queue[1000000]; // curCycle at start of cSimStart() and at end of cSimEnd()
         uint32_t start_cnt_phases = 0;
         uint32_t cycle_adj_idx = 0;
 

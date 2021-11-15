@@ -531,7 +531,7 @@ void OOOCore::leave() {
 void OOOCore::cSimStart() {
     //dbgprint
     //info("CSimStart called");
-    assert(cycle_adj_idx < 100000);
+    assert(cycle_adj_idx < 1000000);
 
     if (start_cnt_phases) {
         cycle_adj_queue[cycle_adj_idx++] = curCycle;
@@ -547,7 +547,7 @@ void OOOCore::cSimEnd() {
     uint64_t targetCycle = cRec.cSimEnd(curCycle);
     assert(targetCycle >= curCycle);
     if (targetCycle > curCycle) advance(targetCycle);
-    assert(cycle_adj_idx < 100000);
+    assert(cycle_adj_idx < 1000000);
     if (start_cnt_phases) {
         cycle_adj_queue[cycle_adj_idx++] = curCycle;
     }
