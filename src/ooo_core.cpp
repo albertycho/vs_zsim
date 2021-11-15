@@ -939,7 +939,7 @@ int OOOCore::nic_ingress_routine(THREADID tid) {
         ((load_generator*)lg_p)->next_cycle = core->curCycle;
         nicInfo->sim_start_time = std::chrono::system_clock::now();
         info("starting sim time count");
-        start_cnt_phases = zinfo->numPhases;
+
 
     }
     uint32_t core_iterator = 0;
@@ -997,6 +997,7 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
                 lg_p->next_cycle = core->curCycle;
                 nicInfo->sim_start_time = std::chrono::system_clock::now();
                 info("starting sim time count");
+                start_cnt_phases = zinfo->numPhases;
             }
 			if(lg_p->sent_packets==0){
                 lg_p->next_cycle = core->curCycle;
