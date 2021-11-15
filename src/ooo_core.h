@@ -486,8 +486,8 @@ class OOOCore : public Core {
         inline EventRecorder* getEventRecorder() {return cRec.getEventRecorder();}
         void cSimStart();
         void cSimEnd();
-        static int  nic_ingress_routine_per_cycle(uint32_t srcId);
-
+        //static int  nic_ingress_routine_per_cycle(uint32_t srcId);
+        int  nic_ingress_routine_per_cycle(uint32_t srcId);
         uint16_t ingr_type, egr_type, egr_inval;
         uint32_t cycle_adj_queue[100000]; // curCycle at start of cSimStart() and at end of cSimEnd()
         uint32_t start_cnt_phases = 0;
