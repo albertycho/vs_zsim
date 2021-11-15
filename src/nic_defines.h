@@ -159,13 +159,11 @@ struct nic_element {
 	//uint64_t lbuf[RECV_BUF_POOL_SIZE];
 	//z_cacheline lbuf[RECV_BUF_POOL_SIZE];
 	z_cacheline *lbuf;
-	uint64_t num_lbuf;
 	recv_buf_dir_t rb_dir[RECV_BUF_POOL_SIZE];
 	uint32_t rb_iterator;
 	uint64_t cq_check_spin_count;
 	uint64_t cq_check_inner_loop_count;
 	uint64_t cq_check_outer_loop_count;
-
 	PAD();
 
 	cq_wr_event* cq_wr_event_q;
@@ -187,8 +185,7 @@ struct nic_element {
 	uint32_t ts_queue[1000000];
 	uint32_t ts_nic_queue[1000000];
 	uint32_t phase_queue[100000];
-	uint32_t ceq2cq_ts[1000000];
-	int ts_idx = 0, ts_nic_idx = 0, ceq2cq_idx = 0;
+	int ts_idx = 0, ts_nic_idx = 0;
 
 	bool packet_pending;
 	lock_t packet_pending_lock;
@@ -244,10 +241,6 @@ struct glob_nic_elements {
 	uint32_t pp_policy;
 
 	bool send_in_loop;
-
-	uint64_t clock_sync_count=0;
-	uint64_t nic_largest_bbl = 0;
-	bool nic_phase_trans=false;
 
 	std::chrono::system_clock::time_point sim_start_time;
 	std::chrono::system_clock::time_point sim_end_time;

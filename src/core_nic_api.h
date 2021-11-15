@@ -81,7 +81,6 @@ int put_cq_entry(cq_entry_t ncq_entry, glob_nic_elements* nicInfo, uint64_t core
 	//separate out function that deals with the head/tail and SR
 	rmc_cq_t* cq = nicInfo->nic_elem[core_id].cq;
 	uint64_t cq_head = nicInfo->nic_elem[core_id].cq_head;
-	//if (cq->SR == cq->q[cq_head].SR) {
 	if ((cq->tail == cq_head) && (cq->SR != nicInfo->nic_elem[core_id].ncq_SR)) {
 		info("FAILED cq->SR == cq->q[cq_head].SR check");
 		info("cq_head=%lu",cq_head);
@@ -149,9 +148,8 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 	rmc_cq_t* cq = nicInfo->nic_elem[core_id].cq;
 	uint64_t cq_head = nicInfo->nic_elem[core_id].cq_head;
 
-	//if (cq->SR == cq->q[cq_head].SR) {
 	if( (cq->tail==cq_head) && (cq->SR!=nicInfo->nic_elem[core_id].ncq_SR) ){
-		info("cq for core %lu is full, curcycle: %lu", core_id, cur_cycle);
+		//info("cq for core %lu is full, curcycle: %lu", core_id, cur_cycle);
 		return -1;
 	}
 
@@ -162,16 +160,12 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 		cq_wr_event* cqwrev = deq_cq_wr_event(nicInfo, core_id);
 		//dbgprint
 		//info("CEQ_size:%d", nicInfo->nic_elem[core_id].ceq_size);
-		if (cqwrev->cqe.success == 0x7f) {
-			nicInfo->nic_elem[core_id].ceq2cq_ts[(nicInfo->nic_elem[core_id].ceq2cq_idx++)] = cur_cycle;
-		}
 
 		if (process_cq_wr_event(cqwrev, nicInfo, core_id) != 0)
 		{
 			panic("cq_entry write failed");
 			return -1;
 		}
-
 	}
 	return 0;
 }
@@ -213,17 +207,12 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle) {
 		((load_generator*)lg_p)->sum_interval = ((load_generator*)lg_p)->sum_interval + interval;
 	}
 
-	//dbg
-	if(cur_cycle >  lg_p->next_cycle){
-		info("update_loadgen: cur_cycle > lg_p->next_cycle by: %lu", cur_cycle - lg_p->next_cycle)
-	}
 
 
 	((load_generator*)lg_p)->next_cycle = ((load_generator*)lg_p)->next_cycle + interval; 
 
 	((load_generator*)lg_p)->ptag = ((load_generator*)lg_p)->ptag + 1;
 
-	
 	((load_generator*)lg_p)->sent_packets = ((load_generator*)lg_p)->sent_packets + 1;
 
 	/*

@@ -475,10 +475,7 @@ int main(int argc, char *argv[]) {
     std::chrono::duration<double> elapsed_seconds = (nicInfo->sim_end_time) - (nicInfo->sim_start_time);
     std::cout << "sim elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
 
-    std::cout<<"clock_sync timeout count: "<<std::dec<<nicInfo->clock_sync_count<<std::endl;
-	std::cout<<"NIC's largest BBL size(cycles): "<<nicInfo->nic_largest_bbl<<std::endl;
-
-/*
+	/*
     /// latency stat output
     info("writing to map_latency_file");
     std::ofstream map_latency_file("map_latency.txt");
@@ -534,13 +531,6 @@ int main(int argc, char *argv[]) {
     info("writing to latency_hist file");
     std::ofstream latency_hist_file("latency_hist.txt");
 
-	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
-	uint64_t average_interval = (lg_p->sum_interval) / (nicInfo->latencies_size);
-	std::cout<<"average interval: "<<average_interval<<std::endl;
-
-	latency_hist_file <<"average interval: "<<average_interval<<std::endl;
-
-
     uint64_t median_index = (nicInfo->latencies_size) / 2;
     uint64_t percentile_80_index = ((nicInfo->latencies_size) * 80) / 100;
     uint64_t percentile_90_index = ((nicInfo->latencies_size) * 90) / 100;
@@ -554,16 +544,15 @@ int main(int argc, char *argv[]) {
     latency_hist_file << "95-percentile : " << sorted_latencies[percentile_95_index] << std::endl;
     latency_hist_file << "99-percentile : " << sorted_latencies[percentile_99_index] << std::endl;
 
-
     latency_hist_file << std::endl;
 
     for (uint64_t iii = 0; iii < hist_width; iii++) {
         latency_hist_file << iii * nicInfo->hist_interval << "," << hist_counters[iii] << "," << std::endl;
     }
     latency_hist_file.close();
-*/
 
-/*
+
+
 	info("start writing to service time file");
     std::ofstream service_time_file("service_times.txt");
     std::ofstream st_stat_file("service_times_stats.txt");
@@ -681,9 +670,6 @@ int aggr=0;
                     f << "\nrequest " << temp1 << ": ";
                     temp1++;
                 }
-                else {
-                    f << nicInfo->nic_elem[i].ceq2cq_ts[((j-1) / 2)] << " ";
-                }
                 f << nicInfo->nic_elem[i].ts_nic_queue[j] << " ";
             }
             f << nicInfo->nic_elem[i].phase_queue[((nicInfo->nic_elem[i].ts_nic_idx) - 2) / 2] << " ";
@@ -698,6 +684,15 @@ int aggr=0;
     info("%d",aggr);
 
 	
+    std::ofstream latency_hist_file("latency_hist.txt");
+
+	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
+	uint64_t average_interval = (lg_p->sum_interval) / (nicInfo->latencies_size);
+	std::cout<<"average interval: "<<average_interval<<std::endl;
+
+	latency_hist_file <<"average interval: "<<average_interval<<std::endl;
+	latency_hist_file.close();
+
 //	for (uint64_t iii = 0; iii < nicInfo->latencies_size; iii++) {
 //        map_latency_file << nicInfo->latencies[iii] << std::endl;
 

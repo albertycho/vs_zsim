@@ -541,12 +541,6 @@ void OOOCore::cSimEnd() {
     uint64_t targetCycle = cRec.cSimEnd(curCycle);
     assert(targetCycle >= curCycle);
     if (targetCycle > curCycle) advance(targetCycle);
-
-	//void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
-    //load_generator* lg_p = (load_generator*)lg_p_vp;
-	//if (lg_p->ready_to_inject==0x1234){
-	//	lg_p->ready_to_inject=0xabcd;
-	//}
 }
 
 void OOOCore::advance(uint64_t targetCycle) {
@@ -584,27 +578,16 @@ int flag = 1;
 void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     OOOCore* core = static_cast<OOOCore*>(cores[tid]);
     //uint64_t core_id = getCid(tid); // using processID to identify nicCore for now
-	uint64_t prev_bbl_cycle = core->curCycle;
     core->bbl(bblAddr, bblInfo);
     
-	uint64_t after_bbl_cycle = core->curCycle;
-	uint64_t bbl_cycle = after_bbl_cycle - prev_bbl_cycle;
-	//TODO remove prev_bbl_cycle, after_bbl_cycle and bbl_cycle. These were for testing values
-    
-	glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 
-    if (nicInfo->nic_ingress_pid == procIdx){
-        nicInfo->nic_phase_trans=false;
-    }
     //dbgprint
     //info("dumb print to show that bblfun gets called");
 
     //TODO check which nic (ingress or egress) should handle this
     //as of now we stick with one NIC core doing both ingress and egress work
     if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) {
-		if(bbl_cycle > nicInfo->nic_largest_bbl){
-			nicInfo->nic_largest_bbl = bbl_cycle;
-		}
         ///////////////CALL DEQ_DPQ//////////////////////
         uint32_t srcId = getCid(tid);
         assert(srcId == 0);
@@ -621,24 +604,14 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         }
         else {
             // Sometime this check gets stuck at the end of the phase, adding safety break
-            uint64_t safety_counter = 0;
+            int safety_counter = 0;
             while (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch())) {
             //while (core->curCycle > ((((OOOCore*)(nicInfo->nicCore_ingress))->getCycles()) + 50) ) { 
                 // +50this could be a performance optmiziation, not sure how significant correctness hazard is
                 //info("thisCore curCycle = %lu, nicCore curcycle = %lu", core->curCycle, ((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch());
                 usleep(1); // short delay seems to work sufficient
                 safety_counter++;
-				//std::cout<<"nic_ingress_clock: "<<(((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch()) <<", serverclock: "<<core->curCycle<<", phaseEndCycle: "<<core->phaseEndCycle  <<std::endl;
-				//info("nicClk: %lu, coreClk: %lu, phasEndCycle: %lu", (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch()), core->curCycle, core->phaseEndCycle);
-				if(core->curCycle > core->phaseEndCycle){
-				//if( (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch())  > ((OOOCore*)(nicInfo->nicCore_ingress))->phaseEndCycle){
-				//if( ((((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch()) % zinfo->phaseLength) < 710){
-                //if(nicInfo->nic_phase_trans==true){
-
-                    //info("doesthis happen?")
-                    //info("nicClk: %lu, coreClk: %lu, phasEndCycle: %lu, cid: %lu", (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch()), core->curCycle, core->phaseEndCycle, getCid(tid));
-                //if (safety_counter > 1000000000000) { // >2 seems to work in current env. May need to be adjusted when running on different machine
-                    nicInfo->clock_sync_count++;
+                if (safety_counter > 10) { // >2 seems to work in current env. May need to be adjusted when running on different machine
                     break;
                 }
             }
@@ -649,9 +622,6 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     while (core->curCycle > core->phaseEndCycle) {
         //info("while loop for phase sync in bbl");
         core->phaseEndCycle += zinfo->phaseLength;
-        if (nicInfo->nic_ingress_pid == procIdx){
-            nicInfo->nic_phase_trans=true;
-        }
 
         //RESIDUE of batch injection per phase. 
         //  Keeping code until we get confidence with per-cycle injection
@@ -773,7 +743,6 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
         num_cline = (((UINT64)(val)) / (sizeof(z_cacheline))) + 1; //+1 in case remainder..
         num_cline = num_cline * 4;
         NICELEM.lbuf = gm_calloc<z_cacheline>(num_cline);
-        NICELEM.num_lbuf = num_cline;
         break;
 
     case NOTIFY_WQ_WRITE://NOTIFY WQ WRITE from application
@@ -913,7 +882,7 @@ uint32_t assign_core(uint32_t in_core_iterator=0) {
         }
 
     }
-    info("ret_core_id: %d, min_cq_size: %lu, min_ceq_size:%lu", ret_core_id, min_q_size-nicInfo->nic_elem[ret_core_id].ceq_size, nicInfo->nic_elem[ret_core_id].ceq_size);
+//    info("ret_core_id: %d, min_cq_size: %lu, min_ceq_size:%lu", ret_core_id, min_q_size-nicInfo->nic_elem[ret_core_id].ceq_size, nicInfo->nic_elem[ret_core_id].ceq_size);
     return ret_core_id;
 
 }
