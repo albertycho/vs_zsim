@@ -491,6 +491,7 @@ class OOOCore : public Core {
         uint16_t ingr_type, egr_type, egr_inval;
         uint32_t cycle_adj_queue[100000]; // curCycle at start of cSimStart() and at end of cSimEnd()
         uint32_t start_cnt_phases = 0;
+        uint32_t cycle_adj_idx = 0;
 
     private:
         inline void load(Address addr);
