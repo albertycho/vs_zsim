@@ -693,6 +693,23 @@ int aggr=0;
 	latency_hist_file <<"average interval: "<<average_interval<<std::endl;
 	latency_hist_file.close();
 
+    for (int i = 0; i < zinfo->numCores; i++) { 
+        std::ofstream f; 
+        f.open("bound-weave_skew_core_" + std::to_string(i) + ".txt");
+        int temp = 0; 
+        auto ooocore = (OOOCore*)(zinfo->cores[i]); 
+        f << "Started counting from phase " << ooocore->start_cnt_phases; 
+        for (int j = 0; j < ooocore->cycle_adj_idx; j += 2) { 
+            f << "\nbound phase: " << temp << ": "; 
+            f << ooocore->cycle_adj_queue[j] << " "; 
+            f << ooocore->cycle_adj_queue[j + 1] << " "; temp++; 
+        }
+        f << "\n num phases from zinfo: " << zinfo->numPhases; 
+        f.close(); 
+    }
+
+
+
 //	for (uint64_t iii = 0; iii < nicInfo->latencies_size; iii++) {
 //        map_latency_file << nicInfo->latencies[iii] << std::endl;
 

@@ -531,6 +531,12 @@ void OOOCore::leave() {
 void OOOCore::cSimStart() {
     //dbgprint
     //info("CSimStart called");
+    assert(cycle_adj_idx < 100000);
+
+    if (start_cnt_phases) {
+        cycle_adj_queue[cycle_adj_idx++] = curCycle;
+    }
+
     uint64_t targetCycle = cRec.cSimStart(curCycle);
     assert(targetCycle >= curCycle);
     if (targetCycle > curCycle) advance(targetCycle);
@@ -541,6 +547,10 @@ void OOOCore::cSimEnd() {
     uint64_t targetCycle = cRec.cSimEnd(curCycle);
     assert(targetCycle >= curCycle);
     if (targetCycle > curCycle) advance(targetCycle);
+    assert(cycle_adj_idx < 100000);
+    if (start_cnt_phases) {
+        cycle_adj_queue[cycle_adj_idx++] = curCycle;
+    }
 }
 
 void OOOCore::advance(uint64_t targetCycle) {
@@ -782,6 +792,7 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 			lg_p->inject_start_phase = (zinfo->numPhases + 2);
 			lg_p->ready_to_inject=0x1234;
 		}
+        start_cnt_phases = zinfo->numPhases;
         break;
 
 	case 0xE:
@@ -928,6 +939,7 @@ int OOOCore::nic_ingress_routine(THREADID tid) {
         ((load_generator*)lg_p)->next_cycle = core->curCycle;
         nicInfo->sim_start_time = std::chrono::system_clock::now();
         info("starting sim time count");
+        start_cnt_phases = zinfo->numPhases;
 
     }
     uint32_t core_iterator = 0;
