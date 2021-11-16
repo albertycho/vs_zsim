@@ -149,7 +149,7 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 	uint64_t cq_head = nicInfo->nic_elem[core_id].cq_head;
 
 	if( (cq->tail==cq_head) && (cq->SR!=nicInfo->nic_elem[core_id].ncq_SR) ){
-		//info("cq for core %lu is full, curcycle: %lu", core_id, cur_cycle);
+		info("cq for core %lu is full, curcycle: %lu", core_id, cur_cycle);
 		return -1;
 	}
 
@@ -424,7 +424,8 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 
 	futex_unlock(&nicInfo->nic_elem[core_id].rb_lock);
 	if (rb_head > RECV_BUF_POOL_SIZE) {
-		info("core %d out of recv buffer, cycle %lu", core_id, cur_cycle);
+		//info("core %d out of recv buffer, cycle %lu", core_id, cur_cycle);
+		panic("core %d out of recv buffer, cycle %lu", core_id, cur_cycle);
 		//info("((zinfo->numCores) - 1)=%d", ((zinfo->numCores) - 1));
 		return -1;
 	}
