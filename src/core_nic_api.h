@@ -449,7 +449,7 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 		lsize += size/64;
 
 		while(lsize){
-			reqSatisfiedCycle = l1d->store(addr, cur_cycle, level, srcId, MemReq::PKTIN) + (level == 3 ? 1 : 0) * L1D_LAT;
+			reqSatisfiedCycle = max(reqSatisfiedCycle, l1d->store(addr, cur_cycle, level, srcId, MemReq::PKTIN) + (level == 3 ? 1 : 0) * L1D_LAT);
 			//TODO check what cycles need to be passed to recrod
 			cRec->record(cur_cycle, cur_cycle, reqSatisfiedCycle);
 			lsize--;
@@ -460,7 +460,8 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 
 	uint64_t ceq_cycle = (uint64_t)(((load_generator*)lg_p)->next_cycle);
 	assert(core_id>1);
-	create_CEQ_entry(recv_buf_addr, 0x7f, cur_cycle/*ceq_cycle*/, nicInfo, core_id);
+	create_CEQ_entry(recv_buf_addr, 0x7f, reqSatisfiedCycle/*ceq_cycle*/, nicInfo, core_id);
+	//create_CEQ_entry(recv_buf_addr, 0x7f, cur_cycle/*ceq_cycle*/, nicInfo, core_id);
 	//create_CEQ_entry(recv_buf_addr, 0x7f, 10/*ceq_cycle*/, nicInfo, core_id);
 
 	//TODO may want to pass the reqSatisfiedcycle value back to the caller via updating an argument
@@ -792,7 +793,7 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 
 		uint32_t span_phase = ending_phase - start_phase + 1;
 
-		nicInfo->nic_elem[core_id].phase_queue[(nicInfo->nic_elem[core_id].ts_nic_idx)/2] = span_phase;
+		nicInfo->nic_elem[core_id].phase_queue[(nicInfo->nic_elem[core_id].ts_nic_idx)/2] = ending_phase;
 		nicInfo->nic_elem[core_id].ts_nic_queue[nicInfo->nic_elem[core_id].ts_nic_idx++] = start_cycle;
 		nicInfo->nic_elem[core_id].ts_nic_queue[nicInfo->nic_elem[core_id].ts_nic_idx++] = end_cycle;
 

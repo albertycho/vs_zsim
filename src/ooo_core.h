@@ -158,13 +158,15 @@ class WindowStructure {
             assert(occupancy <= WSZ);
         }
 
-        inline void advancePos(uint64_t& curCycle, int core_id) {
+        inline void advancePos(uint64_t& curCycle, int core_id, bool injection=true) {
             occupancy -= curWin[curPos].count;
             curWin[curPos].set(0, 0);
             curPos++;
             curCycle++;
             /*NIC logic triggers*/
-            cycle_increment_routine(curCycle, core_id);
+			if(injection){
+            	cycle_increment_routine(curCycle, core_id);
+			}
 
             
 
@@ -194,7 +196,7 @@ class WindowStructure {
 
             // Drain IW
             while (occupancy && curCycle < targetCycle) {
-                advancePos(curCycle, core_id);
+                advancePos(curCycle, core_id, false);
             }
 
             if (occupancy) {

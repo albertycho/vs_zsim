@@ -38,7 +38,11 @@ uint64_t SimpleMemory::access(MemReq& req) {
             *req.state = req.is(MemReq::NOEXCL)? S : E;
             break;
         case GETX:
-            *req.state = M;
+			if((req.flags & MemReq::PKTIN)||(req.flags & MemReq::PKTOUT)){
+			}
+			else{
+            	*req.state = M;
+			}
             break;
 
         default: panic("!?");
