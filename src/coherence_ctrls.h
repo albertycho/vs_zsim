@@ -59,8 +59,8 @@ class CC : public GlobAlloc {
         virtual void finishInv() = 0;
 
         //Repl policy interface
-        virtual uint32_t numSharers(uint32_t lineId) = 0;
-        virtual bool isValid(uint32_t lineId) = 0;
+        virtual uint32_t numSharers(int32_t lineId) = 0;
+        virtual bool isValid(int32_t lineId) = 0;
 };
 
 
@@ -114,7 +114,10 @@ class MESIBottomCC : public GlobAlloc {
 
         void init(const g_vector<MemObject*>& _parents, Network* network, const char* name);
 
-        inline bool isExclusive(uint32_t lineId) {
+        inline bool isExclusive(int32_t lineId) {
+            if(lineId == -1) {
+                return false;
+            }
             MESIState state = array[lineId];
             return (state == E) || (state == M);
         }
@@ -147,15 +150,15 @@ class MESIBottomCC : public GlobAlloc {
             parentStat->append(&profGETNetLat);
         }
 
-        uint64_t processEviction(Address wbLineAddr, uint32_t lineId, bool lowerLevelWriteback, uint64_t cycle, uint32_t srcId, bool no_record);
+        uint64_t processEviction(Address wbLineAddr, int32_t lineId, bool lowerLevelWriteback, uint64_t cycle, uint32_t srcId, bool no_record);
 
         uint64_t passToNext(Address lineAddr, AccessType type, uint32_t childId, uint32_t srcId, uint32_t flags, uint64_t cycle);
 
         uint64_t processAccess(Address lineAddr, int32_t lineId, AccessType type, uint64_t cycle, uint32_t srcId, uint32_t flags);
 
-        void processWritebackOnAccess(Address lineAddr, uint32_t lineId, AccessType type);
+        void processWritebackOnAccess(Address lineAddr, int32_t lineId, AccessType type);
 
-        void processInval(Address lineAddr, uint32_t lineId, InvType type, bool* reqWriteback);
+        void processInval(Address lineAddr, int32_t lineId, InvType type, bool* reqWriteback);
 
         uint64_t processNonInclusiveWriteback(Address lineAddr, AccessType type, uint64_t cycle, MESIState* state, uint32_t srcId, uint32_t flags);
 
@@ -174,7 +177,8 @@ class MESIBottomCC : public GlobAlloc {
         }
 
         /* Replacement policy query interface */
-        inline bool isValid(uint32_t lineId) {
+        inline bool isValid(int32_t lineId) {
+            assert(lineId > -1);
             return array[lineId] != I;
         }
 
@@ -189,7 +193,7 @@ class MESIBottomCC : public GlobAlloc {
 class MESITopCC : public GlobAlloc {
     private:
         struct Entry {
-            uint32_t numSharers;
+            int32_t numSharers;
             std::bitset<MAX_CACHE_CHILDREN> sharers;
             bool exclusive;
 
@@ -231,12 +235,12 @@ class MESITopCC : public GlobAlloc {
 
         void init(const g_vector<BaseCache*>& _children, Network* network, const char* name);
 
-        uint64_t processEviction(Address wbLineAddr, uint32_t lineId, bool* reqWriteback, uint64_t cycle, uint32_t srcId);
+        uint64_t processEviction(Address wbLineAddr, int32_t lineId, bool* reqWriteback, uint64_t cycle, uint32_t srcId);
 
         uint64_t processAccess(Address lineAddr, int32_t lineId, AccessType type, uint32_t childId, bool haveExclusive,
                 MESIState* childState, bool* inducedWriteback, uint64_t cycle, uint32_t srcId, uint32_t flags);
 
-        uint64_t processInval(Address lineAddr, uint32_t lineId, InvType type, bool* reqWriteback, uint64_t cycle, uint32_t srcId);
+        uint64_t processInval(Address lineAddr, int32_t lineId, InvType type, bool* reqWriteback, uint64_t cycle, uint32_t srcId);
 
         inline void lock() {
             futex_lock(&ccLock);
@@ -247,12 +251,13 @@ class MESITopCC : public GlobAlloc {
         }
 
         /* Replacement policy query interface */
-        inline uint32_t numSharers(uint32_t lineId) {
+        inline uint32_t numSharers(int32_t lineId) {
+            assert(lineId > -1);
             return array[lineId].numSharers;
         }
 
     private:
-        uint64_t sendInvalidates(Address lineAddr, uint32_t lineId, InvType type, bool* reqWriteback, uint64_t cycle, uint32_t srcId);
+        uint64_t sendInvalidates(Address lineAddr, int32_t lineId, InvType type, bool* reqWriteback, uint64_t cycle, uint32_t srcId);
 };
 
 static inline bool CheckForMESIRace(AccessType& type, MESIState* state, MESIState initialState) {
@@ -274,10 +279,14 @@ static inline bool CheckForMESIRace(AccessType& type, MESIState* state, MESIStat
             }
         } else if (type == GETX) { //...or it is a GETX
             //In this case, the line MUST have been in S and have been INValidated
-            assert(initialState == S);
+            if(initialState != S) {
+               info("initial state %ld *state %ld",initialState,*state);
+            }
+            assert(initialState == S);// || initialState == E || initialState == M);
             assert(*state == I);
             //Do nothing. This is still a valid GETX, only it is not an upgrade miss anymore
         } else { //no GETSs can race with INVs, if we are doing a GETS it's because the line was invalid to begin with!
+        info("initial state %ld *state %ld",initialState,*state);
             panic("Invalid true race happened (?)");
         }
     }
@@ -361,7 +370,7 @@ class MESICC : public CC {
         }
 
         uint64_t processAccess(const MemReq& req, int32_t lineId, uint64_t startCycle, bool correct_level, uint64_t* getDoneCycle = nullptr) {
-            
+
             uint64_t respCycle = startCycle;
             //Handle non-inclusive writebacks by bypassing
             //NOTE: Most of the time, these are due to evictions, so the line is not there. But the second condition can trigger in NUCA-initiated
@@ -378,7 +387,6 @@ class MESICC : public CC {
                     bool isPrefetch = req.flags & MemReq::PREFETCH;
                     assert(!isPrefetch || req.type == GETS);
                     uint32_t flags = req.flags & ~MemReq::PREFETCH; //always clear PREFETCH, this flag cannot propagate up
-
                     //if needed, fetch line or upgrade miss from upper level
                     respCycle = bcc->processAccess(req.lineAddr, lineId, req.type, startCycle, req.srcId, flags);
                     if (getDoneCycle) *getDoneCycle = respCycle;
@@ -431,8 +439,10 @@ class MESICC : public CC {
         }
 
         //Repl policy interface
-        uint32_t numSharers(uint32_t lineId) {return tcc->numSharers(lineId);}
-        bool isValid(uint32_t lineId) {return bcc->isValid(lineId);}
+        uint32_t numSharers(int32_t lineId) {
+            return tcc->numSharers(lineId);}
+        bool isValid(int32_t lineId) {
+            return bcc->isValid(lineId);}
 };
 
 // Terminal CC, i.e., without children --- accepts GETS/X, but not PUTS/X
@@ -442,9 +452,14 @@ class MESITerminalCC : public CC {
         uint32_t numLines;
         g_string name;
 
+        lock_t terminalccLock;
+
     public:
         //Initialization
-        MESITerminalCC(uint32_t _numLines, const g_string& _name) : bcc(nullptr), numLines(_numLines), name(_name) {}
+        MESITerminalCC(uint32_t _numLines, const g_string& _name) : bcc(nullptr), numLines(_numLines), name(_name) {
+            futex_init(&terminalccLock);
+
+        }
 
         void setParents(uint32_t childId, const g_vector<MemObject*>& parents, Network* network) {
             bcc = new MESIBottomCC(numLines, childId, false /*inclusive*/);
@@ -475,6 +490,7 @@ class MESITerminalCC : public CC {
                 futex_unlock(req.childLock);
             }
 
+            futex_lock(&terminalccLock);
             bcc->lock();
 
             /* The situation is now stable, true race-wise. No one can touch the child state, because we hold
@@ -516,6 +532,7 @@ class MESITerminalCC : public CC {
                 futex_lock(req.childLock);
             }
             bcc->unlock();
+            futex_unlock(&terminalccLock);
         }
 
         //Inv methods
@@ -534,8 +551,10 @@ class MESITerminalCC : public CC {
         }
 
         //Repl policy interface
-        uint32_t numSharers(uint32_t lineId) {return 0;} //no sharers
-        bool isValid(uint32_t lineId) {return bcc->isValid(lineId);}
+        uint32_t numSharers(int32_t lineId) {
+            return 0;} //no sharers
+        bool isValid(int32_t lineId) {
+            return bcc->isValid(lineId);}
 };
 
 #endif  // COHERENCE_CTRLS_H_

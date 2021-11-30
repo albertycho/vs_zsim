@@ -34,7 +34,8 @@
 #include "pad.h"
 #include "stats.h"
 #include "coherence_ctrls.h"
-
+#include "breakdown_stats.h"
+#include <fstream>
 
 /* Helper data structures */
 
@@ -195,6 +196,17 @@ class DDRMemory : public MemObject {
         const bool closedPage;
         const uint32_t domain;
 
+        static const uint32_t bwCounterNum = 4;
+        Counter profBandwidth[bwCounterNum];
+        uint64_t lastAccesses;
+        uint64_t maxBandwidth;
+        uint64_t minBandwidth;
+        uint64_t lastPhase;
+        lock_t statsLock;
+        CycleBreakdownStat profBWHist;
+
+
+
         // DRAM timing parameters -- initialized in initTech()
         // All parameters are in memory clocks (multiples of tCK)
         uint32_t tBL;    // burst length (== tTrans)
@@ -278,10 +290,16 @@ class DDRMemory : public MemObject {
         uint64_t tick(uint64_t sysCycle);
         void recycleEvent(SchedEvent* ev);
 
+        inline uint64_t sysToMicroSec(uint64_t sysCycle) { return sysCycle*1000/sysFreqKHz; }
+        virtual void EstimateBandwidth();
+
         //void setChildrenMem(g_vector<BaseCache*>& children, Network* network);
 
         //g_vector<BaseCache*> children_caches;
         //g_vector<uint32_t> childrenRTTs;
+
+        float mem_bwdth[200000];
+        int midx = 0;
 
     private:
         AddrLoc mapLineAddr(Address lineAddr);

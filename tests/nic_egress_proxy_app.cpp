@@ -30,7 +30,7 @@ int main() {
 
 	CPU_SET(core_id, &cpuset);
 
-	int setresult = sched_setaffinity(pid, sizeof(cpuset), &cpuset);
+	int setresult = sched_setaffinity(pid, sizeof(cpu_set_t), &cpuset);
 
 	if(setresult!=0){
 		std::cout<<"nic_egress_proxy_app - sched_setaffinity failed"<<std::endl;

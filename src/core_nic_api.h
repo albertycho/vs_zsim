@@ -25,7 +25,14 @@ bool cq_wr_event_ready(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint64_t 
 		return false;
 	}
 	uint64_t q_cycle = CQ_WR_EV_Q->q_cycle;
-	return q_cycle <= cur_cycle;
+	if (q_cycle <= cur_cycle) {
+		if(CQ_WR_EV_Q->cqe.success == 0x7f) {
+			nicInfo->nic_elem[core_id].ts_queue[nicInfo->nic_elem[core_id].ts_idx++] = cur_cycle;
+			nicInfo->nic_elem[core_id].phase_queue[nicInfo->nic_elem[core_id].phase_idx++] = zinfo->numPhases;
+		}
+		return true;
+	}
+	return false;
 }
 
 cq_wr_event* deq_cq_wr_event(glob_nic_elements* nicInfo, uint64_t core_id)
@@ -56,14 +63,14 @@ int tc_map_insert(uint64_t in_ptag, uint64_t issue_cycle, uint64_t core_id) {
 	//(lg_p->tc_map)[ptag] = issue_time;
 	assert((lg_p->tc_map->count(ptag)) == 0);
 	//lg_p->tc_map->insert(std::make_pair(ptag, issue_cycle));
-	assert(core_id > 1);
-	//auto pair = std::make_pair(issue_cycle,core_id);
-	//assert(pair.second>1);
-	lg_p->tc_map->insert(std::make_pair(ptag, issue_cycle));
-	lg_p->tc_map_core->insert(std::pair<uint64_t,uint64_t>(ptag, core_id));
-	lg_p->tc_map_phase->insert(std::make_pair(ptag, zinfo->numPhases));
-	assert((*(lg_p->tc_map_core))[ptag] > 1);
-	//info("ptc insert to map successful, map size : %d", lg_p->tc_map->size());
+	//lg_p->tc_map_core->insert(std::pair<uint64_t,uint64_t>(ptag, core_id));
+	//lg_p->tc_map_phase->insert(std::make_pair(ptag, zinfo->numPhases));
+	timestamp ts;
+	ts.core_id = core_id;
+	ts.phase = zinfo->numPhases;
+	ts.nic_enq_cycle = issue_cycle;
+	//ts.bbl = bbl;
+	lg_p->tc_map->insert(std::make_pair(ptag,ts));
 	futex_unlock(&lg_p->ptc_lock);
 
 	return 0;
@@ -149,7 +156,7 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 	uint64_t cq_head = nicInfo->nic_elem[core_id].cq_head;
 
 	if( (cq->tail==cq_head) && (cq->SR!=nicInfo->nic_elem[core_id].ncq_SR) ){
-		info("cq for core %lu is full, curcycle: %lu", core_id, cur_cycle);
+		//info("cq for core %lu is full, curcycle: %lu", core_id, cur_cycle);
 		return -1;
 	}
 
@@ -211,15 +218,14 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle) {
 
 	((load_generator*)lg_p)->next_cycle = ((load_generator*)lg_p)->next_cycle + interval; 
 
-	((load_generator*)lg_p)->ptag = ((load_generator*)lg_p)->ptag + 1;
+	((load_generator*)lg_p)->ptag++;
 
-	((load_generator*)lg_p)->sent_packets = ((load_generator*)lg_p)->sent_packets + 1;
+	((load_generator*)lg_p)->sent_packets++;
 
-	/*
 	if (((load_generator*)lg_p)->sent_packets == ((load_generator*)lg_p)->target_packet_count) {
 		((load_generator*)lg_p)->all_packets_sent = true;
 	}
-	*/
+	
 
 	((load_generator*)lg_p)->prev_cycle = cur_cycle;
 	return 0;
@@ -367,7 +373,6 @@ int create_CEQ_entry(uint64_t recv_buf_addr, uint32_t success, uint64_t cur_cycl
 	//insert_time_card(lg_p->ptag, cur_cycle, lg_p);
 	if (success == 0x7f) {
 		uint64_t start_cycle = cur_cycle;
-		assert(core_id>1);
 		tc_map_insert(tid, start_cycle, core_id);
 	}
 
@@ -417,6 +422,11 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	// 	std::cout<<"I CAN SEE PROCIDX! but doesn't match nic_ingess_pid"<<std::endl;
 	// }
 
+	//if (nicInfo->latencies_size == lg_p->target_packet_count) {
+	//	lg_p->all_packets_sent = true;
+//	info("all packets sent");
+//	}
+
 	futex_lock(&nicInfo->nic_elem[core_id].rb_lock);
 	uint32_t rb_head = allocate_recv_buf(8, nicInfo, core_id);
 	//dbgprint
@@ -424,9 +434,8 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 
 	futex_unlock(&nicInfo->nic_elem[core_id].rb_lock);
 	if (rb_head > RECV_BUF_POOL_SIZE) {
-		//info("core %d out of recv buffer, cycle %lu", core_id, cur_cycle);
 		panic("core %d out of recv buffer, cycle %lu", core_id, cur_cycle);
-		//info("((zinfo->numCores) - 1)=%d", ((zinfo->numCores) - 1));
+		//info("core %d out of recv buffer, cycle %lu", core_id, cur_cycle);
 		return -1;
 	}
 
@@ -438,6 +447,7 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	//acho: I need to think through timing and clock cycle assignment/adjustment 
 
 	uint64_t reqSatisfiedCycle = cur_cycle;
+	uint64_t temp;
 	if (level == 42) {	// ideal ingress
 		reqSatisfiedCycle = cur_cycle+1;
 	}
@@ -448,20 +458,21 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 			lsize = 1;
 		lsize += size/64;
 
+		int i=0;
 		while(lsize){
-			reqSatisfiedCycle = max(reqSatisfiedCycle, l1d->store(addr, cur_cycle, level, srcId, MemReq::PKTIN) + (level == 3 ? 1 : 0) * L1D_LAT);
+			temp = l1d->store(addr, cur_cycle+i, level, srcId, MemReq::PKTIN) + (level == 3 ? 1 : 0) * L1D_LAT;
 			//TODO check what cycles need to be passed to recrod
-			cRec->record(cur_cycle, cur_cycle, reqSatisfiedCycle);
+			cRec->record(cur_cycle+i, cur_cycle+i, temp);
 			lsize--;
 			addr += 64;
+			reqSatisfiedCycle = max(temp, reqSatisfiedCycle);
+			//i++;
 		}
 
 	}
 
-	uint64_t ceq_cycle = (uint64_t)(((load_generator*)lg_p)->next_cycle);
-	assert(core_id>1);
-	create_CEQ_entry(recv_buf_addr, 0x7f, reqSatisfiedCycle/*ceq_cycle*/, nicInfo, core_id);
-	//create_CEQ_entry(recv_buf_addr, 0x7f, cur_cycle/*ceq_cycle*/, nicInfo, core_id);
+	//uint64_t ceq_cycle = (uint64_t)(((load_generator*)lg_p)->next_cycle);
+	create_CEQ_entry(recv_buf_addr, 0x7f, reqSatisfiedCycle/*cur_cycle*//*ceq_cycle*/, nicInfo, core_id);
 	//create_CEQ_entry(recv_buf_addr, 0x7f, 10/*ceq_cycle*/, nicInfo, core_id);
 
 	//TODO may want to pass the reqSatisfiedcycle value back to the caller via updating an argument
@@ -679,12 +690,7 @@ int insert_latency_stat(uint64_t p_latency) {
 		nicInfo->max_latency = p_latency;
 	}
 
-	/* stop sending after target number of requests are sent and completed */
-	//info("target packet count is %lld", lg_p->target_packet_count);
-	if (nicInfo->latencies_size == lg_p->target_packet_count) {
-		lg_p->all_packets_sent = true;
-		info("all packets sent");
-	}
+
 
 	//dbgprint
 	//info("latencies gathered: %d", nicInfo->latencies_size);
@@ -716,7 +722,7 @@ int enq_dpq(uint64_t lbuf_addr, uint64_t end_time, uint64_t ptag, uint64_t lengt
 		nicInfo->done_packet_q_tail = dpq_entry;
 	}
 
-	nicInfo->dpq_size = nicInfo->dpq_size + 1;
+	nicInfo->dpq_size++;
 	//info("dpq_size = %d", nicInfo->dpq_size);
 	futex_unlock(&(nicInfo->dpq_lock));
 
@@ -731,82 +737,99 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
 
-
-	while (nicInfo->done_packet_q_head != NULL) {
-		futex_lock(&(nicInfo->dpq_lock));
-		done_packet_info* dp = nicInfo->done_packet_q_head;
-		nicInfo->done_packet_q_head = dp->next;
-		if (nicInfo->done_packet_q_head == NULL) {
-			nicInfo->done_packet_q_tail = NULL;
-		}
-		futex_unlock(&(nicInfo->dpq_lock));
-		
-		uint64_t end_cycle = dp->end_cycle;
-
-		/// handle done packet - uarch mem access, lookup map to match ptag and log latency
-		///////////////// UARCH MEM ACCESS /////////////////////////
-
-		// GETS to LLC
-
-		//info("starting deq_dpq at cycle %lld", core_cycle);
-		uint64_t reqSatisfiedCycle;
-		if (level == 42) {
-			reqSatisfiedCycle = core_cycle+1;
-		} else if (level == 1 && inval == 1) { 	// non-ddio config of modern intel cpus: they snoop the cache for a packet, but also invalidate, so use a GETX and inval the LLC
-			uint64_t addr = dp->lbuf_addr;
-			uint64_t lsize = dp->len;
-			while(lsize){
-				reqSatisfiedCycle = l1d->store(addr, core_cycle, level, srcId, MemReq::PKTOUT);				//TODO check what cycles need to be passed to recrod
-				cRec->record(core_cycle, core_cycle, reqSatisfiedCycle);
-				lsize--;
-				addr += 64;
+	futex_lock(&(nicInfo->dpq_lock));
+	//while () {
+		if(nicInfo->done_packet_q_head != NULL) {
+			done_packet_info* dp = nicInfo->done_packet_q_head;
+			nicInfo->done_packet_q_head = dp->next;
+			if (nicInfo->done_packet_q_head == NULL) {
+				nicInfo->done_packet_q_tail = NULL;
 			}
-		} else {// ddio: we snoop the cache for the data, but don't invalidate (GETS) + all other cases
-			uint64_t addr = dp->lbuf_addr;
-			uint64_t lsize = dp->len;
-			while(lsize){
-				reqSatisfiedCycle = l1d->load(addr, core_cycle, level, srcId, MemReq::PKTOUT) + (level == 3 ? 1 : 0) * L1D_LAT;		//TODO check what cycles need to be passed to recrod
-				cRec->record(core_cycle, core_cycle, reqSatisfiedCycle);
-				lsize--;
-				addr += 64;
+			//info("dpq_size = %lld",nicInfo->dpq_size);
+			nicInfo->dpq_size--;
+			futex_unlock(&(nicInfo->dpq_lock));
+				
+			uint64_t end_cycle = dp->end_cycle;
+
+			/// handle done packet - uarch mem access, lookup map to match ptag and log latency
+			///////////////// UARCH MEM ACCESS /////////////////////////
+
+			// GETS to LLC
+
+			//info("starting deq_dpq at cycle %lld", core_cycle);
+			uint64_t reqSatisfiedCycle;
+			if (level == 42) {
+				reqSatisfiedCycle = core_cycle+1;
+			} else if (level == 1 && inval == 1) { 	// non-ddio config of modern intel cpus: they snoop the cache for a packet, but also invalidate, so use a GETX and inval the LLC
+				uint64_t addr = dp->lbuf_addr;
+				uint64_t lsize = dp->len;
+				while(lsize){
+					reqSatisfiedCycle = l1d->store(addr, core_cycle, level, srcId, MemReq::PKTOUT);				//TODO check what cycles need to be passed to recrod
+					cRec->record(core_cycle, core_cycle, reqSatisfiedCycle);
+					lsize--;
+					addr += 64;
+				}
+			} else {// ddio: we snoop the cache for the data, but don't invalidate (GETS) + all other cases
+				uint64_t addr = dp->lbuf_addr;
+				uint64_t lsize = dp->len;
+				while(lsize){
+					reqSatisfiedCycle = l1d->load(addr, core_cycle, level, srcId, MemReq::PKTOUT) + (level == 3 ? 1 : 0) * L1D_LAT;		//TODO check what cycles need to be passed to recrod
+					cRec->record(core_cycle, core_cycle, reqSatisfiedCycle);
+					lsize--;
+					addr += 64;
+				}
 			}
+			
+			//////// get packet latency info from tag-starttime map //////
+			uint64_t ptag = dp->tag;
+			uint32_t ending_phase = dp->ending_phase;
+			
+			futex_lock(&lg_p->ptc_lock);
+			//info("reading ptc from map and removing");
+			uint64_t start_cycle = (*(lg_p->tc_map))[ptag].nic_enq_cycle;
+			//assert((*(lg_p->tc_map_core))[ptag] > 1);
+			uint64_t core_id = (*(lg_p->tc_map))[ptag].core_id;
+			uint32_t start_phase = (*(lg_p->tc_map))[ptag].phase;
+			//uint32_t start_bbl = (*(lg_p->tc_map))[ptag].bbl;
+
+			lg_p->tc_map->erase(ptag);
+			//lg_p->tc_map_core->erase(ptag);
+			//lg_p->tc_map_phase->erase(ptag);
+
+
+			futex_unlock(&lg_p->ptc_lock);
+
+			//uint32_t span_phase = ending_phase - start_phase + 1;
+
+			auto coreinfo = nicInfo->nic_elem[core_id];
+
+			nicInfo->nic_elem[core_id].phase_nic_queue[nicInfo->nic_elem[core_id].phase_nic_idx++] = start_phase;//span_phase;
+			nicInfo->nic_elem[core_id].phase_nic_queue[nicInfo->nic_elem[core_id].phase_nic_idx++] = ending_phase;
+			nicInfo->nic_elem[core_id].ts_nic_queue[nicInfo->nic_elem[core_id].ts_nic_idx++] = start_cycle;
+			nicInfo->nic_elem[core_id].ts_nic_queue[nicInfo->nic_elem[core_id].ts_nic_idx++] = end_cycle;
+			//nicInfo->nic_elem[core_id].bbl_queue[nicInfo->nic_elem[core_id].bbl_idx++] = start_bbl;
+			//nicInfo->nic_elem[core_id].bbl_queue[nicInfo->nic_elem[core_id].bbl_idx++] = end_bbl;
+
+			//uint64_t access_latency = reqSatisfiedCycle - core_cycle;
+			//uint64_t p_latency = end_cycle + access_latency - start_cycle;	
+		
+			uint64_t p_latency = end_cycle - start_cycle;
+			insert_latency_stat(p_latency);
+
+			/* stop sending after target number of requests are sent and completed */
+			//info("target packet count is %lld", lg_p->target_packet_count);
+			if (nicInfo->latencies_size == lg_p->target_packet_count) {
+				assert(nicInfo->dpq_size==0);
+				assert(nicInfo->done_packet_q_head==NULL);
+				lg_p->all_packets_completed = true;
+				info("all packets received");
+			}
+		//std::cout << "Packet Tag: " << ptag << ", core "<<core_id << ", start_cycle: " << start_cycle << ", end_cycle: " << end_cycle << ", p_latency: " << p_latency << std::endl;
 		}
-		
-		//////// get packet latency info from tag-starttime map //////
-		uint64_t ptag = dp->tag;
-		uint32_t ending_phase = dp->ending_phase;
-		
-		futex_lock(&lg_p->ptc_lock);
-		//info("reading ptc from map and removing");
-		uint64_t start_cycle = (*(lg_p->tc_map))[ptag];
-		//assert((*(lg_p->tc_map_core))[ptag] > 1);
-		uint64_t core_id = (*(lg_p->tc_map_core))[ptag];
-		uint32_t start_phase = (*(lg_p->tc_map_phase))[ptag];
-
-		lg_p->tc_map->erase(ptag);
-		lg_p->tc_map_core->erase(ptag);
-		lg_p->tc_map_phase->erase(ptag);
-		//assert(core_id > 1);
-		nicInfo->dpq_size--;
-
-		futex_unlock(&lg_p->ptc_lock);
-
-		uint32_t span_phase = ending_phase - start_phase + 1;
-
-		nicInfo->nic_elem[core_id].phase_queue[(nicInfo->nic_elem[core_id].ts_nic_idx)/2] = ending_phase;
-		nicInfo->nic_elem[core_id].ts_nic_queue[nicInfo->nic_elem[core_id].ts_nic_idx++] = start_cycle;
-		nicInfo->nic_elem[core_id].ts_nic_queue[nicInfo->nic_elem[core_id].ts_nic_idx++] = end_cycle;
-
-		//uint64_t access_latency = reqSatisfiedCycle - core_cycle;
-		//uint64_t p_latency = end_cycle + access_latency - start_cycle;	
-	
-		uint64_t p_latency = end_cycle - start_cycle;
-		insert_latency_stat(p_latency);
-
-		std::cout << "Packet Tag: " << ptag << ", core "<<core_id << ", start_cycle: " << start_cycle << ", end_cycle: " << end_cycle << ", p_latency: " << p_latency << std::endl;
-
-
-	}
+		else {
+			futex_unlock(&(nicInfo->dpq_lock));
+		}
+	//}
 
 	return 0;
 }
@@ -818,18 +841,26 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
 	*/
 	if (cur_wq_entry.op == RMC_RECV) {
 		free_recv_buf_addr(cur_wq_entry.buf_addr, core_id);
+		//if(nicInfo->send_in_loop){
+		//	assert(nicInfo->nic_elem[core_id].packet_pending==true);
+		if(nicInfo->nic_elem[core_id].packet_pending==true) {
+			futex_lock(&nicInfo->nic_elem[core_id].packet_pending_lock);
+			nicInfo->nic_elem[core_id].packet_pending=false;
+			futex_unlock(&nicInfo->nic_elem[core_id].packet_pending_lock);
+		}
+		
 		return;
 	}
 
 	if (cur_wq_entry.op == RMC_SEND)
-	{
+	{	/*
 		if(nicInfo->send_in_loop){
 			assert(nicInfo->nic_elem[core_id].packet_pending==true);
 			futex_lock(&nicInfo->nic_elem[core_id].packet_pending_lock);
 			nicInfo->nic_elem[core_id].packet_pending=false;
 			futex_unlock(&nicInfo->nic_elem[core_id].packet_pending_lock);
 		}
-
+		*/
 		//TODO - define this somewhere else? decide how to handle nw_roundtrip_delay
 		uint64_t nw_roundtrip_delay = nicInfo->nw_roundtrip_delay;
 

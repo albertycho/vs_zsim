@@ -158,18 +158,14 @@ class WindowStructure {
             assert(occupancy <= WSZ);
         }
 
-        inline void advancePos(uint64_t& curCycle, int core_id, bool injection=true) {
+        inline void advancePos(uint64_t& curCycle, int core_id, bool inj = true) {
             occupancy -= curWin[curPos].count;
             curWin[curPos].set(0, 0);
             curPos++;
             curCycle++;
             /*NIC logic triggers*/
-			if(injection){
-            	cycle_increment_routine(curCycle, core_id);
-			}
-
-            
-
+            if(inj)
+                cycle_increment_routine(curCycle, core_id);
 
             if (curPos == H) {  // rebase
                 // info("[%ld] Rebasing, curCycle=%ld", curCycle/H, curCycle);
@@ -488,12 +484,13 @@ class OOOCore : public Core {
         inline EventRecorder* getEventRecorder() {return cRec.getEventRecorder();}
         void cSimStart();
         void cSimEnd();
-        //static int  nic_ingress_routine_per_cycle(uint32_t srcId);
-        int  nic_ingress_routine_per_cycle(uint32_t srcId);
-        uint16_t ingr_type, egr_type, egr_inval;
-        uint32_t cycle_adj_queue[1000000]; // curCycle at start of cSimStart() and at end of cSimEnd()
+        static int  nic_ingress_routine_per_cycle(uint32_t srcId);
+
+    	uint32_t cycle_adj_queue[100000];	// curCycle at start of cSimStart() and at end of cSimEnd()
+        uint32_t cycle_adj_idx=0;
         uint32_t start_cnt_phases = 0;
-        uint32_t cycle_adj_idx = 0;
+
+        uint16_t ingr_type, egr_type, egr_inval;
 
     private:
         inline void load(Address addr);

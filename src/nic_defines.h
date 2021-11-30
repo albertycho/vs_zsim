@@ -182,10 +182,13 @@ struct nic_element {
 	bool service_in_progress;
 	PAD();
 
-	uint32_t ts_queue[1000000];
-	uint32_t ts_nic_queue[1000000];
-	uint32_t phase_queue[100000];
-	int ts_idx = 0, ts_nic_idx = 0;
+	// per-core
+	uint32_t ts_queue[1000000];	//timestamps coming from app calling timestamp() + core request pickup
+	uint32_t ts_nic_queue[1000000];	// timestamps recorded in nic functions (injection, answer pickup)
+	uint32_t bbl_queue[100000];	// amount of bbls between injection and completion of a request
+	uint32_t phase_nic_queue[100000];	// bound phase recording per request: injection, answer pickup
+	uint32_t phase_queue[100000];	// bound phase recording per request: core pickup
+	int ts_idx = 0, ts_nic_idx = 0, phase_idx = 0, phase_nic_idx = 0, bbl_idx = 0;
 
 	bool packet_pending;
 	lock_t packet_pending_lock;
@@ -213,7 +216,7 @@ struct glob_nic_elements {
 	done_packet_info* done_packet_q_tail;
 	lock_t dpq_lock;
 
-	uint64_t dpq_size;
+	uint64_t dpq_size=0;
 
 	uint64_t packet_injection_rate;
 	uint32_t expected_core_count;
@@ -247,6 +250,9 @@ struct glob_nic_elements {
 
 	PAD();
 	nic_element nic_elem[MAX_NUM_CORES];
+
+	uint32_t ready_for_inj=0;
+	uint32_t first_injection = 0;
 	//adding additional elements to this struct below nic_elem causes segfault at gm_calloc for unknown reason
 };
 
@@ -258,7 +264,11 @@ typedef struct p_time_card {
 	p_time_card* next;
 } p_time_card;
 
-
+typedef struct timestamp_str {
+	uint64_t core_id;
+	uint64_t phase;
+	uint64_t nic_enq_cycle;
+} timestamp;
 
 struct load_generator {
 	int next_cycle;
@@ -268,21 +278,18 @@ struct load_generator {
 	uint64_t sum_interval;
 
 	int message; //may replace this to appropriate type
-	bool all_packets_sent;
-	uint32_t ready_to_inject=0;
-	uint64_t inject_start_phase=0;
-	int server_ready_count=0;
+	bool all_packets_sent=0, all_packets_completed=0;
 	uint64_t target_packet_count;
-	uint64_t sent_packets=0;
+	uint64_t sent_packets;
 	uint64_t last_core;
 	uint64_t ptag;
 	p_time_card* ptc_head; // this linked list packet_time_card is not used, 
 	lock_t ptc_lock;	   // keeping code for DBG/Comparison purpose
-	//std::map<uint64_t, uint64_t> * tc_map;
-	std::shared_ptr<std::map<uint64_t, uint64_t>> tc_map;
-	std::shared_ptr<std::map<uint64_t, uint64_t>> tc_map_core;
-	std::shared_ptr<std::map<uint64_t, uint64_t>> tc_map_phase;
+	//std::shared_ptr<std::map<uint64_t, uint64_t>> tc_map;
+	//std::shared_ptr<std::map<uint64_t, uint64_t>> tc_map_core;
+	//std::shared_ptr<std::map<uint64_t, uint64_t>> tc_map_phase;
 	//std::shared_ptr<std::map<uint64_t, std::pair<uint64_t,uint64_t>>> tc_map;
+	std::shared_ptr<std::map<uint64_t, timestamp>> tc_map;
 	RPCGenerator* RPCGen;
 };
 

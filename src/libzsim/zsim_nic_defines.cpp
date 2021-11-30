@@ -198,6 +198,8 @@ int rmc_hw_recv(rmc_wq_t *wq, uint32_t ctx_id, void *recv_buf, uint64_t length){
 		//std::cout<<"APP - flips wq SR"<<std::endl;
 	}
 
+	//register_buffer((void*)(NULL), (void*)0x14);
+
 	return 0;
 }
 

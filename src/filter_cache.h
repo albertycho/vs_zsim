@@ -108,18 +108,18 @@ class FilterCache : public Cache {
             if ((lvl == 8) || (lvl == level)) {
 				//if ideal case
 				//if vLineAddr in recv_buf range for this core
-		glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());	
-		//assume cq and wq return immediately
-		uint64_t wq_base = (uint64_t) (nicInfo->nic_elem[srcId].wq);
-		uint64_t wq_top = wq_base + sizeof(rmc_wq_t);
-		uint64_t cq_base = (uint64_t) (nicInfo->nic_elem[srcId].cq);
-		uint64_t cq_top = cq_base + sizeof(rmc_cq_t);
-		if((vAddr >= wq_base) && (vAddr<=wq_top)){
-			return curCycle;
-		}
-		if((vAddr >= cq_base) && (vAddr<=cq_top)){
-			return curCycle;
-		}
+                glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());	
+                //assume cq and wq return immediately
+                uint64_t wq_base = (uint64_t) (nicInfo->nic_elem[srcId].wq);
+                uint64_t wq_top = wq_base + sizeof(rmc_wq_t);
+                uint64_t cq_base = (uint64_t) (nicInfo->nic_elem[srcId].cq);
+                uint64_t cq_top = cq_base + sizeof(rmc_cq_t);
+                if((vAddr >= wq_base) && (vAddr<=wq_top)){
+                    return curCycle;
+                }
+                if((vAddr >= cq_base) && (vAddr<=cq_top)){
+                    return curCycle;
+                }
                 if (vLineAddr == filterArray[idx].rdAddr) {
                     fGETSHit++;
                     return MAX(curCycle, availCycle);
@@ -170,9 +170,7 @@ class FilterCache : public Cache {
                     return MAX(curCycle, availCycle);
                 } 
             }
-                        
             if (lvl == 42) {       // ideal ingress coming from app core, if the data is nic-related return 0 latency
-
                 Address gm_base_addr = 0x00ABBA000000; // defined in galloc.cpp
                 Address gm_seg_size = 1<<30; //TODO: just use default? or wire it from init
                 Address nicLineAddr_bot = gm_base_addr >> lineBits;
@@ -180,13 +178,10 @@ class FilterCache : public Cache {
                 if (vLineAddr >= nicLineAddr_bot && vLineAddr <= nicLineAddr_top) {
                     return curCycle;
                 }
-
                 else {
                     lvl = level;
                 }
             }
-
-            
             if (source == 1742)
                 return replace(vLineAddr, idx, false, curCycle, srcId, 0, flags, (lvl == 8) ? level : lvl);
             else {

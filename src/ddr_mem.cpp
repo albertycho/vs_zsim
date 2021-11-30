@@ -34,6 +34,8 @@
 #include "timing_event.h"
 #include "zsim.h"
 #include "network.h"
+#include <string>
+#include <queue>
 
 //#define DEBUG(args...) info(args)
 #define DEBUG(args...)
@@ -224,6 +226,10 @@ DDRMemory::DDRMemory(uint32_t _lineSize, uint32_t _colSize, uint32_t _ranksPerCh
     nextSchedCycle = -1ul;
     nextSchedEvent = nullptr;
     eventFreelist = nullptr;
+
+    lastPhase = 0;
+    futex_init(&statsLock);
+
 }
 
 void DDRMemory::initStats(AggregateStat* parentStat) {
@@ -236,6 +242,21 @@ void DDRMemory::initStats(AggregateStat* parentStat) {
     profReadHits.init("rdhits", "Read row hits"); memStats->append(&profReadHits);
     profWriteHits.init("wrhits", "Write row hits"); memStats->append(&profWriteHits);
     latencyHist.init("mlh", "latency histogram for memory requests", NUMBINS); memStats->append(&latencyHist);
+
+    /*
+    AggregateStat* bwStats = new AggregateStat();
+    bwStats->init("bw", "Bandwidth Report");
+    profBandwidth[0].init("all", "Cumulative Average bandwidth (MB/s)");
+    profBandwidth[1].init("cur", "Current Average bandwidth (MB/s)");
+    profBandwidth[2].init("max", "Maximum bandwidth (MB/s)");
+    profBandwidth[3].init("min", "Minimum bandwidth (MB/s)");
+    for(uint32_t i = 0; i < bwCounterNum; i++)
+        bwStats->append(&profBandwidth[i]);
+    memStats->append(bwStats);
+    */
+    //profBWHist.init("occHist", "Bandwidth utilization histogram", numMSHRs+1);
+    //memStats->append(&profBWHist);
+
     parentStat->append(memStats);
 }
 
@@ -254,8 +275,39 @@ void DDRMemory::setChildrenMem(g_vector<BaseCache*>& children, Network* network)
     return;
 }
 */
+void DDRMemory::EstimateBandwidth() {
+    // Access Count
+    uint64_t realTime = sysToMicroSec((zinfo->numPhases)*(zinfo->phaseLength));
+    uint64_t lastTime = sysToMicroSec(lastPhase*(zinfo->phaseLength));
+    uint64_t totalAccesses = profReads.get() + profWrites.get();
+    float curBandwidth = ((totalAccesses - lastAccesses)*lineSize*sysFreqKHz*0.000001) / ((zinfo->numPhases-lastPhase)*(zinfo->phaseLength)); //((realTime-lastTime)*0.001);
+    std::string delimiter = "-";
+    std::string nm = getName();
+    std::string token = nm.substr(nm.find(delimiter)+1,nm.length());
+    
+	if(midx<200000){
+		mem_bwdth[midx++] = curBandwidth;
+	}
+
+    lastAccesses = totalAccesses;
+
+    lastPhase = zinfo->numPhases;
+
+}
+
+
 uint64_t DDRMemory::access(MemReq& req) {
     
+    if (nicInfo->ready_for_inj==0xabcd && zinfo->numPhases > lastPhase) {
+        futex_lock(&statsLock);
+        //Recheck, someone may have updated already
+        if (zinfo->numPhases > lastPhase) {
+            EstimateBandwidth();
+        }
+        futex_unlock(&statsLock);
+    }
+    
+
     bool no_record = ((req.flags) & (MemReq::NORECORD)) != 0;
 
     switch (req.type) {
@@ -294,7 +346,7 @@ uint64_t DDRMemory::access(MemReq& req) {
     if (req.type == PUTS) {
         return req.cycle; //must return an absolute value, 0 latency
     } else {
-        bool isWrite = (req.type == PUTX);
+        bool isWrite = (req.type == PUTX || req.flags & MemReq::PKTIN);
         uint64_t respCycle = req.cycle + (isWrite? minWrLatency : minRdLatency);
         if (no_record) {
             return respCycle;

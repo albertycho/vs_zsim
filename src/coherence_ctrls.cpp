@@ -53,12 +53,13 @@ void MESIBottomCC::init(const g_vector<MemObject*>& _parents, Network* network, 
 }
 
 
-uint64_t MESIBottomCC::processEviction(Address wbLineAddr, uint32_t lineId, bool lowerLevelWriteback, uint64_t cycle, uint32_t srcId, bool no_record) {
+uint64_t MESIBottomCC::processEviction(Address wbLineAddr, int32_t lineId, bool lowerLevelWriteback, uint64_t cycle, uint32_t srcId, bool no_record) {
 
     uint32_t norecord_flag = 0;
     if (no_record) {
         norecord_flag = MemReq::NORECORD;
     }
+    assert(lineId > -1);
     MESIState* state = &array[lineId];
     if (lowerLevelWriteback) {
         //If this happens, when tcc issued the invalidations, it got a writeback. This means we have to do a PUTX, i.e. we have to transition to M if we are in E
@@ -99,8 +100,9 @@ uint64_t MESIBottomCC::passToNext( Address lineAddr, AccessType type, uint32_t c
 uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessType type, uint64_t cycle, uint32_t srcId, uint32_t flags) {
     uint64_t respCycle = cycle;
     MESIState* state;
-    if (lineId != -1)
+    if (lineId != -1) {
         state = &array[lineId];
+    }
     else {
         state = (MESIState*)malloc(sizeof(MESIState));
         *state = I;
@@ -158,8 +160,9 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
                     else profGETXMissSM.inc();
 
                     if ((flags & MemReq::PKTIN) && (flags >> 16 == 0)) {    // this is an ingress packed that is directed to the LLC and it missed, so we don't go to memory
-                        info("ddio ingress missed in llc, don't go to mem");
+                        info("ddio ingress missed in llc, don't go to mem, state %s",MESIStateName(*state));
                         *state = M;
+                        respCycle++;
                     } else {
                         uint32_t parentId = getParentId(lineAddr);
                         MemReq req = {lineAddr, GETX, selfId, state, cycle, &ccLock, *state, srcId, flags & ~MemReq::PKTIN};  // we have reached the correct level for ingress, the following requests downwards should have the pktin flag set
@@ -192,7 +195,8 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
     return respCycle;
 }
 
-void MESIBottomCC::processWritebackOnAccess(Address lineAddr, uint32_t lineId, AccessType type) {
+void MESIBottomCC::processWritebackOnAccess(Address lineAddr, int32_t lineId, AccessType type) {
+    assert(lineId > -1);
     MESIState* state = &array[lineId];
     assert(*state == M || *state == E);
     if (*state == E) {
@@ -201,7 +205,8 @@ void MESIBottomCC::processWritebackOnAccess(Address lineAddr, uint32_t lineId, A
     }
 }
 
-void MESIBottomCC::processInval(Address lineAddr, uint32_t lineId, InvType type, bool* reqWriteback) {
+void MESIBottomCC::processInval(Address lineAddr, int32_t lineId, InvType type, bool* reqWriteback) {
+    assert(lineId > -1);
     MESIState* state = &array[lineId];
     //assert(*state != I);
     if (*state == I) {
@@ -255,8 +260,9 @@ void MESITopCC::init(const g_vector<BaseCache*>& _children, Network* network, co
     }
 }
 
-uint64_t MESITopCC::sendInvalidates(Address lineAddr, uint32_t lineId, InvType type, bool* reqWriteback, uint64_t cycle, uint32_t srcId) {
+uint64_t MESITopCC::sendInvalidates(Address lineAddr, int32_t lineId, InvType type, bool* reqWriteback, uint64_t cycle, uint32_t srcId) {
     //Send down downgrades/invalidates
+    assert(lineId > -1);
     Entry* e = &array[lineId];
     //TODO acho: determine if this is okay with direct access
     //Don't propagate downgrades if sharers are not exclusive.
@@ -292,9 +298,10 @@ uint64_t MESITopCC::sendInvalidates(Address lineAddr, uint32_t lineId, InvType t
 }
 
 
-uint64_t MESITopCC::processEviction(Address wbLineAddr, uint32_t lineId, bool* reqWriteback, uint64_t cycle, uint32_t srcId) {  
+uint64_t MESITopCC::processEviction(Address wbLineAddr, int32_t lineId, bool* reqWriteback, uint64_t cycle, uint32_t srcId) {  
     if (nonInclusiveHack) {
         // Don't invalidate anything, just clear our entry
+        assert(lineId > -1);
         array[lineId].clear();
         return cycle;
     } else {
@@ -306,7 +313,6 @@ uint64_t MESITopCC::processEviction(Address wbLineAddr, uint32_t lineId, bool* r
 uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType type, uint32_t childId, bool haveExclusive,
                                   MESIState* childState, bool* inducedWriteback, uint64_t cycle, uint32_t srcId, uint32_t flags) {
     Entry* e; 
-    assert(lineId != -1);
     if (lineId != -1)
         e = &array[lineId];
     else {
@@ -424,7 +430,7 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
     return respCycle;
 }
 
-uint64_t MESITopCC::processInval(Address lineAddr, uint32_t lineId, InvType type, bool* reqWriteback, uint64_t cycle, uint32_t srcId) {
+uint64_t MESITopCC::processInval(Address lineAddr, int32_t lineId, InvType type, bool* reqWriteback, uint64_t cycle, uint32_t srcId) {
     if (type == FWD) {//if it's a FWD, we should be inclusive for now, so we must have the line, just invLat works
         assert(!nonInclusiveHack); //dsm: ask me if you see this failing and don't know why
         return cycle;

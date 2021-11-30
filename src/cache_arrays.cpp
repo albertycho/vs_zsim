@@ -42,6 +42,20 @@ SetAssocArray::SetAssocArray(uint32_t _numLines, uint32_t _assoc, ReplPolicy* _r
     assert_msg(isPow2(numSets), "must have a power of 2 # sets, but you specified %d", numSets);
 }
 
+void SetAssocArray::initStats(AggregateStat* parentStat) {
+    AggregateStat* objStats = new AggregateStat();
+    objStats->init("array", "CacheArray stats");
+    netMisses.init("netMiss", "Requests associated with network functionality, misses");
+    netHits.init("netHit", "Requests associated with network functionality, hits");
+    appMisses.init("appMiss", "Requests associated with app functionality, misses");
+    appHits.init("appHit", "Requests associated with app functionality, hits");
+    objStats->append(&netMisses);
+    objStats->append(&netHits);
+    objStats->append(&appMisses);
+    objStats->append(&appHits);
+    parentStat->append(objStats);
+}
+
 int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool updateReplacement) {
     uint32_t set = hf->hash(0, lineAddr) & setMask;
     uint32_t first = set*assoc;
@@ -52,13 +66,26 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
                     array[id].lastUSer = APP;
                 else                // coming from NIC
                     array[id].lastUSer = NIC;
-                if (req->flags & MemReq::NETRELATED)
-                array[id].nicType = NETWORK;
-                else
+                if (req->flags & MemReq::NETRELATED) {
+                    array[id].nicType = NETWORK;
+                    netHits.atomicInc();
+                }
+                else {
                     array[id].nicType = DATA;
+                    appHits.atomicInc();
+                }
             }
-            if (updateReplacement) rp->update(id, req);
+            if (updateReplacement) 
+                rp->update(id, req);
             return id;
+        }
+    }
+    if (req != nullptr) {
+        if (req->flags & MemReq::NETRELATED) {
+            netMisses.atomicInc();
+        }
+        else {
+            appMisses.atomicInc();
         }
     }
     return -1;

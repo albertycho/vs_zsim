@@ -73,12 +73,17 @@ class SetAssocArray : public CacheArray {
         uint32_t assoc;
         uint32_t setMask;
 
+        Counter netMisses, netHits, appMisses,appHits;
+
+
     public:
         SetAssocArray(uint32_t _numLines, uint32_t _assoc, ReplPolicy* _rp, HashFamily* _hf);
 
         int32_t lookup(const Address lineAddr, const MemReq* req, bool updateReplacement);
         uint32_t preinsert(const Address lineAddr, const MemReq* req, Address* wbLineAddr);
         void postinsert(const Address lineAddr, const MemReq* req, uint32_t candidate);
+
+        void initStats(AggregateStat* parentStat);
 };
 
 /* The cache array that started this simulator :) */

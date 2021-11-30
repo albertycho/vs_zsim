@@ -315,12 +315,19 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
                     Address addr = loadAddrs[loadIdx++];
                     uint64_t reqSatisfiedCycle = dispatchCycle;
                     if (addr != ((Address)-1L)) {
+                        if(core_id > 0) {
                         if (ingr_type == 42) //ideal ingress, app core should always hit in l1 for nic-relate data
                             reqSatisfiedCycle = l1d->load(addr, dispatchCycle, ingr_type) + L1D_LAT;
                         else
                             reqSatisfiedCycle = l1d->load(addr, dispatchCycle) + L1D_LAT;
-
                         cRec.record(curCycle, dispatchCycle, reqSatisfiedCycle);
+                        }
+                        else {
+                            reqSatisfiedCycle = l1d->load(addr, dispatchCycle) + L1D_LAT;
+                            //info("%lld",reqSatisfiedCycle-dispatchCycle);
+                            cRec.record(curCycle, dispatchCycle, reqSatisfiedCycle);
+                        }
+                            
                     }
                     
 
@@ -358,6 +365,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
 
                     Address addr = storeAddrs[storeIdx++];
                     uint64_t reqSatisfiedCycle;
+                    if(core_id > 0){
                     if (ingr_type == 42){ //ideal ingress, app core should always hit in l1 for nic-relate data
                             reqSatisfiedCycle = l1d->store(addr, dispatchCycle, ingr_type) + L1D_LAT;
                     }
@@ -365,7 +373,12 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
                         reqSatisfiedCycle = l1d->store(addr, dispatchCycle) + L1D_LAT;
                     }
                     cRec.record(curCycle, dispatchCycle, reqSatisfiedCycle);
-
+                    }
+                    else {
+                        reqSatisfiedCycle = l1d->store(addr, dispatchCycle) + L1D_LAT;
+                        //info("%lld", reqSatisfiedCycle-dispatchCycle);
+                        cRec.record(curCycle, dispatchCycle, reqSatisfiedCycle);
+                    }
                     // Fill the forwarding table
                     fwdArray[(addr>>2) & (FWD_ENTRIES-1)].set(addr, reqSatisfiedCycle);
 
@@ -474,8 +487,17 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
         Address wrongPathAddr = branchTaken? branchNotTakenNpc : branchTakenNpc;
         uint64_t reqCycle = fetchCycle;
         for (uint32_t i = 0; i < 5*64/lineSize; i++) {
-            uint64_t fetchLat = l1i->load(wrongPathAddr + lineSize*i, curCycle) - curCycle;
+            uint64_t fetchLat = 0;
+            if(core_id > 0 ) {
+            fetchLat = l1i->load(wrongPathAddr + lineSize*i, curCycle) - curCycle;
             cRec.record(curCycle, curCycle, curCycle + fetchLat);
+            }
+            else {
+                fetchLat = l1i->load(wrongPathAddr + lineSize*i, curCycle) - curCycle;
+                //info("%lld", fetchLat);
+                cRec.record(curCycle, curCycle, curCycle + fetchLat);
+            }
+                
             uint64_t respCycle = reqCycle + fetchLat;
             if (respCycle > lastCommitCycle) {
                 break;
@@ -495,9 +517,17 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
         // Do not model fetch throughput limit here, decoder-generated stalls already include it
         // We always call fetches with curCycle to avoid upsetting the weave
         // models (but we could move to a fetch-centric recorder to avoid this)
-       
-        uint64_t fetchLat = l1i->load(fetchAddr, curCycle) - curCycle;
+        uint64_t fetchLat = 0;
+        if(core_id > 0) {
+        fetchLat = l1i->load(fetchAddr, curCycle) - curCycle;
         cRec.record(curCycle, curCycle, curCycle + fetchLat);
+        }
+        else {
+        fetchLat = l1i->load(fetchAddr, curCycle) - curCycle;
+        //info("%lld",fetchLat);
+              cRec.record(curCycle, curCycle, curCycle + fetchLat);
+
+        }
         fetchCycle += fetchLat;
     } 
 
@@ -530,26 +560,28 @@ void OOOCore::leave() {
 
 void OOOCore::cSimStart() {
     //dbgprint
-    //info("CSimStart called");
-    assert(cycle_adj_idx < 1000000);
-
-    if (start_cnt_phases) {
+    //if(core_id == 0 && start_cnt_phases)
+    //    info("CSimStart called");
+    //assert(cycle_adj_idx<100000);
+    if(start_cnt_phases)
         cycle_adj_queue[cycle_adj_idx++] = curCycle;
-    }
-
     uint64_t targetCycle = cRec.cSimStart(curCycle);
     assert(targetCycle >= curCycle);
     if (targetCycle > curCycle) advance(targetCycle);
 }
 
 void OOOCore::cSimEnd() {
-    //info("CSimEnd called");
+
     uint64_t targetCycle = cRec.cSimEnd(curCycle);
+    //if(core_id == 0 && start_cnt_phases)
+    //info("CSimEnd called, curCycle %lld, targetCycle %lld",curCycle,targetCycle);
     assert(targetCycle >= curCycle);
     if (targetCycle > curCycle) advance(targetCycle);
-    assert(cycle_adj_idx < 1000000);
-    if (start_cnt_phases) {
+    //assert(cycle_adj_idx<100000);
+    if(start_cnt_phases)
         cycle_adj_queue[cycle_adj_idx++] = curCycle;
+    if(core_id == 0 && nicInfo->nic_init_done && nicInfo->ready_for_inj==nicInfo->registered_core_count) {
+        nicInfo->ready_for_inj = 0xabcd;
     }
 }
 
@@ -592,9 +624,6 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 
-    //dbgprint
-    //info("dumb print to show that bblfun gets called");
-
     //TODO check which nic (ingress or egress) should handle this
     //as of now we stick with one NIC core doing both ingress and egress work
     if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) {
@@ -615,6 +644,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         else {
             // Sometime this check gets stuck at the end of the phase, adding safety break
             int safety_counter = 0;
+            
             while (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch())) {
             //while (core->curCycle > ((((OOOCore*)(nicInfo->nicCore_ingress))->getCycles()) + 50) ) { 
                 // +50this could be a performance optmiziation, not sure how significant correctness hazard is
@@ -625,9 +655,12 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
                     break;
                 }
             }
+            
         }
     }
 
+
+    int temp = 0;
 
     while (core->curCycle > core->phaseEndCycle) {
         //info("while loop for phase sync in bbl");
@@ -674,6 +707,10 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
             info("newCid!=cid");
             break;
         } 
+        if (temp) {
+            //info("core %d in bbl while loop for %d times",newCid,temp);
+        }
+        temp++;
     }
 }
 
@@ -785,13 +822,9 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
         break;
 
     case 0xD: //send all client_done boolean to the server app to monitor for termination condition
-        *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(lg_p->all_packets_sent));
-		info("after handling monitor_client_done");
-		lg_p->server_ready_count++;
-		if(lg_p->server_ready_count==nicInfo->expected_core_count){
-			lg_p->inject_start_phase = (zinfo->numPhases + 2);
-			lg_p->ready_to_inject=0x1234;
-		}
+        *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(lg_p->all_packets_completed));
+		//info("after handling monitor_client_done");
+        nicInfo->ready_for_inj++;
         start_cnt_phases = zinfo->numPhases;
         break;
 
@@ -821,6 +854,15 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 
     case 0x13:      //timestamp
         nicInfo->nic_elem[core_id].ts_queue[nicInfo->nic_elem[core_id].ts_idx++] = curCycle;
+        break;
+    case 0x14:      //closed-loop injection
+        assert(core_id==this->core_id);
+    	if(nicInfo->send_in_loop){
+			assert(nicInfo->nic_elem[core_id].packet_pending==true);
+			futex_lock(&nicInfo->nic_elem[core_id].packet_pending_lock);
+			nicInfo->nic_elem[core_id].packet_pending=false;
+			futex_unlock(&nicInfo->nic_elem[core_id].packet_pending_lock);
+		}
         break;
     case 0xdead: //invalidate entries after test app terminates
         nicInfo->registered_core_count = nicInfo->registered_core_count - 1;
@@ -853,7 +895,7 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 
 int aggr = 0;
 
-
+/*
 uint32_t assign_core(uint32_t in_core_iterator=0) {
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
     uint64_t min_q_size = ~0;//RECV_BUF_POOL_SIZE; // assign some very large number
@@ -897,6 +939,51 @@ uint32_t assign_core(uint32_t in_core_iterator=0) {
     return ret_core_id;
 
 }
+*/
+uint32_t assign_core(uint32_t in_core_iterator=0) {
+    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+    uint64_t min_q_size = ~0;//RECV_BUF_POOL_SIZE; // assign some very large number
+    uint32_t ret_core_id = in_core_iterator;
+    uint32_t core_iterator = in_core_iterator;
+
+    uint32_t numCores = zinfo->numCores; //(nicInfo->expected_core_count + 2);
+
+    //increment it once at beginning for round-robin fairness
+    core_iterator++;
+    if (core_iterator >= numCores) {
+        core_iterator = 0;
+    }
+
+    for (uint32_t i = 0; i < numCores; i++) {
+        if (nicInfo->nic_elem[core_iterator].cq_valid == true) {
+            uint32_t cq_head = nicInfo->nic_elem[core_iterator].cq_head;
+            uint32_t cq_tail = nicInfo->nic_elem[core_iterator].cq->tail;
+            if (cq_head < cq_tail) {
+                cq_head += MAX_NUM_WQ;
+            }
+            uint32_t cq_size = cq_head - cq_tail;
+            if ((nicInfo->nic_elem[core_iterator].ceq_size + cq_size) < min_q_size) {
+                ret_core_id = core_iterator;
+                min_q_size = nicInfo->nic_elem[core_iterator].ceq_size + cq_size;
+                if (min_q_size == 0) {
+                    //info("ret_core_id: %d", ret_core_id);
+                    return ret_core_id;
+                }
+            }
+
+        }
+
+        core_iterator++;
+        if (core_iterator >= numCores) {
+            core_iterator = 0;
+        }
+
+    }
+    //info("ret_core_id: %d, min_cq_size: %lu, min_ceq_size:%lu", ret_core_id, min_q_size-nicInfo->nic_elem[ret_core_id].ceq_size, nicInfo->nic_elem[ret_core_id].ceq_size);
+    return ret_core_id;
+
+}
+
 
 uint32_t find_idle_core(uint32_t in_core_iterator=0) {
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
@@ -940,7 +1027,6 @@ int OOOCore::nic_ingress_routine(THREADID tid) {
         nicInfo->sim_start_time = std::chrono::system_clock::now();
         info("starting sim time count");
 
-
     }
     uint32_t core_iterator = 0;
 
@@ -974,6 +1060,8 @@ int OOOCore::nic_ingress_routine(THREADID tid) {
     return 0;
 }
 
+
+
 //int OOOCore::nic_ingress_routine_per_cycle(THREADID tid) {
 int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
     //OOOCore* core = static_cast<OOOCore*>(cores[tid]);
@@ -991,13 +1079,13 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
                 nicInfo->nic_egress_proc_on = false;
             }
         }
-        else{
-            //Inject packets if next packet is due according to loadgen->next_cycle
+        else if (!(lg_p->all_packets_sent) && nicInfo->ready_for_inj==0xabcd){
+            //Inject packets if next packet is due according to loadgen->next_cycle            
             if (lg_p->next_cycle == 0) {
                 lg_p->next_cycle = core->curCycle;
                 nicInfo->sim_start_time = std::chrono::system_clock::now();
                 info("starting sim time count");
-                start_cnt_phases = zinfo->numPhases;
+                core->start_cnt_phases = zinfo->numPhases;
             }
 			if(lg_p->sent_packets==0){
                 lg_p->next_cycle = core->curCycle;
@@ -1010,50 +1098,55 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
                         futex_lock(&nicInfo->nic_elem[ii].packet_pending_lock);
 						nicInfo->nic_elem[ii].packet_pending = true;
                         futex_unlock(&nicInfo->nic_elem[ii].packet_pending_lock);
-					int inj_attempt;
-                    if (core->ingr_type < 2) {
-                        inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, ii, srcId, core, &(core->cRec), core->l1d, core->ingr_type);
-                    }
-                    else {
-                        inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, ii, srcId, core, &(core->cRec), l1d_caches[ii], core->ingr_type);
-                    }
-					
+                        int inj_attempt;
+                        if (core->ingr_type < 2) {
+                            inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, ii, srcId, core, &(core->cRec), core->l1d, core->ingr_type);
+                        }
+                        else {
+                            inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, ii, srcId, core, &(core->cRec), l1d_caches[ii], core->ingr_type);
+                        }
 					}
 				}
 			}
 			else{
 
-            	uint64_t injection_cycle = core->curCycle;
-            	uint32_t idle_core = find_idle_core(((load_generator*)lg_p)->last_core);
-				//dbg
-				if(idle_core < 2){
-					info("idle_core < 2, not injecting");
-				}
+                if(nicInfo->first_injection<10*nicInfo->registered_core_count) {
+                    uint64_t injection_cycle = core->curCycle;
+				    for(int ii=3; ii<(nicInfo->registered_core_count+3); ii++){
+					    if(!(nicInfo->nic_elem[ii].packet_pending)){
+                            futex_lock(&nicInfo->nic_elem[ii].packet_pending_lock);
+                            nicInfo->nic_elem[ii].packet_pending = true;
+                            futex_unlock(&nicInfo->nic_elem[ii].packet_pending_lock);
+                            int inj_attempt;
+                            if (core->ingr_type < 2) {
+                                inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, ii, srcId, core, &(core->cRec), core->l1d, core->ingr_type);
+                            }
+                            else {
+                                inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, ii, srcId, core, &(core->cRec), l1d_caches[ii], core->ingr_type);
+                            }
+                            nicInfo->first_injection++;
+					    }
+				    }
+                }
+                else {
+                    uint64_t injection_cycle = core->curCycle;
+                    //uint32_t idle_core = find_idle_core(((load_generator*)lg_p)->last_core);
+                    if(lg_p->next_cycle <= injection_cycle /*&& idle_core > 1*/){
+                        //uint32_t core_iterator = assign_core(core_iterator);
+                        uint32_t core_iterator = assign_core(((load_generator*)lg_p)->last_core);
+                        if(nicInfo->nic_elem[core_iterator].packet_pending == false) {
+                            ((load_generator*)lg_p)->last_core = core_iterator;
+                            //uint32_t srcId = getCid(tid);
+                            int inj_attempt;
+                            if (core->ingr_type < 2)
+                                inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), core->l1d, core->ingr_type);
+                            else
+                                inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), l1d_caches[core_iterator], core->ingr_type);
 
-            	if(lg_p->next_cycle <= injection_cycle && idle_core > 1 &&
-						(lg_p->ready_to_inject==0xabcd)){
-					uint64_t server3_curcycle = ((OOOCore*)(zinfo->cores[3]))->getCycles_forSynch();
-					if((core->curCycle < server3_curcycle)  && ((server3_curcycle - (core->curCycle))> 100) ){
-						info("nicIngress @ injection: clock skew is large: serverClock - nicClock = %lu", (server3_curcycle - (core->curCycle)));
-					}
-            	    //uint32_t core_iterator = assign_core(core_iterator);
-            	    uint32_t core_iterator = assign_core(((load_generator*)lg_p)->last_core);
-            	    //info("core_iterator returned %d", core_iterator);
-            	    ((load_generator*)lg_p)->last_core = core_iterator;
-            	    //uint32_t srcId = getCid(tid);
-            	    int inj_attempt;
-            	    if (core->ingr_type < 2)
-            	        inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), core->l1d, core->ingr_type);
-            	    else
-            	        inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), l1d_caches[core_iterator], core->ingr_type);
-
-            	    return inj_attempt;
-            	}
-				else if(lg_p->ready_to_inject==0x1234){
-					if(lg_p->inject_start_phase <= zinfo->numPhases){
-						lg_p->ready_to_inject=0xabcd;
-					}
-				}
+                            return inj_attempt;
+                        }
+                    }
+                }
 			}
         }    
     }

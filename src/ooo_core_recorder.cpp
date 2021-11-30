@@ -155,7 +155,7 @@ uint64_t OOOCoreRecorder::notifyJoin(uint64_t curCycle) {
 void OOOCoreRecorder::addIssueEvent(uint64_t evCycle) {
     assert(lastEvProduced);
     uint64_t zllCycle = evCycle - gapCycles;
-    assert_msg(zllCycle >= lastEvProduced->zllStartCycle, "zllCycle %ld last %ld", zllCycle, lastEvProduced->zllStartCycle);
+    assert_msg(zllCycle >= lastEvProduced->zllStartCycle, "zllCycle %ld last %ld, evCycle %ld, gapCycles %ld", zllCycle, lastEvProduced->zllStartCycle, evCycle, gapCycles);
     OOOIssueEvent* ev = new (eventRecorder) OOOIssueEvent(0, zllCycle, this, domain);
     ev->id = curId++;
     // 1. Link with prior (<) outstanding responses

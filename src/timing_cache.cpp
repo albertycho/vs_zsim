@@ -138,16 +138,17 @@ uint64_t TimingCache::access(MemReq& req) {
             req.flags  = (req.flags & 0xffff) | (temp << 16);
             
             bool updateReplacement = (req.type == GETS) || (req.type == GETX);
-            lineId = array->lookup(req.lineAddr, &req, updateReplacement);
+            lineId = array->lookup(req.lineAddr, &req, updateReplacement);                                   
             respCycle += accLat;
 
-			bool allocation = 0;
+            bool alloc = 0;
+
             if (lineId == -1 /*&& cc->shouldAllocate(req)*/ && !(req.flags & MemReq::PKTOUT)) {     // a NIC egress access that misses in the LLC should not allocate a line
                 assert(cc->shouldAllocate(req)); //dsm: for now, we don't deal with non-inclusion in TimingCache
                 if(req.flags & MemReq::PKTIN)
                     info("allocating llc line for ingress");
                 //Make space for new line
-				allocation=1;
+                alloc = 1;
                 Address wbLineAddr;
                 lineId = array->preinsert(req.lineAddr, &req, &wbLineAddr); //find the lineId to replace
                 //info("[%s] Evicting 0x%lx", name.c_str(), wbLineAddr);
@@ -173,7 +174,7 @@ uint64_t TimingCache::access(MemReq& req) {
                 // At this point we have all the info we need to hammer out the timing record
                 TimingRecord tr = { req.lineAddr << lineBits, req.cycle, respCycle, req.type, nullptr, nullptr }; //note the end event is the response, not the wback
 
-                if ((getDoneCycle - req.cycle == accLat) && (!allocation)) {
+                if (getDoneCycle - req.cycle == accLat && !alloc) {
                     // Hit
                     assert(!writebackRecord.isValid());
                     assert(!accessRecord.isValid());

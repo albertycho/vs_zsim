@@ -533,6 +533,8 @@ static void InitSystem(Config& config) {
         //uint32_t domain = nextDomain(); //i*zinfo->numDomains/memControllers;
         uint32_t domain = i*zinfo->numDomains/memControllers;
         mems[i] = BuildMemoryController(config, zinfo->lineSize, zinfo->freqMHz, domain, name);
+
+        zinfo->mem_bwdth[i] = ((DDRMemory*)mems[i])->mem_bwdth;
     }
 
 /*
@@ -702,7 +704,7 @@ static void InitSystem(Config& config) {
                     CacheGroup& dgroup = *cMap[dcache];
 
                     if (config.get<uint32_t>(prefix + "app_core", 0) == 1) {
-                            l1d_caches[j+2] = dynamic_cast<FilterCache*>(dgroup[j][0]);
+                            l1d_caches[j+3] = dynamic_cast<FilterCache*>(dgroup[j][0]);
                     }
 
                     if (assignedCaches[icache] >= igroup.size()) {
@@ -955,14 +957,14 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     ((load_generator*)lgp)->ptag= 0;
     ((load_generator*)lgp)->RPCGen = new RPCGenerator(100, 10);
     ((load_generator*)lgp)->ptc_head = NULL;
-    //((load_generator*)lgp)->tc_map = new std::map<uint64_t, uint64_t>();
-    auto tmp_tcmap = std::shared_ptr<map<uint64_t, uint64_t>>(new ::map<uint64_t, uint64_t>());
-    auto tmp_tcmap1 = std::shared_ptr<map<uint64_t, uint64_t>>(new ::map<uint64_t, uint64_t>());
-    auto tmp_tcmap2 = std::shared_ptr<map<uint64_t, uint64_t>>(new ::map<uint64_t, uint64_t>());
+    //auto tmp_tcmap = std::shared_ptr<map<uint64_t, uint64_t>>(new ::map<uint64_t, uint64_t>());
+    //auto tmp_tcmap1 = std::shared_ptr<map<uint64_t, uint64_t>>(new ::map<uint64_t, uint64_t>());
+    //auto tmp_tcmap2 = std::shared_ptr<map<uint64_t, uint64_t>>(new ::map<uint64_t, uint64_t>());
     //auto tmp_tcmap = std::shared_ptr<map<uint64_t, std::pair<uint64_t,uint64_t>>>(new ::map<uint64_t, std::pair<uint64_t,uint64_t>>);
+    auto tmp_tcmap = std::shared_ptr<map<uint64_t, timestamp>>(new ::map<uint64_t, timestamp>());
     ((load_generator*)lgp)->tc_map = tmp_tcmap;
-    ((load_generator*)lgp)->tc_map_core = tmp_tcmap1;
-    ((load_generator*)lgp)->tc_map_phase = tmp_tcmap2;
+    //((load_generator*)lgp)->tc_map_core = tmp_tcmap1;
+    //((load_generator*)lgp)->tc_map_phase = tmp_tcmap2;
     futex_init(&(((load_generator*)lgp)->ptc_lock));
     gm_set_lg_ptr(lgp);
 
