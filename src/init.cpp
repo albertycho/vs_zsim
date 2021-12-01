@@ -850,6 +850,9 @@ static void InitSystem(Config& config) {
     load_generator* lgp;
     lgp=(load_generator*)gm_get_lg_ptr();
 
+    uint32_t dist_type = config.get<uint32_t>("sim.load_dist", 0);
+    lgp->RPCGen->set_load_dist(dist_type);
+
     uint32_t num_keys = config.get<uint32_t>("sim.num_keys", 100);
     lgp->RPCGen->set_num_keys(num_keys);
     

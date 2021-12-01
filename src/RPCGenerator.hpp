@@ -25,7 +25,7 @@ class RPCGenerator {
         int* key_arr;
         long double zipf_s=1.2; 
         long double* zcf; //cumulative frequency table for zipf
-        int load_dist_type=0;
+        uint32_t load_dist_type=0;
 
 
     public:
@@ -33,6 +33,7 @@ class RPCGenerator {
         virtual int generatePackedRPC(char* userBuffer) const ;
         virtual uint32_t getRPCPayloadSize() const ;
         void set_num_keys(size_t i_num_keys);// { num_keys = i_num_keys; }
+        void set_load_dist(uint32_t dist_type) { load_dist_type = dist_type;}
         void set_update_fraction(size_t i_update_fraction) { update_fraction = i_update_fraction; }
 
         //debug functions
