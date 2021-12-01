@@ -28,7 +28,7 @@ class RPCGenerator {
         int load_dist_type=0;
         //std::uniform_real_distribution<long double> unif(0,1);
         //std::uniform_real_distribution<long double> unif;
-        std::default_random_engine re;
+        //std::default_random_engine re;
 
     public:
         RPCGenerator(size_t num_keys, size_t update_fraction);
