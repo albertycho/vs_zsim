@@ -104,7 +104,7 @@ RPCGenerator::generatePackedRPC(char* userBuffer) const {
     //bool is_update = (std::rand() % 100) < (int)update_fraction ? true : false;
     int key_i;
     
-    if(laod_dist_type==ZIPF_DIST){
+    if(load_dist_type==ZIPF_DIST){
         
     }
     else if(load_dist_type==UNIFORM_DIST){

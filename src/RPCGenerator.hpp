@@ -26,7 +26,8 @@ class RPCGenerator {
         long double zipf_s=1.2; 
         long double* zcf; //cumulative frequency table for zipf
         int load_dist_type=0;
-        std::uniform_real_distribution<long double> unif(0,1);
+        //std::uniform_real_distribution<long double> unif(0,1);
+        std::uniform_real_distribution<long double> unif;
         std::default_random_engine re;
 
     public:
