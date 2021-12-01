@@ -59,7 +59,7 @@ long double* get_zipf_table(unsigned int n, uint64_t zipf_s){
     for(int i=0; i<n;i++){
         long double j = i;
         long double tmp = pow(j,zs);
-        std::cout<<"HN_tmp: "<<tmp<<std::endl;
+        std::cout<<"HN_tmp: "<<tmp<<"1/tmp = "<<(1/tmp)<<std::endl;
         hn+= (1 / ( pow(j, zs) ));
     }
     
