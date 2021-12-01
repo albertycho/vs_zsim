@@ -19,7 +19,7 @@ class RPCGenerator {
         uint64_t srand_seed;
         size_t num_keys, update_fraction;
         int* key_arr;
-        uint64_t zipf_s=90;
+        long double zipf_s=1;
         long double* zcf; //cumulative frequency table for zipf
 
     public:
