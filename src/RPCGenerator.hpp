@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <stdint.h>
 #include "city.h"
+#include <random>
 
 #define MICA_OP_GET 111
 #define MICA_OP_PUT 112
@@ -14,13 +15,19 @@
   (512 - (sizeof(struct mica_key) + sizeof(uint16_t) + sizeof(uint16_t)))
 
 
+#define UNIFORM_DIST 0
+#define ZIPF_DIST 1
+
 class RPCGenerator {
     private:
         uint64_t srand_seed;
         size_t num_keys, update_fraction;
         int* key_arr;
-        long double zipf_s=1;
+        long double zipf_s=1.2; 
         long double* zcf; //cumulative frequency table for zipf
+        int load_dist_type=0;
+        std::uniform_real_distribution<long double> unif(0,1);
+        std::default_random_engine re;
 
     public:
         RPCGenerator(size_t num_keys, size_t update_fraction);
