@@ -49,7 +49,7 @@ int* get_random_permutation(unsigned int n, unsigned int clt_gid, uint64_t* seed
     return log;
 }
 
-long double* get_zipf_table(unsigned int n, uint64_t zipf_s){
+long double* get_zipf_table(unsigned int n, long double zipf_s){
 
     
     long double* log = gm_calloc<long double>(n);
