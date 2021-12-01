@@ -114,7 +114,17 @@ RPCGenerator::generatePackedRPC(char* userBuffer) const {
     int key_i;
     
     if(load_dist_type==ZIPF_DIST){
-        
+        key_i=num_keys-1;
+        long double rand_double = unif(re);
+        std::cout<<"generatePackedRPC rand: " <<rand_double<<std::endl;
+        for(int i=0; i<num_keys;i++){
+            if (zcf[i] >= rand_double){
+                key_i=i;
+                break;
+            }
+        }
+        std::cout<<"key_i= "<<key_i<<std::endl;
+
     }
     else if(load_dist_type==UNIFORM_DIST){
         key_i= std::rand() % num_keys;
