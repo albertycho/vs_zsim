@@ -95,18 +95,6 @@ RPCGenerator::set_num_keys(size_t i_num_keys) {
     num_keys = i_num_keys;
     key_arr = get_random_permutation(num_keys, 1 /*clt id*/, &srand_seed);
     zcf = get_zipf_table(num_keys,zipf_s);
-    /*
-    long double lower_bound=0;                                                  
-    long double upper_bound=1;                                                  
-    unif=std::uniform_real_distribution<long double>(lower_bound, upper_bound);
-
-    
-    //check random double generation
-    for(int i=0; i<100;i++){                                                    
-        long double rand_double = unif(re);                                     
-        std::cout<<rand_double<<std::endl;                                      
-    }
-    */
 }
 
 
@@ -118,12 +106,17 @@ RPCGenerator::generatePackedRPC(char* userBuffer) const {
     
     if(load_dist_type==ZIPF_DIST){
         key_i=num_keys-1;
+
+        /* Tried instantiating random double generator once at init,
+         *  but doesn't work well with const function
+         */
         long double lower_bound=0;                                                  
         long double upper_bound=1;                                                  
-        //unif=std::uniform_real_distribution<long double>(lower_bound, upper_bound);
         std::uniform_real_distribution<long double> unif(lower_bound, upper_bound);
-        std::default_random_engine re;
-        long double rand_double = unif(re);
+        std::random_device rd;                                                  
+        std::mt19937 gen(rd());                                                 
+        long double rand_double = unif(gen);
+
         std::cout<<"generatePackedRPC rand: " <<rand_double<<std::endl;
         for(int i=0; i<num_keys;i++){
             if (zcf[i] >= rand_double){
