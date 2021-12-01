@@ -122,7 +122,7 @@ RPCGenerator::generatePackedRPC(char* userBuffer) const {
         long double upper_bound=1;                                                  
         //unif=std::uniform_real_distribution<long double>(lower_bound, upper_bound);
         std::uniform_real_distribution<long double> unif(lower_bound, upper_bound);
-
+        std::default_random_engine re;
         long double rand_double = unif(re);
         std::cout<<"generatePackedRPC rand: " <<rand_double<<std::endl;
         for(int i=0; i<num_keys;i++){
