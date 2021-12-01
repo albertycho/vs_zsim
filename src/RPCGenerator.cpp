@@ -55,8 +55,11 @@ long double* get_zipf_table(unsigned int n, uint64_t zipf_s){
     long double* log = gm_calloc<long double>(n);
     long double hn=0;
     long double zs=zipf_s;
+    std::cout<<"zs: "<<zs<<std::endl;
     for(int i=0; i<n;i++){
         long double j = i;
+        long double tmp = pow(j,zs);
+        std::cout<<"HN_tmp: "<<tmp<<std::endl;
         hn+= (1 / ( pow(j, zs) ));
     }
     
