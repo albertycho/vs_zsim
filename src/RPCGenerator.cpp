@@ -10,6 +10,8 @@
 #include <cstring>
 #include <galloc.h>
 
+#include <math.h>
+
 
 
 int* get_random_permutation(unsigned int n, unsigned int clt_gid, uint64_t* seed) {
@@ -47,6 +49,32 @@ int* get_random_permutation(unsigned int n, unsigned int clt_gid, uint64_t* seed
     return log;
 }
 
+long double* get_zipf_table(unsigned int n, uint64_t zipf_s){
+
+    
+    long double* log = gm_calloc<long double>(n);
+    long double hn=0;
+    long double zs=zipf_s;
+    for(int i=0; i<n;i++){
+        long double j = i;
+        hn+= (1 / ( pow(j, zs) ));
+    }
+    
+    for(int i=0;i<n;i++){
+        long double j=i;
+        long double tmp = (1 / (pow(j,zs)));
+        log[i]= tmp / hn;
+    }
+    //now make frequency cumulative
+    for(int i=1;i<n;i++){
+        log[i]= log[i-1] + log[i];
+        std::cout<<"zipf_log["<<i<<"] = "<<log[i]<<std::endl;
+    }
+
+    return log;
+
+}
+
 RPCGenerator::RPCGenerator(size_t aNumKeys, size_t anUpdateFrac) :
     srand_seed(0xdeadbeef),
     num_keys(aNumKeys),
@@ -62,7 +90,9 @@ void
 RPCGenerator::set_num_keys(size_t i_num_keys) {
     num_keys = i_num_keys;
     key_arr = get_random_permutation(num_keys, 1 /*clt id*/, &srand_seed);
+    zcf = get_zipf_table(num_keys,zipf_s);
 }
+
 
 int
 RPCGenerator::generatePackedRPC(char* userBuffer) const {
