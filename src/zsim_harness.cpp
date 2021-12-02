@@ -313,6 +313,7 @@ void LaunchProcess(uint32_t procIdx) {
 
 void generate_raw_timestamp_files(){
 
+    GlobSimInfo* zinfo = zinfo = static_cast<GlobSimInfo*>(gm_get_glob_ptr());
 	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
 
     for(int i=0; i<6; i++) {
@@ -566,7 +567,7 @@ int main(int argc, char *argv[]) {
     std::cout << "sim elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
 
 
-    generate_raw_timestamp_files()
+    generate_raw_timestamp_files();
 
 
     uint32_t exitCode = 0;
