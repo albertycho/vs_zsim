@@ -566,8 +566,12 @@ int main(int argc, char *argv[]) {
     std::chrono::duration<double> elapsed_seconds = (nicInfo->sim_end_time) - (nicInfo->sim_start_time);
     std::cout << "sim elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
 
-
-    generate_raw_timestamp_files();
+    if(nicInfo->out_of_rbuf){
+        std::cout<<"sim terminated with out of recv_buffer"<<std::endl;
+    }
+    else{
+        generate_raw_timestamp_files();
+    }
 
 
     uint32_t exitCode = 0;

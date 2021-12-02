@@ -402,7 +402,7 @@ int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uin
 	l1d: l1d of destination core
 */
 
-int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uint32_t core_id, uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d, uint16_t level) {
+int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void* lg_p_in, uint32_t core_id, uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d, uint16_t level) {
 /*
 * inject_incoming_packet - takes necessary architectural AND microarchitectural actions to inject packet
 *				fetches next msg from load generator
@@ -427,6 +427,8 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 //	info("all packets sent");
 //	}
 
+	load_generator* lg_p = ((load_generator*) lg_p_in);
+
 	futex_lock(&nicInfo->nic_elem[core_id].rb_lock);
 	uint32_t rb_head = allocate_recv_buf(8, nicInfo, core_id);
 	//dbgprint
@@ -434,8 +436,13 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 
 	futex_unlock(&nicInfo->nic_elem[core_id].rb_lock);
 	if (rb_head > RECV_BUF_POOL_SIZE) {
-		panic("core %d out of recv buffer, cycle %lu", core_id, cur_cycle);
-		//info("core %d out of recv buffer, cycle %lu", core_id, cur_cycle);
+		//panic("core %d out of recv buffer, cycle %lu", core_id, cur_cycle);
+		/* Try graceful exit */
+		info("core %d out of recv buffer, cycle %lu", core_id, cur_cycle);
+
+		lg_p->all_packets_completed=true;
+		nicInfo->out_of_rbuf=true;
+
 		return -1;
 	}
 

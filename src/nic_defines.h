@@ -244,6 +244,7 @@ struct glob_nic_elements {
 	uint32_t pp_policy;
 
 	bool send_in_loop;
+	bool out_of_rbuf=false;
 
 	std::chrono::system_clock::time_point sim_start_time;
 	std::chrono::system_clock::time_point sim_end_time;
