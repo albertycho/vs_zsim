@@ -18,8 +18,6 @@ int* get_random_permutation(unsigned int n, unsigned int clt_gid, uint64_t* seed
     unsigned int i, j, temp;
     assert(n > 0);
 
-    std::cout << "get_random_permutation: n = " << n << std::endl;
-
     /* Each client uses a different range in the cycle space of fastrand */
     for (i = 0; i < clt_gid * n; i++) {
         std::rand();
@@ -55,14 +53,14 @@ long double* get_zipf_table(unsigned int n, long double zipf_s){
     long double* log = gm_calloc<long double>(n);
     long double hn=0;
     long double zs=zipf_s;
-    std::cout<<"zs: "<<zs<<std::endl;
+
     for(int i=0; i<n;i++){
         long double j = i+1;
         long double tmp = pow(j,zs);
-        std::cout<<"HN_tmp: "<<tmp<<", 1/tmp = "<<(1/tmp)<<std::endl;
+
         hn+= (1 / ( pow(j, zs) ));
     }
-    std::cout<<"HN: "<<hn<<std::endl;
+
     
     for(int i=0;i<n;i++){
         long double j=i+1;
@@ -72,7 +70,8 @@ long double* get_zipf_table(unsigned int n, long double zipf_s){
     //now make frequency cumulative
     for(int i=1;i<n;i++){
         log[i]= log[i-1] + log[i];
-        std::cout<<"zipf_log["<<i<<"] = "<<log[i]<<std::endl;
+        //leave print for debug / zipf_s calibration
+        //std::cout<<"zipf_log["<<i<<"] = "<<log[i]<<std::endl;
     }
 
     return log;
@@ -117,14 +116,15 @@ RPCGenerator::generatePackedRPC(char* userBuffer) const {
         std::mt19937 gen(rd());                                                 
         long double rand_double = unif(gen);
 
-        std::cout<<"generatePackedRPC rand: " <<rand_double<<std::endl;
+
         for(int i=0; i<num_keys;i++){
             if (zcf[i] >= rand_double){
                 key_i=i;
                 break;
             }
         }
-        std::cout<<"key_i= "<<key_i<<std::endl;
+        //std::cout<<"generatePackedRPC rand: " <<rand_double<<std::endl;
+        //std::cout<<"key_i= "<<key_i<<std::endl;
 
     }
     else if(load_dist_type==UNIFORM_DIST){
