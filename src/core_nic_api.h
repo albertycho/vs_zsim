@@ -438,7 +438,9 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	if (rb_head > RECV_BUF_POOL_SIZE) {
 		//panic("core %d out of recv buffer, cycle %lu", core_id, cur_cycle);
 		/* Try graceful exit */
-		info("core %d out of recv buffer, cycle %lu", core_id, cur_cycle);
+		if(nicInfo->out_of_rbuf==false){
+			info("core %d out of recv buffer, cycle %lu", core_id, cur_cycle);
+		}
 
 		lg_p->all_packets_completed=true;
 		nicInfo->out_of_rbuf=true;
