@@ -567,9 +567,9 @@ int main(int argc, char *argv[]) {
     std::cout << "sim elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
 
     if(nicInfo->out_of_rbuf){
-        std::cout<<
-        ":::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n
-         :::::SIM TERMINATED WITH OUT OF RECV BUFFER sim terminated with out of recv_buffer:::::\n
+        std::cout<<"\
+         :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n\
+         :::::SIM TERMINATED WITH OUT OF RECV BUFFER sim terminated with out of recv_buffer:::::\n\
          :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"<<std::endl;
     }
     else{
