@@ -313,7 +313,7 @@ void LaunchProcess(uint32_t procIdx) {
 
 void generate_raw_timestamp_files(){
 
-    GlobSimInfo* zinfo = zinfo = static_cast<GlobSimInfo*>(gm_get_glob_ptr());
+    GlobSimInfo* zinfo  = static_cast<GlobSimInfo*>(gm_get_glob_ptr());
 	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
 
     for(int i=0; i<6; i++) {
