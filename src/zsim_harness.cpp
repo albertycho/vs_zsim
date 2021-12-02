@@ -567,7 +567,7 @@ int main(int argc, char *argv[]) {
     std::cout << "sim elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
 
     if(nicInfo->out_of_rbuf){
-        std::cout<<"sim terminated with out of recv_buffer"<<std::endl;
+        std::cout<<"SIM TERMINATED WITH OUT OF RECV BUFFER sim terminated with out of recv_buffer"<<std::endl;
     }
     else{
         generate_raw_timestamp_files();
