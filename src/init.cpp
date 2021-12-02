@@ -847,6 +847,9 @@ static void InitSystem(Config& config) {
     bool send_in_loop = config.get<bool>("sim.send_in_loop", false);
 	nicInfo->send_in_loop = send_in_loop;
 
+    uint32_t load_balance = config.get<uint32_t>("sim.load_balance",0);
+    nicInfo->load_balance = load_balance;
+
     load_generator* lgp;
     lgp=(load_generator*)gm_get_lg_ptr();
 

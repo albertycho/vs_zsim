@@ -948,11 +948,25 @@ uint32_t assign_core(uint32_t in_core_iterator=0) {
 
     uint32_t numCores = zinfo->numCores; //(nicInfo->expected_core_count + 2);
 
+    if(nicInfo->load_balance==1){ // random
+        core_iterator = std::rand() % nicInfo->registered_core_count;
+        core_iterator +=3; // 3 special cores (core 2 is app's thread generator)
+        while(nicInfo->nic_elem[core_iterator].cq_valid!=true){
+            core_iterator++;
+            if(core_iterator>=numCores){
+                core_iterator=3;
+            }
+        }
+
+        return core_iterator;
+    }
+
     //increment it once at beginning for round-robin fairness
     core_iterator++;
     if (core_iterator >= numCores) {
         core_iterator = 0;
     }
+
 
     for (uint32_t i = 0; i < numCores; i++) {
         if (nicInfo->nic_elem[core_iterator].cq_valid == true) {

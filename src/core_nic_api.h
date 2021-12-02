@@ -208,6 +208,7 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle) {
 			interval = lg_p->interval;
 		break;
 	}
+	//info("interval: %lu", interval);
 
 //	if(lg_p->arrival_dist==1){ //poisson
 //		uint32_t lambda = lg_p->interval;
