@@ -863,6 +863,8 @@ static void InitSystem(Config& config) {
     lgp->target_packet_count = (uint64_t) target_pacekt_count;
     lgp->last_core = 0;
 	lgp->sum_interval=0;
+    uint32_t arrival_dist = config.get<uint32_t>("sim.arrival_dist", 0);
+    lgp->arrival_dist = arrival_dist;
     
 
     info("Initialized system");

@@ -275,6 +275,7 @@ struct load_generator {
 	int next_cycle;
 	int interval;
 	int prev_cycle;
+	uint32_t arrival_dist=0;
 	//dbg
 	uint64_t sum_interval;
 

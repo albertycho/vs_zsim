@@ -189,19 +189,32 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle) {
 
 	load_generator * lg_p = ((load_generator*)in_lg_p);
 	//bool poisson_rate = true;
-	bool poisson_rate = false;
+	//bool poisson_rate = false;
 
 	// calculate based on injection rate. interval = phaseLen / injection rate
-	uint64_t interval = ((load_generator*)lg_p)->interval;
+	//uint64_t interval = ((load_generator*)lg_p)->interval;
+	uint64_t interval;
 
-	if(poisson_rate){
-		uint32_t lambda = interval;
-		double U = drand48();
-		interval = (uint64_t) floor(-log(U) * lambda) + 1;
+	switch(lg_p->arrival_dist){
+		case 0: //uniform arrival rate
+			interval = lg_p->interval;
+			break;
+		case 1:	//poissson arrival rate
+			uint32_t lambda = lg_p->interval;
+			double U = drand48();
+			interval = (uint64_t) floor(-log(U) * lambda) + 1;
+			break;
+		default:
+			interval = lg_p->interval;
+		break;
 	}
-	
-	//dbg
-	//info("lg_p interval: %lu", interval);
+
+//	if(lg_p->arrival_dist==1){ //poisson
+//		uint32_t lambda = lg_p->interval;
+//		double U = drand48();
+//		interval = (uint64_t) floor(-log(U) * lambda) + 1;
+//	}
+
 	
 	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
 	if(nicInfo->send_in_loop){
