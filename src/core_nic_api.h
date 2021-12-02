@@ -194,14 +194,14 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle) {
 	// calculate based on injection rate. interval = phaseLen / injection rate
 	//uint64_t interval = ((load_generator*)lg_p)->interval;
 	uint64_t interval;
+	uint32_t lambda = lg_p->interval;
+	double U = drand48();
 
 	switch(lg_p->arrival_dist){
 		case 0: //uniform arrival rate
 			interval = lg_p->interval;
 			break;
 		case 1:	//poissson arrival rate
-			uint32_t lambda = lg_p->interval;
-			double U = drand48();
 			interval = (uint64_t) floor(-log(U) * lambda) + 1;
 			break;
 		default:
