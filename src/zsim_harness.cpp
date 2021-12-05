@@ -355,6 +355,11 @@ void generate_raw_timestamp_files(){
                     temp1++;
                 }
                 f << nicInfo->nic_elem[i].ts_nic_queue[j] << " ";
+                if (j % 2 == 1) {
+                    int jtmp = (j - 1) / 2;
+                    uint32_t phases = ((nicInfo->nic_elem[i].phase_nic_queue[j + 1]) - (nicInfo->nic_elem[i].phase_nic_queue[j])) + 1;
+                    f << phases << " ";
+                }
             }
             //f << nicInfo->nic_elem[i].phase_queue[((nicInfo->nic_elem[i].ts_nic_idx) - 2) / 2] << " ";
             f.close();
