@@ -875,11 +875,11 @@ static void InitSystem(Config& config) {
     vector<const char*> loadGenNames;
     config.subgroups("sim.load_gen", loadGenNames);
     //string prefix = "sim.load_gen.";
-    for (const char* grp : loadGenNames) {
-        info("loadGenName: %s", grp);
+    for (const char* lgi : loadGenNames) {
+        string lgi_name(lgi);
+        info("loadGenName: %s", lgi);
+        info(lgi_name);
     }
-    
-
     info("Initialized system");
 }
 
@@ -971,9 +971,9 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     void* lgp;
     lgp = gm_calloc<load_generator>();
     //((load_generator*)lgp)->next_cycle = 100000;
-    //((load_generator*)lgp)->next_cycle = 0;
+    ((load_generator*)lgp)->next_cycle = 0;
     ((load_generator*)lgp)->ptag= 0;
-    //((load_generator*)lgp)->RPCGen = new RPCGenerator(100, 10); //moved to individual LG
+    ((load_generator*)lgp)->RPCGen = new RPCGenerator(100, 10); //moved to individual LG
     ((load_generator*)lgp)->ptc_head = NULL;
     //auto tmp_tcmap = std::shared_ptr<map<uint64_t, uint64_t>>(new ::map<uint64_t, uint64_t>());
     //auto tmp_tcmap1 = std::shared_ptr<map<uint64_t, uint64_t>>(new ::map<uint64_t, uint64_t>());
