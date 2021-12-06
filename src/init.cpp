@@ -874,11 +874,12 @@ static void InitSystem(Config& config) {
     // Build the load generators
     vector<const char*> loadGenNames;
     config.subgroups("sim.load_gen", loadGenNames);
-    //string prefix = "sim.load_gen.";
+    string lg_prefix = "sim.load_gen.";
     for (const char* lgi : loadGenNames) {
-        string lgi_name(lgi);
         info("loadGenName: %s", lgi);
-        info(lgi_name);
+        uint32_t lg_type = config.get<uint32_t>(lg_prefix+lgi+".type", 0);
+        uint32_t lg_num_keys = config.get<uint32_t>(lg_prefix+lgi+".num_keys", 1024);
+
     }
     info("Initialized system");
 }
