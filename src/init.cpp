@@ -856,23 +856,25 @@ static void InitSystem(Config& config) {
     uint32_t dist_type = config.get<uint32_t>("sim.load_dist", 0);
     lgp->RPCGen->set_load_dist(dist_type);
 
-    uint32_t num_keys = config.get<uint32_t>("sim.num_keys", 100);
-    lgp->RPCGen->set_num_keys(num_keys);
+    //uint32_t num_keys = config.get<uint32_t>("sim.num_keys", 100);
+    //lgp->RPCGen->set_num_keys(num_keys);
     
-    uint32_t update_fraction = config.get<uint32_t>("sim.update_fraction", 10);
-    lgp->RPCGen->set_update_fraction(update_fraction);
-    lgp->interval = (zinfo->phaseLength) / (nicInfo->packet_injection_rate);
+    //uint32_t update_fraction = config.get<uint32_t>("sim.update_fraction", 10);
+    //lgp->RPCGen->set_update_fraction(update_fraction);
+    //lgp->interval = (zinfo->phaseLength) / (nicInfo->packet_injection_rate);
     uint32_t target_pacekt_count = config.get<uint32_t>("sim.packet_count", 10000);
     lgp->target_packet_count = (uint64_t) target_pacekt_count;
-    lgp->last_core = 0;
-	lgp->sum_interval=0;
     uint32_t arrival_dist = config.get<uint32_t>("sim.arrival_dist", 0);
     lgp->arrival_dist = arrival_dist;
+
+    lgp->last_core = 0;
+	lgp->sum_interval=0;
+
 
     // Build the load generators
     vector<const char*> loadGenNames;
     config.subgroups("sim.load_gen", loadGenNames);
-    string prefix = "sim.load_gen.";
+    //string prefix = "sim.load_gen.";
     for (const char* grp : loadGenNames) {
         info("loadGenName: %s", grp);
     }
