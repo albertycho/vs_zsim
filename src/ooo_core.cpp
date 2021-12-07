@@ -893,68 +893,36 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
     return;
 }
 
-int aggr = 0;
 
-/*
-uint32_t assign_core(uint32_t in_core_iterator=0) {
-    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-    uint64_t min_q_size = ~0;//RECV_BUF_POOL_SIZE; // assign some very large number
-    uint32_t ret_core_id = in_core_iterator;
-    uint32_t core_iterator = in_core_iterator;
 
-    uint32_t numCores = zinfo->numCores; //(nicInfo->expected_core_count + 2);
+
+uint32_t assign_core(uint32_t lg_i) {
     
-    //increment it once at beginning for round-robin fairness
-    core_iterator++;
-    if (core_iterator >= numCores) {
-        core_iterator = 0;
-    }
-
-    for (uint32_t i = 0; i < numCores; i++) {
-        if (nicInfo->nic_elem[core_iterator].cq_valid == true) {
-            uint32_t cq_head = nicInfo->nic_elem[core_iterator].cq_head;
-            uint32_t cq_tail = nicInfo->nic_elem[core_iterator].cq->tail;
-            if (cq_head < cq_tail) {
-                cq_head += MAX_NUM_WQ;
-            }
-            uint32_t cq_size = cq_head - cq_tail;
-            if ((nicInfo->nic_elem[core_iterator].ceq_size + cq_size) < min_q_size) {
-                ret_core_id = core_iterator;
-                min_q_size = nicInfo->nic_elem[core_iterator].ceq_size + cq_size;
-                if (min_q_size == 0) {
-                    //info("ret_core_id: %d", ret_core_id);
-                    return ret_core_id;
-                }
-            }
-
-        }
-
-        core_iterator++;
-        if (core_iterator >= numCores) {
-            core_iterator = 0;
-        }
-
-    }
-//    info("ret_core_id: %d, min_cq_size: %lu, min_ceq_size:%lu", ret_core_id, min_q_size-nicInfo->nic_elem[ret_core_id].ceq_size, nicInfo->nic_elem[ret_core_id].ceq_size);
-    return ret_core_id;
-
-}
-*/
-uint32_t assign_core(uint32_t in_core_iterator=0) {
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-    uint64_t min_q_size = ~0;//RECV_BUF_POOL_SIZE; // assign some very large number
-    uint32_t ret_core_id = in_core_iterator;
-    uint32_t core_iterator = in_core_iterator;
+    void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
+    load_generator* lg_p = (load_generator*)lg_p_vp;
 
-    uint32_t numCores = zinfo->numCores; //(nicInfo->expected_core_count + 2);
+    uint64_t min_q_size = ~0;//RECV_BUF_POOL_SIZE; // assign some very large number
+    uint32_t ret_core_id = lg_p->lgs[lg_i].last_core;
+    uint32_t core_iterator = lg_p->lgs[lg_i].last_core;
+    //core_iterator and last_core will have index for core_ids, not the core_id itself!
+
+    uint32_t numCores = lg_p->lgs[lg_i].num_cores; //(nicInfo->expected_core_count + 2);
 
     if(nicInfo->load_balance==1){ // random
-        core_iterator = std::rand() % nicInfo->registered_core_count;
-        core_iterator +=3; // 3 special cores (core 2 is app's thread generator)
-        while(nicInfo->nic_elem[core_iterator].cq_valid!=true){
+        core_iterator = std::rand() % lg_p->lgs[lg_i].num_cores;
+        uint32_t core_id_r = lg_p->lgs[lg_i].core_ids[core_iterator];
+        uint32_t tmp = 0;
+        while(nicInfo->nic_elem[core_id_r].cq_valid!=true){
             core_iterator++;
-            if(core_iterator>=numCores){
-                core_iterator=3;
+            if(core_iterator>= lg_p->lgs[lg_i].num_cores){
+                core_iterator=0;
+            }
+            core_id_r = lg_p->lgs[lg_i].core_ids[core_iterator];
+            tmp++;
+            if (tmp > lg_p->lgs[lg_i].num_cores) {
+                info("assign core: no active cores");
+                return core_id_r;
             }
         }
 
@@ -969,18 +937,20 @@ uint32_t assign_core(uint32_t in_core_iterator=0) {
 
 
     for (uint32_t i = 0; i < numCores; i++) {
-        if (nicInfo->nic_elem[core_iterator].cq_valid == true) {
-            uint32_t cq_head = nicInfo->nic_elem[core_iterator].cq_head;
-            uint32_t cq_tail = nicInfo->nic_elem[core_iterator].cq->tail;
+        uint32_t core_id_l = lg_p->lgs[lg_i].core_ids[core_iterator];
+        if (nicInfo->nic_elem[core_id_l].cq_valid == true) {
+            uint32_t cq_head = nicInfo->nic_elem[core_id_l].cq_head;
+            uint32_t cq_tail = nicInfo->nic_elem[core_id_l].cq->tail;
             if (cq_head < cq_tail) {
                 cq_head += MAX_NUM_WQ;
             }
             uint32_t cq_size = cq_head - cq_tail;
-            if ((nicInfo->nic_elem[core_iterator].ceq_size + cq_size) < min_q_size) {
-                ret_core_id = core_iterator;
-                min_q_size = nicInfo->nic_elem[core_iterator].ceq_size + cq_size;
+            if ((nicInfo->nic_elem[core_id_l].ceq_size + cq_size) < min_q_size) {
+                ret_core_id = core_id_l;
+                min_q_size = nicInfo->nic_elem[core_id_l].ceq_size + cq_size;
                 if (min_q_size == 0) {
                     //info("ret_core_id: %d", ret_core_id);
+                    lg_p->lgs[lg_i].last_core = ret_core_id;
                     return ret_core_id;
                 }
             }
@@ -994,6 +964,7 @@ uint32_t assign_core(uint32_t in_core_iterator=0) {
 
     }
     //info("ret_core_id: %d, min_cq_size: %lu, min_ceq_size:%lu", ret_core_id, min_q_size-nicInfo->nic_elem[ret_core_id].ceq_size, nicInfo->nic_elem[ret_core_id].ceq_size);
+    lg_p->lgs[lg_i].last_core = ret_core_id;
     return ret_core_id;
 
 }
@@ -1028,52 +999,6 @@ uint32_t find_idle_core(uint32_t in_core_iterator=0) {
 
 }
 
-int OOOCore::nic_ingress_routine(THREADID tid) {
-
-    OOOCore* core = static_cast<OOOCore*>(cores[tid]);
-
-    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-    void* lg_p = static_cast<void*>(gm_get_lg_ptr());
-    uint64_t packet_rate = nicInfo->packet_injection_rate;
-
-    if (((load_generator*)lg_p)->next_cycle == 0) {
-        ((load_generator*)lg_p)->next_cycle = core->curCycle;
-        nicInfo->sim_start_time = std::chrono::system_clock::now();
-        info("starting sim time count");
-
-    }
-    uint32_t core_iterator = 0;
-
-    uint32_t inject_fail_counter = 0;
-
-    for (uint64_t i = 0; i < packet_rate; i++) {
-
-        /* assign core_id in round robin */
-        core_iterator++;
-        if (core_iterator >= zinfo->numCores) {
-            core_iterator = 0;
-        }
-
-        core_iterator = assign_core(((load_generator*)lg_p)->last_core);
-        ((load_generator*)lg_p)->last_core = core_iterator;
-        /* Inject packet (call core function) */
-        uint32_t srcId = getCid(tid);
-        uint64_t injection_cycle = core->curCycle;
-        int inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), l1d_caches[core_iterator], core->ingr_type);
-
-        if (inj_attempt == -1) {
-            //core out of recv buffer. stop injecting for this phase
-            inject_fail_counter++;
-            if (inject_fail_counter >= (nicInfo->registered_core_count - 1)) {
-                break;
-            }
-        }
-
-    }
-
-    return 0;
-}
-
 
 
 //int OOOCore::nic_ingress_routine_per_cycle(THREADID tid) {
@@ -1105,6 +1030,10 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
                 lg_p->next_cycle = core->curCycle;
 			}
 			if(nicInfo->send_in_loop){
+                //assumed we'll only use send_in_loop with 1 loadgen
+                if (lg_p->num_loadgen > 1) {
+                    panic("don't support send_in_loop with multiple Load Gen");
+                }
                 //info("if send_in_loop: ooo_core.cpp line 973");
             	uint64_t injection_cycle = core->curCycle;
 				for(int ii=3; ii<(nicInfo->registered_core_count+3); ii++){
@@ -1114,10 +1043,10 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
                         futex_unlock(&nicInfo->nic_elem[ii].packet_pending_lock);
                         int inj_attempt;
                         if (core->ingr_type < 2) {
-                            inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, ii, srcId, core, &(core->cRec), core->l1d, core->ingr_type);
+                            inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, ii, srcId, core, &(core->cRec), core->l1d, core->ingr_type, 0);
                         }
                         else {
-                            inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, ii, srcId, core, &(core->cRec), l1d_caches[ii], core->ingr_type);
+                            inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, ii, srcId, core, &(core->cRec), l1d_caches[ii], core->ingr_type, 0);
                         }
 					}
 				}
@@ -1126,6 +1055,25 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
 
                 if(nicInfo->first_injection<10*nicInfo->registered_core_count) {
                     uint64_t injection_cycle = core->curCycle;
+                    for (int ii = 0; ii < lg_p->num_loadgen; ii++) {
+                        for (int jj = 0; jj < lg_p->lgs[ii].num_cores; jj++) {
+                            uint32_t core_id = lg_p->lgs[ii].core_ids[jj];
+                            if (!(nicInfo->nic_elem[core_id].packet_pending)) {
+                                futex_lock(&nicInfo->nic_elem[core_id].packet_pending_lock);
+                                nicInfo->nic_elem[core_id].packet_pending = true;
+                                futex_unlock(&nicInfo->nic_elem[core_id].packet_pending_lock);
+                                int inj_attempt;
+                                if (core->ingr_type < 2) {
+                                    inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_id, srcId, core, &(core->cRec), core->l1d, core->ingr_type, ii);
+                                }
+                                else {
+                                    inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_id, srcId, core, &(core->cRec), l1d_caches[core_id], core->ingr_type, ii);
+                                }
+                                nicInfo->first_injection++;
+                            }
+                        }
+                    }
+                    /*
 				    for(int ii=3; ii<(nicInfo->registered_core_count+3); ii++){
 					    if(!(nicInfo->nic_elem[ii].packet_pending)){
                             futex_lock(&nicInfo->nic_elem[ii].packet_pending_lock);
@@ -1141,14 +1089,31 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
                             nicInfo->first_injection++;
 					    }
 				    }
+                    */
                 }
                 else {
                     uint64_t injection_cycle = core->curCycle;
-                    //uint32_t idle_core = find_idle_core(((load_generator*)lg_p)->last_core);
-                    if(lg_p->next_cycle <= injection_cycle /*&& idle_core > 1*/){
+                    for (int ii = 0; ii < lg_p->num_loadgen; ii++) {
+                        if (lg_p->next_cycle <= injection_cycle /*&& idle_core > 1*/) {
+                            //uint32_t core_iterator = assign_core(core_iterator);
+                            uint32_t core_iterator = assign_core(ii);
+                            if (nicInfo->nic_elem[core_iterator].packet_pending == false) {
+                                //uint32_t srcId = getCid(tid);
+                                int inj_attempt;
+                                if (core->ingr_type < 2)
+                                    inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), core->l1d, core->ingr_type, ii);
+                                else
+                                    inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), l1d_caches[core_iterator], core->ingr_type,ii);
+
+                                return inj_attempt;
+                            }
+                        }
+                    }
+                    /*
+                    if (lg_p->next_cycle <= injection_cycle) {
                         //uint32_t core_iterator = assign_core(core_iterator);
                         uint32_t core_iterator = assign_core(((load_generator*)lg_p)->last_core);
-                        if(nicInfo->nic_elem[core_iterator].packet_pending == false) {
+                        if (nicInfo->nic_elem[core_iterator].packet_pending == false) {
                             ((load_generator*)lg_p)->last_core = core_iterator;
                             //uint32_t srcId = getCid(tid);
                             int inj_attempt;
@@ -1160,6 +1125,8 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
                             return inj_attempt;
                         }
                     }
+                    */
+
                 }
 			}
         }    

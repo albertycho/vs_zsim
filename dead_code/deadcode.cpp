@@ -67,6 +67,97 @@ for (uint64_t i = 0; i < packet_rate; i++) {
 }
 */
 /*
+uint32_t assign_core(uint32_t in_core_iterator=0) {
+    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+    uint64_t min_q_size = ~0;//RECV_BUF_POOL_SIZE; // assign some very large number
+    uint32_t ret_core_id = in_core_iterator;
+    uint32_t core_iterator = in_core_iterator;
+
+    uint32_t numCores = zinfo->numCores; //(nicInfo->expected_core_count + 2);
+
+    //increment it once at beginning for round-robin fairness
+    core_iterator++;
+    if (core_iterator >= numCores) {
+        core_iterator = 0;
+    }
+
+    for (uint32_t i = 0; i < numCores; i++) {
+        if (nicInfo->nic_elem[core_iterator].cq_valid == true) {
+            uint32_t cq_head = nicInfo->nic_elem[core_iterator].cq_head;
+            uint32_t cq_tail = nicInfo->nic_elem[core_iterator].cq->tail;
+            if (cq_head < cq_tail) {
+                cq_head += MAX_NUM_WQ;
+            }
+            uint32_t cq_size = cq_head - cq_tail;
+            if ((nicInfo->nic_elem[core_iterator].ceq_size + cq_size) < min_q_size) {
+                ret_core_id = core_iterator;
+                min_q_size = nicInfo->nic_elem[core_iterator].ceq_size + cq_size;
+                if (min_q_size == 0) {
+                    //info("ret_core_id: %d", ret_core_id);
+                    return ret_core_id;
+                }
+            }
+
+        }
+
+        core_iterator++;
+        if (core_iterator >= numCores) {
+            core_iterator = 0;
+        }
+
+    }
+//    info("ret_core_id: %d, min_cq_size: %lu, min_ceq_size:%lu", ret_core_id, min_q_size-nicInfo->nic_elem[ret_core_id].ceq_size, nicInfo->nic_elem[ret_core_id].ceq_size);
+    return ret_core_id;
+
+}
+*/
+/*
+int OOOCore::nic_ingress_routine(THREADID tid) {
+
+    OOOCore* core = static_cast<OOOCore*>(cores[tid]);
+
+    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+    void* lg_p = static_cast<void*>(gm_get_lg_ptr());
+    uint64_t packet_rate = nicInfo->packet_injection_rate;
+
+    if (((load_generator*)lg_p)->next_cycle == 0) {
+        ((load_generator*)lg_p)->next_cycle = core->curCycle;
+        nicInfo->sim_start_time = std::chrono::system_clock::now();
+        info("starting sim time count");
+
+    }
+    uint32_t core_iterator = 0;
+
+    uint32_t inject_fail_counter = 0;
+
+    for (uint64_t i = 0; i < packet_rate; i++) {
+
+        core_iterator++;
+        if (core_iterator >= zinfo->numCores) {
+            core_iterator = 0;
+        }
+
+        core_iterator = assign_core(((load_generator*)lg_p)->last_core);
+        ((load_generator*)lg_p)->last_core = core_iterator;
+
+        uint32_t srcId = getCid(tid);
+        uint64_t injection_cycle = core->curCycle;
+        int inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), l1d_caches[core_iterator], core->ingr_type);
+
+        if (inj_attempt == -1) {
+            //core out of recv buffer. stop injecting for this phase
+            inject_fail_counter++;
+            if (inject_fail_counter >= (nicInfo->registered_core_count - 1)) {
+                break;
+            }
+        }
+
+    }
+
+    return 0;
+}
+*/
+/*
 //TODO: DELETE THIS!! experiemnt code for checking L2 access with procMask
 if (!nicInfo->nic_proc_on) {
     info("Direct accessing rbuf_addr var");

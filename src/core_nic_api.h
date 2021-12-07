@@ -181,15 +181,14 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 
 //functions for interfacing load_generator
 
-int update_loadgen(void* in_lg_p, uint64_t cur_cycle) {
+int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0) {
 /*
 * update_loadgen- updates cycle and tag for load gen
 *					packet creation is done in RPCGEN::generatePackedRPC
 */
 
 	load_generator * lg_p = ((load_generator*)in_lg_p);
-	//bool poisson_rate = true;
-	//bool poisson_rate = false;
+	load_gen_mod* lgm_p = lg_p->lgs;
 
 	// calculate based on injection rate. interval = phaseLen / injection rate
 	//uint64_t interval = ((load_generator*)lg_p)->interval;
@@ -416,7 +415,7 @@ int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uin
 	l1d: l1d of destination core
 */
 
-int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void* lg_p_in, uint32_t core_id, uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d, uint16_t level) {
+int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void* lg_p_in, uint32_t core_id, uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d, uint16_t level, uint32_t lg_i) {
 /*
 * inject_incoming_packet - takes necessary architectural AND microarchitectural actions to inject packet
 *				fetches next msg from load generator
