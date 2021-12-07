@@ -1020,14 +1020,20 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
         }
         else if (!(lg_p->all_packets_sent) && nicInfo->ready_for_inj==0xabcd){
             //Inject packets if next packet is due according to loadgen->next_cycle            
-            if (lg_p->next_cycle == 0) {
-                lg_p->next_cycle = core->curCycle;
-                nicInfo->sim_start_time = std::chrono::system_clock::now();
-                info("starting sim time count");
-                core->start_cnt_phases = zinfo->numPhases;
+            if (lg_p->num_loadgen > 0) {
+                if (lg_p->lgs[0].next_cycle == 0) {
+                    for (int ii = 0; ii < lg_p->num_loadgen; ii++) {
+                        lg_p->lgs[ii].next_cycle = core->curCycle + ii;
+                    }
+                    nicInfo->sim_start_time = std::chrono::system_clock::now();
+                    info("starting sim time count");
+                    core->start_cnt_phases = zinfo->numPhases;
+                }
             }
 			if(lg_p->sent_packets==0){
-                lg_p->next_cycle = core->curCycle;
+                for (int ii = 0; ii < lg_p->num_loadgen; ii++) {
+                    lg_p->lgs[ii].next_cycle = core->curCycle + ii;
+                }
 			}
 			if(nicInfo->send_in_loop){
                 //assumed we'll only use send_in_loop with 1 loadgen
