@@ -273,6 +273,7 @@ typedef struct timestamp_str {
 } timestamp;
 
 typedef struct load_gen_mod {
+	uint32_t lg_type;
 	uint64_t next_cycle;
 	uint32_t interval;
 	uint32_t prev_cycle;
@@ -290,7 +291,7 @@ struct load_generator {
 	uint32_t num_loadgen;
 	load_gen_mod* lgs;
 	//dbg
-	//uint64_t sum_interval;
+	uint64_t sum_interval;
 	
 
 	//int message; //may replace this to appropriate type

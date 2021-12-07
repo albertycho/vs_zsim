@@ -850,8 +850,8 @@ static void InitSystem(Config& config) {
     uint32_t load_balance = config.get<uint32_t>("sim.load_balance",0);
     nicInfo->load_balance = load_balance;
 
-    load_generator* lgp;
-    lgp=(load_generator*)gm_get_lg_ptr();
+    //load_generator* lgp;
+    //lgp=(load_generator*)gm_get_lg_ptr();
 
  //   uint32_t dist_type = config.get<uint32_t>("sim.load_dist", 0);
  //   lgp->RPCGen->set_load_dist(dist_type);
@@ -1029,10 +1029,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     lgp->target_packet_count = (uint64_t)target_pacekt_count;
     uint32_t arrival_dist = config.get<uint32_t>("sim.arrival_dist", 0);
     lgp->arrival_dist = arrival_dist;
-
-    lgp->last_core = 0;
-    //lgp->sum_interval = 0;
-
+    lgp->sum_interval = 0;
 
     // Build the load generators
     vector<const char*> loadGenNames;
@@ -1050,25 +1047,23 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
         uint32_t IR = config.get<uint32_t>(lg_prefix + lgi + ".injection_rate", 10);
         uint32_t update_fraction = config.get<uint32_t>(lg_prefix + lgi + ".update_fraction", 25);
         uint32_t assoc_cores = config.get<uint32_t>(lg_prefix + lgi + ".assoc_cores", 16);
+        lgp->lgs[tmp].lg_type = lg_type;
         lgp->lgs[tmp].next_cycle = 0;
         lgp->lgs[tmp].interval = (zinfo->phaseLength) / (IR);
         lgp->lgs[tmp].prev_cycle = 0;
         lgp->lgs[tmp].last_core = start_core;
         lgp->lgs[tmp].num_cores = assoc_cores;
-        for (int i = 0; i < assoc_cores; i++) {
-            lgp->lgs[tmp].cores_ids[i] = start_core++;
+        for (uint32_t i = 0; i < assoc_cores; i++) {
+            lgp->lgs[tmp].core_ids[i] = start_core++;
         }
         lgp->lgs[tmp].RPCGen = new RPCGenerator(100, 10); // this call may change depending on loadgen TYPE
-        ////////////COMEBACK WERE NOT DONE //////////////////////
+
         lgp->lgs[tmp].RPCGen->set_load_dist(dist_type);
         lgp->lgs[tmp].RPCGen->set_num_keys(lg_num_keys);
-        //lgp->RPCGen->set_num_keys(num_keys);
-
-        //uint32_t update_fraction = config.get<uint32_t>("sim.update_fraction", 10);
-        //lgp->RPCGen->set_update_fraction(update_fraction);
+        uint32_t update_fraction = config.get<uint32_t>("sim.update_fraction", 10);
+        lgp->lgs[tmp].RPCGen->set_update_fraction(update_fraction);
             //start_core += assoc_cores;
         tmp++;
-
     }
 
 
