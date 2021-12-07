@@ -193,18 +193,18 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0) {
 	// calculate based on injection rate. interval = phaseLen / injection rate
 	//uint64_t interval = ((load_generator*)lg_p)->interval;
 	uint64_t interval;
-	uint32_t lambda = lg_p->interval;
+	uint32_t lambda = lg_p->lgs[lg_i].interval;
 	double U = drand48();
 
 	switch(lg_p->arrival_dist){
 		case 0: //uniform arrival rate
-			interval = lg_p->interval;
+			interval = lg_p->lgs[lg_i].interval;
 			break;
 		case 1:	//poissson arrival rate
 			interval = (uint64_t) floor(-log(U) * lambda) + 1;
 			break;
 		default:
-			interval = lg_p->interval;
+			interval = lg_p->lgs[lg_i].interval;
 		break;
 	}
 	//info("interval: %lu", interval);
@@ -229,7 +229,7 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0) {
 
 
 
-	((load_generator*)lg_p)->next_cycle = ((load_generator*)lg_p)->next_cycle + interval; 
+	((load_generator*)lg_p)->lgs[lg_i].next_cycle = ((load_generator*)lg_p)->lgs[lg_i].next_cycle + interval;
 
 	((load_generator*)lg_p)->ptag++;
 
@@ -463,8 +463,8 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 
 	uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head]));
 	// write message to recv buffer via load generator/RPCGen
-	int size = ((load_generator*) lg_p)->RPCGen->generatePackedRPC((char*)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head].line_seg[0])));
-	update_loadgen(lg_p, cur_cycle);
+	int size = ((load_generator*) lg_p)->lgs[lg_i].RPCGen->generatePackedRPC((char*)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head].line_seg[0])));
+	update_loadgen(lg_p, cur_cycle, lg_i);
 
 	//acho: I need to think through timing and clock cycle assignment/adjustment 
 
@@ -927,91 +927,3 @@ int nic_rgp_action(uint64_t core_id, glob_nic_elements* nicInfo)
 
 #endif
 
-
-
-
-//int tc_linked_list_insert(uint64_t ptag, uint64_t issue_cycle) {
-//	/*
-//	 * we won't use list so this is obsolete, keeping for possible comparison
-//	 */
-//
-//	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
-//
-//
-//	p_time_card* ptc = gm_calloc<p_time_card>();
-//	ptc->issue_cycle = issue_cycle;
-//	ptc->ptag = ptag;
-//
-//	if (lg_p->ptc_head == NULL)
-//	{
-//		lg_p->ptc_head = ptc;
-//		return 0;
-//	}
-//
-//	uint64_t tcount = 0;
-//
-//	futex_lock(&lg_p->ptc_lock);
-//	p_time_card* head = lg_p->ptc_head;
-//	while (head->next != NULL) {
-//		head = head->next;
-//		tcount++;
-//	}
-//	head->next = ptc;
-//	//info("insert ptc pcount = %d", tcount);
-//	futex_unlock(&lg_p->ptc_lock);
-//	return 0;
-//
-//}
-
-//int log_packet_latency_list(uint64_t ptag, uint64_t fin_time) {
-//	/*
-//	* we won't use list so this is obsolete, keeping for possible comparison
-//	*/
-//
-//	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
-//
-//	ofstream list_latency_file("list_latency.txt", ios::app);
-//
-//	uint64_t tcount = 0;
-//
-//	assert(lg_p->ptc_head != NULL);
-//
-//	futex_lock(&lg_p->ptc_lock);
-//	p_time_card* tmp = lg_p->ptc_head;
-//
-//	if (tmp->ptag == ptag) {
-//		lg_p->ptc_head = tmp->next;
-//	}
-//	else {
-//		p_time_card* prev = tmp;
-//		tmp = tmp->next;
-//		while (tmp->ptag != ptag) {
-//			tcount++;
-//
-//			prev = tmp;
-//			tmp = tmp->next;
-//			//DBG
-//			if (tmp == NULL) {
-//				info("ptag=%d", ptag);
-//			}
-//			assert(tmp != NULL);
-//		}
-//
-//		prev->next = tmp->next;
-//
-//	}
-//	uint64_t latency = fin_time - tmp->issue_cycle;
-//	//info("log packet latency pcount = %d ,ptag = %d, latency = %d", tcount, ptag, latency);
-//	futex_unlock(&lg_p->ptc_lock);
-//
-//	//uint64_t latency = fin_time - tmp->issue_cycle;
-//
-//	//LOG latency
-//	//out >> "tag= " >> tmp->ptag >> ", lat= " >> latency >> std::endl;
-//	list_latency_file << ptag << ", " << (fin_time - (tmp->issue_cycle)) << std::endl;
-//
-//	list_latency_file.close();
-//	//FREE ptc pointer
-//	gm_free(tmp);
-//	return 0;
-//}

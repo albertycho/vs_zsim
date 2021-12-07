@@ -283,6 +283,95 @@ int RRPP_routine_backup(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg
 */
 
 
+
+//int tc_linked_list_insert(uint64_t ptag, uint64_t issue_cycle) {
+//	/*
+//	 * we won't use list so this is obsolete, keeping for possible comparison
+//	 */
+//
+//	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
+//
+//
+//	p_time_card* ptc = gm_calloc<p_time_card>();
+//	ptc->issue_cycle = issue_cycle;
+//	ptc->ptag = ptag;
+//
+//	if (lg_p->ptc_head == NULL)
+//	{
+//		lg_p->ptc_head = ptc;
+//		return 0;
+//	}
+//
+//	uint64_t tcount = 0;
+//
+//	futex_lock(&lg_p->ptc_lock);
+//	p_time_card* head = lg_p->ptc_head;
+//	while (head->next != NULL) {
+//		head = head->next;
+//		tcount++;
+//	}
+//	head->next = ptc;
+//	//info("insert ptc pcount = %d", tcount);
+//	futex_unlock(&lg_p->ptc_lock);
+//	return 0;
+//
+//}
+
+//int log_packet_latency_list(uint64_t ptag, uint64_t fin_time) {
+//	/*
+//	* we won't use list so this is obsolete, keeping for possible comparison
+//	*/
+//
+//	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
+//
+//	ofstream list_latency_file("list_latency.txt", ios::app);
+//
+//	uint64_t tcount = 0;
+//
+//	assert(lg_p->ptc_head != NULL);
+//
+//	futex_lock(&lg_p->ptc_lock);
+//	p_time_card* tmp = lg_p->ptc_head;
+//
+//	if (tmp->ptag == ptag) {
+//		lg_p->ptc_head = tmp->next;
+//	}
+//	else {
+//		p_time_card* prev = tmp;
+//		tmp = tmp->next;
+//		while (tmp->ptag != ptag) {
+//			tcount++;
+//
+//			prev = tmp;
+//			tmp = tmp->next;
+//			//DBG
+//			if (tmp == NULL) {
+//				info("ptag=%d", ptag);
+//			}
+//			assert(tmp != NULL);
+//		}
+//
+//		prev->next = tmp->next;
+//
+//	}
+//	uint64_t latency = fin_time - tmp->issue_cycle;
+//	//info("log packet latency pcount = %d ,ptag = %d, latency = %d", tcount, ptag, latency);
+//	futex_unlock(&lg_p->ptc_lock);
+//
+//	//uint64_t latency = fin_time - tmp->issue_cycle;
+//
+//	//LOG latency
+//	//out >> "tag= " >> tmp->ptag >> ", lat= " >> latency >> std::endl;
+//	list_latency_file << ptag << ", " << (fin_time - (tmp->issue_cycle)) << std::endl;
+//
+//	list_latency_file.close();
+//	//FREE ptc pointer
+//	gm_free(tmp);
+//	return 0;
+//}
+
+
+
 /*
 	MemReq req;
 	Address rbuf_lineAddr = recv_buf_addr >> lineBits;

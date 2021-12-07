@@ -276,7 +276,6 @@ typedef struct load_gen_mod {
 	uint32_t lg_type;
 	uint64_t next_cycle;
 	uint32_t interval;
-	uint32_t prev_cycle;
 	RPCGenerator* RPCGen;
 	uint64_t last_core;
 	uint32_t num_cores;
@@ -292,6 +291,7 @@ struct load_generator {
 	load_gen_mod* lgs;
 	//dbg
 	uint64_t sum_interval;
+	uint32_t prev_cycle;
 	
 
 	//int message; //may replace this to appropriate type
