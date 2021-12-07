@@ -283,14 +283,14 @@ typedef struct load_gen_mod {
 }load_gen_mod;
 
 struct load_generator {
-	int next_cycle;
-	int interval;
-	int prev_cycle;
+	//int next_cycle;
+	//int interval;
+	//int prev_cycle;
 	uint32_t arrival_dist=0;
 	uint32_t num_loadgen;
 	load_gen_mod* lgs;
 	//dbg
-	uint64_t sum_interval;
+	//uint64_t sum_interval;
 	
 
 	//int message; //may replace this to appropriate type

@@ -971,24 +971,20 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 
     void* lgp;
     lgp = gm_calloc<load_generator>();
-    //((load_generator*)lgp)->next_cycle = 100000;
-    ((load_generator*)lgp)->next_cycle = 0;
+
+    //((load_generator*)lgp)->next_cycle = 0;
     ((load_generator*)lgp)->ptag= 0;
-    ((load_generator*)lgp)->RPCGen = new RPCGenerator(100, 10); //moved to individual LG
-    //auto tmp_tcmap = std::shared_ptr<map<uint64_t, uint64_t>>(new ::map<uint64_t, uint64_t>());
-    //auto tmp_tcmap1 = std::shared_ptr<map<uint64_t, uint64_t>>(new ::map<uint64_t, uint64_t>());
-    //auto tmp_tcmap2 = std::shared_ptr<map<uint64_t, uint64_t>>(new ::map<uint64_t, uint64_t>());
-    //auto tmp_tcmap = std::shared_ptr<map<uint64_t, std::pair<uint64_t,uint64_t>>>(new ::map<uint64_t, std::pair<uint64_t,uint64_t>>);
+    //((load_generator*)lgp)->RPCGen = new RPCGenerator(100, 10); //moved to individual LG
+    
     auto tmp_tcmap = std::shared_ptr<map<uint64_t, timestamp>>(new ::map<uint64_t, timestamp>());
     ((load_generator*)lgp)->tc_map = tmp_tcmap;
-    //((load_generator*)lgp)->tc_map_core = tmp_tcmap1;
-    //((load_generator*)lgp)->tc_map_phase = tmp_tcmap2;
+
     futex_init(&(((load_generator*)lgp)->ptc_lock));
     gm_set_lg_ptr(lgp);
 
 
     uint32_t dist_type = config.get<uint32_t>("sim.load_dist", 0);
-    lgp->RPCGen->set_load_dist(dist_type);
+    //lgp->RPCGen->set_load_dist(dist_type);
 
     //uint32_t num_keys = config.get<uint32_t>("sim.num_keys", 100);
     //lgp->RPCGen->set_num_keys(num_keys);
@@ -1002,17 +998,43 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     lgp->arrival_dist = arrival_dist;
 
     lgp->last_core = 0;
-    lgp->sum_interval = 0;
+    //lgp->sum_interval = 0;
 
 
     // Build the load generators
     vector<const char*> loadGenNames;
     config.subgroups("sim.load_gen", loadGenNames);
     string lg_prefix = "sim.load_gen.";
+    uint32_t num_loadgen = loadGenNames.size();
+    lgp->num_loadgen = num_loadgen;
+    lgp->lgs = (load_gen_mod *) (gm_calloc<load_gen_mod>(num_loadgen));
+    uint32_t tmp = 0;
+    uint32_t start_core = 2 + num_loadgen; //2 nic cores + thread spawning master threads for each app
     for (const char* lgi : loadGenNames) {
         info("loadGenName: %s", lgi);
         uint32_t lg_type = config.get<uint32_t>(lg_prefix + lgi + ".type", 0);
         uint32_t lg_num_keys = config.get<uint32_t>(lg_prefix + lgi + ".num_keys", 1024);
+        uint32_t IR = config.get<uint32_t>(lg_prefix + lgi + ".injection_rate", 10);
+        uint32_t update_fraction = config.get<uint32_t>(lg_prefix + lgi + ".update_fraction", 25);
+        uint32_t assoc_cores = config.get<uint32_t>(lg_prefix + lgi + ".assoc_cores", 16);
+        lgp->lgs[tmp].next_cycle = 0;
+        lgp->lgs[tmp].interval = (zinfo->phaseLength) / (IR);
+        lgp->lgs[tmp].prev_cycle = 0;
+        lgp->lgs[tmp].last_core = start_core;
+        lgp->lgs[tmp].num_cores = assoc_cores;
+        for (int i = 0; i < assoc_cores; i++) {
+            lgp->lgs[tmp].cores_ids[i] = start_core++;
+        }
+        lgp->lgs[tmp].RPCGen = new RPCGenerator(100, 10); // this call may change depending on loadgen TYPE
+        ////////////COMEBACK WERE NOT DONE //////////////////////
+        lgp->lgs[tmp].RPCGen->set_load_dist(dist_type);
+        lgp->lgs[tmp].RPCGen->set_num_keys(lg_num_keys);
+    //lgp->RPCGen->set_num_keys(num_keys);
+
+    //uint32_t update_fraction = config.get<uint32_t>("sim.update_fraction", 10);
+    //lgp->RPCGen->set_update_fraction(update_fraction);
+        //start_core += assoc_cores;
+        tmp++;
 
     }
 
