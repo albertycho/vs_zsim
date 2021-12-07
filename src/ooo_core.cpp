@@ -950,7 +950,7 @@ uint32_t assign_core(uint32_t lg_i) {
                 min_q_size = nicInfo->nic_elem[core_id_l].ceq_size + cq_size;
                 if (min_q_size == 0) {
                     //info("ret_core_id: %d", ret_core_id);
-                    lg_p->lgs[lg_i].last_core = ret_core_id;
+                    lg_p->lgs[lg_i].last_core = core_iterator;
                     return ret_core_id;
                 }
             }
@@ -964,7 +964,7 @@ uint32_t assign_core(uint32_t lg_i) {
 
     }
     //info("ret_core_id: %d, min_cq_size: %lu, min_ceq_size:%lu", ret_core_id, min_q_size-nicInfo->nic_elem[ret_core_id].ceq_size, nicInfo->nic_elem[ret_core_id].ceq_size);
-    lg_p->lgs[lg_i].last_core = ret_core_id;
+    lg_p->lgs[lg_i].last_core = core_iterator;
     return ret_core_id;
 
 }
