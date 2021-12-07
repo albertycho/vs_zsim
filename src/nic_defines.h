@@ -272,28 +272,40 @@ typedef struct timestamp_str {
 	uint64_t nic_enq_cycle;
 } timestamp;
 
+typedef struct load_gen_mod {
+	uint64_t next_cycle;
+	uint32_t interval;
+	uint32_t prev_cycle;
+	RPCGenerator* RPCGen;
+	uint64_t last_core;
+	uint32_t num_cores;
+	uint32_t core_ids[64]; //assume max core count 64
+}load_gen_mod;
+
 struct load_generator {
 	int next_cycle;
 	int interval;
 	int prev_cycle;
 	uint32_t arrival_dist=0;
+	uint32_t num_loadgen;
+	load_gen_mod* lgs;
 	//dbg
 	uint64_t sum_interval;
+	
 
-	int message; //may replace this to appropriate type
+	//int message; //may replace this to appropriate type
 	bool all_packets_sent=0, all_packets_completed=0;
 	uint64_t target_packet_count;
 	uint64_t sent_packets;
-	uint64_t last_core;
+	//uint64_t last_core;
 	uint64_t ptag;
-	p_time_card* ptc_head; // this linked list packet_time_card is not used, 
 	lock_t ptc_lock;	   // keeping code for DBG/Comparison purpose
 	//std::shared_ptr<std::map<uint64_t, uint64_t>> tc_map;
 	//std::shared_ptr<std::map<uint64_t, uint64_t>> tc_map_core;
 	//std::shared_ptr<std::map<uint64_t, uint64_t>> tc_map_phase;
 	//std::shared_ptr<std::map<uint64_t, std::pair<uint64_t,uint64_t>>> tc_map;
 	std::shared_ptr<std::map<uint64_t, timestamp>> tc_map;
-	RPCGenerator* RPCGen;
+	//RPCGenerator* RPCGen;
 };
 
 
