@@ -846,7 +846,7 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 				lg_p->all_packets_completed = true;
 				info("all packets received");
 			}
-		//std::cout << "Packet Tag: " << ptag << ", core "<<core_id << ", start_cycle: " << start_cycle << ", end_cycle: " << end_cycle << ", p_latency: " << p_latency << std::endl;
+		std::cout << "Packet Tag: " << ptag << ", core "<<core_id << ", start_cycle: " << start_cycle << ", end_cycle: " << end_cycle << ", p_latency: " << p_latency << std::endl;
 		}
 		else {
 			futex_unlock(&(nicInfo->dpq_lock));
