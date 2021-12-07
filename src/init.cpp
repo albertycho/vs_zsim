@@ -1030,6 +1030,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     uint32_t arrival_dist = config.get<uint32_t>("sim.arrival_dist", 0);
     lgp->arrival_dist = arrival_dist;
     lgp->sum_interval = 0;
+    lgp->prev_cycle = 0;
 
     // Build the load generators
     vector<const char*> loadGenNames;
@@ -1050,7 +1051,6 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
         lgp->lgs[tmp].lg_type = lg_type;
         lgp->lgs[tmp].next_cycle = 0;
         lgp->lgs[tmp].interval = (zinfo->phaseLength) / (IR);
-        lgp->lgs[tmp].prev_cycle = 0;
         lgp->lgs[tmp].last_core = start_core;
         lgp->lgs[tmp].num_cores = assoc_cores;
         for (uint32_t i = 0; i < assoc_cores; i++) {
