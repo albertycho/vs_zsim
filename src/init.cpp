@@ -1000,8 +1000,9 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     Config config(configFile);
 
     /// init Load Generator //
-    void* lgp;
-    lgp = gm_calloc<load_generator>();
+    void* lgp_void;
+    lgp_void = gm_calloc<load_generator>();
+    load_generator* lgp = (load_generator*)lgp_void;
 
     //((load_generator*)lgp)->next_cycle = 0;
     ((load_generator*)lgp)->ptag = 0;
@@ -1011,8 +1012,9 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     ((load_generator*)lgp)->tc_map = tmp_tcmap;
 
     futex_init(&(((load_generator*)lgp)->ptc_lock));
-    gm_set_lg_ptr(lgp);
+    gm_set_lg_ptr(lgp_void);
 
+    
 
     uint32_t dist_type = config.get<uint32_t>("sim.load_dist", 0);
     //lgp->RPCGen->set_load_dist(dist_type);
