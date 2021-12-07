@@ -1114,53 +1114,6 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 
     zinfo->pinCmd = new PinCmd(&config, nullptr /*don't pass config file to children --- can go either way, it's optional*/, outputDir, shmid);
 
-    //Caches, cores, memory controllers
-    InitSystem(config);
-
-    //Sched stats (deferred because of circular deps)
-    if (zinfo->sched) zinfo->sched->initStats(zinfo->rootStat);
-
-    zinfo->processStats = new ProcessStats(zinfo->rootStat);
-
-    const char* procStatsFilter = config.get<const char*>("sim.procStatsFilter", "");
-    if (strlen(procStatsFilter)) {
-        zinfo->procStats = new ProcStats(zinfo->rootStat, FilterStats(zinfo->rootStat, procStatsFilter));
-    } else {
-        zinfo->procStats = nullptr;
-    }
-
-    //It's a global stat, but I want it to be last...
-    zinfo->profHeartbeats = new VectorCounter();
-    zinfo->profHeartbeats->init("heartbeats", "Per-process heartbeats", zinfo->lineSize);
-    zinfo->rootStat->append(zinfo->profHeartbeats);
-
-    bool perProcessDir = config.get<bool>("sim.perProcessDir", false);
-    PostInitStats(perProcessDir, config);
-
-    zinfo->perProcessCpuEnum = config.get<bool>("sim.perProcessCpuEnum", false);
-
-    //Odds and ends
-    bool printMemoryStats = config.get<bool>("sim.printMemoryStats", false);
-    if (printMemoryStats) {
-        gm_stats();
-    }
-
-    //HACK: Read all variables that are read in the harness but not in init
-    //This avoids warnings on those elements
-    config.get<uint32_t>("sim.gmMBytes", (1 << 10));
-    if (!zinfo->attachDebugger) config.get<bool>("sim.deadlockDetection", true);
-    config.get<bool>("sim.aslr", false);
-
-    //Write config out
-    bool strictConfig = config.get<bool>("sim.strictConfig", true); //if true, panic on unused variables
-    config.writeAndClose((string(zinfo->outputDir) + "/out.cfg").c_str(), strictConfig);
-
-    zinfo->contentionSim->postInit();
-
-
-
-    gm_set_nic_ptr(nicInfo);
-  
     /// init Load Generator //
     void* lgp_void;
     lgp_void = gm_calloc<load_generator>();
@@ -1226,6 +1179,57 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
         //start_core += assoc_cores;
         tmp++;
     }
+
+
+
+    //Caches, cores, memory controllers
+    InitSystem(config);
+
+    //Sched stats (deferred because of circular deps)
+    if (zinfo->sched) zinfo->sched->initStats(zinfo->rootStat);
+
+    zinfo->processStats = new ProcessStats(zinfo->rootStat);
+
+    const char* procStatsFilter = config.get<const char*>("sim.procStatsFilter", "");
+    if (strlen(procStatsFilter)) {
+        zinfo->procStats = new ProcStats(zinfo->rootStat, FilterStats(zinfo->rootStat, procStatsFilter));
+    } else {
+        zinfo->procStats = nullptr;
+    }
+
+    //It's a global stat, but I want it to be last...
+    zinfo->profHeartbeats = new VectorCounter();
+    zinfo->profHeartbeats->init("heartbeats", "Per-process heartbeats", zinfo->lineSize);
+    zinfo->rootStat->append(zinfo->profHeartbeats);
+
+    bool perProcessDir = config.get<bool>("sim.perProcessDir", false);
+    PostInitStats(perProcessDir, config);
+
+    zinfo->perProcessCpuEnum = config.get<bool>("sim.perProcessCpuEnum", false);
+
+    //Odds and ends
+    bool printMemoryStats = config.get<bool>("sim.printMemoryStats", false);
+    if (printMemoryStats) {
+        gm_stats();
+    }
+
+    //HACK: Read all variables that are read in the harness but not in init
+    //This avoids warnings on those elements
+    config.get<uint32_t>("sim.gmMBytes", (1 << 10));
+    if (!zinfo->attachDebugger) config.get<bool>("sim.deadlockDetection", true);
+    config.get<bool>("sim.aslr", false);
+
+    //Write config out
+    bool strictConfig = config.get<bool>("sim.strictConfig", true); //if true, panic on unused variables
+    config.writeAndClose((string(zinfo->outputDir) + "/out.cfg").c_str(), strictConfig);
+
+    zinfo->contentionSim->postInit();
+
+
+
+    gm_set_nic_ptr(nicInfo);
+  
+   
 
 
 	info("Initialization complete");
