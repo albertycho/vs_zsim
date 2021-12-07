@@ -1060,7 +1060,6 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 
         lgp->lgs[tmp].RPCGen->set_load_dist(dist_type);
         lgp->lgs[tmp].RPCGen->set_num_keys(lg_num_keys);
-        uint32_t update_fraction = config.get<uint32_t>("sim.update_fraction", 10);
         lgp->lgs[tmp].RPCGen->set_update_fraction(update_fraction);
             //start_core += assoc_cores;
         tmp++;
