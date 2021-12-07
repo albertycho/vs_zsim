@@ -969,13 +969,44 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     zinfo->outputDir = gm_strdup(outputDir);
     zinfo->statsBackends = new g_vector<StatsBackend*>();
 
+
+    //init nic_elements ptr
+    //glob_nic_elements* nicInfo= gm_calloc<glob_nic_elements>();
+    nicInfo = gm_calloc<glob_nic_elements>();
+    futex_init(&(nicInfo->dpq_lock));
+    nicInfo->done_packet_q_head = NULL;
+    nicInfo->done_packet_q_tail = NULL;
+    //nicInfo->RPCGen = new RPCGenerator(100, 10);
+    for (uint64_t i = 0; i < MAX_NUM_CORES; i++) {
+        nicInfo->nic_elem[i].wq = gm_calloc<rmc_wq_t>();
+        nicInfo->nic_elem[i].cq = gm_calloc<rmc_cq_t>();
+        futex_init(&nicInfo->nic_elem[i].rb_lock);
+        futex_init(&nicInfo->nic_elem[i].ceq_lock);
+        futex_init(&nicInfo->nic_elem[i].rcp_lock);
+		nicInfo->nic_elem[i].rb_iterator=0;
+		nicInfo->nic_elem[i].cq_check_spin_count=0;
+		nicInfo->nic_elem[i].cq_check_inner_loop_count =0;
+        nicInfo->nic_elem[i].cq_check_outer_loop_count = 0;
+        nicInfo->nic_elem[i].packet_pending = false;
+        futex_init(&nicInfo->nic_elem[i].packet_pending_lock);
+    }
+    nicInfo->latencies = gm_calloc<uint64_t>(LAT_ARR_SIZE);
+    //nicInfo->latencies_list = gm_calloc<uint64_t>(LAT_ARR_SIZE);
+    nicInfo->latencies_capa = LAT_ARR_SIZE;
+    //nicInfo->latencies_list_capa = LAT_ARR_SIZE;
+
+    l1d_caches = gm_calloc<FilterCache*>(256);
+
+    Config config(configFile);
+
+    /// init Load Generator //
     void* lgp;
     lgp = gm_calloc<load_generator>();
 
     //((load_generator*)lgp)->next_cycle = 0;
-    ((load_generator*)lgp)->ptag= 0;
+    ((load_generator*)lgp)->ptag = 0;
     //((load_generator*)lgp)->RPCGen = new RPCGenerator(100, 10); //moved to individual LG
-    
+
     auto tmp_tcmap = std::shared_ptr<map<uint64_t, timestamp>>(new ::map<uint64_t, timestamp>());
     ((load_generator*)lgp)->tc_map = tmp_tcmap;
 
@@ -1007,7 +1038,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     string lg_prefix = "sim.load_gen.";
     uint32_t num_loadgen = loadGenNames.size();
     lgp->num_loadgen = num_loadgen;
-    lgp->lgs = (load_gen_mod *) (gm_calloc<load_gen_mod>(num_loadgen));
+    lgp->lgs = (load_gen_mod*)(gm_calloc<load_gen_mod>(num_loadgen));
     uint32_t tmp = 0;
     uint32_t start_core = 2 + num_loadgen; //2 nic cores + thread spawning master threads for each app
     for (const char* lgi : loadGenNames) {
@@ -1029,44 +1060,16 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
         ////////////COMEBACK WERE NOT DONE //////////////////////
         lgp->lgs[tmp].RPCGen->set_load_dist(dist_type);
         lgp->lgs[tmp].RPCGen->set_num_keys(lg_num_keys);
-    //lgp->RPCGen->set_num_keys(num_keys);
+        //lgp->RPCGen->set_num_keys(num_keys);
 
-    //uint32_t update_fraction = config.get<uint32_t>("sim.update_fraction", 10);
-    //lgp->RPCGen->set_update_fraction(update_fraction);
-        //start_core += assoc_cores;
+        //uint32_t update_fraction = config.get<uint32_t>("sim.update_fraction", 10);
+        //lgp->RPCGen->set_update_fraction(update_fraction);
+            //start_core += assoc_cores;
         tmp++;
 
     }
 
 
-    //init nic_elements ptr
-    //glob_nic_elements* nicInfo= gm_calloc<glob_nic_elements>();
-    nicInfo = gm_calloc<glob_nic_elements>();
-    futex_init(&(nicInfo->dpq_lock));
-    nicInfo->done_packet_q_head = NULL;
-    nicInfo->done_packet_q_tail = NULL;
-    //nicInfo->RPCGen = new RPCGenerator(100, 10);
-    for (uint64_t i = 0; i < MAX_NUM_CORES; i++) {
-        nicInfo->nic_elem[i].wq = gm_calloc<rmc_wq_t>();
-        nicInfo->nic_elem[i].cq = gm_calloc<rmc_cq_t>();
-        futex_init(&nicInfo->nic_elem[i].rb_lock);
-        futex_init(&nicInfo->nic_elem[i].ceq_lock);
-        futex_init(&nicInfo->nic_elem[i].rcp_lock);
-		nicInfo->nic_elem[i].rb_iterator=0;
-		nicInfo->nic_elem[i].cq_check_spin_count=0;
-		nicInfo->nic_elem[i].cq_check_inner_loop_count =0;
-        nicInfo->nic_elem[i].cq_check_outer_loop_count = 0;
-        nicInfo->nic_elem[i].packet_pending = false;
-        futex_init(&nicInfo->nic_elem[i].packet_pending_lock);
-    }
-    nicInfo->latencies = gm_calloc<uint64_t>(LAT_ARR_SIZE);
-    //nicInfo->latencies_list = gm_calloc<uint64_t>(LAT_ARR_SIZE);
-    nicInfo->latencies_capa = LAT_ARR_SIZE;
-    //nicInfo->latencies_list_capa = LAT_ARR_SIZE;
-
-    l1d_caches = gm_calloc<FilterCache*>(256);
-
-    Config config(configFile);
 
     //Debugging
     //NOTE: This should be as early as possible, so that we can attach to the debugger before initialization.
