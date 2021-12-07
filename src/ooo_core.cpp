@@ -1100,7 +1100,7 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
                 else {
                     uint64_t injection_cycle = core->curCycle;
                     for (int ii = 0; ii < lg_p->num_loadgen; ii++) {
-                        if (lg_p->next_cycle <= injection_cycle /*&& idle_core > 1*/) {
+                        if (lg_p->lgs[ii].next_cycle <= injection_cycle /*&& idle_core > 1*/) {
                             //uint32_t core_iterator = assign_core(core_iterator);
                             uint32_t core_iterator = assign_core(ii);
                             if (nicInfo->nic_elem[core_iterator].packet_pending == false) {
