@@ -823,8 +823,6 @@ static void InitSystem(Config& config) {
     for (pair<string, CacheGroup*> kv : cMap) delete kv.second;
     cMap.clear();
 
-    uint32_t packet_injection_rate = config.get<uint32_t>("sim.packet_injection_rate", RECV_BUF_POOL_SIZE);
-    nicInfo->packet_injection_rate = (uint64_t) packet_injection_rate;
     bool record_nic_access = config.get<bool>("sim.record_nic_access", true);
     nicInfo->record_nic_access = record_nic_access;
 
@@ -1160,7 +1158,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
         info("loadGenName: %s", lgi);
         uint32_t lg_type = config.get<uint32_t>(lg_prefix + lgi + ".type", 0);
         uint32_t lg_num_keys = config.get<uint32_t>(lg_prefix + lgi + ".num_keys", 1024);
-        uint32_t IR = config.get<uint32_t>(lg_prefix + lgi + ".injection_rate", 10);
+        uint32_t IR = config.get<uint32_t>(lg_prefix + lgi + ".packet_injection_rate", 10);
         uint32_t update_fraction = config.get<uint32_t>(lg_prefix + lgi + ".update_fraction", 25);
         uint32_t assoc_cores = config.get<uint32_t>(lg_prefix + lgi + ".assoc_cores", 16);
         lgp->lgs[tmp].lg_type = lg_type;

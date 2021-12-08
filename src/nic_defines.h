@@ -218,7 +218,6 @@ struct glob_nic_elements {
 
 	uint64_t dpq_size=0;
 
-	uint64_t packet_injection_rate;
 	uint32_t expected_core_count;
 	uint32_t registered_core_count;
 	bool nic_ingress_proc_on;

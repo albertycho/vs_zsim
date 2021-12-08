@@ -801,7 +801,6 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
         nicInfo->nic_ingress_pid = procIdx;
         nicInfo->nic_ingress_proc_on = true;
         info("nic ingress pid:%d, cid:%lu", procIdx, core_id);
-        info("packet injection rate:%lu", nicInfo->packet_injection_rate)
         if (nicInfo->registered_core_count == nicInfo->expected_core_count) {
             nicInfo->nic_init_done = true;
         }
