@@ -1153,7 +1153,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     lgp->num_loadgen = num_loadgen;
     lgp->lgs = (load_gen_mod*)(gm_calloc<load_gen_mod>(num_loadgen));
     uint32_t tmp = 0;
-    uint32_t start_core = 2 + num_loadgen; //2 nic cores + thread spawning master threads for each app
+    uint32_t start_core = 3; //2 nic cores + core for thread spawning master threads
     for (const char* lgi : loadGenNames) {
         info("loadGenName: %s", lgi);
         uint32_t lg_type = config.get<uint32_t>(lg_prefix + lgi + ".type", 0);
