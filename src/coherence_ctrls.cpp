@@ -160,7 +160,7 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
                     else profGETXMissSM.inc();
 
                     if ((flags & MemReq::PKTIN) && (flags >> 16 == 0)) {    // this is an ingress packed that is directed to the LLC and it missed, so we don't go to memory
-                        info("ddio ingress missed in llc, don't go to mem, state %s",MESIStateName(*state));
+                        //info("ddio ingress missed in llc, don't go to mem, state %s",MESIStateName(*state));
                         *state = M;
                         respCycle++;
                     } else {

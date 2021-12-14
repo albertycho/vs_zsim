@@ -150,11 +150,12 @@ RPCGenerator::generatePackedRPC(char* userBuffer) const {
 */
     //sizeof mica_op is 64
     memcpy(&req, &hval, sizeof(hval));
-    memcpy(userBuffer, &(req), sizeof(req));
+    int copy_size = is_update? sizeof(req) : (sizeof(req) - MICA_MAX_VALUE);
+    memcpy(userBuffer, &(req), copy_size);
 
     //printf("Generated packet with opcode %d, val_len %d, key %llx\n", req.opcode, req.val_len, hval);
 
-    return sizeof(req);
+    return copy_size;
 }
 
 uint32_t

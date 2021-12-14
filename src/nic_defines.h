@@ -74,7 +74,7 @@
 */
 
 
-#define RECV_BUF_POOL_SIZE 2000
+#define RECV_BUF_POOL_SIZE 524288 		// 1MB of buffer space per core
 //#define RECV_BUF_POOL_SIZE 32000
 
 #define LAT_ARR_SIZE 6000
@@ -139,7 +139,7 @@ typedef struct rcp_event {
 } rcp_event;
 
 typedef struct z_cacheline {
-	uint64_t line_seg[8];
+	uint8_t line_seg[1];
 } z_cacheline;
 
 struct nic_element {

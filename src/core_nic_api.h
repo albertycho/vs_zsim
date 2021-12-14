@@ -14,7 +14,6 @@
 /// RRPP functions
 /////////////////////
 
-
 bool cq_wr_event_ready(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint64_t core_id)
 {
 /*
@@ -443,7 +442,7 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	load_generator* lg_p = ((load_generator*) lg_p_in);
 
 	futex_lock(&nicInfo->nic_elem[core_id].rb_lock);
-	uint32_t rb_head = allocate_recv_buf(8, nicInfo, core_id);
+	uint32_t rb_head = allocate_recv_buf(512, nicInfo, core_id);		// for mica, allocate 512B 
 	//dbgprint
 	//info("allocate_recv_buf - rb_head = %d", rb_head);
 
@@ -669,7 +668,7 @@ int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {
 
 	uint64_t buf_base = (uint64_t)(&(NICELEM.recv_buf[0]));
 	uint64_t offset = buf_addr - buf_base;
-	uint32_t head = (uint32_t)(offset / 64); //divide by size of buffer in bytes
+	uint32_t head = (uint32_t)(offset); //divide by size of buffer entry in bytes
 
 
 
@@ -846,7 +845,7 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 				lg_p->all_packets_completed = true;
 				info("all packets received");
 			}
-		std::cout << "Packet Tag: " << ptag << ", core "<<core_id << ", start_cycle: " << start_cycle << ", end_cycle: " << end_cycle << ", p_latency: " << p_latency << std::endl;
+		//std::cout << "Packet Tag: " << ptag << ", core "<<core_id << ", start_cycle: " << start_cycle << ", end_cycle: " << end_cycle << ", p_latency: " << p_latency << std::endl;
 		}
 		else {
 			futex_unlock(&(nicInfo->dpq_lock));

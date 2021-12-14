@@ -145,8 +145,8 @@ uint64_t TimingCache::access(MemReq& req) {
 
             if (lineId == -1 /*&& cc->shouldAllocate(req)*/ && !(req.flags & MemReq::PKTOUT)) {     // a NIC egress access that misses in the LLC should not allocate a line
                 assert(cc->shouldAllocate(req)); //dsm: for now, we don't deal with non-inclusion in TimingCache
-                if(req.flags & MemReq::PKTIN)
-                    info("allocating llc line for ingress");
+                //if(req.flags & MemReq::PKTIN)
+                //    info("allocating llc line for ingress");
                 //Make space for new line
                 alloc = 1;
                 Address wbLineAddr;

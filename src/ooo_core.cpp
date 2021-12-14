@@ -925,7 +925,8 @@ uint32_t assign_core(uint32_t lg_i) {
             }
         }
 
-        return core_iterator;
+        //return core_iterator;
+        return core_id_r;
     }
 
     //increment it once at beginning for round-robin fairness
