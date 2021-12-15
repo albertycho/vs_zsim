@@ -580,7 +580,10 @@ int main(int argc, char *argv[]) {
          :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"<<std::endl;
     }
     else{
-        generate_raw_timestamp_files();
+        load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
+        if (lg_p->num_loadgen > 0) {
+            generate_raw_timestamp_files();
+        }
     }
 
 
