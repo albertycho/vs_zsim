@@ -156,10 +156,10 @@ struct nic_element {
 	PAD();
 	//uint64_t recv_buf[RECV_BUF_POOL_SIZE];
 	//z_cacheline recv_buf[RECV_BUF_POOL_SIZE];
-	z_cacheline *recv_buf
+	z_cacheline* recv_buf;
 	z_cacheline *lbuf;
 	//recv_buf_dir_t rb_dir[RECV_BUF_POOL_SIZE];
-	recv_buf_dir_t *rb_dir
+	recv_buf_dir_t* rb_dir;
 	uint32_t rb_iterator;
 	uint64_t cq_check_spin_count;
 	uint64_t cq_check_inner_loop_count;
