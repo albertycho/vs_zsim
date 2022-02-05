@@ -1003,7 +1003,13 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 
     Config config(configFile);
 
-
+    uint32_t recv_buf_pool_size = config.get<uint32_t>("sim.recv_buf_pool_size", 524288);
+    nicInfo->recv_buf_pool_size = recv_buf_pool_size;
+    //nicInfo->latencies = gm_calloc<uint64_t>(LAT_ARR_SIZE);
+    for (uint64_t i = 0; i < MAX_NUM_CORES; i++) {
+        nicInfo->nic_elem[i].recv_buf = gm_calloc<z_cacheline>(recv_buf_pool_size);
+        nicInfo->nic_elem[i].rb_dir = gm_calloc<recv_buf_dir_t>(recv_buf_pool_size);
+    }
 
 
 

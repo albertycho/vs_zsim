@@ -74,8 +74,8 @@
 */
 
 
-#define RECV_BUF_POOL_SIZE 524288//1048576 		// 1MB of buffer space per core
-//#define RECV_BUF_POOL_SIZE 32000
+//#define RECV_BUF_POOL_SIZE 524288//1048576 		// 1MB of buffer space per core
+#define RECV_BUF_POOL_SIZE (nicInfo->recv_buf_pool_size)
 
 #define LAT_ARR_SIZE 6000
 
@@ -155,11 +155,11 @@ struct nic_element {
 	bool ncq_SR;
 	PAD();
 	//uint64_t recv_buf[RECV_BUF_POOL_SIZE];
-	z_cacheline recv_buf[RECV_BUF_POOL_SIZE];
-	//uint64_t lbuf[RECV_BUF_POOL_SIZE];
-	//z_cacheline lbuf[RECV_BUF_POOL_SIZE];
+	//z_cacheline recv_buf[RECV_BUF_POOL_SIZE];
+	z_cacheline *recv_buf
 	z_cacheline *lbuf;
-	recv_buf_dir_t rb_dir[RECV_BUF_POOL_SIZE];
+	//recv_buf_dir_t rb_dir[RECV_BUF_POOL_SIZE];
+	recv_buf_dir_t *rb_dir
 	uint32_t rb_iterator;
 	uint64_t cq_check_spin_count;
 	uint64_t cq_check_inner_loop_count;
@@ -218,6 +218,7 @@ struct glob_nic_elements {
 	lock_t dpq_lock;
 
 	uint64_t dpq_size=0;
+	uint64_t recv_buf_pool_size;
 
 	uint32_t expected_core_count;
 	uint32_t registered_core_count;
