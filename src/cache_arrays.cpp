@@ -53,14 +53,18 @@ SetAssocArray::SetAssocArray(uint32_t _numLines, uint32_t _assoc, ReplPolicy* _r
 void SetAssocArray::initStats(AggregateStat* parentStat) {
     AggregateStat* objStats = new AggregateStat();
     objStats->init("array", "CacheArray stats");
-    netMisses.init("netMiss", "Requests associated with network functionality, misses");
-    netHits.init("netHit", "Requests associated with network functionality, hits");
+    netMisses_nic.init("netMiss_nic", "Requests associated with network functionality from nic, misses");
+    netMisses_core.init("netMiss_core", "Requests associated with network functionality from core, misses");
+    netHits_nic.init("netHit_nic", "Requests associated with network functionality from nic, hits");
+    netHits_core.init("netHit_core", "Requests associated with network functionality from core, hits");
     appMisses.init("appMiss", "Requests associated with app functionality, misses");
     appHits.init("appHit", "Requests associated with app functionality, hits");
     way_misses.init("way_inserts", "Insertions per cache way",assoc);
     way_hits.init("way_hits", "Hits per cache way",assoc);
-    objStats->append(&netMisses);
-    objStats->append(&netHits);
+    objStats->append(&netMisses_nic);
+    objStats->append(&netMisses_core);
+    objStats->append(&netHits_nic);
+    objStats->append(&netHits_core);
     objStats->append(&appMisses);
     objStats->append(&appHits);
     objStats->append(&way_misses);
@@ -80,7 +84,12 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
                     array[id].lastUSer = NIC;
                 if (req->flags & MemReq::NETRELATED) {
                     array[id].nicType = NETWORK;
-                    netHits.atomicInc();
+                    if (req->srcId > 1) {
+                        netHits_core.atomicInc();
+                    }
+                    else {
+                        netHits_nic.atomicInc();
+                    }
                 }
                 else {
                     array[id].nicType = DATA;
@@ -95,7 +104,12 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
     }
     if (req != nullptr) {
         if (req->flags & MemReq::NETRELATED) {
-            netMisses.atomicInc();
+            if (req->srcId > 1) {
+                netMisses_core.atomicInc();
+            }
+            else {
+                netMisses_nic.atomicInc();
+            }
         }
         else {
             appMisses.atomicInc();
