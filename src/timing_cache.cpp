@@ -143,8 +143,8 @@ uint64_t TimingCache::access(MemReq& req) {
 
             bool alloc = 0;
 
-            if (lineId == -1 /*&& cc->shouldAllocate(req)*/ && !(req.flags & MemReq::PKTOUT)) {     // a NIC egress access that misses in the LLC should not allocate a line
-                assert(cc->shouldAllocate(req)); //dsm: for now, we don't deal with non-inclusion in TimingCache
+            if (lineId == -1 && cc->shouldAllocate(req) && !(req.flags & MemReq::PKTOUT)) {     // a NIC egress access that misses in the LLC should not allocate a line
+                //assert(cc->shouldAllocate(req)); //dsm: for now, we don't deal with non-inclusion in TimingCache
                 //if(req.flags & MemReq::PKTIN)
                 //    info("allocating llc line for ingress");
                 //Make space for new line
@@ -159,8 +159,10 @@ uint64_t TimingCache::access(MemReq& req) {
 
                 array->postinsert(req.lineAddr, &req, lineId); //do the actual insertion. NOTE: Now we must split insert into a 2-phase thing because cc unlocks us.
 
-                if (evRec->hasRecord()) writebackRecord = evRec->popRecord();
+                //if (evRec->hasRecord()) writebackRecord = evRec->popRecord();
             }
+
+            if (evRec->hasRecord()) writebackRecord = evRec->popRecord();
 
             uint64_t getDoneCycle = respCycle;
             respCycle = cc->processAccess(req, lineId, respCycle, correct_level, &getDoneCycle);

@@ -285,8 +285,9 @@ void DDRMemory::EstimateBandwidth() {
     std::string nm = getName();
     std::string token = nm.substr(nm.find(delimiter)+1,nm.length());
     
-	if(midx<200000){
+	if(midx<200000-1){
 		mem_bwdth[midx++] = curBandwidth;
+        mem_bwdth[midx] = 100;
 	}
 
     lastAccesses = totalAccesses;

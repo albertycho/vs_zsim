@@ -74,7 +74,7 @@
 */
 
 
-#define RECV_BUF_POOL_SIZE 524288 		// 1MB of buffer space per core
+#define RECV_BUF_POOL_SIZE 524288//1048576 		// 1MB of buffer space per core
 //#define RECV_BUF_POOL_SIZE 32000
 
 #define LAT_ARR_SIZE 6000
@@ -207,6 +207,7 @@ typedef struct done_packet_info {
 
 
 struct glob_nic_elements {
+	lock_t nic_lock;
 	uint64_t nic_ingress_pid;
 	uint64_t nic_egress_pid;
 	void* nicCore_ingress;
@@ -224,6 +225,9 @@ struct glob_nic_elements {
 	bool nic_egress_proc_on;
 	bool nic_init_done;
 	bool record_nic_access;
+
+	uint32_t expected_non_net_core_count;
+	uint32_t registered_non_net_core_count;
 
 	//need to find a way to wire this into existing zsim stats
 	uint64_t* latencies;
@@ -245,6 +249,7 @@ struct glob_nic_elements {
 	bool send_in_loop;
 	bool out_of_rbuf=false;
 	uint32_t load_balance=0;
+	uint32_t forced_packet_size=0;
 
 	std::chrono::system_clock::time_point sim_start_time;
 	std::chrono::system_clock::time_point sim_end_time;
@@ -275,6 +280,8 @@ typedef struct load_gen_mod {
 	uint32_t lg_type;
 	uint64_t next_cycle;
 	uint32_t interval;
+	uint32_t burst_count=0;
+	uint32_t burst_len=0;
 	RPCGenerator* RPCGen;
 	uint64_t last_core;
 	uint32_t num_cores;

@@ -27,6 +27,8 @@
 #include "hash.h"
 #include "repl_policies.h"
 
+#include <math.h>   
+
 /* Set-associative array implementation */
 
 SetAssocArray::SetAssocArray(uint32_t _numLines, uint32_t _assoc, ReplPolicy* _rp, HashFamily* _hf) : rp(_rp), hf(_hf), numLines(_numLines), assoc(_assoc)  {
@@ -38,8 +40,14 @@ SetAssocArray::SetAssocArray(uint32_t _numLines, uint32_t _assoc, ReplPolicy* _r
         array[i].lastUSer = NONE;
     }
     numSets = numLines/assoc;
-    setMask = numSets - 1;
-    assert_msg(isPow2(numSets), "must have a power of 2 # sets, but you specified %d", numSets);
+
+    if(isPow2(numSets))
+        setMask = numSets-1;
+    else {
+        setMask = ceil(log2(numSets));
+    }
+
+    //assert_msg(isPow2(numSets), "must have a power of 2 # sets, but you specified %d", numSets);
 }
 
 void SetAssocArray::initStats(AggregateStat* parentStat) {
@@ -49,15 +57,19 @@ void SetAssocArray::initStats(AggregateStat* parentStat) {
     netHits.init("netHit", "Requests associated with network functionality, hits");
     appMisses.init("appMiss", "Requests associated with app functionality, misses");
     appHits.init("appHit", "Requests associated with app functionality, hits");
+    way_misses.init("way_inserts", "Insertions per cache way",assoc);
+    way_hits.init("way_hits", "Hits per cache way",assoc);
     objStats->append(&netMisses);
     objStats->append(&netHits);
     objStats->append(&appMisses);
     objStats->append(&appHits);
+    objStats->append(&way_misses);
+    objStats->append(&way_hits);
     parentStat->append(objStats);
 }
 
 int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool updateReplacement) {
-    uint32_t set = hf->hash(0, lineAddr) & setMask;
+    uint32_t set = (hf->hash(0, lineAddr) & setMask) % numSets;
     uint32_t first = set*assoc;
     for (uint32_t id = first; id < first + assoc; id++) {
         if (array[id].addr ==  lineAddr) {
@@ -75,6 +87,7 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
                     appHits.atomicInc();
                 }
             }
+            way_hits.inc(id-first);
             if (updateReplacement) 
                 rp->update(id, req);
             return id;
@@ -92,10 +105,11 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
 }
 
 uint32_t SetAssocArray::preinsert(const Address lineAddr, const MemReq* req, Address* wbLineAddr) { //TODO: Give out valid bit of wb cand?
-    uint32_t set = hf->hash(0, lineAddr) & setMask;
+    uint32_t set = (hf->hash(0, lineAddr) & setMask) % numSets;
     uint32_t first = set*assoc;
 
     uint32_t candidate = rp->rankCands(req, SetAssocCands(first, first+assoc));
+    way_misses.inc(candidate-first);
     //info("eviction candidate is %lld, with index %ld", array[candidate], candidate);
     *wbLineAddr = array[candidate].addr;
     return candidate;

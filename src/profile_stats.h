@@ -66,6 +66,8 @@ class ClockStat : public ScalarStat {
         uint64_t get() const {
             return totalNs + (startNs? (getNs() - startNs) : 0);
         }
+
+        //void clear () ;
 };
 
 /* Implements multi-state time profiling. Always starts at state 0.

@@ -1222,6 +1222,10 @@ VOID HandleMagicOp(THREADID tid, ADDRINT op) {
         case 1029:
         case 1030:
         case 1031:
+			zinfo->trigger = 20000;
+			for (StatsBackend* backend : *(zinfo->statsBackends)) backend->dump(false /*unbuffered, write out*/);
+			for (AccessTraceWriter* t : *(zinfo->traceWriters)) t->dump(false); // flushes trace writer
+			return;
         case 1032:
         case 1033:
             return;

@@ -124,7 +124,7 @@ void chldSigHandler(int sig) {
             //Stricter check: See if notifyEnd was called (i.e. zsim caught this termination)
             //Only works for direct children though
             if (globzinfo && !globzinfo->procExited[idx]) {
-                panic("Child %d (idx %d) exit was anomalous, killing simulation", cpid, idx);
+                //panic("Child %d (idx %d) exit was anomalous, killing simulation", cpid, idx);
             }
 
             if (globzinfo && globzinfo->procExited[idx] == PROC_RESTARTME) {
@@ -318,9 +318,13 @@ void generate_raw_timestamp_files(){
 
     for(int i=0; i<6; i++) {
         std::ofstream f("memory_controller_"+std::to_string(i)+"_bandwidth.txt");
-        for(int j=0;j<20000;j++) {
+        int j=0;
+        while (zinfo->mem_bwdth[i][j]!=100){
             f << zinfo->mem_bwdth[i][j] << std::endl;
+            j++;
+            
         }
+        info("%d",j);
         f.close();
     }
 
@@ -507,6 +511,8 @@ int main(int argc, char *argv[]) {
 
     int64_t lastNumPhases = 0;
 
+    glob_nic_elements* nicInfo;
+
     while (getNumChildren() > 0) {
         if (!gm_isready()) {
             usleep(1000);  // wait till proc idx 0 initializes everyhting
@@ -565,9 +571,30 @@ int main(int argc, char *argv[]) {
             sigHandler(SIGINT);
             exit(42);
         }
+
+        nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
+
+        if (!nicInfo->nic_egress_proc_on) {
+            int temp=0;
+            for (int i = 0; i < MAX_CHILDREN; i++) {
+                if (childInfo[i].status == PS_RUNNING)
+                    temp++;
+            }
+            if (temp == nicInfo->expected_non_net_core_count + 1) {
+                info("Attempting graceful termination");
+                for (int i = 0; i < MAX_CHILDREN; i++) {
+                    int cpid = childInfo[i].pid;
+                    if (childInfo[i].status == PS_RUNNING) {
+                        info("Killing process %d", cpid);
+                        kill(-cpid, SIGKILL);
+                        usleep(100000);
+                        kill(cpid, SIGKILL);
+                    }
+                }
+            }
+        }
     }
 
-    glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
 
     nicInfo->sim_end_time = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = (nicInfo->sim_end_time) - (nicInfo->sim_start_time);

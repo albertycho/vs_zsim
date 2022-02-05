@@ -118,7 +118,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
     // Power of two sets check; also compute setBits, will be useful later
     uint32_t numSets = numLines/ways;
     uint32_t setBits = 31 - __builtin_clz(numSets);
-    if ((1u << setBits) != numSets) panic("%s: Number of sets must be a power of two (you specified %d sets)", name.c_str(), numSets);
+    //if ((1u << setBits) != numSets) panic("%s: Number of sets must be a power of two (you specified %d sets)", name.c_str(), numSets);
 
     //Hash function
     HashFamily* hf = nullptr;
@@ -266,7 +266,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
 
     // Inclusion?
     bool nonInclusiveHack = config.get<bool>(prefix + "nonInclusiveHack", false);
-    if (nonInclusiveHack) assert(type == "Simple" && !isTerminal);
+    //if (nonInclusiveHack) assert(type == "Simple" && !isTerminal);
 
     // Finally, build the cache
     Cache* cache;
@@ -833,6 +833,9 @@ static void InitSystem(Config& config) {
     nicInfo->registered_core_count = 0;
     nicInfo->nic_init_done = false;
 
+    nicInfo->expected_non_net_core_count = config.get<uint32_t>("sim.num_non_net_cores", (zinfo->numCores - 3 - num_cores_serving_nw));
+    nicInfo->registered_non_net_core_count = 0;
+
     uint32_t hist_interval = config.get<uint32_t>("sim.hist_interval", 5000);
     nicInfo->hist_interval = hist_interval;
 
@@ -847,6 +850,8 @@ static void InitSystem(Config& config) {
 
     uint32_t load_balance = config.get<uint32_t>("sim.load_balance",0);
     nicInfo->load_balance = load_balance;
+	uint32_t forced_packet_size = config.get<uint32_t>("sim.forced_packet_size",0);
+	nicInfo->forced_packet_size = forced_packet_size;
 
     //load_generator* lgp;
     //lgp=(load_generator*)gm_get_lg_ptr();
@@ -974,6 +979,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     futex_init(&(nicInfo->dpq_lock));
     nicInfo->done_packet_q_head = NULL;
     nicInfo->done_packet_q_tail = NULL;
+    futex_init(&(nicInfo->nic_lock));
     //nicInfo->RPCGen = new RPCGenerator(100, 10);
     for (uint64_t i = 0; i < MAX_NUM_CORES; i++) {
         nicInfo->nic_elem[i].wq = gm_calloc<rmc_wq_t>();
@@ -1145,6 +1151,9 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     lgp->sum_interval = 0;
     lgp->prev_cycle = 0;
 
+    uint32_t burst_len = config.get<uint32_t>("sim.burst_len", 0);
+
+
     // Build the load generators
     vector<const char*> loadGenNames;
     config.subgroups("sim.load_gen", loadGenNames);
@@ -1164,13 +1173,16 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
         lgp->lgs[tmp].lg_type = lg_type;
         lgp->lgs[tmp].next_cycle = 0;
         lgp->lgs[tmp].interval = (zinfo->phaseLength) / (IR);
-        lgp->lgs[tmp].last_core = start_core;
+		lgp->lgs[tmp].burst_count=0;
+		lgp->lgs[tmp].burst_len=burst_len;
+        lgp->lgs[tmp].last_core = 0;//start_core; - bugfix: last_core points to index of core_ids, not the actual core's id
         lgp->lgs[tmp].num_cores = assoc_cores;
         for (uint32_t i = 0; i < assoc_cores; i++) {
             lgp->lgs[tmp].core_ids[i] = start_core++;
         }
         lgp->lgs[tmp].RPCGen = new RPCGenerator(100, 10); // this call may change depending on loadgen TYPE
 
+        lgp->lgs[tmp].RPCGen->set_lg_type(lg_type);
         lgp->lgs[tmp].RPCGen->set_load_dist(dist_type);
         lgp->lgs[tmp].RPCGen->set_num_keys(lg_num_keys);
         lgp->lgs[tmp].RPCGen->set_update_fraction(update_fraction);

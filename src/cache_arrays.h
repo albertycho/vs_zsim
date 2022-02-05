@@ -74,6 +74,7 @@ class SetAssocArray : public CacheArray {
         uint32_t setMask;
 
         Counter netMisses, netHits, appMisses,appHits;
+        VectorCounter way_misses, way_hits;
 
 
     public:

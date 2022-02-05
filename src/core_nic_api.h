@@ -200,7 +200,31 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0) {
 			interval = lg_p->lgs[lg_i].interval;
 			break;
 		case 1:	//poissson arrival rate
-			interval = (uint64_t) floor(-log(U) * lambda) + 1;
+		{	
+			errno = 0;
+			double temp = log(U);
+			while(errno == ERANGE) {
+				U = drand48();
+				errno = 0;
+				temp = log(U);
+			}
+			interval = (uint64_t) floor((-1) * temp * lambda) + 1;
+		}
+			break;
+		case 2: // burst and rest
+			{
+				if(lg_p->lgs[lg_i].burst_count < lg_p->lgs[lg_i].burst_len){
+					//don't change "next cycle", so we send next packet immediately
+					lg_p->lgs[lg_i].burst_count = lg_p->lgs[lg_i].burst_count+1;
+					interval = 0;
+				}
+				else{
+					//else reset counter set next cycle s.t. average interval is maintained
+					lg_p->lgs[lg_i].burst_count=0;
+					interval = (lg_p->lgs[lg_i].burst_len) * (lg_p->lgs[lg_i].interval);
+				}
+
+			}
 			break;
 		default:
 			interval = lg_p->lgs[lg_i].interval;
@@ -427,13 +451,6 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 		info("inject_incoming_packet - core_id out of bound: %d", core_id);
 	}
 
-	// if(procIdx==nicInfo->nic_ingress_pid){
-	// 	std::cout<<"I CAN SEE PROCIDX!"<<std::endl;
-	// }
-	// else{
-	// 	std::cout<<"I CAN SEE PROCIDX! but doesn't match nic_ingess_pid"<<std::endl;
-	// }
-
 	//if (nicInfo->latencies_size == lg_p->target_packet_count) {
 	//	lg_p->all_packets_sent = true;
 //	info("all packets sent");
@@ -441,8 +458,13 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 
 	load_generator* lg_p = ((load_generator*) lg_p_in);
 
+	uint32_t packet_size = 512;
+	if(nicInfo->forced_packet_size!=0){
+		packet_size = nicInfo->forced_packet_size;
+	}
+
 	futex_lock(&nicInfo->nic_elem[core_id].rb_lock);
-	uint32_t rb_head = allocate_recv_buf(512, nicInfo, core_id);		// for mica, allocate 512B 
+	uint32_t rb_head = allocate_recv_buf(packet_size, nicInfo, core_id);		// for mica, allocate 512B 
 	//dbgprint
 	//info("allocate_recv_buf - rb_head = %d", rb_head);
 
@@ -464,6 +486,11 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	// write message to recv buffer via load generator/RPCGen
 	int size = ((load_generator*) lg_p)->lgs[lg_i].RPCGen->generatePackedRPC((char*)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head].line_seg[0])));
 	update_loadgen(lg_p, cur_cycle, lg_i);
+
+	if(nicInfo->forced_packet_size!=0){
+		size = nicInfo->forced_packet_size;
+	}
+
 
 	//acho: I need to think through timing and clock cycle assignment/adjustment 
 

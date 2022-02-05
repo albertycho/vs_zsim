@@ -773,10 +773,13 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 
         NICELEM.cq_valid = true;
         *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(nicInfo->nic_elem[core_id].cq);
+        futex_lock(&nicInfo->nic_lock);
         nicInfo->registered_core_count = nicInfo->registered_core_count + 1;
-        if (nicInfo->registered_core_count == nicInfo->expected_core_count) {
+        futex_unlock(&nicInfo->nic_lock);
+        if ((nicInfo->registered_core_count == nicInfo->expected_core_count) && (nicInfo->registered_non_net_core_count == nicInfo->expected_non_net_core_count)) {
             if (nicInfo->nic_ingress_proc_on) {
                 nicInfo->nic_init_done = true;
+                info("nic init completed");
             }
         }
         info("core %d registered CQ at addrs %lld", core_id, nicInfo->nic_elem[core_id].cq);
@@ -801,7 +804,7 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
         nicInfo->nic_ingress_pid = procIdx;
         nicInfo->nic_ingress_proc_on = true;
         info("nic ingress pid:%d, cid:%lu", procIdx, core_id);
-        if (nicInfo->registered_core_count == nicInfo->expected_core_count) {
+        if ((nicInfo->registered_core_count == nicInfo->expected_core_count) && (nicInfo->registered_non_net_core_count == nicInfo->expected_non_net_core_count)) {
             nicInfo->nic_init_done = true;
         }
         //nicInfo->nicCore_ingress = (void*) cores[tid];
@@ -813,7 +816,7 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
         nicInfo->nic_egress_pid = procIdx;
         nicInfo->nic_egress_proc_on = true;
         info("nic egress  pid:%d, cid:%lu", procIdx, core_id);
-        if (nicInfo->registered_core_count == nicInfo->expected_core_count) {
+        if ((nicInfo->registered_core_count == nicInfo->expected_core_count) && (nicInfo->registered_non_net_core_count == nicInfo->expected_non_net_core_count)) {
             nicInfo->nic_init_done = true;
         }
         //nicInfo->nicCore_egress = (void*)cores[tid];
@@ -823,7 +826,9 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
     case 0xD: //send all client_done boolean to the server app to monitor for termination condition
         *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(lg_p->all_packets_completed));
 		//info("after handling monitor_client_done");
+        futex_lock(&nicInfo->nic_lock);
         nicInfo->ready_for_inj++;
+        futex_unlock(&nicInfo->nic_lock);
         start_cnt_phases = zinfo->numPhases;
         break;
 
@@ -863,6 +868,18 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 			futex_unlock(&nicInfo->nic_elem[core_id].packet_pending_lock);
 		}
         break;
+    case 0x15:      //registering non-network cores
+        {
+            futex_lock(&nicInfo->nic_lock);
+            nicInfo->registered_non_net_core_count++;
+            futex_unlock(&nicInfo->nic_lock);
+            if ((nicInfo->registered_core_count == nicInfo->expected_core_count) && (nicInfo->registered_non_net_core_count == nicInfo->expected_non_net_core_count)) {
+                if (nicInfo->nic_ingress_proc_on) {
+                    nicInfo->nic_init_done = true;
+                }
+            }
+            break;
+        }
     case 0xdead: //invalidate entries after test app terminates
         nicInfo->registered_core_count = nicInfo->registered_core_count - 1;
 
@@ -923,6 +940,7 @@ uint32_t assign_core(uint32_t lg_i) {
                 info("assign core: no active cores");
                 return core_id_r;
             }
+            
         }
 
         //return core_iterator;
@@ -1013,8 +1031,8 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
         //assert(srcId == 0);
         if (nicInfo->registered_core_count == 0) { // we're done, don't do anything
             if (nicInfo->nic_ingress_proc_on) {
-                info("ooo_core.cpp - turn off nic proc");
-                nicInfo->nic_ingress_proc_on = false;
+                //info("ooo_core.cpp - turn off nic proc");
+                //nicInfo->nic_ingress_proc_on = false;
                 nicInfo->nic_egress_proc_on = false;
             }
         }
