@@ -116,6 +116,20 @@ convert_ipv6_5tuple(struct ipv6_5tuple* key1,
 }
 
 
+
+int
+RPCGenerator::generatePackedRPC_batch(char* userBuffer, uint32_t numreqs) const {
+	char* buf_ptr = userBuffer;
+	int retsize = 0;
+	for (int i = 0; i < numreqs; i++) {
+		int reqsize = generatePackedRPC(buf_ptr);
+		retsize += reqsize;
+		buf_ptr += reqsize;
+	}
+	return retsize;
+
+}
+
 int
 RPCGenerator::generatePackedRPC(char* userBuffer) const {
 	bool is_update = true; //(std::rand() % 100) < (int)update_fraction ? true : false;
@@ -170,7 +184,8 @@ RPCGenerator::generatePackedRPC(char* userBuffer) const {
 		   */
 		//sizeof mica_op is 64
 		memcpy(&req, &hval, sizeof(hval));
-		int copy_size = is_update? sizeof(req) : (sizeof(req) - MICA_MAX_VALUE);
+		//int copy_size = is_update? sizeof(req) : (sizeof(req) - MICA_MAX_VALUE);
+		int copy_size = sizeof(req); //packet size is a test variable now, use uniform size per req
 		memcpy(userBuffer, &(req), copy_size);
 
 		//printf("Generated packet with opcode %d, val_len %d, key %llx\n", req.opcode, req.val_len, hval);

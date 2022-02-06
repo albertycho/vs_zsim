@@ -115,6 +115,7 @@ class RPCGenerator {
 
 	public:
 		RPCGenerator(size_t num_keys, size_t update_fraction);
+		virtual int generatePackedRPC_batch(char* userBuffer, uint32_t numreqs) const;
 		virtual int generatePackedRPC(char* userBuffer) const ;
 		virtual uint32_t getRPCPayloadSize() const ;
 		void set_num_keys(size_t i_num_keys);// { num_keys = i_num_keys; }
