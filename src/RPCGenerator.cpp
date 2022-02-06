@@ -122,6 +122,7 @@ RPCGenerator::generatePackedRPC_batch(char* userBuffer, uint32_t numreqs) const 
 	char* buf_ptr = userBuffer;
 	int retsize = 0;
 	for (int i = 0; i < numreqs; i++) {
+		printf("generatePackedRPC_batch: buf_ptr:%d", buf_ptr);
 		int reqsize = generatePackedRPC(buf_ptr);
 		retsize += reqsize;
 		buf_ptr += reqsize;
