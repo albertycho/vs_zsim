@@ -756,7 +756,22 @@ void DDRMemory::initTech(const char* techName) {
     // tBL's below are for 64-byte lines; we adjust as needed
 
     // Please keep this orderly; go from faster to slower technologies
-    if (tech == "DDR3-1333-CL10") {
+    if(tech == "DDR4-2400"){
+        tCK = 0.833; // ns; all other in mem cycles
+        tBL = 8;
+        tCL = 17; 
+        tRCD = 17;
+        tRTP = 4;
+        tRP = 17;
+        tRRD = 4;
+        tRAS = 39;
+        tFAW = 16;
+        tWTR = 3;
+        tWR = 15;
+        tRFC = 193;
+        tREFI = 10650; //7.8us according to spec. divided by 0.75ns
+    }
+    else if (tech == "DDR3-1333-CL10") {
         // from DRAMSim2/ini/DDR3_micron_16M_8B_x4_sg15.ini (Micron)
         tCK = 1.5;  // ns; all other in mem cycles
         tBL = 4;
