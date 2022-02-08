@@ -177,7 +177,7 @@ RPCGenerator::generatePackedRPC(char* userBuffer, uint32_t packet_size) const {
 
 		req.opcode = is_update ? HERD_OP_PUT : HERD_OP_GET;
 		//req.val_len = is_update ? MICA_MAX_VALUE : 0;
-		req.val_len = is_update ? (MICA_MAX_VALUE) : 0;
+		req.val_len = is_update ? (packet_size - 512 + (MICA_MAX_VALUE)) : 0;
 		/*
 		   if (is_update) {
 		   for (size_t i = 0; i < MICA_MAX_VALUE; i++) {
