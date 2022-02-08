@@ -117,13 +117,14 @@ convert_ipv6_5tuple(struct ipv6_5tuple* key1,
 
 
 
+// we're not going with larger packet==multi request, so this func unused for now
 int
 RPCGenerator::generatePackedRPC_batch(char* userBuffer, uint32_t numreqs) const {
 	char* buf_ptr = userBuffer;
 	int retsize = 0;
 	for (int i = 0; i < numreqs; i++) {
 		//printf("generatePackedRPC_batch: rep:%d, buf_ptr:%u\n", i, buf_ptr); 
-		int reqsize = generatePackedRPC(buf_ptr);
+		int reqsize = generatePackedRPC(buf_ptr, 512);
 		retsize += reqsize;
 		buf_ptr += reqsize;
 	}
@@ -132,7 +133,7 @@ RPCGenerator::generatePackedRPC_batch(char* userBuffer, uint32_t numreqs) const 
 }
 
 int
-RPCGenerator::generatePackedRPC(char* userBuffer) const {
+RPCGenerator::generatePackedRPC(char* userBuffer, uint32_t packet_size) const {
 	bool is_update = true; //(std::rand() % 100) < (int)update_fraction ? true : false;
 	//bool is_update = (std::rand() % 100) < (int)update_fraction ? true : false;
 	int key_i;
@@ -175,7 +176,8 @@ RPCGenerator::generatePackedRPC(char* userBuffer) const {
 		uint128 hval = CityHash128((char*)&key_arr[key_i], 4);
 
 		req.opcode = is_update ? HERD_OP_PUT : HERD_OP_GET;
-		req.val_len = is_update ? MICA_MAX_VALUE : 0;
+		//req.val_len = is_update ? MICA_MAX_VALUE : 0;
+		req.val_len = is_update ? (MICA_MAX_VALUE) : 0;
 		/*
 		   if (is_update) {
 		   for (size_t i = 0; i < MICA_MAX_VALUE; i++) {
@@ -186,7 +188,8 @@ RPCGenerator::generatePackedRPC(char* userBuffer) const {
 		//sizeof mica_op is 64
 		memcpy(&req, &hval, sizeof(hval));
 		//int copy_size = is_update? sizeof(req) : (sizeof(req) - MICA_MAX_VALUE);
-		int copy_size = sizeof(req); //packet size is a test variable now, use uniform size per req
+		//int copy_size = sizeof(req); //packet size is a test variable now, use uniform size per req
+		int copy_size = packet_size; //packet size is a test variable now, use uniform size per req
 		memcpy(userBuffer, &(req), copy_size);
 
 		//printf("Generated packet with opcode %d, val_len %d, key %llx\n", req.opcode, req.val_len, hval);

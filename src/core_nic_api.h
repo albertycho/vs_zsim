@@ -466,9 +466,9 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	}
 
 	uint32_t numreqs = packet_size / herd_msg_size;
-	if (packet_size % herd_msg_size != 0) {
-		info("WARNING: packet size is not a multiple of msg size!");
-	}
+	//if (packet_size % herd_msg_size != 0) {
+	//	info("WARNING: packet size is not a multiple of msg size!");
+	//}
 
 	futex_lock(&nicInfo->nic_elem[core_id].rb_lock);
 	uint32_t rb_head = allocate_recv_buf(packet_size, nicInfo, core_id);		// for mica, allocate 512B 
@@ -491,7 +491,7 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 
 	uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head]));
 	// write message to recv buffer via load generator/RPCGen
-	int size = ((load_generator*) lg_p)->lgs[lg_i].RPCGen->generatePackedRPC_batch((char*)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head].line_seg[0])), numreqs);
+	int size = ((load_generator*) lg_p)->lgs[lg_i].RPCGen->generatePackedRPC((char*)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head].line_seg[0])), packet_size);
 	update_loadgen(lg_p, cur_cycle, lg_i);
 
 	//if(nicInfo->forced_packet_size!=0){
