@@ -163,6 +163,7 @@ DDRMemory::DDRMemory(uint32_t _lineSize, uint32_t _colSize, uint32_t _ranksPerCh
 {
     sysFreqKHz = 1000 * _sysFreqMHz;
     initTech(tech);  // sets all tXX and memFreqKHz
+	//printf("memFreqKhz: %d, sysFreqKhz/2: %d\n", memFreqKHz, sysFreqKHz/2);
     if (memFreqKHz >= sysFreqKHz/2) {
         panic("You may need to tweak the scheduling code, which works with system cycles." \
             "With these frequencies, events (which run on system cycles) can't hit us every memory cycle.");
@@ -758,6 +759,7 @@ void DDRMemory::initTech(const char* techName) {
     // Please keep this orderly; go from faster to slower technologies
     if(tech == "DDR4-2400"){
         tCK = 0.833; // ns; all other in mem cycles
+        //tCK = 1.5; // complain about mem freq > sys freq. WA for now
         tBL = 8;
         tCL = 17; 
         tRCD = 17;

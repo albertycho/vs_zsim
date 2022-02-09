@@ -62,11 +62,17 @@ uint32_t ProcessGroupPartMapper::getPartition(const MemReq& req) {
     return groupIdx;
 }
 
-uint32_t DDIOPartMapper::getNumPartitions() {
-    return 2;
-}
 
 uint32_t DDIOPartMapper::getPartition(const MemReq& req) {
-    return (req.flags & MemReq::PKTIN) ? 1 : 0;
+    if (req.flags & MemReq::PKTIN) {
+        return 0;
+    }
+    else {
+        return procIdx+1;
+    }
 }
 
+
+std::vector<std::string> DDIOPartMapper::getMapping(uint32_t id) {
+    return partMap[id];
+}

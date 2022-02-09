@@ -245,6 +245,7 @@ struct glob_nic_elements {
 	uint32_t ceq_delay;
 	uint32_t nw_roundtrip_delay;
 
+	uint32_t memtype=1;
 	uint32_t pp_policy;
 
 	bool send_in_loop;

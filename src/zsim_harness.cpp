@@ -316,17 +316,19 @@ void generate_raw_timestamp_files(){
     GlobSimInfo* zinfo  = static_cast<GlobSimInfo*>(gm_get_glob_ptr());
 	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
 
-    for(int i=0; i<6; i++) {
-        std::ofstream f("memory_controller_"+std::to_string(i)+"_bandwidth.txt");
-        int j=0;
-        while (zinfo->mem_bwdth[i][j]!=100){
-            f << zinfo->mem_bwdth[i][j] << std::endl;
-            j++;
-            
-        }
-        info("%d",j);
-        f.close();
-    }
+	if(nicInfo->memtype!=0){ // this hangs when using simple mem
+    	for(int i=0; i<6; i++) {
+    	    std::ofstream f("memory_controller_"+std::to_string(i)+"_bandwidth.txt");
+    	    int j=0;
+    	    while (zinfo->mem_bwdth[i][j]!=100){
+    	        f << zinfo->mem_bwdth[i][j] << std::endl;
+    	        j++;
+    	        
+    	    }
+    	    info("%d",j);
+    	    f.close();
+    	}
+	}
 
     
     for(int i=0; i<MAX_NUM_CORES; i++) {

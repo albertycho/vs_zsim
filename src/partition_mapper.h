@@ -25,10 +25,14 @@
 
 #ifndef PARTITION_MAPPER_H_
 #define PARTITION_MAPPER_H_
-
+#include <string>
+#include <vector>
+#include <unordered_map>
 #include <stdint.h>
 #include "galloc.h"
 #include "memory_hierarchy.h"
+
+
 
 //Interface
 class PartMapper : public GlobAlloc {
@@ -87,11 +91,16 @@ class ProcessGroupPartMapper : public PartMapper {
 };
 
 class DDIOPartMapper : public PartMapper {
+    private:
+        uint32_t numProcs, num_partitions;
+        std::unordered_map<int, std::vector<std::string>> partMap;
     public:
-        DDIOPartMapper() {}
-        virtual uint32_t getNumPartitions();
+        DDIOPartMapper(uint32_t _numProcs, uint32_t _num_partitions, std::unordered_map<int, std::vector<std::string>> _partMap) : numProcs(_numProcs),num_partitions(_num_partitions), partMap(_partMap){}
+        virtual uint32_t getNumPartitions() {return numProcs+1;};
         virtual uint32_t getPartition(const MemReq& req);
+        virtual std::vector<std::string> getMapping(uint32_t id);
 };
+
 
 #endif  // PARTITION_MAPPER_H_
 

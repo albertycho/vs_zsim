@@ -183,7 +183,18 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
         } else if (partMapper == "ProcessGroup") {
             pm = new ProcessGroupPartMapper();
         } else if (partMapper == "DDIO") {
-            pm = new DDIOPartMapper();
+            unordered_map<int, vector<string>> partMap;
+            uint32_t num_partitions = config.get<uint32_t>(prefix + "repl.num_partitions", 0);
+            for (int i=0; i<zinfo->numProcs; i++) {
+                string ways = config.get<const char*>(prefix + "repl.mapping.process" + to_string(i), "");
+                if(ways == "") {
+                    partMap[i] = {"all"};
+                }
+                else {
+                    partMap[i] = ParseList<string>(ways,",");
+                }
+            }
+            pm = new DDIOPartMapper(zinfo->numProcs,num_partitions,partMap);
         } 
         else {
             panic("Invalid repl.partMapper %s on %s", partMapper.c_str(), name.c_str());
@@ -822,6 +833,14 @@ static void InitSystem(Config& config) {
     //Odds and ends: BuildCacheGroup new'd the cache groups, we need to delete them
     for (pair<string, CacheGroup*> kv : cMap) delete kv.second;
     cMap.clear();
+
+	string mem_type = config.get<const char*>("sys.mem.type", "Simple");
+	if(mem_type=="Simple"){
+		nicInfo->memtype=0;
+	}
+	else{
+		nicInfo->memtype=1;
+	}
 
     bool record_nic_access = config.get<bool>("sim.record_nic_access", true);
     nicInfo->record_nic_access = record_nic_access;

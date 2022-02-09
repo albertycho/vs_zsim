@@ -660,7 +660,7 @@ class DDIOPartReplPolicy : public PartReplPolicy, public LegacyReplPolicy {
 
         DDIOPartInfo* array;
 
-        uint32_t* wayPartIndex; //stores partition of each way
+        bool** wayPartIndex; //stores partition of each way
 
         bool testMode;
 
@@ -695,15 +695,32 @@ class DDIOPartReplPolicy : public PartReplPolicy, public LegacyReplPolicy {
 
             array = gm_calloc<DDIOPartInfo>(totalSize); //all have ts, p == 0...
 
-            wayPartIndex = gm_calloc<uint32_t>(ways);
-
             ddio_ways = _ddio_ways;
+                        
+            wayPartIndex = gm_calloc<bool*>(ways);
 
-            for (uint32_t w = ways; w > ways - ddio_ways; w--) {
-                wayPartIndex[w-1] = 1;
+            for (uint32_t w=0; w<ways; w++){
+                wayPartIndex[w] = gm_calloc<bool>(partitions);
             }
-            for (uint32_t w = ways - ddio_ways; w > 0; w--) {
-                wayPartIndex[w-1] = 0;
+            
+            for (uint32_t w = ways; w > ways - ddio_ways; w--) {
+                (wayPartIndex[w-1])[0] = true;
+            }
+
+            DDIOPartMapper* mymapper = (DDIOPartMapper*)mapper;
+            for (uint32_t i=0; i<zinfo->numProcs; i++) {
+                std::vector<std::string> part_ways = mymapper->getMapping(i);
+                if (part_ways[0] == "all") {
+                    for (uint32_t j=0; j<ways; j++) {
+                        (wayPartIndex[j])[i+1] = true;
+                    }
+                }
+                else {
+                    for (uint32_t j=0; j<part_ways.size(); j++) {
+                        int way = stoi(part_ways[j]);
+                        (wayPartIndex[way])[i+1] = true;
+                    }
+                }
             }
 
             candIdx = 0;
@@ -756,7 +773,7 @@ class DDIOPartReplPolicy : public PartReplPolicy, public LegacyReplPolicy {
         void startReplacement(const MemReq* req) {
             assert(candIdx == 0);
             assert(bestId == -1);
-            incomingLinePart = mapper->getPartition(*req); // should return partition 1 for pktin, 0 for everything else
+            incomingLinePart = mapper->getPartition(*req); // should return partition 0 for pktin, procIdx+1 for everything else
             incomingLineAddr = req->lineAddr;
         }
 
@@ -766,20 +783,28 @@ class DDIOPartReplPolicy : public PartReplPolicy, public LegacyReplPolicy {
             DDIOPartInfo* best = (bestId >= 0)? &array[bestId] : nullptr;
             uint32_t way = candIdx++;
             //In test mode, this works as LRU
-            if (testMode || (!incomingLinePart) || wayPartIndex[way] == incomingLinePart) { //this is a way we can fill
+            if (testMode || incomingLinePart == 1 || incomingLinePart == 2) {    /* if process 0,1 do lru on all ways*/
                 if (best == nullptr) {
                     bestId = id;
-                } else {
-                    //NOTE: This is actually not feasible without tagging. But what IS feasible is to stop updating the LRU position on new fills. We could kill this, and profile the differences.
-                    if ( testMode || (!incomingLinePart) || (c->p == incomingLinePart && best->p == incomingLinePart) ) {
-                        if (c->ts < best->ts) bestId = id;
-                    } else if (c->p == incomingLinePart && best->p != incomingLinePart) {
-                        //c wins
-                    } else if (c->p != incomingLinePart && best->p == incomingLinePart) {
-                        //c loses
+                } else if (c->ts < best->ts) {
+                    bestId = id;
+                }
+            } else  {
+                if ((wayPartIndex[way])[incomingLinePart]) {
+                    if (best == nullptr) {
                         bestId = id;
-                    } else { //none in our partition, this should be transient but at least enforce LRU
-                        if (c->ts < best->ts) bestId = id;
+                    } else {
+                        //NOTE: This is actually not feasible without tagging. But what IS feasible is to stop updating the LRU position on new fills. We could kill this, and profile the differences.
+                        if (c->p == incomingLinePart && best->p == incomingLinePart) {
+                            if (c->ts < best->ts) bestId = id;
+                        } else if (c->p == incomingLinePart && best->p != incomingLinePart) {
+                            //c wins
+                        } else if (c->p != incomingLinePart && best->p == incomingLinePart) {
+                            //c loses
+                            bestId = id;
+                        } else { //none in our partition, this should be transient but at least enforce LRU
+                            if (c->ts < best->ts) bestId = id;
+                        }
                     }
                 }
             }
