@@ -519,10 +519,11 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	if(nicInfo->warmup_phase==0){
 		if(cq_size>=50){
 			//we're warm now. move on to drain phase
-			nicInfo->warmup_phase=1;			
+			nicInfo->warmup_phase=1;
+			info("Moving to drain phase");
 		}
 		else{
-			if(nicInfo->nic_elem[core_i].ceq_size < 50){
+			if(nicInfo->nic_elem[core_i].ceq_size > 50){
 				//we don't want to run out of recv buffers during warmup
 				return -2;
 			}
