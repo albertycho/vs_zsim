@@ -483,7 +483,7 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 
 	if(cur_cycle > nicInfo->next_phase_sampling_cycle){
 		if((cur_cycle - (nicInfo->next_phase_sampling_cycle)) > 200){
-			info("cur_cycle is too far ahead of phase sampling cycle");
+			info("cur_cycle is too far ahead of phase sampling cycle by %d", (cur_cycle - (nicInfo->next_phase_sampling_cycle)));
 		}
 		uint32_t ii=nicInfo->sampling_phase_index;
 		nicInfo->sampling_phase_index++;
