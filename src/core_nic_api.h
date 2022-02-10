@@ -491,8 +491,8 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 		nicInfo->SR_per_phase[ii]=nicInfo->latencies_size - nicInfo->last_phase_done_packets;
 		nicInfo->last_phase_sent_packets=lg_p->sent_packets;
 		nicInfo->last_phase_done_packets=nicInfo->latencies_size;
-		cq_size_per_phase[ii]=cq_size;
-		ceq_size_per_phase[ii]=nicInfo->nic_elem[core_i].ceq_size;
+		nicInfo->cq_size_per_phase[ii]=cq_size;
+		nicInfo->ceq_size_per_phase[ii]=nicInfo->nic_elem[core_i].ceq_size;
 
 		nicInfo->next_phase_sampling_cycle+=1000;
 	}
