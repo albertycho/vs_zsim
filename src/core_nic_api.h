@@ -177,6 +177,16 @@ int core_ceq_routine(uint64_t cur_cycle, glob_nic_elements * nicInfo, uint64_t c
 }
 
 
+uint32_t get_cq_size(uint32_t core_i){
+	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
+	uint32_t cq_head = nicInfo->nic_elem[core_i].cq_head;
+    uint32_t cq_tail = nicInfo->nic_elem[core_i].cq->tail;
+    if (cq_head < cq_tail) {
+        cq_head += MAX_NUM_WQ;
+	}
+    return (cq_head - cq_tail);
+}
+
 
 //functions for interfacing load_generator
 
@@ -240,6 +250,12 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0) {
 
 	
 	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
+
+	if(nicInfo->warmup_phase==0){
+		interval = 1;
+	}
+
+	//////// send in loop was a debug feature////////
 	if(nicInfo->send_in_loop){
 		//info("send_in_loop");
 		if(!(lg_p->prev_cycle==0)){
@@ -260,6 +276,9 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0) {
 
 	if (((load_generator*)lg_p)->sent_packets == ((load_generator*)lg_p)->target_packet_count) {
 		((load_generator*)lg_p)->all_packets_sent = true;
+		if(nicInfo->warmup_phase!=2){
+			info("WARNING: Load Generator sent %d packets before finishing warmup!\n", ((load_generator*)lg_p)->target_packet_count);
+		}
 	}
 	
 
@@ -450,13 +469,72 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	if (core_id > ((zinfo->numCores) - 1)) {
 		info("inject_incoming_packet - core_id out of bound: %d", core_id);
 	}
+	load_generator* lg_p = ((load_generator*) lg_p_in);
+
+	uint32_t core_i = lg_p->lgs[lg_i].last_core;
+	uint32_t cq_size = get_cq_size(core_i);
+
+	//log IR, SR, cq/ceq size for plotting to profile initila queue buildup
+	if(nicInfo->next_phase_sampling_cycle==0){
+		nicInfo->next_phase_sampling_cycle=cur_cycle+1000;
+		nicInfo->last_phase_sent_packets=lg_p->sent_packets;
+		nicInfo->last_phase_done_packets=nicInfo->latencies_size;
+	}
+
+	if(cur_cycle > nicInfo->next_phase_sampling_cycle){
+		if((cur_cycle - (nicInfo->next_phase_sampling_cycle)) > 200){
+			info("cur_cycle is too far ahead of phase sampling cycle");
+		}
+		uint32_t ii=nicInfo->sampling_phase_index;
+		nicInfo->sampling_phase_index++;
+		nicInfo->IR_per_phase[ii]=lg_p->sent_packets - nicInfo->last_phase_sent_packets;
+		nicInfo->SR_per_phase[ii]=nicInfo->latencies_size - nicInfo->last_phase_done_packets;
+		nicInfo->last_phase_sent_packets=lg_p->sent_packets;
+		nicInfo->last_phase_done_packets=nicInfo->latencies_size;
+		cq_size_per_phase[ii]=cq_size;
+		ceq_size_per_phase[ii]=nicInfo->nic_elem[core_i].ceq_size;
+
+		nicInfo->next_phase_sampling_cycle+=1000;
+	}
+
+
+	if(nicInfo->warmup_phase==1){
+		//we can tolerate 2 packets queued up
+		if(cq_size < 3){
+			for(uint32_t ii=0; ii<lg_p->num_loadgen;ii++){
+				lg_p->lgs[ii].next_cycle = cur_cycle;
+			}
+			nicInfo->warmup_phase=2;
+			nicInfo->warmup_packets=lg_p->sent_packets;
+			info("Warmup packet count: %d",nicInfo->warmup_packets);
+			//CALL dump zsim.out here instead of at the magic op
+
+		}
+		else{
+			//let it drain more
+			return -3;
+		}
+	}
+
+	if(nicInfo->warmup_phase==0){
+		if(cq_size>=50){
+			//we're warm now. move on to drain phase
+			nicInfo->warmup_phase=1;			
+		}
+		else{
+			if(nicInfo->nic_elem[core_i].ceq_size < 50){
+				//we don't want to run out of recv buffers during warmup
+				return -2;
+			}
+		}		
+	}
 
 	//if (nicInfo->latencies_size == lg_p->target_packet_count) {
 	//	lg_p->all_packets_sent = true;
-//	info("all packets sent");
-//	}
+	//	info("all packets sent");
+	//}
 
-	load_generator* lg_p = ((load_generator*) lg_p_in);
+
 
 	uint32_t herd_msg_size = 512;
 	uint32_t packet_size = herd_msg_size;

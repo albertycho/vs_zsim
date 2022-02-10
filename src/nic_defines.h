@@ -246,14 +246,24 @@ struct glob_nic_elements {
 	uint32_t nw_roundtrip_delay;
 
 	uint32_t memtype=1;
-	uint32_t pp_policy;
 
+	uint32_t pp_policy;
+	uint32_t warmup_phase=0; // for packet injection warm up
+	uint32_t warmup_packets=0;
 	bool send_in_loop;
 	bool out_of_rbuf=false;
 	uint32_t load_balance=0;
 	uint32_t forced_packet_size=0;
 	uint32_t num_controllers=6;
 
+	uint32_t IR_per_phase[100000]; //for plotting IR vs SR
+	uint32_t SR_per_phase[100000]; //Service rate
+	uint32_t cq_size_per_phase[100000]; 
+	uint32_t ceq_size_per_phase[100000]; 
+	uint32_t next_phase_sampling_cycle=0;
+	uint32_t last_phase_sent_packets=0;
+	uint32_t last_phase_done_packets=0;
+	uint32_t sampling_phase_index=0;
 	std::chrono::system_clock::time_point sim_start_time;
 	std::chrono::system_clock::time_point sim_end_time;
 

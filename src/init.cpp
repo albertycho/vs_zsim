@@ -995,43 +995,46 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     zinfo->statsBackends = new g_vector<StatsBackend*>();
 
 
-    //init nic_elements ptr
-    //glob_nic_elements* nicInfo= gm_calloc<glob_nic_elements>();
-    nicInfo = gm_calloc<glob_nic_elements>();
-    futex_init(&(nicInfo->dpq_lock));
-    nicInfo->done_packet_q_head = NULL;
-    nicInfo->done_packet_q_tail = NULL;
-    futex_init(&(nicInfo->nic_lock));
-    //nicInfo->RPCGen = new RPCGenerator(100, 10);
-    for (uint64_t i = 0; i < MAX_NUM_CORES; i++) {
-        nicInfo->nic_elem[i].wq = gm_calloc<rmc_wq_t>();
-        nicInfo->nic_elem[i].cq = gm_calloc<rmc_cq_t>();
-        futex_init(&nicInfo->nic_elem[i].rb_lock);
-        futex_init(&nicInfo->nic_elem[i].ceq_lock);
-        futex_init(&nicInfo->nic_elem[i].rcp_lock);
-		nicInfo->nic_elem[i].rb_iterator=0;
-		nicInfo->nic_elem[i].cq_check_spin_count=0;
-		nicInfo->nic_elem[i].cq_check_inner_loop_count =0;
-        nicInfo->nic_elem[i].cq_check_outer_loop_count = 0;
-        nicInfo->nic_elem[i].packet_pending = false;
-        futex_init(&nicInfo->nic_elem[i].packet_pending_lock);
-    }
-    nicInfo->latencies = gm_calloc<uint64_t>(LAT_ARR_SIZE);
-    //nicInfo->latencies_list = gm_calloc<uint64_t>(LAT_ARR_SIZE);
-    nicInfo->latencies_capa = LAT_ARR_SIZE;
-    //nicInfo->latencies_list_capa = LAT_ARR_SIZE;
+
 
     l1d_caches = gm_calloc<FilterCache*>(256);
 
     Config config(configFile);
 
-    uint32_t recv_buf_pool_size = config.get<uint32_t>("sim.recv_buf_pool_size", 524288);
-    nicInfo->recv_buf_pool_size = recv_buf_pool_size;
-    //nicInfo->latencies = gm_calloc<uint64_t>(LAT_ARR_SIZE);
-    for (uint64_t i = 0; i < MAX_NUM_CORES; i++) {
-        nicInfo->nic_elem[i].recv_buf = gm_calloc<z_cacheline>(recv_buf_pool_size);
-        nicInfo->nic_elem[i].rb_dir = gm_calloc<recv_buf_dir_t>(recv_buf_pool_size);
-    }
+    // //init nic_elements ptr
+    // //glob_nic_elements* nicInfo= gm_calloc<glob_nic_elements>();
+    // nicInfo = gm_calloc<glob_nic_elements>();
+    // futex_init(&(nicInfo->dpq_lock));
+    // nicInfo->done_packet_q_head = NULL;
+    // nicInfo->done_packet_q_tail = NULL;
+    // futex_init(&(nicInfo->nic_lock));
+    
+    // //change num_cores
+    // for (uint64_t i = 0; i < MAX_NUM_CORES; i++) {
+    //     nicInfo->nic_elem[i].wq = gm_calloc<rmc_wq_t>();
+    //     nicInfo->nic_elem[i].cq = gm_calloc<rmc_cq_t>();
+    //     futex_init(&nicInfo->nic_elem[i].rb_lock);
+    //     futex_init(&nicInfo->nic_elem[i].ceq_lock);
+    //     futex_init(&nicInfo->nic_elem[i].rcp_lock);
+	// 	nicInfo->nic_elem[i].rb_iterator=0;
+	// 	nicInfo->nic_elem[i].cq_check_spin_count=0;
+	// 	nicInfo->nic_elem[i].cq_check_inner_loop_count =0;
+    //     nicInfo->nic_elem[i].cq_check_outer_loop_count = 0;
+    //     nicInfo->nic_elem[i].packet_pending = false;
+    //     futex_init(&nicInfo->nic_elem[i].packet_pending_lock);
+    // }
+    // nicInfo->latencies = gm_calloc<uint64_t>(LAT_ARR_SIZE);
+    // //nicInfo->latencies_list = gm_calloc<uint64_t>(LAT_ARR_SIZE);
+    // nicInfo->latencies_capa = LAT_ARR_SIZE;
+    // //nicInfo->latencies_list_capa = LAT_ARR_SIZE;
+
+    // uint32_t recv_buf_pool_size = config.get<uint32_t>("sim.recv_buf_pool_size", 524288);
+    // nicInfo->recv_buf_pool_size = recv_buf_pool_size;
+    // //nicInfo->latencies = gm_calloc<uint64_t>(LAT_ARR_SIZE);
+    // for (uint64_t i = 0; i < MAX_NUM_CORES; i++) {
+    //     nicInfo->nic_elem[i].recv_buf = gm_calloc<z_cacheline>(recv_buf_pool_size);
+    //     nicInfo->nic_elem[i].rb_dir = gm_calloc<recv_buf_dir_t>(recv_buf_pool_size);
+    // }
 
 
 
@@ -1067,6 +1070,45 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
         zinfo->numCores = numCores;
         assert(numCores <= MAX_THREADS); //TODO: Is there any reason for this limit?
     }
+
+
+
+    //init nic_elements ptr
+    //glob_nic_elements* nicInfo= gm_calloc<glob_nic_elements>();
+    nicInfo = gm_calloc<glob_nic_elements>();
+    futex_init(&(nicInfo->dpq_lock));
+    nicInfo->done_packet_q_head = NULL;
+    nicInfo->done_packet_q_tail = NULL;
+    futex_init(&(nicInfo->nic_lock));
+    
+    for (uint64_t i = 0; i < numCores; i++) {
+        nicInfo->nic_elem[i].wq = gm_calloc<rmc_wq_t>();
+        nicInfo->nic_elem[i].cq = gm_calloc<rmc_cq_t>();
+        futex_init(&nicInfo->nic_elem[i].rb_lock);
+        futex_init(&nicInfo->nic_elem[i].ceq_lock);
+        futex_init(&nicInfo->nic_elem[i].rcp_lock);
+		nicInfo->nic_elem[i].rb_iterator=0;
+		nicInfo->nic_elem[i].cq_check_spin_count=0;
+		nicInfo->nic_elem[i].cq_check_inner_loop_count =0;
+        nicInfo->nic_elem[i].cq_check_outer_loop_count = 0;
+        nicInfo->nic_elem[i].packet_pending = false;
+        futex_init(&nicInfo->nic_elem[i].packet_pending_lock);
+    }
+    nicInfo->latencies = gm_calloc<uint64_t>(LAT_ARR_SIZE);
+    //nicInfo->latencies_list = gm_calloc<uint64_t>(LAT_ARR_SIZE);
+    nicInfo->latencies_capa = LAT_ARR_SIZE;
+    //nicInfo->latencies_list_capa = LAT_ARR_SIZE;
+
+    uint32_t recv_buf_pool_size = config.get<uint32_t>("sim.recv_buf_pool_size", 524288);
+    nicInfo->recv_buf_pool_size = recv_buf_pool_size;
+    //nicInfo->latencies = gm_calloc<uint64_t>(LAT_ARR_SIZE);
+    for (uint64_t i = 0; i < MAX_NUM_CORES; i++) {
+        nicInfo->nic_elem[i].recv_buf = gm_calloc<z_cacheline>(recv_buf_pool_size);
+        nicInfo->nic_elem[i].rb_dir = gm_calloc<recv_buf_dir_t>(recv_buf_pool_size);
+    }
+
+
+
 
     zinfo->numDomains = config.get<uint32_t>("sim.domains", 1);
     uint32_t numSimThreads = config.get<uint32_t>("sim.contentionThreads", MAX((uint32_t)1, zinfo->numDomains/2)); //gives a bit of parallelism, TODO tune

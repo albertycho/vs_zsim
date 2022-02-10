@@ -1097,23 +1097,7 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
                             }
                         }
                     }
-                    /*
-				    for(int ii=3; ii<(nicInfo->registered_core_count+3); ii++){
-					    if(!(nicInfo->nic_elem[ii].packet_pending)){
-                            futex_lock(&nicInfo->nic_elem[ii].packet_pending_lock);
-                            nicInfo->nic_elem[ii].packet_pending = true;
-                            futex_unlock(&nicInfo->nic_elem[ii].packet_pending_lock);
-                            int inj_attempt;
-                            if (core->ingr_type < 2) {
-                                inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, ii, srcId, core, &(core->cRec), core->l1d, core->ingr_type);
-                            }
-                            else {
-                                inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, ii, srcId, core, &(core->cRec), l1d_caches[ii], core->ingr_type);
-                            }
-                            nicInfo->first_injection++;
-					    }
-				    }
-                    */
+
                 }
                 else {
                     uint64_t injection_cycle = core->curCycle;

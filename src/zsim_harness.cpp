@@ -311,6 +311,21 @@ void LaunchProcess(uint32_t procIdx) {
 }
 
 
+void dump_IR_SR_stat(){
+    if (lg_p->num_loadgen==0) {
+        return;
+    }
+    glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
+    std::ofstream f("IRSR_dump.csv");
+    f<<"IR,SR,cq_size,ceq_size,\n";
+    for(uint32_t ii=0; ii<nicInfo->sampling_phase_index; ii++){
+        f << nicInfo->IR_per_phase[ii] <<","<<nicInfo->SR_per_phase[ii]<<","<<nicInfo->cq_size_per_phase[ii]<<","
+        <<nicInfo->ceq_size_per_phase[ii]<<",\n";
+        f.close();
+    }
+
+}
+
 void generate_raw_timestamp_files(){
 
     GlobSimInfo* zinfo  = static_cast<GlobSimInfo*>(gm_get_glob_ptr());
@@ -339,7 +354,8 @@ void generate_raw_timestamp_files(){
             std::ofstream f("timestamps_core_"+std::to_string(i)+".txt");
             int temp=0;
 
-            for (int j=0; j<nicInfo->nic_elem[i].ts_idx; j++) {
+            int jstart = (nicInfo->warmup_packets)*5;
+            for (int j=jstart; j<nicInfo->nic_elem[i].ts_idx; j++) {
                 if(j%5==0){
                     f << "\nrequest " << temp << ": ";
                     temp++;
@@ -348,9 +364,12 @@ void generate_raw_timestamp_files(){
             }
             f.close();
 
+
+
             f.open("timestamps_nic_core_"+std::to_string(i)+".txt");
             int temp1=0;
-            for (int j=0; j<nicInfo->nic_elem[i].ts_nic_idx; j++) {
+            jstart = (nicInfo->warmup_packets)*2;
+            for (int j=jstart; j<nicInfo->nic_elem[i].ts_nic_idx; j++) {
                 if(j%2==0){
                     /*
                     if (j >= 2) {//add phases
@@ -614,6 +633,7 @@ int main(int argc, char *argv[]) {
             generate_raw_timestamp_files();
         }
     }
+    dump_IR_SR_stat();
 
 
     uint32_t exitCode = 0;
