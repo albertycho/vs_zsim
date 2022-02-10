@@ -312,6 +312,7 @@ void LaunchProcess(uint32_t procIdx) {
 
 
 void dump_IR_SR_stat(){
+    load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
     if (lg_p->num_loadgen==0) {
         return;
     }
