@@ -66,7 +66,7 @@ void SetAssocArray::initStats(AggregateStat* parentStat) {
     objStats->append(&netMisses_nic_rb);
     objStats->append(&netMisses_nic_lb);
     objStats->append(&netMisses_core);
-    objStats->append(&netHits_nic);
+    //objStats->append(&netHits_nic);
     objStats->append(&netHits_nic_rb);
     objStats->append(&netHits_nic_lb);
     objStats->append(&netHits_core);
