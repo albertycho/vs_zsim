@@ -818,6 +818,8 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 			} else if (level == 1 && inval == 1) { 	// non-ddio config of modern intel cpus: they snoop the cache for a packet, but also invalidate, so use a GETX and inval the LLC
 				uint64_t addr = dp->lbuf_addr;
 				uint64_t lsize = dp->len;
+				//lsize is in bytes, convert to number of cachelines
+				lsize = lsize / 64;
 				while(lsize){
 					reqSatisfiedCycle = l1d->store(addr, core_cycle, level, srcId, MemReq::PKTOUT);				//TODO check what cycles need to be passed to recrod
 					cRec->record(core_cycle, core_cycle, reqSatisfiedCycle);
@@ -827,6 +829,8 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 			} else {// ddio: we snoop the cache for the data, but don't invalidate (GETS) + all other cases
 				uint64_t addr = dp->lbuf_addr;
 				uint64_t lsize = dp->len;
+				//lsize is in bytes, convert to number of cachelines
+				lsize = lsize / 64;
 				while(lsize){
 					reqSatisfiedCycle = l1d->load(addr, core_cycle, level, srcId, MemReq::PKTOUT) + (level == 3 ? 1 : 0) * L1D_LAT;		//TODO check what cycles need to be passed to recrod
 					cRec->record(core_cycle, core_cycle, reqSatisfiedCycle);

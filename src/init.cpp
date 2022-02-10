@@ -872,6 +872,9 @@ static void InitSystem(Config& config) {
 	uint32_t forced_packet_size = config.get<uint32_t>("sim.forced_packet_size",0);
 	nicInfo->forced_packet_size = forced_packet_size;
 
+    //uint32_t memControllers = config.get<uint32_t>("sys.mem.controllers", 1);
+	nicInfo->num_controllers=memControllers;
+
     //load_generator* lgp;
     //lgp=(load_generator*)gm_get_lg_ptr();
 

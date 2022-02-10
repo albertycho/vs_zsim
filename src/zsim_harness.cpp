@@ -317,7 +317,7 @@ void generate_raw_timestamp_files(){
 	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
 
 	if(nicInfo->memtype!=0){ // this hangs when using simple mem
-    	for(int i=0; i<6; i++) {
+    	for(int i=0; i<(nicInfo->num_controllers); i++) {
     	    std::ofstream f("memory_controller_"+std::to_string(i)+"_bandwidth.txt");
     	    int j=0;
     	    while (zinfo->mem_bwdth[i][j]!=100){

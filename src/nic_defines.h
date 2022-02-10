@@ -252,6 +252,7 @@ struct glob_nic_elements {
 	bool out_of_rbuf=false;
 	uint32_t load_balance=0;
 	uint32_t forced_packet_size=0;
+	uint32_t num_controllers=6;
 
 	std::chrono::system_clock::time_point sim_start_time;
 	std::chrono::system_clock::time_point sim_end_time;
