@@ -383,7 +383,7 @@ void generate_raw_timestamp_files(){
                 }
                 f << nicInfo->nic_elem[i].ts_nic_queue[j] << " ";
                 if (j % 2 == 1) {
-                    int jtmp = (j - 1) / 2;
+                    int jtmp = (j - 1);
                     //uint32_t start_phase = (nicInfo->nic_elem[i].phase_nic_queue[jtmp]));
                     //uint32_t done_phase = (nicInfo->nic_elem[i].phase_nic_queue[jtmp+1]));
                     uint32_t phases = ((nicInfo->nic_elem[i].phase_nic_queue[jtmp + 1]) - (nicInfo->nic_elem[i].phase_nic_queue[jtmp])) + 1;
