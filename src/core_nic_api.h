@@ -497,38 +497,38 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 		nicInfo->next_phase_sampling_cycle+=1000;
 	}
 
+	nicInfo->warmup_phase=2;
+	// if(nicInfo->warmup_phase==1){
+	// 	//we can tolerate 2 packets queued up
+	// 	if(cq_size < 3){
+	// 		for(uint32_t ii=0; ii<lg_p->num_loadgen;ii++){
+	// 			lg_p->lgs[ii].next_cycle = cur_cycle;
+	// 		}
+	// 		nicInfo->warmup_phase=2;
+	// 		nicInfo->warmup_packets=lg_p->sent_packets;
+	// 		info("Warmup packet count: %d",nicInfo->warmup_packets);
+	// 		//CALL dump zsim.out here instead of at the magic op
 
-	if(nicInfo->warmup_phase==1){
-		//we can tolerate 2 packets queued up
-		if(cq_size < 3){
-			for(uint32_t ii=0; ii<lg_p->num_loadgen;ii++){
-				lg_p->lgs[ii].next_cycle = cur_cycle;
-			}
-			nicInfo->warmup_phase=2;
-			nicInfo->warmup_packets=lg_p->sent_packets;
-			info("Warmup packet count: %d",nicInfo->warmup_packets);
-			//CALL dump zsim.out here instead of at the magic op
+	// 	}
+	// 	else{
+	// 		//let it drain more
+	// 		return -3;
+	// 	}
+	// }
 
-		}
-		else{
-			//let it drain more
-			return -3;
-		}
-	}
-
-	if(nicInfo->warmup_phase==0){
-		if(cq_size>=50){
-			//we're warm now. move on to drain phase
-			nicInfo->warmup_phase=1;
-			info("Moving to drain phase");
-		}
-		else{
-			if(nicInfo->nic_elem[core_i].ceq_size > 50){
-				//we don't want to run out of recv buffers during warmup
-				return -2;
-			}
-		}		
-	}
+	// if(nicInfo->warmup_phase==0){
+	// 	if(cq_size>=50){
+	// 		//we're warm now. move on to drain phase
+	// 		nicInfo->warmup_phase=1;
+	// 		info("Moving to drain phase");
+	// 	}
+	// 	else{
+	// 		if(nicInfo->nic_elem[core_i].ceq_size > 50){
+	// 			//we don't want to run out of recv buffers during warmup
+	// 			return -2;
+	// 		}
+	// 	}		
+	// }
 
 	//if (nicInfo->latencies_size == lg_p->target_packet_count) {
 	//	lg_p->all_packets_sent = true;
