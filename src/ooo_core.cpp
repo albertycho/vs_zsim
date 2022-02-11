@@ -1076,7 +1076,7 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
 				}
 			}
 			else{
-
+                bool flag=false;
                 if(nicInfo->first_injection<10*nicInfo->registered_core_count) {
                     uint64_t injection_cycle = core->curCycle;
                     for (int ii = 0; ii < lg_p->num_loadgen; ii++) {
@@ -1097,11 +1097,19 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
                             }
                         }
                     }
+                    if(nicInfo->first_injection>=10*nicInfo->registered_core_count){
+                        flag=true;
+                    }
 
                 }
                 else {
                     uint64_t injection_cycle = core->curCycle;
                     for (int ii = 0; ii < lg_p->num_loadgen; ii++) {
+                        if(flag==true){
+                            for(uint32_t mm=0; mm<lg_p->num_loadgen;mm++){
+	                 			lg_p->lgs[mm].next_cycle = cur_cycle;
+	 		                }
+                        }
                         if (lg_p->lgs[ii].next_cycle <= injection_cycle /*&& idle_core > 1*/) {
                             //uint32_t core_iterator = assign_core(core_iterator);
                             uint32_t core_iterator = assign_core(ii);
