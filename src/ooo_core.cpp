@@ -1099,6 +1099,7 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
                     }
                     if(nicInfo->first_injection>=10*nicInfo->registered_core_count){
                         flag=true;
+                        info("done with closed loop warmup!");
                     }
 
                 }
