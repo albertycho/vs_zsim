@@ -252,6 +252,7 @@ struct glob_nic_elements {
 	uint32_t warmup_packets=0;
 	bool send_in_loop;
 	bool out_of_rbuf=false;
+	bool closed_loop_done=false;
 	uint32_t load_balance=0;
 	uint32_t forced_packet_size=0;
 	uint32_t num_controllers=6;

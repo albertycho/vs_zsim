@@ -1076,7 +1076,6 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
 				}
 			}
 			else{
-                bool flag=false;
                 if(nicInfo->first_injection<10*nicInfo->registered_core_count) {
                     uint64_t injection_cycle = core->curCycle;
                     for (int ii = 0; ii < lg_p->num_loadgen; ii++) {
@@ -1098,19 +1097,17 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
                             }
                         }
                     }
-                    if(nicInfo->first_injection==(10*(nicInfo->registered_core_count))){
-                        flag=true;
-                        info("done with closed loop warmup!");
-                    }
 
                 }
                 else {
                     uint64_t injection_cycle = core->curCycle;
                     for (int ii = 0; ii < lg_p->num_loadgen; ii++) {
-                        if(flag==true){
+                        if(nicInfo->closed_loop_done==false){
                             for(uint32_t mm=0; mm<lg_p->num_loadgen;mm++){
 	                 			lg_p->lgs[mm].next_cycle = injection_cycle;
 	 		                }
+                            info("done with closed loop warmup!");
+                            nicInfo->closed_loop_done=true;
                         }
                         if (lg_p->lgs[ii].next_cycle <= injection_cycle /*&& idle_core > 1*/) {
                             //uint32_t core_iterator = assign_core(core_iterator);
