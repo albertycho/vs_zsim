@@ -323,8 +323,8 @@ void dump_IR_SR_stat(){
     for(uint32_t ii=0; ii<nicInfo->sampling_phase_index; ii++){
         f << nicInfo->IR_per_phase[ii] <<","<<nicInfo->SR_per_phase[ii]<<","<<nicInfo->cq_size_per_phase[ii]<<","
         <<nicInfo->ceq_size_per_phase[ii]<<",\n";
-        f.close();
     }
+    f.close();
 
 }
 
