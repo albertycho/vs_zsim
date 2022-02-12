@@ -902,6 +902,7 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 				uint64_t lsize = dp->len;
 				//lsize is in bytes, convert to number of cachelines
 				//lsize = lsize / 64;
+				info("lsize: %d", lsize);
 				while(lsize){
 					reqSatisfiedCycle = l1d->store(addr, core_cycle, level, srcId, MemReq::PKTOUT);				//TODO check what cycles need to be passed to recrod
 					cRec->record(core_cycle, core_cycle, reqSatisfiedCycle);
