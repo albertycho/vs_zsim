@@ -902,7 +902,7 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 				uint64_t lsize = dp->len;
 				//lsize is in bytes, convert to number of cachelines
 				//lsize = lsize / 64;
-				info("lsize: %d", lsize);
+				//info("lsize: %d", lsize);
 				while(lsize){
 					reqSatisfiedCycle = l1d->store(addr, core_cycle, level, srcId, MemReq::PKTOUT);				//TODO check what cycles need to be passed to recrod
 					cRec->record(core_cycle, core_cycle, reqSatisfiedCycle);
@@ -912,6 +912,7 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 			} else {// ddio: we snoop the cache for the data, but don't invalidate (GETS) + all other cases
 				uint64_t addr = dp->lbuf_addr;
 				uint64_t lsize = dp->len;
+				//info("lsize: %d", lsize);
 				//lsize is in bytes, convert to number of cachelines
 				//lsize = lsize / 64;
 				while(lsize){

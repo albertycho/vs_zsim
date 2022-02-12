@@ -238,6 +238,7 @@ void DDRMemory::initStats(AggregateStat* parentStat) {
     memStats->init(name.c_str(), "Memory controller stats");
     profReads.init("rd", "Read requests"); memStats->append(&profReads);
     profWrites.init("wr", "Write requests"); memStats->append(&profWrites);
+    total_access_count.init("total_accesses", "count all requests at access method"); memStats->append(&total_access_count);
     profTotalRdLat.init("rdlat", "Total latency experienced by read requests"); memStats->append(&profTotalRdLat);
     profTotalWrLat.init("wrlat", "Total latency experienced by write requests"); memStats->append(&profTotalWrLat);
     profReadHits.init("rdhits", "Read row hits"); memStats->append(&profReadHits);
@@ -319,8 +320,10 @@ uint64_t DDRMemory::access(MemReq& req) {
             break;
         case GETS:
             *req.state = req.is(MemReq::NOEXCL)? S : E;
+            total_access_count.inc();
             break;
         case GETX:
+            total_access_count.inc();
             if(req.flags & MemReq::PKTIN || req.flags & MemReq::PKTOUT) {
                 /*info("PKTIN request in memory");
                 uint32_t numChildren = children_caches.size();
