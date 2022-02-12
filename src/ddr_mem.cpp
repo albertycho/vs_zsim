@@ -315,7 +315,9 @@ uint64_t DDRMemory::access(MemReq& req) {
 
     switch (req.type) {
         case PUTS:
+            total_access_count.inc();
         case PUTX:
+            total_access_count.inc();
             *req.state = I;
             break;
         case GETS:
