@@ -328,7 +328,15 @@ void dump_IR_SR_stat(){
 
 }
 
-void generate_raw_timestamp_files(){
+void generate_raw_timestamp_files(bool run_success){
+
+
+	if(run_success){
+		//put a dummy file for processing script to know run finished
+		std::ofstream ff("run_success");
+		ff<<"run_success"<<std::endl;
+		ff.close();
+	}
 
     GlobSimInfo* zinfo  = static_cast<GlobSimInfo*>(gm_get_glob_ptr());
 	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
@@ -350,9 +358,21 @@ void generate_raw_timestamp_files(){
     
     for(int i=0; i<MAX_NUM_CORES; i++) {
         if(nicInfo->nic_elem[i].ts_nic_idx) {
-            assert(nicInfo->nic_elem[i].ts_idx*2 == nicInfo->nic_elem[i].ts_nic_idx*5);
-            assert(nicInfo->nic_elem[i].phase_nic_idx == nicInfo->nic_elem[i].ts_nic_idx);
-            assert(nicInfo->nic_elem[i].ts_idx/5 == nicInfo->nic_elem[i].phase_idx);
+			if(run_success){
+            	assert(nicInfo->nic_elem[i].ts_idx*2 == nicInfo->nic_elem[i].ts_nic_idx*5);
+            	assert(nicInfo->nic_elem[i].phase_nic_idx == nicInfo->nic_elem[i].ts_nic_idx);
+            	assert(nicInfo->nic_elem[i].ts_idx/5 == nicInfo->nic_elem[i].phase_idx);
+			}
+			else{
+				//run failed. sync counts for ts and ts_nic
+				while(nicInfo->nic_elem[i].ts_idx*2 > nicInfo->nic_elem[i].ts_nic_idx*5){
+					nicInfo->nic_elem[i].ts_idx--;
+				}
+				while(nicInfo->nic_elem[i].ts_idx*2 < nicInfo->nic_elem[i].ts_nic_idx*5){
+					nicInfo->nic_elem[i].ts_nic_idx--;
+				}
+
+			}
             std::ofstream f("timestamps_core_"+std::to_string(i)+".txt");
             int temp=0;
 
@@ -403,7 +423,9 @@ void generate_raw_timestamp_files(){
                 temp++;
             }
             f.close();
-            assert(nicInfo->nic_elem[i].phase_nic_idx==nicInfo->nic_elem[i].phase_idx*2);
+			if(run_success){
+           		assert(nicInfo->nic_elem[i].phase_nic_idx==nicInfo->nic_elem[i].phase_idx*2);
+			}
 
         }
     }
@@ -628,11 +650,16 @@ int main(int argc, char *argv[]) {
          :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n\
          :::::SIM TERMINATED WITH OUT OF RECV BUFFER sim terminated with out of recv_buffer:::::\n\
          :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"<<std::endl;
+		load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
+        if (lg_p->num_loadgen > 0) {
+            generate_raw_timestamp_files(false);
+        }
+
     }
     else{
         load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
         if (lg_p->num_loadgen > 0) {
-            generate_raw_timestamp_files();
+            generate_raw_timestamp_files(true);
         }
     }
     dump_IR_SR_stat();

@@ -495,6 +495,9 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 		nicInfo->ceq_size_per_phase[ii]=nicInfo->nic_elem[core_i].ceq_size;
 
 		nicInfo->next_phase_sampling_cycle+=1000;
+		if(nicInfo->sampling_phase_index < 30){
+			info("sampling phase count: %d", nicInfo->sampling_phase_index);
+		}
 	}
 
 	nicInfo->warmup_phase=2;

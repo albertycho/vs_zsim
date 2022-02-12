@@ -1017,7 +1017,7 @@ uint32_t find_idle_core(uint32_t in_core_iterator=0) {
 
 }
 
-
+uint32_t core_sizes[64] = {0};
 
 //int OOOCore::nic_ingress_routine_per_cycle(THREADID tid) {
 int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
@@ -1082,11 +1082,12 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
                         for (int jj = 0; jj < lg_p->lgs[ii].num_cores; jj++) 
                         {
                             uint32_t core_id = lg_p->lgs[ii].core_ids[jj];
-                            if (!(nicInfo->nic_elem[core_id].packet_pending)) {
+                            if ((!(nicInfo->nic_elem[core_id].packet_pending)) && (core_sizes[core_id]<10) ) {
                                 futex_lock(&nicInfo->nic_elem[core_id].packet_pending_lock);
                                 nicInfo->nic_elem[core_id].packet_pending = true;
                                 futex_unlock(&nicInfo->nic_elem[core_id].packet_pending_lock);
                                 int inj_attempt;
+								core_sizes[core_id]++;
                                 if (core->ingr_type < 2) {
                                     inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_id, srcId, core, &(core->cRec), core->l1d, core->ingr_type, ii);
                                 }
@@ -1094,6 +1095,11 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
                                     inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_id, srcId, core, &(core->cRec), l1d_caches[core_id], core->ingr_type, ii);
                                 }
                                 nicInfo->first_injection++;
+								for(uint32_t mm=0; mm<lg_p->num_loadgen;mm++){
+	                 				lg_p->lgs[mm].next_cycle = injection_cycle;
+	 		                	}
+
+
                             }
                         }
                     }
@@ -1103,9 +1109,12 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
                     uint64_t injection_cycle = core->curCycle;
                     for (int ii = 0; ii < lg_p->num_loadgen; ii++) {
                         if(nicInfo->closed_loop_done==false){
-                            for(uint32_t mm=0; mm<lg_p->num_loadgen;mm++){
+                            							uint32_t cycle_diff = injection_cycle- (lg_p->lgs[0].next_cycle);
+							info("loadgen behind by %d cycles afte warmup\n",cycle_diff);
+							for(uint32_t mm=0; mm<lg_p->num_loadgen;mm++){
 	                 			lg_p->lgs[mm].next_cycle = injection_cycle;
 	 		                }
+
                             info("done with closed loop warmup!");
                             nicInfo->closed_loop_done=true;
                         }
