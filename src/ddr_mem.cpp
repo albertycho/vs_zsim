@@ -238,9 +238,9 @@ void DDRMemory::initStats(AggregateStat* parentStat) {
     memStats->init(name.c_str(), "Memory controller stats");
     profReads.init("rd", "Read requests"); memStats->append(&profReads);
     profWrites.init("wr", "Write requests"); memStats->append(&profWrites);
-    total_access_count.init("total_accesses", "count all requests at access method"); memStats->append(&total_access_count);
     profTotalRdLat.init("rdlat", "Total latency experienced by read requests"); memStats->append(&profTotalRdLat);
     profTotalWrLat.init("wrlat", "Total latency experienced by write requests"); memStats->append(&profTotalWrLat);
+    total_access_count.init("total_accesses", "count all requests at access method"); memStats->append(&total_access_count);
     profReadHits.init("rdhits", "Read row hits"); memStats->append(&profReadHits);
     profWriteHits.init("wrhits", "Write row hits"); memStats->append(&profWriteHits);
     latencyHist.init("mlh", "latency histogram for memory requests", NUMBINS); memStats->append(&latencyHist);
