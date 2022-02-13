@@ -1115,7 +1115,7 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
 	                 			lg_p->lgs[mm].next_cycle = injection_cycle;
 	 		                }
 
-                            info("done with closed loop warmup!");
+                            info("done with closed loop warmup!, sampling phase: %d", nicInfo->sampling_phase_index);
                             nicInfo->closed_loop_done=true;
                         }
                         if (lg_p->lgs[ii].next_cycle <= injection_cycle /*&& idle_core > 1*/) {
