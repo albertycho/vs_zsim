@@ -504,7 +504,7 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 		assert(core_id > 2);
 		assert(core_id < 19);
 		for (int iii = 3; iii < 19; iii++) {
-			nicInfo->cq_size_cores_per_phase[iii][ii] = get_cq_size(iii);
+			nicInfo->cq_size_cores_per_phase[iii-3][ii] = get_cq_size(iii);
 		}
 
 		nicInfo->next_phase_sampling_cycle+=1000;
