@@ -337,7 +337,7 @@ void dump_IR_SR_stat(){
         }
         f3 << std::endl;
     }
-    f3.close()
+    f3.close();
 
 }
 
