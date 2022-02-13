@@ -494,8 +494,17 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 		nicInfo->cq_size_per_phase[ii]=cq_size;
 		nicInfo->ceq_size_per_phase[ii]=nicInfo->nic_elem[core_i].ceq_size;
 		nicInfo->lg_clk_slack[ii] = 0;
+		
+		//dbg
 		if (cur_cycle > lg_p->lgs[0].next_cycle) {
 			nicInfo->lg_clk_slack[ii] = (cur_cycle) - (lg_p->lgs[0].next_cycle);
+		}
+
+		//dbg - remove. only works for sepcific setup (16 cores)
+		assert(core_id > 2);
+		assert(core_id < 19);
+		for (int iii = 3; iii < 19; iii++) {
+			nicInfo->cq_size_cores_per_phase[iii][ii] = get_cq_size[iii];
 		}
 
 		nicInfo->next_phase_sampling_cycle+=1000;

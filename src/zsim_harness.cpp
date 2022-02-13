@@ -330,6 +330,15 @@ void dump_IR_SR_stat(){
     f.close();
     f2.close();
 
+    std::ofstream f3("cq_sizes_all_cores.txt");
+    for (uint32_t ii = 0; ii < nicInfo->sampling_phase_index; ii++) {
+        for (uint32_t jj = 0; jj < 16; jj++) {
+            f3 << nicInfo->cq_size_cores_per_phase[jj][ii] << ",";
+        }
+        f3 << std::endl;
+    }
+    f3.close()
+
 }
 
 void generate_raw_timestamp_files(bool run_success){
