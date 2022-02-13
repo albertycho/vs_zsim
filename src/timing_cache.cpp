@@ -198,8 +198,8 @@ uint64_t TimingCache::access(MemReq& req) {
 
                     mse->setMinStartCycle(req.cycle);
                     mre->setMinStartCycle(getDoneCycle);
-                    if (!(req.flags & MemReq::PKTOUT))
-                        mwe->setMinStartCycle(MAX(evDoneCycle, getDoneCycle));
+                    //if (!(req.flags & MemReq::PKTOUT))
+                    mwe->setMinStartCycle(MAX(evDoneCycle, getDoneCycle));
 
                     // Tie two events to an optional timing record
                     // TODO: Promote to evRec if this is more generally useful
@@ -243,8 +243,8 @@ uint64_t TimingCache::access(MemReq& req) {
 
                     // Get path
                     connect(accessRecord.isValid() ? &accessRecord : nullptr, mse, mre, req.cycle + accLat, getDoneCycle);
-                    if (!(req.flags & MemReq::PKTOUT))
-                        mre->addChild(mwe, evRec);
+                    //if (!(req.flags & MemReq::PKTOUT))
+                    mre->addChild(mwe, evRec);
 
                     // Eviction path
                     if (!(req.flags & MemReq::PKTOUT) && evDoneCycle) {
