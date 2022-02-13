@@ -493,6 +493,10 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 		nicInfo->last_phase_done_packets=nicInfo->latencies_size;
 		nicInfo->cq_size_per_phase[ii]=cq_size;
 		nicInfo->ceq_size_per_phase[ii]=nicInfo->nic_elem[core_i].ceq_size;
+		nicInfo->lg_clk_slack[ii] = 0;
+		if (cur_cycle > lg_p->lgs[0].next_cycle) {
+			nicInfo->lg_clk_slack[ii] = (cur_cycle) - (lg_p->lgs[0].next_cycle);
+		}
 
 		nicInfo->next_phase_sampling_cycle+=1000;
 		if(nicInfo->sampling_phase_index < 30){

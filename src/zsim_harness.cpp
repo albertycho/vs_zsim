@@ -318,13 +318,17 @@ void dump_IR_SR_stat(){
     }
     glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
     std::ofstream f("IRSR_dump.csv");
+    std::ofstream f2("lg_clk_slack.txt");
     info("sampling phase count: %d",nicInfo->sampling_phase_index);
     f<<"IR,SR,cq_size,ceq_size,\n";
     for(uint32_t ii=0; ii<nicInfo->sampling_phase_index; ii++){
         f << nicInfo->IR_per_phase[ii] <<","<<nicInfo->SR_per_phase[ii]<<","<<nicInfo->cq_size_per_phase[ii]<<","
         <<nicInfo->ceq_size_per_phase[ii]<<",\n";
+
+        f2 << nicInfo->lg_clk_slack[ii] << std::endl;
     }
     f.close();
+    f2.close();
 
 }
 

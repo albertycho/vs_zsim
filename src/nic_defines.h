@@ -262,6 +262,8 @@ struct glob_nic_elements {
 	uint32_t cq_size_per_phase[100000]; 
 	uint32_t ceq_size_per_phase[100000]; 
 	uint32_t next_phase_sampling_cycle=0;
+	//dbg
+	uint32_t lg_clk_slack[100000];
 	uint32_t last_phase_sent_packets=0;
 	uint32_t last_phase_done_packets=0;
 	uint32_t sampling_phase_index=0;
