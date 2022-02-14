@@ -566,7 +566,9 @@ void OOOCore::cSimStart() {
     if(start_cnt_phases)
         cycle_adj_queue[cycle_adj_idx++] = curCycle;
     uint64_t targetCycle = cRec.cSimStart(curCycle);
-    info("CSimstart called, curCycle %lld, targetCycle %lld",curCycle,targetCycle);
+    if(core_id == 0){
+        info("CSimstart called, curCycle %lld, targetCycle %lld",curCycle,targetCycle);
+    }
     assert(targetCycle >= curCycle);
     if (targetCycle > curCycle) advance(targetCycle);
 }
@@ -574,8 +576,9 @@ void OOOCore::cSimStart() {
 void OOOCore::cSimEnd() {
 
     uint64_t targetCycle = cRec.cSimEnd(curCycle);
-    //if(core_id == 0 && start_cnt_phases)
-    info("CSimEnd called, curCycle %lld, targetCycle %lld",curCycle,targetCycle);
+    if(core_id == 0){
+        info("CSimEnd called, curCycle %lld, targetCycle %lld",curCycle,targetCycle);
+    }
     assert(targetCycle >= curCycle);
 
 
