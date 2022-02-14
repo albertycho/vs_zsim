@@ -294,8 +294,9 @@ void DDRMemory::EstimateBandwidth() {
 
     lastAccesses = totalAccesses;
 
-    lastPhase = zinfo->numPhases;
     info("zsim_phases since last mem BW sampling: %d",zinfo->numPhases - lastPhase);
+    lastPhase = zinfo->numPhases;
+
 
 }
 
