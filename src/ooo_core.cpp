@@ -1083,13 +1083,13 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
 				}
 			}
 			else{
-                if(nicInfo->first_injection<1000*nicInfo->registered_core_count) {
+                if(nicInfo->first_injection<100*nicInfo->registered_core_count) {
                     uint64_t injection_cycle = core->curCycle;
                     for (int ii = 0; ii < lg_p->num_loadgen; ii++) {
                         for (int jj = 0; jj < lg_p->lgs[ii].num_cores; jj++) 
                         {
                             uint32_t core_id = lg_p->lgs[ii].core_ids[jj];
-                            if ((!(nicInfo->nic_elem[core_id].packet_pending)) && (core_sizes[core_id]<1000) ) {
+                            if ((!(nicInfo->nic_elem[core_id].packet_pending)) && (core_sizes[core_id]<100) ) {
                                 futex_lock(&nicInfo->nic_elem[core_id].packet_pending_lock);
                                 nicInfo->nic_elem[core_id].packet_pending = true;
                                 futex_unlock(&nicInfo->nic_elem[core_id].packet_pending_lock);
