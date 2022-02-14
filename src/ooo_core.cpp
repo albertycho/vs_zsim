@@ -566,6 +566,7 @@ void OOOCore::cSimStart() {
     if(start_cnt_phases)
         cycle_adj_queue[cycle_adj_idx++] = curCycle;
     uint64_t targetCycle = cRec.cSimStart(curCycle);
+    info("CSimstart called, curCycle %lld, targetCycle %lld",curCycle,targetCycle);
     assert(targetCycle >= curCycle);
     if (targetCycle > curCycle) advance(targetCycle);
 }
@@ -574,8 +575,10 @@ void OOOCore::cSimEnd() {
 
     uint64_t targetCycle = cRec.cSimEnd(curCycle);
     //if(core_id == 0 && start_cnt_phases)
-    //info("CSimEnd called, curCycle %lld, targetCycle %lld",curCycle,targetCycle);
+    info("CSimEnd called, curCycle %lld, targetCycle %lld",curCycle,targetCycle);
     assert(targetCycle >= curCycle);
+
+
     if (targetCycle > curCycle) advance(targetCycle);
     //assert(cycle_adj_idx<100000);
     if(start_cnt_phases)
@@ -583,6 +586,7 @@ void OOOCore::cSimEnd() {
     if(core_id == 0 && nicInfo->nic_init_done && nicInfo->ready_for_inj==nicInfo->registered_core_count) {
         nicInfo->ready_for_inj = 0xabcd;
     }
+
 }
 
 void OOOCore::advance(uint64_t targetCycle) {
