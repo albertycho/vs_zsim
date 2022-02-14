@@ -497,6 +497,7 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 		}
 		uint32_t ii=nicInfo->sampling_phase_index;
 		nicInfo->sampling_phase_index++;
+		nicInfo->last_zsim_pahse = zinfo->numPhases;
 		nicInfo->IR_per_phase[ii]=lg_p->sent_packets - nicInfo->last_phase_sent_packets;
 		nicInfo->SR_per_phase[ii]=nicInfo->latencies_size - nicInfo->last_phase_done_packets;
 		nicInfo->last_phase_sent_packets=lg_p->sent_packets;
