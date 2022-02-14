@@ -469,6 +469,8 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	if (core_id > ((zinfo->numCores) - 1)) {
 		info("inject_incoming_packet - core_id out of bound: %d", core_id);
 	}
+
+	info("inject incoming packet called, cur_cycle= %d", cur_cycle);
 	load_generator* lg_p = ((load_generator*) lg_p_in);
 
 	uint32_t core_i = lg_p->lgs[lg_i].last_core;
