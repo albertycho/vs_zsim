@@ -491,10 +491,10 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	}
 
 	if((cur_cycle > nicInfo->next_phase_sampling_cycle) && (nicInfo->ready_for_inj==0xabcd)){
-		if((cur_cycle - (nicInfo->next_phase_sampling_cycle)) > 200){
+		//if((cur_cycle - (nicInfo->next_phase_sampling_cycle)) > 200){
 			info("cur_cycle is too far ahead of phase sampling cycle by %d", (cur_cycle - (nicInfo->next_phase_sampling_cycle)));
 			info("zsim_phases since last sampling phase: %d", ((zinfo->numPhases) - (nicInfo->last_zsim_pahse)));
-		}
+		//}
 		uint32_t ii=nicInfo->sampling_phase_index;
 		nicInfo->sampling_phase_index++;
 		nicInfo->last_zsim_pahse = zinfo->numPhases;
