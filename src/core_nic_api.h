@@ -517,7 +517,7 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 		nicInfo->ceq_size_per_phase[ii]=nicInfo->nic_elem[core_i].ceq_size;
 		nicInfo->lg_clk_slack[ii] = 0;
 		nicInfo->remaining_rb[ii] = nicInfo->nic_elem[core_i].rb_left;
-		nicInfo->mem_bw_sampled[ii]=zinfo->mem_bwdth[zinfo->mem_bw_len-1];
+		nicInfo->mem_bw_sampled[ii]=zinfo->mem_bwdth[0][zinfo->mem_bw_len-1];
 		
 		//dbg
 		if (cur_cycle > lg_p->lgs[0].next_cycle) {
