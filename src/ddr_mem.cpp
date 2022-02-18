@@ -290,6 +290,7 @@ void DDRMemory::EstimateBandwidth() {
 	if(midx<200000-1){
 		mem_bwdth[midx++] = curBandwidth;
         mem_bwdth[midx] = 1000000.0;
+        zinfo->mem_bw_len=midx;
 	}
 
     lastAccesses = totalAccesses;

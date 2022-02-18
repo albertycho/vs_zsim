@@ -192,6 +192,7 @@ struct GlobSimInfo {
 
     //g_vector<float*> mem_bwdth;
     float** mem_bwdth;
+    uint32_t mem_bw_len;
 
 };
 

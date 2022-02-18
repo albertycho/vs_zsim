@@ -273,6 +273,7 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0) {
 
 	if (((load_generator*)lg_p)->sent_packets == ((load_generator*)lg_p)->target_packet_count) {
 		((load_generator*)lg_p)->all_packets_sent = true;
+		info("all packets sent at sampling phase %d, mem_bw_len: %d", nicInfo->sampling_phase_index, zinfo->mem_bw_len);
 	}
 	
 
