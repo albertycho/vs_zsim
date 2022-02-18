@@ -320,10 +320,10 @@ void dump_IR_SR_stat(){
     std::ofstream f("IRSR_dump.csv");
     std::ofstream f2("lg_clk_slack.txt");
     info("sampling phase count: %d",nicInfo->sampling_phase_index);
-    f<<"IR,SR,cq_size,ceq_size,\n";
+    f<<"IR,SR,cq_size,ceq_size, remaining_rb, mem_bw,\n";
     for(uint32_t ii=0; ii<nicInfo->sampling_phase_index; ii++){
         f << nicInfo->IR_per_phase[ii] <<","<<nicInfo->SR_per_phase[ii]<<","<<nicInfo->cq_size_per_phase[ii]<<","
-        <<nicInfo->ceq_size_per_phase[ii]<<","<<nicInfo->remaining_rb[ii]<<",\n";
+        <<nicInfo->ceq_size_per_phase[ii]<<","<<nicInfo->remaining_rb[ii]<<","<<nicInfo->mem_bw_sampled[ii]<<",\n";
 
         f2 << nicInfo->lg_clk_slack[ii] << std::endl;
     }
