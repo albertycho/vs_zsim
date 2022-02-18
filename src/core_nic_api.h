@@ -4,6 +4,7 @@
 #include "ooo_core_recorder.h"
 #include "memory_hierarchy.h"
 
+#include "trace_driver.h"
 #include <iostream>
 #include <fstream>
 
@@ -26,7 +27,7 @@ bool cq_wr_event_ready(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint64_t 
 	uint64_t q_cycle = CQ_WR_EV_Q->q_cycle;
 	if (q_cycle <= cur_cycle) {
 		if(CQ_WR_EV_Q->cqe.success == 0x7f) {
-			nicInfo->nic_elem[core_id].ts_queue[nicInfo->nic_elem[core_id].ts_idx++] = cur_cycle;
+			//nicInfo->nic_elem[core_id].ts_queue[nicInfo->nic_elem[core_id].ts_idx++] = cur_cycle;
 			nicInfo->nic_elem[core_id].phase_queue[nicInfo->nic_elem[core_id].phase_idx++] = zinfo->numPhases;
 		}
 		return true;
@@ -58,18 +59,17 @@ int tc_map_insert(uint64_t in_ptag, uint64_t issue_cycle, uint64_t core_id) {
 	uint16_t ptag = (uint16_t) in_ptag;
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
 	futex_lock(&lg_p->ptc_lock);
-	//info("ptc insert to map");
-	//(lg_p->tc_map)[ptag] = issue_time;
-	assert((lg_p->tc_map->count(ptag)) == 0);
-	//lg_p->tc_map->insert(std::make_pair(ptag, issue_cycle));
-	//lg_p->tc_map_core->insert(std::pair<uint64_t,uint64_t>(ptag, core_id));
-	//lg_p->tc_map_phase->insert(std::make_pair(ptag, zinfo->numPhases));
+	
+	if((lg_p->tc_map[ptag].core_id) != 0){
+		panic("already have %lld", ptag);
+	}
+
 	timestamp ts;
 	ts.core_id = core_id;
 	ts.phase = zinfo->numPhases;
 	ts.nic_enq_cycle = issue_cycle;
 	//ts.bbl = bbl;
-	lg_p->tc_map->insert(std::make_pair(ptag,ts));
+	lg_p->tc_map[(uint16_t)ptag] = ts;
 	futex_unlock(&lg_p->ptc_lock);
 
 	return 0;
@@ -251,9 +251,6 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0) {
 	
 	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
 
-	if(nicInfo->warmup_phase==0){
-		interval = 1;
-	}
 
 	//////// send in loop was a debug feature////////
 	if(nicInfo->send_in_loop){
@@ -276,9 +273,6 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0) {
 
 	if (((load_generator*)lg_p)->sent_packets == ((load_generator*)lg_p)->target_packet_count) {
 		((load_generator*)lg_p)->all_packets_sent = true;
-		if(nicInfo->warmup_phase!=2){
-			info("WARNING: Load Generator sent %d packets before finishing warmup!\n", ((load_generator*)lg_p)->target_packet_count);
-		}
 	}
 	
 
@@ -470,7 +464,7 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 		info("inject_incoming_packet - core_id out of bound: %d", core_id);
 	}
 
-	info("inject incoming packet called, cur_cycle= %d", cur_cycle);
+	//info("inject incoming packet called, cur_cycle= %d", cur_cycle);
 	load_generator* lg_p = ((load_generator*) lg_p_in);
 
 	uint32_t core_i = lg_p->lgs[lg_i].last_core;
@@ -492,11 +486,25 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 
 	}
 
+	
+	////FIXME: MUST REMOVE!!!!!!!!!!!!!!! added for dbug
+	//if(nicInfo->sampling_phase_index==7000){
+	//		nicInfo->sampling_phase_index++;
+	//		zinfo->trigger = 20000;
+	//		for (StatsBackend* backend : *(zinfo->statsBackends)) backend->dump(false /*unbuffered, write out*/);
+	//		for (AccessTraceWriter* t : *(zinfo->traceWriters)) t->dump(false); // flushes trace writer
+
+	//}
+
+
+
+
+
 	if((cur_cycle > nicInfo->next_phase_sampling_cycle) && (nicInfo->ready_for_inj==0xabcd)){
-		//if((cur_cycle - (nicInfo->next_phase_sampling_cycle)) > 200){
+		if((cur_cycle - (nicInfo->next_phase_sampling_cycle)) > 200){
 			info("cur_cycle is too far ahead of phase sampling cycle by %d", (cur_cycle - (nicInfo->next_phase_sampling_cycle)));
 			info("zsim_phases since last sampling phase: %d", ((zinfo->numPhases) - (nicInfo->last_zsim_pahse)));
-		//}
+		}
 		uint32_t ii=nicInfo->sampling_phase_index;
 		nicInfo->sampling_phase_index++;
 		nicInfo->last_zsim_pahse = zinfo->numPhases;
@@ -507,6 +515,7 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 		nicInfo->cq_size_per_phase[ii]=cq_size;
 		nicInfo->ceq_size_per_phase[ii]=nicInfo->nic_elem[core_i].ceq_size;
 		nicInfo->lg_clk_slack[ii] = 0;
+		nicInfo->remaining_rb[ii] = nicInfo->nic_elem[core_i].rb_left;
 		
 		//dbg
 		if (cur_cycle > lg_p->lgs[0].next_cycle) {
@@ -514,55 +523,18 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 		}
 
 		//dbg - remove. only works for sepcific setup (16 cores)
-		assert(core_id > 2);
-		assert(core_id < 19);
+		//assert(core_id > 2);
+		//assert(core_id < 19);
 		for (int iii = 3; iii < 19; iii++) {
 			nicInfo->cq_size_cores_per_phase[iii-3][ii] = get_cq_size(iii);
 		}
 
 		nicInfo->next_phase_sampling_cycle+=1000;
 		if(nicInfo->sampling_phase_index < 30){
-			info("sampling phase count: %d", nicInfo->sampling_phase_index);
+			//info("sampling phase count: %d", nicInfo->sampling_phase_index);
 		}
 	}
 
-	nicInfo->warmup_phase=2;
-	// if(nicInfo->warmup_phase==1){
-	// 	//we can tolerate 2 packets queued up
-	// 	if(cq_size < 3){
-	// 		for(uint32_t ii=0; ii<lg_p->num_loadgen;ii++){
-	// 			lg_p->lgs[ii].next_cycle = cur_cycle;
-	// 		}
-	// 		nicInfo->warmup_phase=2;
-	// 		nicInfo->warmup_packets=lg_p->sent_packets;
-	// 		info("Warmup packet count: %d",nicInfo->warmup_packets);
-	// 		//CALL dump zsim.out here instead of at the magic op
-
-	// 	}
-	// 	else{
-	// 		//let it drain more
-	// 		return -3;
-	// 	}
-	// }
-
-	// if(nicInfo->warmup_phase==0){
-	// 	if(cq_size>=50){
-	// 		//we're warm now. move on to drain phase
-	// 		nicInfo->warmup_phase=1;
-	// 		info("Moving to drain phase");
-	// 	}
-	// 	else{
-	// 		if(nicInfo->nic_elem[core_i].ceq_size > 50){
-	// 			//we don't want to run out of recv buffers during warmup
-	// 			return -2;
-	// 		}
-	// 	}		
-	// }
-
-	//if (nicInfo->latencies_size == lg_p->target_packet_count) {
-	//	lg_p->all_packets_sent = true;
-	//	info("all packets sent");
-	//}
 
 
 
@@ -580,6 +552,7 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 
 	futex_lock(&nicInfo->nic_elem[core_id].rb_lock);
 	uint32_t rb_head = allocate_recv_buf(packet_size, nicInfo, core_id);		// for mica, allocate 512B 
+	nicInfo->nic_elem[core_id].rb_left--;
 	//dbgprint
 	//info("allocate_recv_buf - rb_head = %d", rb_head);
 
@@ -796,6 +769,7 @@ int free_recv_buf(uint32_t head, uint32_t core_id) {
 		NICELEM.rb_dir[i].len = 0;
 	}
 
+	nicInfo->nic_elem[core_id].rb_left++;
 	//dbg print
 	//info("free_recv_buf - finished freeing");
 	return 0;
@@ -954,14 +928,17 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 			uint32_t ending_phase = dp->ending_phase;
 			
 			futex_lock(&lg_p->ptc_lock);
-			//info("reading ptc from map and removing");
-			uint64_t start_cycle = (*(lg_p->tc_map))[ptag].nic_enq_cycle;
-			//assert((*(lg_p->tc_map_core))[ptag] > 1);
-			uint64_t core_id = (*(lg_p->tc_map))[ptag].core_id;
-			uint32_t start_phase = (*(lg_p->tc_map))[ptag].phase;
+
+			//assert(lg_p->tc_map->count(ptag) > 0);
+
+			timestamp tmstmp = lg_p->tc_map[ptag];
+			uint64_t start_cycle = tmstmp.nic_enq_cycle;
+			
+			uint64_t core_id = tmstmp.core_id;
+			uint32_t start_phase = tmstmp.phase;
 			//uint32_t start_bbl = (*(lg_p->tc_map))[ptag].bbl;
 
-			lg_p->tc_map->erase(ptag);
+			lg_p->tc_map[ptag].core_id=0;
 			//lg_p->tc_map_core->erase(ptag);
 			//lg_p->tc_map_phase->erase(ptag);
 

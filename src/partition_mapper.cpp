@@ -64,7 +64,7 @@ uint32_t ProcessGroupPartMapper::getPartition(const MemReq& req) {
 
 
 uint32_t DDIOPartMapper::getPartition(const MemReq& req) {
-    if (req.flags & MemReq::PKTIN) {
+    if ((req.flags & MemReq::PKTIN) || (req.flags & MemReq::PKTOUT)) {
         return 0;
     }
     else {

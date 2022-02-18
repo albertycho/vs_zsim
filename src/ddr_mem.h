@@ -247,7 +247,7 @@ class DDRMemory : public MemObject {
 
         // R/W stats
         PAD();
-        Counter profReads, profWrites;
+        Counter profReads, profWrites, profAccs;
         Counter profTotalRdLat, profTotalWrLat, total_access_count;
         Counter profReadHits, profWriteHits;  // row buffer hits
         VectorCounter latencyHist;
@@ -257,6 +257,8 @@ class DDRMemory : public MemObject {
         //In KHz, though it does not matter so long as they are consistent and fine-grain enough (not Hz because we multiply
         //uint64_t cycles by this; as it is, KHzs are 20 bits, so we can simulate ~40+ bits (a few trillion system cycles, around an hour))
         uint64_t sysFreqKHz, memFreqKHz;
+
+        bool no_latency, no_bw;
 
         // sys<->mem cycle xlat functions. We get and must return system cycles, but all internal logic is in memory cycles
         // will do the right thing so long as you multiply first
@@ -273,7 +275,7 @@ class DDRMemory : public MemObject {
     public:
         DDRMemory(uint32_t _lineSize, uint32_t _colSize, uint32_t _ranksPerChannel, uint32_t _banksPerRank,
             uint32_t _sysFreqMHz, const char* tech, const char* addrMapping, uint32_t _controllerSysLatency,
-            uint32_t _queueDepth, uint32_t _rowHitLimit, bool _deferredWrites, bool _closedPage,
+            uint32_t _queueDepth, uint32_t _rowHitLimit, bool _deferredWrites, bool _closedPage, bool _no_latency, bool _no_bw,
             uint32_t _domain, g_string& _name);
 
         void initStats(AggregateStat* parentStat);

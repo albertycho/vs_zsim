@@ -400,6 +400,9 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
 				OOOCore* m_core = magic_cores[magicOpIdx];
 				ADDRINT val = magic_vals[magicOpIdx];
 				ADDRINT field = magic_fields[magicOpIdx];
+                if (field == 0x13) {
+                    val = dispatchCycle;
+                }
 				NicMagicFunc(m_core_id, m_core, val, field);
 				magicOpIdx++;
 				break;
@@ -566,9 +569,9 @@ void OOOCore::cSimStart() {
     if(start_cnt_phases)
         cycle_adj_queue[cycle_adj_idx++] = curCycle;
     uint64_t targetCycle = cRec.cSimStart(curCycle);
-    if(core_id == 0){
-        info("CSimstart called, curCycle %lld, targetCycle %lld",curCycle,targetCycle);
-    }
+    //if(core_id == 0){
+    //    info("CSimstart called, curCycle %lld, targetCycle %lld",curCycle,targetCycle);
+    //}
     assert(targetCycle >= curCycle);
     if (targetCycle > curCycle) advance(targetCycle);
 }
@@ -576,12 +579,10 @@ void OOOCore::cSimStart() {
 void OOOCore::cSimEnd() {
 
     uint64_t targetCycle = cRec.cSimEnd(curCycle);
-    if(core_id == 0){
-        info("CSimEnd called, curCycle %lld, targetCycle %lld",curCycle,targetCycle);
-    }
+    //if(core_id == 0){
+    //    info("CSimEnd called, curCycle %lld, targetCycle %lld",curCycle,targetCycle);
+    //}
     assert(targetCycle >= curCycle);
-
-
     if (targetCycle > curCycle) advance(targetCycle);
     //assert(cycle_adj_idx<100000);
     if(start_cnt_phases)
@@ -589,7 +590,6 @@ void OOOCore::cSimEnd() {
     if(core_id == 0 && nicInfo->nic_init_done && nicInfo->ready_for_inj==nicInfo->registered_core_count) {
         nicInfo->ready_for_inj = 0xabcd;
     }
-
 }
 
 void OOOCore::advance(uint64_t targetCycle) {
@@ -635,12 +635,11 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     //as of now we stick with one NIC core doing both ingress and egress work
     if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) {
         ///////////////CALL DEQ_DPQ//////////////////////
-        uint32_t srcId = getCid(tid);
-        assert(srcId == 0);
-        deq_dpq(srcId, core, &(core->cRec), core->l1d/*MemObject* dest*/, core->curCycle, core->egr_type);
     }
-    if ((nicInfo->nic_egress_pid == procIdx) && (nicInfo->nic_init_done)) {
-        //nic_egress_routine(tid);
+    if ((nicInfo->nic_egress_pid == procIdx) && (nicInfo->nic_init_done) && nicInfo->ready_for_inj==0xabcd) {
+        uint32_t srcId = getCid(tid);
+        //assert(srcId == 0);
+        deq_dpq(srcId, core, &(core->cRec), core->l1d/*MemObject* dest*/, core->curCycle, core->egr_type);
     }
     
     // Simple synchronization mechanism for enforcing producer consumer order for NIC_Ingress and other cores
@@ -864,7 +863,7 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
         break;
 
     case 0x13:      //timestamp
-        nicInfo->nic_elem[core_id].ts_queue[nicInfo->nic_elem[core_id].ts_idx++] = curCycle;
+        nicInfo->nic_elem[core_id].ts_queue[nicInfo->nic_elem[core_id].ts_idx++] = val;
         break;
     case 0x14:      //closed-loop injection
         assert(core_id==this->core_id);
@@ -1024,9 +1023,12 @@ uint32_t find_idle_core(uint32_t in_core_iterator=0) {
 
 }
 
-uint32_t core_sizes[64] = {0};
+
 
 //int OOOCore::nic_ingress_routine_per_cycle(THREADID tid) {
+bool flag_t;
+int arr[MAX_NUM_CORES];
+
 int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
     //OOOCore* core = static_cast<OOOCore*>(cores[tid]);
     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
@@ -1083,18 +1085,17 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
 				}
 			}
 			else{
-                if(nicInfo->first_injection<100*nicInfo->registered_core_count) {
+                if(nicInfo->first_injection<1000*nicInfo->registered_core_count) {
                     uint64_t injection_cycle = core->curCycle;
                     for (int ii = 0; ii < lg_p->num_loadgen; ii++) {
-                        for (int jj = 0; jj < lg_p->lgs[ii].num_cores; jj++) 
-                        {
+                        for (int jj = 0; jj < lg_p->lgs[ii].num_cores; jj++) {
                             uint32_t core_id = lg_p->lgs[ii].core_ids[jj];
-                            if ((!(nicInfo->nic_elem[core_id].packet_pending)) && (core_sizes[core_id]<100) ) {
+                            if (!(nicInfo->nic_elem[core_id].packet_pending) && arr[core_id] < 1000) {
                                 futex_lock(&nicInfo->nic_elem[core_id].packet_pending_lock);
                                 nicInfo->nic_elem[core_id].packet_pending = true;
                                 futex_unlock(&nicInfo->nic_elem[core_id].packet_pending_lock);
                                 int inj_attempt;
-								core_sizes[core_id]++;
+                                arr[core_id]++;
                                 if (core->ingr_type < 2) {
                                     inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_id, srcId, core, &(core->cRec), core->l1d, core->ingr_type, ii);
                                 }
@@ -1102,20 +1103,25 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
                                     inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_id, srcId, core, &(core->cRec), l1d_caches[core_id], core->ingr_type, ii);
                                 }
                                 nicInfo->first_injection++;
-								for(uint32_t mm=0; mm<lg_p->num_loadgen;mm++){
-	                 				lg_p->lgs[mm].next_cycle = injection_cycle;
-	 		                	}
-
-
+				for(uint32_t mm=0; mm<lg_p->num_loadgen;mm++){
+	                 		lg_p->lgs[mm].next_cycle = injection_cycle;
+	 		        }
                             }
                         }
                     }
-
+                    if(nicInfo->first_injection==(1000*nicInfo->registered_core_count)) {
+                        flag_t = true;
+                    }
                 }
                 else {
                     uint64_t injection_cycle = core->curCycle;
                     for (int ii = 0; ii < lg_p->num_loadgen; ii++) {
-                        if(nicInfo->closed_loop_done==false){
+                        if(flag_t){
+                            info("done with closed loop warmup!, sampling phase: %d", nicInfo->sampling_phase_index);
+                            lg_p->lgs[ii].next_cycle = core->curCycle + 1;
+                            flag_t=false;
+                        /*
+			if(nicInfo->closed_loop_done==false){
                             							uint32_t cycle_diff = injection_cycle- (lg_p->lgs[0].next_cycle);
 							info("loadgen behind by %d cycles afte warmup\n",cycle_diff);
 							for(uint32_t mm=0; mm<lg_p->num_loadgen;mm++){
@@ -1124,6 +1130,7 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
 
                             info("done with closed loop warmup!, sampling phase: %d", nicInfo->sampling_phase_index);
                             nicInfo->closed_loop_done=true;
+			*/
                         }
                         if (lg_p->lgs[ii].next_cycle <= injection_cycle /*&& idle_core > 1*/) {
                             //uint32_t core_iterator = assign_core(core_iterator);
@@ -1135,7 +1142,6 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
                                     inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), core->l1d, core->ingr_type, ii);
                                 else
                                     inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), l1d_caches[core_iterator], core->ingr_type,ii);
-
                                 return inj_attempt;
                             }
                         }

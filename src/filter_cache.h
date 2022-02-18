@@ -128,7 +128,9 @@ class FilterCache : public Cache {
 
             if (lvl == 42) {       // ideal ingress coming from app core, if the data is nic-related return 0 latency
                 Address gm_base_addr = 0x00ABBA000000; // defined in galloc.cpp
-                Address gm_seg_size = 1<<30; //TODO: just use default? or wire it from init
+				//Address gm_seg_size = 1<<30; //TODO: just use default? or wire it from init
+            	glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());	
+            	Address gm_seg_size = nicInfo->gm_size;
                 Address nicLineAddr_bot = gm_base_addr >> lineBits;
                 Address nicLineAddr_top = (gm_base_addr + gm_seg_size) >> lineBits;
                 if (vLineAddr >= nicLineAddr_bot && vLineAddr <= nicLineAddr_top) {
@@ -172,7 +174,9 @@ class FilterCache : public Cache {
             }
             if (lvl == 42) {       // ideal ingress coming from app core, if the data is nic-related return 0 latency
                 Address gm_base_addr = 0x00ABBA000000; // defined in galloc.cpp
-                Address gm_seg_size = 1<<30; //TODO: just use default? or wire it from init
+                //Address gm_seg_size = 1<<30; //TODO: just use default? or wire it from init
+            	glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());	
+            	Address gm_seg_size = nicInfo->gm_size;
                 Address nicLineAddr_bot = gm_base_addr >> lineBits;
                 Address nicLineAddr_top = (gm_base_addr + gm_seg_size) >> lineBits;
                 if (vLineAddr >= nicLineAddr_bot && vLineAddr <= nicLineAddr_top) {
@@ -193,7 +197,10 @@ class FilterCache : public Cache {
             Address procMask_f = procMask;
             //Don't apply mask if it's a NIC related address
             Address gm_base_addr = 0x00ABBA000000; // defined in galloc.cpp
-            Address gm_seg_size = 1<<30; //TODO: just use default? or wire it from init
+            //Address gm_seg_size = 1<<30; //TODO: just use default? or wire it from init
+            glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());	
+            Address gm_seg_size = nicInfo->gm_size;
+			//info("filtercache: gm_seg_size: %d",gm_seg_size);
             Address nicLineAddr_bot = gm_base_addr >> lineBits;
             Address nicLineAddr_top = (gm_base_addr + gm_seg_size) >> lineBits;
             if (vLineAddr >= nicLineAddr_bot && vLineAddr <= nicLineAddr_top) {

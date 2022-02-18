@@ -12,7 +12,7 @@
 #include <map>
 #include <memory>
 #include <queue>
-
+#include "g_std/g_list.h"
 #include <chrono>
 
 
@@ -156,6 +156,8 @@ struct nic_element {
 	PAD();
 	//uint64_t recv_buf[RECV_BUF_POOL_SIZE];
 	//z_cacheline recv_buf[RECV_BUF_POOL_SIZE];
+	//dbg counter
+	int rb_left;
 	z_cacheline* recv_buf;
 	z_cacheline *lbuf;
 	//recv_buf_dir_t rb_dir[RECV_BUF_POOL_SIZE];
@@ -248,19 +250,19 @@ struct glob_nic_elements {
 	uint32_t memtype=1;
 
 	uint32_t pp_policy;
-	uint32_t warmup_phase=0; // for packet injection warm up
-	uint32_t warmup_packets=0;
 	bool send_in_loop;
 	bool out_of_rbuf=false;
 	bool closed_loop_done=false;
 	uint32_t load_balance=0;
 	uint32_t forced_packet_size=0;
 	uint32_t num_controllers=6;
+	uint64_t gm_size=0;
 
 	uint32_t IR_per_phase[100000]; //for plotting IR vs SR
 	uint32_t SR_per_phase[100000]; //Service rate
 	uint32_t cq_size_per_phase[100000]; 
 	uint32_t ceq_size_per_phase[100000]; 
+	int		 remaining_rb[100000];
 	uint32_t next_phase_sampling_cycle=0;
 	//dbg
 	uint32_t lg_clk_slack[100000];
@@ -330,7 +332,8 @@ struct load_generator {
 	//std::shared_ptr<std::map<uint64_t, uint64_t>> tc_map_core;
 	//std::shared_ptr<std::map<uint64_t, uint64_t>> tc_map_phase;
 	//std::shared_ptr<std::map<uint64_t, std::pair<uint64_t,uint64_t>>> tc_map;
-	std::shared_ptr<std::map<uint64_t, timestamp>> tc_map;
+	//std::shared_ptr<std::map<uint64_t, timestamp>> tc_map;
+	timestamp_str* tc_map;
 	//RPCGenerator* RPCGen;
 };
 

@@ -323,7 +323,7 @@ void dump_IR_SR_stat(){
     f<<"IR,SR,cq_size,ceq_size,\n";
     for(uint32_t ii=0; ii<nicInfo->sampling_phase_index; ii++){
         f << nicInfo->IR_per_phase[ii] <<","<<nicInfo->SR_per_phase[ii]<<","<<nicInfo->cq_size_per_phase[ii]<<","
-        <<nicInfo->ceq_size_per_phase[ii]<<",\n";
+        <<nicInfo->ceq_size_per_phase[ii]<<","<<nicInfo->remaining_rb[ii]<<",\n";
 
         f2 << nicInfo->lg_clk_slack[ii] << std::endl;
     }
@@ -358,7 +358,7 @@ void generate_raw_timestamp_files(bool run_success){
     	for(int i=0; i<(nicInfo->num_controllers); i++) {
     	    std::ofstream f("memory_controller_"+std::to_string(i)+"_bandwidth.txt");
     	    int j=0;
-    	    while (zinfo->mem_bwdth[i][j]!=100){
+    	    while (zinfo->mem_bwdth[i][j]!=1000000.0){
     	        f << zinfo->mem_bwdth[i][j] << std::endl;
     	        j++;
     	        
@@ -372,16 +372,16 @@ void generate_raw_timestamp_files(bool run_success){
     for(int i=0; i<MAX_NUM_CORES; i++) {
         if(nicInfo->nic_elem[i].ts_nic_idx) {
 			if(run_success){
-            	assert(nicInfo->nic_elem[i].ts_idx*2 == nicInfo->nic_elem[i].ts_nic_idx*5);
+            	assert(nicInfo->nic_elem[i].ts_idx*2 == nicInfo->nic_elem[i].ts_nic_idx*4);
             	assert(nicInfo->nic_elem[i].phase_nic_idx == nicInfo->nic_elem[i].ts_nic_idx);
-            	assert(nicInfo->nic_elem[i].ts_idx/5 == nicInfo->nic_elem[i].phase_idx);
+            	assert(nicInfo->nic_elem[i].ts_idx/4 == nicInfo->nic_elem[i].phase_idx);
 			}
 			else{
 				//run failed. sync counts for ts and ts_nic
-				while(nicInfo->nic_elem[i].ts_idx*2 > nicInfo->nic_elem[i].ts_nic_idx*5){
+				while(nicInfo->nic_elem[i].ts_idx*2 > nicInfo->nic_elem[i].ts_nic_idx*4){
 					nicInfo->nic_elem[i].ts_idx--;
 				}
-				while(nicInfo->nic_elem[i].ts_idx*2 < nicInfo->nic_elem[i].ts_nic_idx*5){
+				while(nicInfo->nic_elem[i].ts_idx*2 < nicInfo->nic_elem[i].ts_nic_idx*4){
 					nicInfo->nic_elem[i].ts_nic_idx--;
 				}
 
@@ -389,9 +389,10 @@ void generate_raw_timestamp_files(bool run_success){
             std::ofstream f("timestamps_core_"+std::to_string(i)+".txt");
             int temp=0;
 
-            int jstart = (nicInfo->warmup_packets)*5;
+            //int jstart = (nicInfo->warmup_packets)*4;
+	    int jstart=0;
             for (int j=jstart; j<nicInfo->nic_elem[i].ts_idx; j++) {
-                if(j%5==0){
+                if(j%4==0){
                     f << "\nrequest " << temp << ": ";
                     temp++;
                 }
@@ -403,7 +404,8 @@ void generate_raw_timestamp_files(bool run_success){
 
             f.open("timestamps_nic_core_"+std::to_string(i)+".txt");
             int temp1=0;
-            jstart = (nicInfo->warmup_packets)*2;
+            //jstart = (nicInfo->warmup_packets)*2;
+	    jstart=0;
             for (int j=jstart; j<nicInfo->nic_elem[i].ts_nic_idx; j++) {
                 if(j%2==0){
                     /*
@@ -437,7 +439,7 @@ void generate_raw_timestamp_files(bool run_success){
             }
             f.close();
 			if(run_success){
-           		assert(nicInfo->nic_elem[i].phase_nic_idx==nicInfo->nic_elem[i].phase_idx*2);
+           			assert(nicInfo->nic_elem[i].phase_nic_idx==nicInfo->nic_elem[i].phase_idx*2);
 			}
 
         }
@@ -635,11 +637,25 @@ int main(int argc, char *argv[]) {
         if (!nicInfo->nic_egress_proc_on) {
             int temp=0;
             for (int i = 0; i < MAX_CHILDREN; i++) {
-                if (childInfo[i].status == PS_RUNNING)
+                if (childInfo[i].status == PS_RUNNING) {
                     temp++;
+                    std::cout << i << " " << childInfo[i].pid << std::endl;
+                }
             }
-            if (temp == nicInfo->expected_non_net_core_count + 1) {
+            if (temp >1 && temp == nicInfo->expected_non_net_core_count + 1) {
                 info("Attempting graceful termination");
+                for (int i = 1; i < MAX_CHILDREN; i++) {
+                    int cpid = childInfo[i].pid;
+                    if (childInfo[i].status == PS_RUNNING) {
+                        info("Killing process %d", cpid);
+                        kill(-cpid, SIGKILL);
+                        usleep(100000);
+                        kill(cpid, SIGKILL);
+                    }
+                }
+            }
+            else if (temp == 1) {
+                info("Killing main thread");
                 for (int i = 0; i < MAX_CHILDREN; i++) {
                     int cpid = childInfo[i].pid;
                     if (childInfo[i].status == PS_RUNNING) {

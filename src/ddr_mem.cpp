@@ -155,24 +155,23 @@ class SchedEvent : public TimingEvent, public GlobAlloc {
 
 DDRMemory::DDRMemory(uint32_t _lineSize, uint32_t _colSize, uint32_t _ranksPerChannel, uint32_t _banksPerRank,
         uint32_t _sysFreqMHz, const char* tech, const char* addrMapping, uint32_t _controllerSysLatency,
-        uint32_t _queueDepth, uint32_t _rowHitLimit, bool _deferredWrites, bool _closedPage,
+        uint32_t _queueDepth, uint32_t _rowHitLimit, bool _deferredWrites, bool _closedPage, bool _no_latency, bool _no_bw,
         uint32_t _domain, g_string& _name)
     : lineSize(_lineSize), ranksPerChannel(_ranksPerChannel), banksPerRank(_banksPerRank),
       controllerSysLatency(_controllerSysLatency), queueDepth(_queueDepth), rowHitLimit(_rowHitLimit),
-      deferredWrites(_deferredWrites), closedPage(_closedPage), domain(_domain), name(_name)
+      deferredWrites(_deferredWrites), closedPage(_closedPage), no_latency(_no_latency), no_bw(_no_bw), domain(_domain), name(_name)
 {
     sysFreqKHz = 1000 * _sysFreqMHz;
     initTech(tech);  // sets all tXX and memFreqKHz
-	//printf("memFreqKhz: %d, sysFreqKhz/2: %d\n", memFreqKHz, sysFreqKHz/2);
     if (memFreqKHz >= sysFreqKHz/2) {
         panic("You may need to tweak the scheduling code, which works with system cycles." \
             "With these frequencies, events (which run on system cycles) can't hit us every memory cycle.");
     }
 
-    minRdLatency = controllerSysLatency + memToSysCycle(tCL+tBL-1);
-    minWrLatency = controllerSysLatency;
-    preDelay = controllerSysLatency;
-    postDelayRd = minRdLatency - preDelay;
+    minRdLatency = no_latency? 0 : controllerSysLatency + memToSysCycle(tCL+tBL-1);
+    minWrLatency = no_latency? 0 : controllerSysLatency;
+    preDelay = no_latency? 0 : controllerSysLatency;
+    postDelayRd = no_latency? 0 : minRdLatency - preDelay;
     postDelayWr = 0;
 
     rdQueue.init(queueDepth);
@@ -243,6 +242,7 @@ void DDRMemory::initStats(AggregateStat* parentStat) {
     total_access_count.init("total_accesses", "count all requests at access method"); memStats->append(&total_access_count);
     profReadHits.init("rdhits", "Read row hits"); memStats->append(&profReadHits);
     profWriteHits.init("wrhits", "Write row hits"); memStats->append(&profWriteHits);
+    profAccs.init("accs","Getx+Gets reaching mem in bound"); memStats->append(&profAccs);
     latencyHist.init("mlh", "latency histogram for memory requests", NUMBINS); memStats->append(&latencyHist);
 
     /*
@@ -279,24 +279,23 @@ void DDRMemory::setChildrenMem(g_vector<BaseCache*>& children, Network* network)
 */
 void DDRMemory::EstimateBandwidth() {
     // Access Count
-    uint64_t realTime = sysToMicroSec((zinfo->numPhases)*(zinfo->phaseLength));
-    uint64_t lastTime = sysToMicroSec(lastPhase*(zinfo->phaseLength));
+    //uint64_t realTime = sysToMicroSec((zinfo->numPhases)*(zinfo->phaseLength));
+    //uint64_t lastTime = sysToMicroSec(lastPhase*(zinfo->phaseLength));
     uint64_t totalAccesses = profReads.get() + profWrites.get();
     float curBandwidth = ((totalAccesses - lastAccesses)*lineSize*sysFreqKHz*0.000001) / ((zinfo->numPhases-lastPhase)*(zinfo->phaseLength)); //((realTime-lastTime)*0.001);
-    std::string delimiter = "-";
-    std::string nm = getName();
-    std::string token = nm.substr(nm.find(delimiter)+1,nm.length());
+    //std::string delimiter = "-";
+    //std::string nm = getName();
+    //std::string token = nm.substr(nm.find(delimiter)+1,nm.length());
     
 	if(midx<200000-1){
 		mem_bwdth[midx++] = curBandwidth;
-        mem_bwdth[midx] = 100;
+        mem_bwdth[midx] = 1000000.0;
 	}
 
     lastAccesses = totalAccesses;
 
-    info("zsim_phases since last mem BW sampling: %d, curBW:: %f",zinfo->numPhases - lastPhase, curBandwidth);
+    //info("zsim_phases since last mem BW sampling: %d, curBW:: %f",zinfo->numPhases - lastPhase, curBandwidth);
     lastPhase = zinfo->numPhases;
-
 
 }
 
@@ -323,8 +322,9 @@ uint64_t DDRMemory::access(MemReq& req) {
             *req.state = I;
             break;
         case GETS:
-            *req.state = req.is(MemReq::NOEXCL)? S : E;
-            total_access_count.inc();
+            if(!(req.flags & MemReq::PKTOUT))
+                *req.state = req.is(MemReq::NOEXCL)? S : E;
+	    total_access_count.inc();
             break;
         case GETX:
             total_access_count.inc();
@@ -358,17 +358,17 @@ uint64_t DDRMemory::access(MemReq& req) {
         bool isWrite = (req.type == PUTX || req.flags & MemReq::PKTIN);
         uint64_t respCycle = req.cycle + (isWrite? minWrLatency : minRdLatency);
         if (no_record) {
-            return respCycle;
+            return no_latency? req.cycle : respCycle;
         }
-        if (zinfo->eventRecorders[req.srcId]) {
+        if (!no_bw && zinfo->eventRecorders[req.srcId]) {
             DDRMemoryAccEvent* memEv = new (zinfo->eventRecorders[req.srcId]) DDRMemoryAccEvent(this,
                     isWrite, req.lineAddr, domain, preDelay, isWrite? postDelayWr : postDelayRd);
             memEv->setMinStartCycle(req.cycle);
             TimingRecord tr = {req.lineAddr, req.cycle, respCycle, req.type, memEv, memEv};
             zinfo->eventRecorders[req.srcId]->pushRecord(tr);
-        }
+        }   
         //info("Access to %lx at %ld, %ld latency", req.lineAddr, req.cycle, minLatency);
-        return respCycle;
+        return no_latency? req.cycle+1 : respCycle;
     }
 }
 
@@ -766,19 +766,18 @@ void DDRMemory::initTech(const char* techName) {
     // Please keep this orderly; go from faster to slower technologies
     if(tech == "DDR4-2400"){
         tCK = 0.833; // ns; all other in mem cycles
-        //tCK = 1.5; // complain about mem freq > sys freq. WA for now
-        tBL = 8;
-        tCL = 17; 
-        tRCD = 17;
-        tRTP = 4;
-        tRP = 17;
+        tBL = 4;//8;
+        tCL = 18; 
+        tRCD = 18;
+        tRTP = 9;//4;
+        tRP = 18;//17;
         tRRD = 4;
         tRAS = 39;
         tFAW = 16;
         tWTR = 3;
         tWR = 15;
         tRFC = 193;
-        tREFI = 10650; //7.8us according to spec. divided by 0.75ns
+        tREFI = 9363; //7.8us according to spec. divided by 0.75ns
     }
     else if (tech == "DDR3-1333-CL10") {
         // from DRAMSim2/ini/DDR3_micron_16M_8B_x4_sg15.ini (Micron)

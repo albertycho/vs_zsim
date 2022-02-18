@@ -338,8 +338,11 @@ DDRMemory* BuildDDRMemory(Config& config, uint32_t lineSize, uint32_t frequency,
     uint32_t queueDepth = config.get<uint32_t>(prefix + "queueDepth", 16);
     uint32_t controllerLatency = config.get<uint32_t>(prefix + "controllerLatency", 10);  // in system cycles
 
+    bool no_latency = config.get<bool>(prefix + "no_latency", false);
+    bool no_bw = config.get<bool>(prefix + "no_bw", false);
+
     auto mem = new DDRMemory(zinfo->lineSize, pageSize, ranksPerChannel, banksPerRank, frequency, tech,
-            addrMapping, controllerLatency, queueDepth, maxRowHits, deferWrites, closedPage, domain, name);
+            addrMapping, controllerLatency, queueDepth, maxRowHits, deferWrites, closedPage, no_latency, no_bw, domain, name);
     return mem;
 }
 
@@ -537,6 +540,11 @@ static void InitSystem(Config& config) {
     g_vector<MemObject*> mems;
     mems.resize(memControllers);
 
+    zinfo->mem_bwdth = gm_calloc<float*>(memControllers);
+    //zinfo->mem_bwdth = new g_vector<float*>(memControllers);
+    //zinfo->mem_bwdth.resize(memControllers);
+
+
     for (uint32_t i = 0; i < memControllers; i++) {
         stringstream ss;
         ss << "mem-" << i;
@@ -544,8 +552,8 @@ static void InitSystem(Config& config) {
         //uint32_t domain = nextDomain(); //i*zinfo->numDomains/memControllers;
         uint32_t domain = i*zinfo->numDomains/memControllers;
         mems[i] = BuildMemoryController(config, zinfo->lineSize, zinfo->freqMHz, domain, name);
-
         zinfo->mem_bwdth[i] = ((DDRMemory*)mems[i])->mem_bwdth;
+        //zinfo->mem_bwdth->push_back(((DDRMemory*)mems[i])->mem_bwdth);
     }
 
 /*
@@ -871,9 +879,18 @@ static void InitSystem(Config& config) {
     nicInfo->load_balance = load_balance;
 	uint32_t forced_packet_size = config.get<uint32_t>("sim.forced_packet_size",0);
 	nicInfo->forced_packet_size = forced_packet_size;
-
+	
+    for (uint64_t i = 0; i < zinfo->numCores; i++) {
+		nicInfo->nic_elem[i].rb_left = nicInfo->recv_buf_pool_size/forced_packet_size;
+	}
     //uint32_t memControllers = config.get<uint32_t>("sys.mem.controllers", 1);
 	nicInfo->num_controllers=memControllers;
+
+    uint32_t gmSize = config.get<uint32_t>("sim.gmMBytes", (1<<14) /*default 1024MB*/);
+    //int shmid = gm_init(((size_t)gmSize) << 20 /*MB to Bytes*/);
+	nicInfo->gm_size = (uint64_t)gmSize << 20;
+	info("init: gmSize: %d gm_size: %d",gmSize, nicInfo->gm_size);
+
 
     //load_generator* lgp;
     //lgp=(load_generator*)gm_get_lg_ptr();
@@ -1001,42 +1018,6 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 
     Config config(configFile);
 
-    // //init nic_elements ptr
-    // //glob_nic_elements* nicInfo= gm_calloc<glob_nic_elements>();
-    // nicInfo = gm_calloc<glob_nic_elements>();
-    // futex_init(&(nicInfo->dpq_lock));
-    // nicInfo->done_packet_q_head = NULL;
-    // nicInfo->done_packet_q_tail = NULL;
-    // futex_init(&(nicInfo->nic_lock));
-    
-    // //change num_cores
-    // for (uint64_t i = 0; i < MAX_NUM_CORES; i++) {
-    //     nicInfo->nic_elem[i].wq = gm_calloc<rmc_wq_t>();
-    //     nicInfo->nic_elem[i].cq = gm_calloc<rmc_cq_t>();
-    //     futex_init(&nicInfo->nic_elem[i].rb_lock);
-    //     futex_init(&nicInfo->nic_elem[i].ceq_lock);
-    //     futex_init(&nicInfo->nic_elem[i].rcp_lock);
-	// 	nicInfo->nic_elem[i].rb_iterator=0;
-	// 	nicInfo->nic_elem[i].cq_check_spin_count=0;
-	// 	nicInfo->nic_elem[i].cq_check_inner_loop_count =0;
-    //     nicInfo->nic_elem[i].cq_check_outer_loop_count = 0;
-    //     nicInfo->nic_elem[i].packet_pending = false;
-    //     futex_init(&nicInfo->nic_elem[i].packet_pending_lock);
-    // }
-    // nicInfo->latencies = gm_calloc<uint64_t>(LAT_ARR_SIZE);
-    // //nicInfo->latencies_list = gm_calloc<uint64_t>(LAT_ARR_SIZE);
-    // nicInfo->latencies_capa = LAT_ARR_SIZE;
-    // //nicInfo->latencies_list_capa = LAT_ARR_SIZE;
-
-    // uint32_t recv_buf_pool_size = config.get<uint32_t>("sim.recv_buf_pool_size", 524288);
-    // nicInfo->recv_buf_pool_size = recv_buf_pool_size;
-    // //nicInfo->latencies = gm_calloc<uint64_t>(LAT_ARR_SIZE);
-    // for (uint64_t i = 0; i < MAX_NUM_CORES; i++) {
-    //     nicInfo->nic_elem[i].recv_buf = gm_calloc<z_cacheline>(recv_buf_pool_size);
-    //     nicInfo->nic_elem[i].rb_dir = gm_calloc<recv_buf_dir_t>(recv_buf_pool_size);
-    // }
-
-
 
     //Debugging
     //NOTE: This should be as early as possible, so that we can attach to the debugger before initialization.
@@ -1102,7 +1083,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     uint32_t recv_buf_pool_size = config.get<uint32_t>("sim.recv_buf_pool_size", 524288);
     nicInfo->recv_buf_pool_size = recv_buf_pool_size;
     //nicInfo->latencies = gm_calloc<uint64_t>(LAT_ARR_SIZE);
-    for (uint64_t i = 0; i < MAX_NUM_CORES; i++) {
+    for (uint64_t i = 0; i < zinfo->numCores; i++) {
         nicInfo->nic_elem[i].recv_buf = gm_calloc<z_cacheline>(recv_buf_pool_size);
         nicInfo->nic_elem[i].rb_dir = gm_calloc<recv_buf_dir_t>(recv_buf_pool_size);
     }
@@ -1197,12 +1178,11 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     ((load_generator*)lgp)->ptag = 0;
     //((load_generator*)lgp)->RPCGen = new RPCGenerator(100, 10); //moved to individual LG
 
-    auto tmp_tcmap = std::shared_ptr<map<uint64_t, timestamp>>(new ::map<uint64_t, timestamp>());
-    ((load_generator*)lgp)->tc_map = tmp_tcmap;
+
+    lgp->tc_map = gm_calloc<timestamp>(65536);
 
     futex_init(&(((load_generator*)lgp)->ptc_lock));
     gm_set_lg_ptr(lgp_void);
-
 
 
     uint32_t dist_type = config.get<uint32_t>("sim.load_dist", 0);

@@ -239,9 +239,10 @@ void MESIBottomCC::processInval(Address lineAddr, int32_t lineId, InvType type, 
 uint64_t MESIBottomCC::processNonInclusiveWriteback(Address lineAddr, AccessType type, uint64_t cycle, MESIState* state, uint32_t srcId, uint32_t flags) {
     if (!nonInclusiveHack) panic("Non-inclusive %s on line 0x%lx, this cache should be inclusive", AccessTypeName(type), lineAddr);
 
-    //info("Non-inclusive wback, forwarding");
+    //info("Non-inclusive wbackon line 0x%lx, forwarding",lineAddr);
     MemReq req = {lineAddr, type, selfId, state, cycle, &ccLock, *state, srcId, flags | MemReq::NONINCLWB};
     uint64_t respCycle = parents[getParentId(lineAddr)]->access(req);
+    assert(*state == I);
     return respCycle;
 }
 
@@ -262,9 +263,40 @@ void MESITopCC::init(const g_vector<BaseCache*>& _children, Network* network, co
 
 uint64_t MESITopCC::sendInvalidates(Address lineAddr, int32_t lineId, InvType type, bool* reqWriteback, uint64_t cycle, uint32_t srcId) {
     //Send down downgrades/invalidates
-    assert(lineId > -1);
-    Entry* e = &array[lineId];
-    //TODO acho: determine if this is okay with direct access
+    //assert(lineId > -1);
+    /*
+    if (lineId == -1 && evicted_lines.count(lineAddr) > 0) { // i am the llc but don't have the line; check evicted_lines 
+        uint32_t numChildren = children.size();
+        uint32_t sentInvs = 0;
+        uint64_t maxCycle = cycle;
+        Entry* e = &evicted_lines[lineAddr];
+        for (uint32_t c = 0; c < numChildren; c++) {
+            if()
+            InvReq req = {lineAddr, type, reqWriteback, cycle, srcId};
+            uint64_t respCycle = children[c]->invalidate(req);
+            if(respCycle != req.cycle)
+                respCycle += childrenRTTs[c];
+            maxCycle = MAX(respCycle, maxCycle);
+        }
+        return maxCycle;
+    }
+    */
+    Entry* e;
+    
+    if (lineId == -1) {
+        panic("!?");
+        if (evicted_lines.count(lineAddr) > 0) {
+            e = &evicted_lines[lineAddr];
+            assert(!e->isEmpty());
+        }
+        else {
+            return cycle;
+        }
+    }
+    else {
+        e = &array[lineId];
+    }
+     
     //Don't propagate downgrades if sharers are not exclusive.
     if (type == INVX && !e->isExclusive()) {
         return cycle;
@@ -297,12 +329,31 @@ uint64_t MESITopCC::sendInvalidates(Address lineAddr, int32_t lineId, InvType ty
     return maxCycle;
 }
 
+void MESITopCC::processNonInclusiveWriteback(Address lineAddr, uint64_t srcId) {
+    if (!nonInclusiveHack) panic("this cache should be inclusive");
+    if (evicted_lines.count(lineAddr) > 0) {
+        Entry *e = &evicted_lines[lineAddr];
+        assert(e->sharers[srcId]);
+        if(e->numSharers == 1)
+            evicted_lines.erase(lineAddr);
+        else {
+            evicted_lines[lineAddr].sharers[srcId] = false;
+            evicted_lines[lineAddr].numSharers--;
+        }
+    }
+    return;
+}
 
 uint64_t MESITopCC::processEviction(Address wbLineAddr, int32_t lineId, bool* reqWriteback, uint64_t cycle, uint32_t srcId) {  
     if (nonInclusiveHack) {
         // Don't invalidate anything, just clear our entry
         assert(lineId > -1);
+        assert(evicted_lines.count(wbLineAddr)==0);
+        if (array[lineId].numSharers > 0) {
+            evicted_lines[wbLineAddr] = array[lineId];
+        }
         array[lineId].clear();
+        //info("eviction from the llc on line 0x%lx",wbLineAddr);
         return cycle;
     } else {
         //Send down invalidates
@@ -340,15 +391,34 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
         assert(!(flags & MemReq::PKTIN));
             // should a GETS from the NIC modify any cache state? I think not (unless it finds an invalid line, which we deal with in bcc)
             if(!(flags & MemReq::PKTOUT)) {
-                if (e->isEmpty() && haveExclusive && !(flags & MemReq::NOEXCL)) {
+
+                if ((e->isEmpty() && haveExclusive && !(flags & MemReq::NOEXCL) && evicted_lines.count(lineAddr) == 0)
+                    || (e->isEmpty() && evicted_lines.count(lineAddr) == 1 && evicted_lines[lineAddr].sharers[childId] == true && evicted_lines[lineAddr].numSharers == 1)) {
                     //Give in E state
                     e->exclusive = true;
                     e->sharers[childId] = true;
                     e->numSharers = 1;
                     *childState = E;
+                    evicted_lines.erase(lineAddr);
                 } else {
                     //Give in S state
                     assert(e->sharers[childId] == false);
+
+                    if (evicted_lines.count(lineAddr) > 0) {
+                        Entry* evct = &evicted_lines[lineAddr];
+                        uint32_t numChildren = children.size();
+                        for (uint32_t c = 0; c < numChildren; c++) {
+                            if (evct->sharers[c]) {
+                                e->sharers[c] = true;
+                                e->numSharers++;
+                                if (evct->exclusive) {
+                                    assert(!e->exclusive);
+                                    e->exclusive = true;
+                                }
+                            }
+                        }
+                        evicted_lines.erase(lineAddr);
+                    }
 
                     if (e->isExclusive()) {
                         //Downgrade the exclusive sharer
@@ -357,15 +427,30 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
 
                     assert_msg(!e->isExclusive(), "Can't have exclusivity here. isExcl=%d excl=%d numSharers=%d", e->isExclusive(), e->exclusive, e->numSharers);
 
-                    e->sharers[childId] = true;
-                    e->numSharers++;
-                    e->exclusive = false; //dsm: Must set, we're explicitly non-exclusive
+                    if(!e->sharers[childId]) {
+                        e->sharers[childId] = true;
+                        e->numSharers++;
+                        e->exclusive = false; //dsm: Must set, we're explicitly non-exclusive
+                    }
                     *childState = S;
                 }
             }
             break;
         case GETX:
             assert((flags & MemReq::PKTOUT) || haveExclusive); //the current cache better have exclusive access to this line
+
+            if (evicted_lines.count(lineAddr) > 0) {
+                Entry* evct = &evicted_lines[lineAddr];
+                uint32_t numChildren = children.size();
+                for (uint32_t c = 0; c < numChildren; c++) {
+                    if (evct->sharers[c]) {
+                        e->sharers[c] = true;
+                        e->numSharers++;
+                    }
+                }
+                evicted_lines.erase(lineAddr);
+            }
+
             // if we write directly to the l2/llc, we want all children to be invalidated
             if (!((flags & MemReq::PKTIN) && childId > MAX_CACHE_CHILDREN)) {
                 // If child is in sharers list (this is an upgrade miss), take it out

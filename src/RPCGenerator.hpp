@@ -107,7 +107,7 @@ class RPCGenerator {
 		uint64_t srand_seed;
 		size_t num_keys, update_fraction;
 		int* key_arr;
-		long double zipf_s=1.2; 
+		long double zipf_s=0.99; 
 		long double* zcf; //cumulative frequency table for zipf
 		uint32_t load_dist_type=0;
 		uint32_t lg_type = 0;

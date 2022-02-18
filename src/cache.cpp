@@ -162,15 +162,23 @@ uint64_t Cache::finishInvalidate(const InvReq& req) {
     int32_t lineId = array->lookup(req.lineAddr, nullptr, false);
     uint64_t respCycle = req.cycle;
     if (lineId == -1) {
-        assert_msg(req.srcId == 1742, "[%s] Invalidate on non-existing address 0x%lx type %s lineId %d, reqWriteback %d, srcId %d", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback, req.srcId);
-        cc->finishInv();
+        size_t found = name.find("l3");     // am I the llc?
+        if (found != std::string::npos) {   //not the llc, kill the received invalidation
+            cc->finishInv();
+        }
+        else {          // i am the llc but don't have the line; someone above me might have it though
+            respCycle = req.cycle + invLat;
+            respCycle = cc->processInv(req, lineId, respCycle);
+            if (respCycle == req.cycle + invLat)
+                respCycle -= invLat;
+        }
     }
     else {
-        assert_msg(lineId != -1, "[%s] Invalidate on non-existing address 0x%lx type %s lineId %d, reqWriteback %d", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback);
+        //assert_msg(lineId != -1, "[%s] Invalidate on non-existing address 0x%lx type %s lineId %d, reqWriteback %d", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback);
         respCycle = req.cycle + invLat;
-        trace(Cache, "[%s] Invalidate start 0x%lx type %s lineId %d, reqWriteback %d", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback);
+        //trace(Cache, "[%s] Invalidate start 0x%lx type %s lineId %d, reqWriteback %d", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback);
         respCycle = cc->processInv(req, lineId, respCycle); //send invalidates or downgrades to children, and adjust our own state
-        trace(Cache, "[%s] Invalidate end 0x%lx type %s lineId %d, reqWriteback %d, latency %ld", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback, respCycle - req.cycle);
+        //trace(Cache, "[%s] Invalidate end 0x%lx type %s lineId %d, reqWriteback %d, latency %ld", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback, respCycle - req.cycle);
     }
     return respCycle;
 }

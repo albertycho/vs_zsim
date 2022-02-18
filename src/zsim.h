@@ -190,7 +190,8 @@ struct GlobSimInfo {
     bool traceDriven;
     TraceDriver* traceDriver;
 
-    float *mem_bwdth[6];
+    //g_vector<float*> mem_bwdth;
+    float** mem_bwdth;
 
 };
 

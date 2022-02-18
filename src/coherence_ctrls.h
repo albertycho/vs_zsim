@@ -30,10 +30,13 @@
 #include "constants.h"
 #include "g_std/g_string.h"
 #include "g_std/g_vector.h"
+#include "g_std/g_unordered_map.h"
 #include "locks.h"
 #include "memory_hierarchy.h"
 #include "pad.h"
 #include "stats.h"
+
+#include <unordered_map>
 
 //TODO: Now that we have a pure CC interface, the MESI controllers should go on different files.
 
@@ -217,6 +220,8 @@ class MESITopCC : public GlobAlloc {
         g_vector<uint32_t> childrenRTTs;
         uint32_t numLines;
 
+        g_unordered_map<uint64_t,Entry> evicted_lines;
+
         bool nonInclusiveHack;
 
         PAD();
@@ -255,6 +260,8 @@ class MESITopCC : public GlobAlloc {
             assert(lineId > -1);
             return array[lineId].numSharers;
         }
+
+        void processNonInclusiveWriteback(Address lineAddr, uint64_t srcId);
 
     private:
         uint64_t sendInvalidates(Address lineAddr, int32_t lineId, InvType type, bool* reqWriteback, uint64_t cycle, uint32_t srcId);
@@ -382,6 +389,8 @@ class MESICC : public CC {
                     assert(nonInclusiveHack);
                     assert((req.type == PUTS) || (req.type == PUTX));
                     respCycle = bcc->processNonInclusiveWriteback(req.lineAddr, req.type, startCycle, req.state, req.srcId, req.flags);
+                    tcc->processNonInclusiveWriteback(req.lineAddr, req.childId);
+                    if (getDoneCycle) *getDoneCycle = 0;
                 } else {
                     //Prefetches are side requests and get handled a bit differently
                     bool isPrefetch = req.flags & MemReq::PREFETCH;
@@ -394,6 +403,8 @@ class MESICC : public CC {
                         //At this point, the line is in a good state w.r.t. upper levels
                         bool lowerLevelWriteback = false;
                         //change directory info, invalidate other children if needed, tell requester about its state
+                        if ((req.type == PUTS) || (req.type == PUTX))
+                            assert(bcc->isValid(lineId));
                         respCycle = tcc->processAccess(req.lineAddr, lineId, req.type, req.childId, bcc->isExclusive(lineId), req.state,
                                 &lowerLevelWriteback, respCycle, req.srcId, flags);
                         if (lowerLevelWriteback) {
