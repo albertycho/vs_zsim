@@ -316,7 +316,7 @@ void dump_rb_use_counters(){
     for(int i=0; i<MAX_NUM_CORES; i++) {
         if(nicInfo->nic_elem[i].ts_nic_idx) {
             std::ofstream f("rb_use_count_dump_core_"+std::to_string(i)+".txt");
-            for(int j=0; j<nicInfo->recv_buf_pool_size){
+            for(int j=0; j<nicInfo->recv_buf_pool_size;j++){
                 f<<nicInfo->nic_elem[i].rb_dir[j].use_count<<std::endl;
             }
             f.close();
