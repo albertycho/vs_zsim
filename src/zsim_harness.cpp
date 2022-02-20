@@ -319,9 +319,8 @@ void dump_rb_use_counters(){
             for(int j=0; j<nicInfo->recv_buf_pool_size){
                 f<<nicInfo->nic_elem[i].rb_dir[j].use_count<<std::endl;
             }
+            f.close();
         }
-        f.close();
-
     }
 }
 
