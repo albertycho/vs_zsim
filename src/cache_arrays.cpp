@@ -76,8 +76,8 @@ void SetAssocArray::initStats(AggregateStat* parentStat) {
     objStats->append(&appHits);
     objStats->append(&way_misses);
     objStats->append(&way_hits);
-    objStats->append(&nic_rb_way_hits)
-    objStats->append(&nic_rb_way_misses)
+    objStats->append(&nic_rb_way_hits);
+    objStats->append(&nic_rb_way_misses);
     parentStat->append(objStats);
 }
 
