@@ -271,8 +271,8 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0) {
 
 	((load_generator*)lg_p)->sent_packets++;
 	//for debugging
-	if(lg_p->sent_packets == 9216){ // iterated through all recv buf - 512(rb count) * 18 (core count)
-		info("RB space iterated once: sampling phase %d (for 1024p_512rb, 18 core)", nicInfo->sampling_phase_index);
+	if(((lg_p->sent_packets) % 9216)==0){ // iterated through all recv buf - 512(rb count) * 18 (core count)
+		info("RB space iterated %d-th time: sampling phase %d (for 1024p_512rb, 18 core)", ((lg_p->sent_packets / 9216)),nicInfo->sampling_phase_index);
 	}
 
 	if (((load_generator*)lg_p)->sent_packets == ((load_generator*)lg_p)->target_packet_count) {
