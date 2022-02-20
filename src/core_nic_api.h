@@ -270,6 +270,10 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0) {
 	((load_generator*)lg_p)->ptag++;
 
 	((load_generator*)lg_p)->sent_packets++;
+	//for debugging
+	if(lg_p->sent_packets == 9216){ // iterated through all recv buf - 512(rb count) * 18 (core count)
+		info("RB space iterated once (for 1024p_512rb, 18 core)");
+	}
 
 	if (((load_generator*)lg_p)->sent_packets == ((load_generator*)lg_p)->target_packet_count) {
 		((load_generator*)lg_p)->all_packets_sent = true;
