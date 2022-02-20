@@ -491,19 +491,6 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 
 	}
 
-	
-	////FIXME: MUST REMOVE!!!!!!!!!!!!!!! added for dbug
-	//if(nicInfo->sampling_phase_index==7000){
-	//		nicInfo->sampling_phase_index++;
-	//		zinfo->trigger = 20000;
-	//		for (StatsBackend* backend : *(zinfo->statsBackends)) backend->dump(false /*unbuffered, write out*/);
-	//		for (AccessTraceWriter* t : *(zinfo->traceWriters)) t->dump(false); // flushes trace writer
-
-	//}
-
-
-
-
 
 	if((cur_cycle > nicInfo->next_phase_sampling_cycle) && (nicInfo->ready_for_inj==0xabcd)){
 		if((cur_cycle - (nicInfo->next_phase_sampling_cycle)) > 200){
@@ -519,6 +506,7 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 		nicInfo->last_phase_done_packets=nicInfo->latencies_size;
 		nicInfo->cq_size_per_phase[ii]=cq_size;
 		nicInfo->ceq_size_per_phase[ii]=nicInfo->nic_elem[core_i].ceq_size;
+		nicInfo->llc_acitve_misses[ii]=nicInfo->cur_llc_active_misses;
 		nicInfo->lg_clk_slack[ii] = 0;
 		nicInfo->remaining_rb[ii] = nicInfo->nic_elem[core_i].rb_left;
 		if(zinfo->mem_bw_len>0){

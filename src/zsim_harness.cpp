@@ -323,7 +323,7 @@ void dump_IR_SR_stat(){
     f<<"IR,SR,cq_size,ceq_size, remaining_rb, mem_bw,\n";
     for(uint32_t ii=0; ii<nicInfo->sampling_phase_index; ii++){
         f << nicInfo->IR_per_phase[ii] <<","<<nicInfo->SR_per_phase[ii]<<","<<nicInfo->cq_size_per_phase[ii]<<","
-        <<nicInfo->ceq_size_per_phase[ii]<<","<<nicInfo->remaining_rb[ii]<<","<<nicInfo->mem_bw_sampled[ii]<<",\n";
+        <<nicInfo->ceq_size_per_phase[ii]<<","<<nicInfo->remaining_rb[ii]<<","<<nicInfo->mem_bw_sampled[ii]<<","<<nicInfo->llc_acitve_misses[ii]<<",\n";
 
         f2 << nicInfo->lg_clk_slack[ii] << std::endl;
     }
