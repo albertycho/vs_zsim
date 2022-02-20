@@ -63,6 +63,8 @@ void SetAssocArray::initStats(AggregateStat* parentStat) {
     appHits.init("appHit", "Requests associated with app functionality, hits");
     way_misses.init("way_inserts", "Insertions per cache way",assoc);
     way_hits.init("way_hits", "Hits per cache way",assoc);
+    nic_rb_way_hits.init("nic_rb_way_hits", "Hits per cache way",assoc);
+    nic_rb_way_misses.init("nic_rb_way_inserts", "Insertions per cache way",assoc);
     objStats->append(&netMisses_nic_rb);
     objStats->append(&netMisses_nic_lb);
     objStats->append(&netMisses_core);
@@ -74,6 +76,8 @@ void SetAssocArray::initStats(AggregateStat* parentStat) {
     objStats->append(&appHits);
     objStats->append(&way_misses);
     objStats->append(&way_hits);
+    objStats->append(&nic_rb_way_hits)
+    objStats->append(&nic_rb_way_misses)
     parentStat->append(objStats);
 }
 
@@ -96,6 +100,7 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
                         //netHits_nic.atomicInc();
                         if(req->flags & MemReq::PKTIN){
                             netHits_nic_rb.atomicInc();
+                            nic_rb_way_hits.inc(id-first);
                         }
                         else if(req->flags & MemReq::PKTOUT){
                             netHits_nic_lb.atomicInc();
@@ -147,6 +152,9 @@ uint32_t SetAssocArray::preinsert(const Address lineAddr, const MemReq* req, Add
     uint32_t candidate = rp->rankCands(req, SetAssocCands(first, first+assoc));
     way_misses.inc(candidate-first);
     //info("eviction candidate is %lld, with index %ld", array[candidate], candidate);
+    if(req->flags & MemReq::PKTIN){
+        nic_rb_way_misses.inc(candidate-first);
+    }
     *wbLineAddr = array[candidate].addr;
     return candidate;
 }
