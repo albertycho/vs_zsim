@@ -113,7 +113,7 @@ void TimingCache::initStats(AggregateStat* parentStat) {
 // TODO(dsm): This is copied verbatim from Cache. We should split Cache into different methods, then call those.
 uint64_t TimingCache::access(MemReq& req) {
 
-    //debug
+    //for plotting
     if(level==1){//llc
         nicInfo->cur_llc_active_misses = activeMisses;
     }

@@ -120,6 +120,7 @@ typedef struct recv_buf_dir {
 	bool in_use;
 	bool is_head;
 	uint32_t len;
+	uint32_t use_count; //for dbg
 } recv_buf_dir_t;
 
 typedef struct cq_wr_event {

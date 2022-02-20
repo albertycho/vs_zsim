@@ -332,6 +332,7 @@ uint32_t allocate_recv_buf(uint32_t blen, glob_nic_elements* nicInfo, uint32_t c
 				for (uint32_t i = head; i < head + blen; i++)
 				{
 					NICELEM.rb_dir[i].in_use = true;
+					NICELEM.rb_dir[i].use_count++;
 				}
 				NICELEM.rb_iterator = head+blen;
 

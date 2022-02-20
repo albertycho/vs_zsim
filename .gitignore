@@ -8,3 +8,4 @@ tests/nic_proxy_app
 tests/qp_test
 tests/qp_test_thread_ver
 
+.vscode/settings.json

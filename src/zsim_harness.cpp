@@ -311,6 +311,20 @@ void LaunchProcess(uint32_t procIdx) {
 }
 
 
+void dump_rb_use_counters(){
+    glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
+    for(int i=0; i<MAX_NUM_CORES; i++) {
+        if(nicInfo->nic_elem[i].ts_nic_idx) {
+            std::ofstream f("rb_use_count_dump_core_"+std::to_string(i)+".txt");
+            for(int j=0; j<nicInfo->recv_buf_pool_size){
+                f<<nicInfo->nic_elem[i].rb_dir[j].use_count<<std::endl;
+            }
+        }
+        f.close();
+
+    }
+}
+
 void dump_IR_SR_stat(){
     load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
     if (lg_p->num_loadgen==0) {
@@ -692,6 +706,7 @@ int main(int argc, char *argv[]) {
         }
     }
     dump_IR_SR_stat();
+    dump_rb_use_counters();
 
 
     uint32_t exitCode = 0;
