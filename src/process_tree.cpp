@@ -49,7 +49,12 @@ static void DumpEventualStats(uint32_t procIdx, const char* reason) {
     uint32_t p = zinfo->procArray[procIdx]->getGroupIdx();
     info("Dumping eventual stats for process GROUP %d (%s)", p, reason);
     zinfo->trigger = p;
-    zinfo->eventualStatsBackend->dump(true /*buffered*/);
+    //zinfo->eventualStatsBackend->dump(true /*buffered*/);
+
+	for (StatsBackend* backend : *(zinfo->statsBackends)) backend->dump(false /*unbuffered, write out*/);
+
+
+
     zinfo->procEventualDumps++;
     if (zinfo->procEventualDumps == zinfo->maxProcEventualDumps) {
         info("Terminating, maxProcEventualDumps (%ld) reached", zinfo->maxProcEventualDumps);

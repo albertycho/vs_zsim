@@ -176,9 +176,9 @@ uint64_t TimingCache::access(MemReq& req) {
                 assert(!(evRec->hasRecord()));
             }
             else {
-                if (evRec->hasRecord()) accessRecord = evRec->popRecord();
 
                 if (getDoneCycle != 0) {
+                	if (evRec->hasRecord()) accessRecord = evRec->popRecord();
 
                     // At this point we have all the info we need to hammer out the timing record
                     TimingRecord tr = { req.lineAddr << lineBits, req.cycle, respCycle, req.type, nullptr, nullptr }; //note the end event is the response, not the wback

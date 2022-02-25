@@ -1409,15 +1409,15 @@ static EXCEPT_HANDLING_RESULT InternalExceptionHandler(THREADID tid, EXCEPTION_I
     fprintf(stderr, "%s[%d]  Description: %s\n", logHeader, tid, PIN_ExceptionToString(pExceptInfo).c_str());
 
     ADDRINT faultyAccessAddr;
-    if (PIN_GetFaultyAccessAddress(pExceptInfo, &faultyAccessAddr)) {
-        const char* faultyAccessStr = "";
-        FAULTY_ACCESS_TYPE fat = PIN_GetFaultyAccessType(pExceptInfo);
-        if (fat == FAULTY_ACCESS_READ) faultyAccessStr = "READ ";
-        else if (fat == FAULTY_ACCESS_WRITE) faultyAccessStr = "WRITE ";
-        else if (fat == FAULTY_ACCESS_EXECUTE) faultyAccessStr = "EXECUTE ";
+    //if (PIN_GetFaultyAccessAddress(pExceptInfo, &faultyAccessAddr)) {
+    //    const char* faultyAccessStr = "";
+    //    FAULTY_ACCESS_TYPE fat = PIN_GetFaultyAccessType(pExceptInfo);
+    //    if (fat == FAULTY_ACCESS_READ) faultyAccessStr = "READ ";
+    //    else if (fat == FAULTY_ACCESS_WRITE) faultyAccessStr = "WRITE ";
+    //    else if (fat == FAULTY_ACCESS_EXECUTE) faultyAccessStr = "EXECUTE ";
 
-        fprintf(stderr, "%s[%d]  Caused by invalid %saccess to address 0x%lx\n", logHeader, tid, faultyAccessStr, faultyAccessAddr);
-    }
+    //    fprintf(stderr, "%s[%d]  Caused by invalid %saccess to address 0x%lx\n", logHeader, tid, faultyAccessStr, faultyAccessAddr);
+    //}
 
     void* array[40];
     size_t size = backtrace(array, 40);

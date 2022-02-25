@@ -923,6 +923,7 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 			//////// get packet latency info from tag-starttime map //////
 			uint64_t ptag = dp->tag;
 			uint32_t ending_phase = dp->ending_phase;
+			gm_free(dp);
 			
 			futex_lock(&lg_p->ptc_lock);
 

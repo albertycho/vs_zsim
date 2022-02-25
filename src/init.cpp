@@ -877,7 +877,7 @@ static void InitSystem(Config& config) {
 
     uint32_t load_balance = config.get<uint32_t>("sim.load_balance",0);
     nicInfo->load_balance = load_balance;
-	uint32_t forced_packet_size = config.get<uint32_t>("sim.forced_packet_size",0);
+	uint32_t forced_packet_size = config.get<uint32_t>("sim.forced_packet_size",512);
 	nicInfo->forced_packet_size = forced_packet_size;
 	
     for (uint64_t i = 0; i < zinfo->numCores; i++) {
