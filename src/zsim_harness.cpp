@@ -460,21 +460,21 @@ void generate_raw_timestamp_files(bool run_success){
 
 	
     std::ofstream latency_hist_file("latency_hist.txt");
-    for(int i=0; i<zinfo->numCores; i++) {
-        std::ofstream f;
-        f.open("bound-weave_skew_core_"+std::to_string(i)+".txt");
-        int temp=0;
-        auto ooocore = (OOOCore*)(zinfo->cores[i]);
-        f << "Started counting from phase " << ooocore->start_cnt_phases;
-        for (int j=0; j<ooocore->cycle_adj_idx; j+=2) {
-            f << "\nbound phase: " << temp << ": ";
-            f << ooocore->cycle_adj_queue[j] << " ";
-            f << ooocore->cycle_adj_queue[j+1] << " ";
-            temp++;
-        }
-        f << "\n num phases from zinfo: " << zinfo->numPhases;
-        f.close();
-    }
+    //for(int i=0; i<zinfo->numCores; i++) {
+    //    std::ofstream f;
+    //    f.open("bound-weave_skew_core_"+std::to_string(i)+".txt");
+    //    int temp=0;
+    //    auto ooocore = (OOOCore*)(zinfo->cores[i]);
+    //    f << "Started counting from phase " << ooocore->start_cnt_phases;
+    //    for (int j=0; j<ooocore->cycle_adj_idx; j+=2) {
+    //        f << "\nbound phase: " << temp << ": ";
+    //        f << ooocore->cycle_adj_queue[j] << " ";
+    //        f << ooocore->cycle_adj_queue[j+1] << " ";
+    //        temp++;
+    //    }
+    //    f << "\n num phases from zinfo: " << zinfo->numPhases;
+    //    f.close();
+    //}
 
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
 	uint64_t average_interval = (lg_p->sum_interval) / (nicInfo->latencies_size);
