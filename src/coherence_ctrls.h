@@ -415,7 +415,7 @@ class MESICC : public CC {
                 }
                 //TODO: Albert - add READNINV here?
                 if((req.flags & MemReq::READNINV) && (is_llc)){
-                    info("CC: after bcc and tcc process access, readinv")
+                    if(req.srcId == 3) info("CC: after bcc and tcc process access, readinv")
                 }
             }           
             else {
