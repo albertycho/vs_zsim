@@ -138,7 +138,7 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
             //TODO: Albert - add invaliate if flags & READNINV here?
             if((flags & MemReq::READNINV) && (is_llc)){
                 if(srcId==3) info("BottomCC: readNinv, state=%d", *state);
-                //*state=I;
+                *state=E;
             }
             break;
         case GETX:
