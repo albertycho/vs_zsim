@@ -157,7 +157,7 @@ class MESIBottomCC : public GlobAlloc {
 
         uint64_t passToNext(Address lineAddr, AccessType type, uint32_t childId, uint32_t srcId, uint32_t flags, uint64_t cycle);
 
-        uint64_t processAccess(Address lineAddr, int32_t lineId, AccessType type, uint64_t cycle, uint32_t srcId, uint32_t flags, bool is_llc=false);
+        uint64_t processAccess(Address lineAddr, int32_t lineId, AccessType type, uint64_t cycle, uint32_t srcId, uint32_t flags, bool is_llc);
 
         void processWritebackOnAccess(Address lineAddr, int32_t lineId, AccessType type);
 
