@@ -113,9 +113,11 @@ void TimingCache::initStats(AggregateStat* parentStat) {
 // TODO(dsm): This is copied verbatim from Cache. We should split Cache into different methods, then call those.
 uint64_t TimingCache::access(MemReq& req) {
 
+    bool is_llc=false;
     //for plotting
     if(level==1){//llc
         nicInfo->cur_llc_active_misses = activeMisses;
+        is_llc=true;
     }
 
     int req_level = req.flags >> 16;
@@ -170,7 +172,7 @@ uint64_t TimingCache::access(MemReq& req) {
             //if (evRec->hasRecord()) writebackRecord = evRec->popRecord();
 
             uint64_t getDoneCycle = respCycle;
-            respCycle = cc->processAccess(req, lineId, respCycle, correct_level, &getDoneCycle);
+            respCycle = cc->processAccess(req, lineId, respCycle, correct_level, &getDoneCycle, is_llc);
 
             if (no_record) {
                 assert(!(evRec->hasRecord()));

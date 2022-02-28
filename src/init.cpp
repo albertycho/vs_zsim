@@ -880,6 +880,9 @@ static void InitSystem(Config& config) {
 	uint32_t forced_packet_size = config.get<uint32_t>("sim.forced_packet_size",512);
 	nicInfo->forced_packet_size = forced_packet_size;
 	
+    uint32_t inval_read_rb = config.get<uint32_t>("sim.inval_read_rb",0);
+    nicInfo->inval_read_rb = inval_read_rb;
+
     for (uint64_t i = 0; i < zinfo->numCores; i++) {
 		nicInfo->nic_elem[i].rb_left = nicInfo->recv_buf_pool_size/forced_packet_size;
 	}

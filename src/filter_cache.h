@@ -209,6 +209,18 @@ class FilterCache : public Cache {
                 procMask_f = 0;
                 flags = flags | MemReq::NETRELATED;
             }
+
+            //if read for RB from core (and inval_read_rb set)
+            if(isLoad && (nicInfo->inval_read_rb==1) &&(srcId>2)){
+                uint64_t rb_base = (uint64_t) (nicInfo->nic_elem[srcId].recv_buf);
+                uint64_t rb_top  = (uint64_t) rb_base + nicInfo->recv_buf_pool_size;
+                uint64_t rb_base_line=rb_base>>lineBits;
+                uint64_t rb_top_line =rb_top>>lineBits;
+                if (vLineAddr >= rb_base_line && vLineAddr <= rb_top_line) {
+                    flags = flags | MemReq::READNINV;
+                }
+            }
+
             Address pLineAddr = procMask_f | vLineAddr;
             MESIState dummyState = MESIState::I;
             futex_lock(&filterLock);

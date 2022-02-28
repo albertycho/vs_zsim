@@ -250,6 +250,8 @@ struct glob_nic_elements {
 
 	uint32_t memtype=1;
 
+	uint32_t inval_read_rb=0; //0: none, 1: inval at read, 2: inval at free_recb_buf
+
 	uint32_t pp_policy;
 	bool send_in_loop;
 	bool out_of_rbuf=false;

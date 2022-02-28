@@ -115,7 +115,8 @@ struct MemReq {
         NORECORD      = (1<<6),
         PKTIN         = (1<<7),
         PKTOUT        = (1<<8),
-        NETRELATED    = (1<<9)
+        NETRELATED    = (1<<9),
+        READNINV      = (1<<10)
     };
     uint32_t flags;
 

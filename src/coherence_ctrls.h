@@ -376,7 +376,7 @@ class MESICC : public CC {
             return evCycle;
         }
 
-        uint64_t processAccess(const MemReq& req, int32_t lineId, uint64_t startCycle, bool correct_level, uint64_t* getDoneCycle = nullptr) {
+        uint64_t processAccess(const MemReq& req, int32_t lineId, uint64_t startCycle, bool correct_level, uint64_t* getDoneCycle = nullptr, bool is_llc=false) {
 
             uint64_t respCycle = startCycle;
             //Handle non-inclusive writebacks by bypassing
@@ -412,6 +412,10 @@ class MESICC : public CC {
                             bcc->processWritebackOnAccess(req.lineAddr, lineId, req.type);
                         }
                     }
+                }
+                //TODO: Albert - add READNINV here?
+                if((req.flags & MemReq::READNINV) && (is_llc)){
+                    info("CC: after bcc and tcc process access, readinv")
                 }
             }           
             else {
