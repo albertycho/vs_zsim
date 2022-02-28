@@ -421,7 +421,6 @@ class MESICC : public CC {
                 if((req.flags & MemReq::READNINV) && (is_llc)){
                     if(req.srcId == 3) {
                         info("CC: after bcc and tcc process access, readinv, state=%d",bcc->getState(lineId));
-
                     }
                 }
             }           
