@@ -376,7 +376,7 @@ class MESICC : public CC {
             return evCycle;
         }
 
-        uint64_t processAccess(const MemReq& req, int32_t lineId, uint64_t startCycle, bool correct_level, uint64_t* getDoneCycle = nullptr, bool is_llc) {
+        uint64_t processAccess(const MemReq& req, int32_t lineId, uint64_t startCycle, bool correct_level, uint64_t* getDoneCycle = nullptr, bool is_llc=false) {
 
             uint64_t respCycle = startCycle;
             //Handle non-inclusive writebacks by bypassing
