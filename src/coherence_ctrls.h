@@ -397,7 +397,7 @@ class MESICC : public CC {
                     assert(!isPrefetch || req.type == GETS);
                     uint32_t flags = req.flags & ~MemReq::PREFETCH; //always clear PREFETCH, this flag cannot propagate up
                     //if needed, fetch line or upgrade miss from upper level
-                    respCycle = bcc->processAccess(req.lineAddr, lineId, req.type, startCycle, req.srcId, flags);
+                    respCycle = bcc->processAccess(req.lineAddr, lineId, req.type, startCycle, req.srcId, flags, is_llc);
                     if (getDoneCycle) *getDoneCycle = respCycle;
                     if (!isPrefetch) { //prefetches only touch bcc; the demand request from the core will pull the line to lower level
                         //At this point, the line is in a good state w.r.t. upper levels
