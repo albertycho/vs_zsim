@@ -526,7 +526,7 @@ class MESITerminalCC : public CC {
             return endCycle;  // critical path unaffected, but TimingCache needs it
         }
 
-        uint64_t processAccess(const MemReq& req, int32_t lineId, uint64_t startCycle, bool correct_level, uint64_t* getDoneCycle = nullptr) {
+        uint64_t processAccess(const MemReq& req, int32_t lineId, uint64_t startCycle, bool correct_level, uint64_t* getDoneCycle = nullptr, bool is_llc=false) {
             if (correct_level) {
                 assert(lineId != -1);
                 assert(!getDoneCycle);
