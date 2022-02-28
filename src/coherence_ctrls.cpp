@@ -97,7 +97,7 @@ uint64_t MESIBottomCC::passToNext( Address lineAddr, AccessType type, uint32_t c
     return parents[parentId]->access(req);
 }
 
-uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessType type, uint64_t cycle, uint32_t srcId, uint32_t flags, bool is_llc=false) {
+uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessType type, uint64_t cycle, uint32_t srcId, uint32_t flags, bool is_llc) {
     uint64_t respCycle = cycle;
     MESIState* state;
     if (lineId != -1) {
