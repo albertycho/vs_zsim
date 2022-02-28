@@ -187,6 +187,10 @@ class MESIBottomCC : public GlobAlloc {
 
         //Could extend with isExclusive, isDirty, etc, but not needed for now.
 
+        MESIState getState(uint32_t lineid){
+            return array[lineid];
+        }
+
     private:
         uint32_t getParentId(Address lineAddr);
 };
@@ -415,7 +419,10 @@ class MESICC : public CC {
                 }
                 //TODO: Albert - add READNINV here?
                 if((req.flags & MemReq::READNINV) && (is_llc)){
-                    if(req.srcId == 3) info("CC: after bcc and tcc process access, readinv")
+                    if(req.srcId == 3) {
+                        info("CC: after bcc and tcc process access, readinv, state=%d",bcc->getState(lineId));
+
+                    }
                 }
             }           
             else {
