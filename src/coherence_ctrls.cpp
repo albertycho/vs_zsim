@@ -137,7 +137,7 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
             }
             //TODO: Albert - add invaliate if flags & READNINV here?
             if((flags & MemReq::READNINV) && (is_llc)){
-                if(srcId==3) info("BottomCC: readNinv, state=%d", *state);
+                //if(srcId==3) info("BottomCC: readNinv, state=%d", *state);
                 //downgrade from M to E. Assume Recv buffers are affiliated to cores so no shared
                 //considered setting to INV, but coherence won't work for inclusive cache
                 *state=E;
