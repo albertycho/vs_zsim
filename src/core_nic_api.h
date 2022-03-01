@@ -457,26 +457,8 @@ int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uin
 	l1d: l1d of destination core
 */
 
-int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void* lg_p_in, uint32_t core_id, uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d, uint16_t level, uint32_t lg_i) {
-/*
-* inject_incoming_packet - takes necessary architectural AND microarchitectural actions to inject packet
-*				fetches next msg from load generator
-*				allocates recv buffer and writes msg to it
-*				record the memory access from injection (microarchitecutral)
-*				creates ceq entry (architectural)
-*/
-	//TODO: passing on l1d for now, to use getParent method. Will have to be updated with the correct Memory Direct access method
-	if (core_id > ((zinfo->numCores) - 1)) {
-		info("inject_incoming_packet - core_id out of bound: %d", core_id);
-	}
-
-	//info("inject incoming packet called, cur_cycle= %d", cur_cycle);
-	load_generator* lg_p = ((load_generator*) lg_p_in);
-
-	uint32_t core_i = lg_p->lgs[lg_i].last_core;
-	uint32_t cq_size = get_cq_size(core_i);
-
-	//log IR, SR, cq/ceq size for plotting to profile initila queue buildup
+void get_IRSR_stat(load_generator* lg_p, glob_nic_elements* nicInfo, uint32_t core_i, uint32_t cq_size ){
+		//log IR, SR, cq/ceq size for plotting to profile initila queue buildup
 	//if(nicInfo->next_phase_sampling_cycle==0){
 	if((nicInfo->next_phase_sampling_cycle==0) && (nicInfo->ready_for_inj==0xabcd)){
 		nicInfo->next_phase_sampling_cycle=cur_cycle+1000;
@@ -521,15 +503,91 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 		//dbg - remove. only works for sepcific setup (16 cores)
 		//assert(core_id > 2);
 		//assert(core_id < 19);
-		for (int iii = 3; iii < 19; iii++) {
-			nicInfo->cq_size_cores_per_phase[iii-3][ii] = get_cq_size(iii);
-		}
+		//for (int iii = 3; iii < 19; iii++) {
+		//	nicInfo->cq_size_cores_per_phase[iii-3][ii] = get_cq_size(iii);
+		//}
 
 		nicInfo->next_phase_sampling_cycle+=1000;
 		if(nicInfo->sampling_phase_index < 30){
 			//info("sampling phase count: %d", nicInfo->sampling_phase_index);
 		}
 	}
+
+}
+
+int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void* lg_p_in, uint32_t core_id, uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d, uint16_t level, uint32_t lg_i) {
+/*
+* inject_incoming_packet - takes necessary architectural AND microarchitectural actions to inject packet
+*				fetches next msg from load generator
+*				allocates recv buffer and writes msg to it
+*				record the memory access from injection (microarchitecutral)
+*				creates ceq entry (architectural)
+*/
+	//TODO: passing on l1d for now, to use getParent method. Will have to be updated with the correct Memory Direct access method
+	if (core_id > ((zinfo->numCores) - 1)) {
+		info("inject_incoming_packet - core_id out of bound: %d", core_id);
+	}
+
+	//info("inject incoming packet called, cur_cycle= %d", cur_cycle);
+	load_generator* lg_p = ((load_generator*) lg_p_in);
+
+	uint32_t core_i = lg_p->lgs[lg_i].last_core;
+	uint32_t cq_size = get_cq_size(core_i);
+	get_IRSR_stat(lg_p, nicInfo, core_i, cq_size);
+	// //log IR, SR, cq/ceq size for plotting to profile initila queue buildup
+	// //if(nicInfo->next_phase_sampling_cycle==0){
+	// if((nicInfo->next_phase_sampling_cycle==0) && (nicInfo->ready_for_inj==0xabcd)){
+	// 	nicInfo->next_phase_sampling_cycle=cur_cycle+1000;
+	// 	info("first sampling cycle: %d", nicInfo->next_phase_sampling_cycle);
+	// 	nicInfo->last_phase_sent_packets=lg_p->sent_packets;
+	// 	nicInfo->last_phase_done_packets=nicInfo->latencies_size;
+	// 	nicInfo->last_zsim_pahse = zinfo->numPhases;
+
+	// 	//put 0 data for index 0. To sync phases with mem bw
+	// 	nicInfo->sampling_phase_index++; 
+	// 	nicInfo->IR_per_phase[0]=0;
+	// 	nicInfo->SR_per_phase[0]=0;
+
+	// }
+
+
+	// if((cur_cycle > nicInfo->next_phase_sampling_cycle) && (nicInfo->ready_for_inj==0xabcd)){
+	// 	if((cur_cycle - (nicInfo->next_phase_sampling_cycle)) > 200){
+	// 		info("cur_cycle is too far ahead of phase sampling cycle by %d", (cur_cycle - (nicInfo->next_phase_sampling_cycle)));
+	// 		info("zsim_phases since last sampling phase: %d", ((zinfo->numPhases) - (nicInfo->last_zsim_pahse)));
+	// 	}
+	// 	uint32_t ii=nicInfo->sampling_phase_index;
+	// 	nicInfo->sampling_phase_index++;
+	// 	nicInfo->last_zsim_pahse = zinfo->numPhases;
+	// 	nicInfo->IR_per_phase[ii]=lg_p->sent_packets - nicInfo->last_phase_sent_packets;
+	// 	nicInfo->SR_per_phase[ii]=nicInfo->latencies_size - nicInfo->last_phase_done_packets;
+	// 	nicInfo->last_phase_sent_packets=lg_p->sent_packets;
+	// 	nicInfo->last_phase_done_packets=nicInfo->latencies_size;
+	// 	nicInfo->cq_size_per_phase[ii]=cq_size;
+	// 	nicInfo->ceq_size_per_phase[ii]=nicInfo->nic_elem[core_i].ceq_size;
+	// 	nicInfo->lg_clk_slack[ii] = 0;
+	// 	nicInfo->remaining_rb[ii] = nicInfo->nic_elem[core_i].rb_left;
+	// 	if(zinfo->mem_bw_len>0){
+	// 		nicInfo->mem_bw_sampled[ii]=zinfo->mem_bwdth[0][zinfo->mem_bw_len-1];
+	// 	}
+		
+	// 	//dbg
+	// 	if (cur_cycle > lg_p->lgs[0].next_cycle) {
+	// 		nicInfo->lg_clk_slack[ii] = (cur_cycle) - (lg_p->lgs[0].next_cycle);
+	// 	}
+
+	// 	//dbg - remove. only works for sepcific setup (16 cores)
+	// 	//assert(core_id > 2);
+	// 	//assert(core_id < 19);
+	// 	//for (int iii = 3; iii < 19; iii++) {
+	// 	//	nicInfo->cq_size_cores_per_phase[iii-3][ii] = get_cq_size(iii);
+	// 	//}
+
+	// 	nicInfo->next_phase_sampling_cycle+=1000;
+	// 	if(nicInfo->sampling_phase_index < 30){
+	// 		//info("sampling phase count: %d", nicInfo->sampling_phase_index);
+	// 	}
+	// }
 
 
 
