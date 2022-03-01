@@ -457,7 +457,7 @@ int RRPP_routine(uint64_t cur_cycle, glob_nic_elements* nicInfo, void* lg_p, uin
 	l1d: l1d of destination core
 */
 
-void get_IRSR_stat(load_generator* lg_p, glob_nic_elements* nicInfo, uint32_t core_i, uint32_t cq_size ){
+void get_IRSR_stat(uint64_t cur_cycle, load_generator* lg_p, glob_nic_elements* nicInfo, uint32_t core_i, uint32_t cq_size ){
 		//log IR, SR, cq/ceq size for plotting to profile initila queue buildup
 	//if(nicInfo->next_phase_sampling_cycle==0){
 	if((nicInfo->next_phase_sampling_cycle==0) && (nicInfo->ready_for_inj==0xabcd)){
@@ -533,7 +533,7 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 
 	uint32_t core_i = lg_p->lgs[lg_i].last_core;
 	uint32_t cq_size = get_cq_size(core_i);
-	get_IRSR_stat(lg_p, nicInfo, core_i, cq_size);
+	get_IRSR_stat(cur_cycle, lg_p, nicInfo, core_i, cq_size);
 	// //log IR, SR, cq/ceq size for plotting to profile initila queue buildup
 	// //if(nicInfo->next_phase_sampling_cycle==0){
 	// if((nicInfo->next_phase_sampling_cycle==0) && (nicInfo->ready_for_inj==0xabcd)){
