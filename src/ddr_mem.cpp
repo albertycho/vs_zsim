@@ -311,12 +311,13 @@ bool is_rb_addr(Address lineaddr){
         uint64_t rb_top =rb_base+nicInfo->recv_buf_pool_size;
         uint64_t rb_base_line=rb_base>>lineBits;
         uint64_t rb_top_line = rb_top>>lineBits;
+        //mem uses address splitter, so apply same to rb addresses
+        rb_base_line = rb_base_line / (nicInfo->num_controllers);               
+        rb_top_line = rb_top_line / (nicInfo->num_controllers); 
         if (lineaddr >= rb_base_line && lineaddr <= rb_top_line) {
             return true;
         }
     }
-
-
     return false;
 }
 
@@ -336,13 +337,15 @@ uint64_t DDRMemory::access(MemReq& req) {
 
     switch (req.type) {
         case PUTS:
-            total_access_count.inc();
+            //total_access_count.inc(); // no break, so it will be counted by PUTX case
         case PUTX:
             total_access_count.inc();
             *req.state = I;
-            if(is_rb_addr(req.lineAddr)){
-                //increment rb dirty eviction count
-                rb_dirty_evic_count.inc();
+            if(req.type == PUTX){ // PUTS case doesn't break, so add this if
+                if(is_rb_addr(req.lineAddr)){
+                    //increment rb dirty eviction count
+                    rb_dirty_evic_count.inc();
+                }
             }
             break;
         case GETS:
