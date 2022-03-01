@@ -240,6 +240,7 @@ void DDRMemory::initStats(AggregateStat* parentStat) {
     profTotalRdLat.init("rdlat", "Total latency experienced by read requests"); memStats->append(&profTotalRdLat);
     profTotalWrLat.init("wrlat", "Total latency experienced by write requests"); memStats->append(&profTotalWrLat);
     total_access_count.init("total_accesses", "count all requests at access method"); memStats->append(&total_access_count);
+    rb_dirty_evic_count.init("rb_dirty_evic", "count recv buf dirty evictinos to mem"); memStats->append(&rb_dirty_evic_count);
     profReadHits.init("rdhits", "Read row hits"); memStats->append(&profReadHits);
     profWriteHits.init("wrhits", "Write row hits"); memStats->append(&profWriteHits);
     profAccs.init("accs","Getx+Gets reaching mem in bound"); memStats->append(&profAccs);
@@ -303,6 +304,22 @@ void DDRMemory::EstimateBandwidth() {
 }
 
 
+bool is_rb_addr(Address lineaddr){
+    uint64_t num_cores = zinfo->numCores;
+    for(int i=0; i<num_cores;i++){
+        uint64_t rb_base=nicInfo->nic_elem[i].recv_buf;
+        uint64_t rb_top =rb_base+nicInfo->recv_buf_pool_size;
+        uint64_t rb_base_line=rb_base>>lineBits;
+        uint64_t rb_top_line = rb_top>>lineBits;
+        if (lineAddr >= rb_base_line && lineAddr <= rb_top_line) {
+            return true;
+        }
+    }
+
+
+    return false;
+}
+
 uint64_t DDRMemory::access(MemReq& req) {
     
     if (nicInfo->ready_for_inj==0xabcd && zinfo->numPhases > lastPhase) {
@@ -323,6 +340,10 @@ uint64_t DDRMemory::access(MemReq& req) {
         case PUTX:
             total_access_count.inc();
             *req.state = I;
+            if(is_rb_addr(req.lineAddr)){
+                //increment rb dirty eviction count
+                rb_dirty_evic_count.inc();
+            }
             break;
         case GETS:
             if(!(req.flags & MemReq::PKTOUT))
