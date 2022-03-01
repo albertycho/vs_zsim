@@ -307,11 +307,11 @@ void DDRMemory::EstimateBandwidth() {
 bool is_rb_addr(Address lineaddr){
     uint64_t num_cores = zinfo->numCores;
     for(int i=0; i<num_cores;i++){
-        uint64_t rb_base=nicInfo->nic_elem[i].recv_buf;
+        uint64_t rb_base=(uint64_t) nicInfo->nic_elem[i].recv_buf;
         uint64_t rb_top =rb_base+nicInfo->recv_buf_pool_size;
         uint64_t rb_base_line=rb_base>>lineBits;
         uint64_t rb_top_line = rb_top>>lineBits;
-        if (lineAddr >= rb_base_line && lineAddr <= rb_top_line) {
+        if (lineaddr >= rb_base_line && lineaddr <= rb_top_line) {
             return true;
         }
     }
