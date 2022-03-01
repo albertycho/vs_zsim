@@ -240,10 +240,10 @@ void DDRMemory::initStats(AggregateStat* parentStat) {
     profTotalRdLat.init("rdlat", "Total latency experienced by read requests"); memStats->append(&profTotalRdLat);
     profTotalWrLat.init("wrlat", "Total latency experienced by write requests"); memStats->append(&profTotalWrLat);
     total_access_count.init("total_accesses", "count all requests at access method"); memStats->append(&total_access_count);
-    rb_dirty_evic_count.init("rb_dirty_evic", "count recv buf dirty evictinos to mem"); memStats->append(&rb_dirty_evic_count);
     profReadHits.init("rdhits", "Read row hits"); memStats->append(&profReadHits);
     profWriteHits.init("wrhits", "Write row hits"); memStats->append(&profWriteHits);
     profAccs.init("accs","Getx+Gets reaching mem in bound"); memStats->append(&profAccs);
+    rb_dirty_evic_count.init("rb_dirty_evic", "count recv buf dirty evictinos to mem"); memStats->append(&rb_dirty_evic_count);
     latencyHist.init("mlh", "latency histogram for memory requests", NUMBINS); memStats->append(&latencyHist);
 
     /*
