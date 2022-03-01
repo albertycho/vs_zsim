@@ -418,11 +418,8 @@ class MESICC : public CC {
                     }
                 }
                 //TODO: Albert - add READNINV here?
-                if((req.flags & MemReq::READNINV) && (is_llc)){
-                    if(req.srcId == 3) {
-                        //info("CC: after bcc and tcc process access, readinv, state=%d",bcc->getState(lineId));
-                    }
-                }
+                //handling it in bcc->processAccess
+                //if((req.flags & MemReq::READNINV) && (is_llc)){}
             }           
             else {
             //info("Passing to next cache");

@@ -116,7 +116,6 @@ uint64_t TimingCache::access(MemReq& req) {
     bool is_llc=false;
     //for plotting
     if(level==1){//llc
-        nicInfo->cur_llc_active_misses = activeMisses;
         is_llc=true;
     }
 

@@ -507,7 +507,6 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 		nicInfo->last_phase_done_packets=nicInfo->latencies_size;
 		nicInfo->cq_size_per_phase[ii]=cq_size;
 		nicInfo->ceq_size_per_phase[ii]=nicInfo->nic_elem[core_i].ceq_size;
-		nicInfo->llc_acitve_misses[ii]=nicInfo->cur_llc_active_misses;
 		nicInfo->lg_clk_slack[ii] = 0;
 		nicInfo->remaining_rb[ii] = nicInfo->nic_elem[core_i].rb_left;
 		if(zinfo->mem_bw_len>0){

@@ -268,8 +268,6 @@ struct glob_nic_elements {
 	uint32_t ceq_size_per_phase[100000]; 
 	float 	 mem_bw_sampled[100000];
 	int		 remaining_rb[100000];
-	uint32_t llc_acitve_misses[100000];
-	uint32_t cur_llc_active_misses=0;
 	uint32_t next_phase_sampling_cycle=0;
 	//dbg
 	uint32_t lg_clk_slack[100000];
