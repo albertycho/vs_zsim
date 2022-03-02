@@ -705,7 +705,7 @@ int main(int argc, char *argv[]) {
         }
     }
     dump_IR_SR_stat();
-    dump_rb_use_counters();
+    //dump_rb_use_counters();
 
 
     uint32_t exitCode = 0;
