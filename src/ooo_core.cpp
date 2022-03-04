@@ -797,6 +797,7 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
     
     case 3: //get buf_size for lbuf. Is called before case 2 (but this was coded later)
         num_cline = (((UINT64)(val)) / (sizeof(z_cacheline))) + 1; //+1 in case remainder..
+        info("before *4, \n num_cline = %d, val = %d, sizeof z_cacheline = %d",num_cline, val, sizeof(z_cacheline));
         num_cline = num_cline*4;
         NICELEM.lbuf = gm_calloc<z_cacheline>(num_cline);
         break;
