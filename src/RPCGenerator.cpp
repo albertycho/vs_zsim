@@ -211,7 +211,8 @@ RPCGenerator::generatePackedRPC(char* userBuffer, uint32_t packet_size) const {
 		entry.key.ip_dst[15] = (port+1) % 256;//BYTE_VALUE_MAX;
 		convert_ipv6_5tuple(&entry.key, &newkey);
 		memcpy(userBuffer, &newkey, sizeof(newkey));
-		return sizeof(newkey);
+		//return sizeof(newkey);
+		return packet_size;
 	}
 
 	//Other cases?
