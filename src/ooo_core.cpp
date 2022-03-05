@@ -887,6 +887,12 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
             }
             break;
         }
+
+        case 0x16: //register all_packets_SENT for l3fwd. used to prevent hang when batching
+        *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(lg_p->all_packets_sent));
+		
+        break;
+
     case 0xdead: //invalidate entries after test app terminates
         nicInfo->registered_core_count = nicInfo->registered_core_count - 1;
 
