@@ -1198,6 +1198,11 @@ void cycle_increment_routine(uint64_t& curCycle, int core_id) {
     if(procIdx==nicInfo->nic_ingress_pid){
         //std::cout<<"procIdx available in cycle_increment routine"<<std::endl;
         ((OOOCore *)(nicInfo->nicCore_ingress))->nic_ingress_routine_per_cycle(core_id);
+        void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
+        load_generator* lg_p = (load_generator*)lg_p_vp;
+        if (lg_p->all_packets_completed && !(lg_p->all_packets_completed)) {
+            info("outstanding packets to be completed: %d",(lg_p->target_packet_count - nicInfo->latencies_size));
+        }
     }
 
     if (!(nicInfo->nic_elem[core_id].cq_valid)) {
