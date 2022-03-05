@@ -1200,7 +1200,7 @@ void cycle_increment_routine(uint64_t& curCycle, int core_id) {
         ((OOOCore *)(nicInfo->nicCore_ingress))->nic_ingress_routine_per_cycle(core_id);
         void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
         load_generator* lg_p = (load_generator*)lg_p_vp;
-        if (lg_p->all_packets_completed && !(lg_p->all_packets_completed)) {
+        if (lg_p->all_packets_sent && !(lg_p->all_packets_completed)) {
             info("outstanding packets to be completed: %d",(lg_p->target_packet_count - nicInfo->latencies_size));
         }
     }
