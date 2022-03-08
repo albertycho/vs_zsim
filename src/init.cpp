@@ -1061,6 +1061,8 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     //glob_nic_elements* nicInfo= gm_calloc<glob_nic_elements>();
     nicInfo = gm_calloc<glob_nic_elements>();
     futex_init(&(nicInfo->dpq_lock));
+    futex_init(&(nicInfo->ptag_dbug_lock));
+    
     nicInfo->done_packet_q_head = NULL;
     nicInfo->done_packet_q_tail = NULL;
     futex_init(&(nicInfo->nic_lock));

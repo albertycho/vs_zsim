@@ -280,6 +280,12 @@ struct glob_nic_elements {
 	std::chrono::system_clock::time_point sim_start_time;
 	std::chrono::system_clock::time_point sim_end_time;
 
+	//temp debug counters
+	uint64_t free_rb_call_count=0;
+	uint64_t process_wq_entry_count=0;
+	uint64_t rmc_send_count=0;
+	lock_t ptag_dbug_lock;
+
 	PAD();
 	nic_element nic_elem[MAX_NUM_CORES];
 

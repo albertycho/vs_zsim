@@ -68,6 +68,9 @@ int tc_map_insert(uint64_t in_ptag, uint64_t issue_cycle, uint64_t core_id) {
 		info("sent: %d, completed: %d",sent_p, done_p)
 		info("already have %lld", ptag);
 		info("remining rb on current core: %d", nicInfo->remaining_rb[nicInfo->sampling_phase_index-1]);
+		info("process_wq_entry called %d",nicInfo->process_wq_entry_count);
+		info("free rb called		  %d",nicInfo->free_rb_call_count);
+		info("rmc_send_withptag count %d",nicInfo->rmc_send_count);
 		panic("already have %lld", ptag);
 	}
 
@@ -791,6 +794,11 @@ int free_recv_buf_addr(uint64_t buf_addr, uint32_t core_id) {
 	*       (added layer of function for easier edit/debug)
 	*/
 
+	//dbg count
+	futex_lock(&(nicInfo->ptag_dbug_lock));
+	nicInfo->free_rb_call_count++;
+	futex_unlock(&(nicInfo->ptag_dbug_lock));
+
 	uint64_t buf_base = (uint64_t)(&(NICELEM.recv_buf[0]));
 	uint64_t offset = buf_addr - buf_base;
 	uint32_t head = (uint32_t)(offset); //divide by size of buffer entry in bytes
@@ -992,6 +1000,10 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 
 void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elements* nicInfo)
 {
+	//debug count
+	futex_lock(&(nicInfo->ptag_dbug_lock));
+	nicInfo->process_wq_entry_count++;
+	futex_unlock(&(nicInfo->ptag_dbug_lock));
 	/*
 	* process_wq_entry - handles the wq_entry by calling appropirate action based on OP
 	*/
@@ -1009,7 +1021,12 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
 	}
 
 	if (cur_wq_entry.op == RMC_SEND)
-	{	/*
+	{	
+		//debug count
+		futex_lock(&(nicInfo->ptag_dbug_lock));
+		nicInfo->rmc_send_count++;
+		futex_unlock(&(nicInfo->ptag_dbug_lock));
+		/*
 		if(nicInfo->send_in_loop){
 			assert(nicInfo->nic_elem[core_id].packet_pending==true);
 			futex_lock(&nicInfo->nic_elem[core_id].packet_pending_lock);
