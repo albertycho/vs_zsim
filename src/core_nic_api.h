@@ -61,6 +61,11 @@ int tc_map_insert(uint64_t in_ptag, uint64_t issue_cycle, uint64_t core_id) {
 	futex_lock(&lg_p->ptc_lock);
 	
 	if((lg_p->tc_map[ptag].core_id) != 0){
+		info("duplicate ptag found");
+		glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
+		uint64_t sent_p = lg_p->sent_packets;
+		uint64_t done_p = nicInfo->latencies_size;
+		info("sent: %d, completed: %d",sent_p, done_p)
 		panic("already have %lld", ptag);
 	}
 
