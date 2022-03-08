@@ -66,6 +66,8 @@ int tc_map_insert(uint64_t in_ptag, uint64_t issue_cycle, uint64_t core_id) {
 		uint64_t sent_p = lg_p->sent_packets;
 		uint64_t done_p = nicInfo->latencies_size;
 		info("sent: %d, completed: %d",sent_p, done_p)
+		info("already have %lld", ptag);
+		info("remining rb on current core: %d", nicInfo->remaining_rb[nicInfo->sampling_phase_index-1]);
 		panic("already have %lld", ptag);
 	}
 
