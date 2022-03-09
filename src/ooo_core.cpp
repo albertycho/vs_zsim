@@ -827,7 +827,7 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
             nicInfo->nic_init_done = true;
         }
         //nicInfo->nicCore_egress = (void*)cores[tid];
-        nicInfo->nicCore_egress = (void*)cores;
+        nicInfo->nicCore_egress = (void*)core;
         break;
 
     case 0xD: //send all client_done boolean to the server app to monitor for termination condition
@@ -1209,9 +1209,10 @@ void cycle_increment_routine(uint64_t& curCycle, int core_id) {
         return;
     }
     if ((nicInfo->nic_egress_pid == procIdx) && (nicInfo->nic_init_done) && nicInfo->ready_for_inj==0xabcd) {
-        uint32_t srcId = getCid(tid);
+        //uint32_t srcId = getCid(tid);
         //assert(srcId == 0);
-        deq_dpq(srcId, core, &(core->cRec), core->l1d/*MemObject* dest*/, core->curCycle, core->egr_type);
+        OOOCore* core = nicInfo->nicCore_egress;
+        deq_dpq(1, core, &(core->cRec), core->l1d/*MemObject* dest*/, core->curCycle, core->egr_type);
     }
     
 
