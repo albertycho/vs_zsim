@@ -74,6 +74,8 @@ int tc_map_insert(uint64_t in_ptag, uint64_t issue_cycle, uint64_t core_id) {
 		info("valid deq_dpqCall count %d",nicInfo->deq_dpq_count);
 		info("enq_dpq count      	  %d",nicInfo->enq_dpq_count);
 		info("dpq size				  %d", nicInfo->dpq_size);
+		info("conseq_validDeqDpqCall  %d",nicInfo->conseq_valid_deq_dpq_count);
+		info("delat dpq size          %d",nicInfo->delta_dpq_size);
 		panic("already have %lld", ptag);
 	}
 
@@ -900,6 +902,11 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
 
+	//debug 
+	nicInfo->delta_dpq_size = nicInfo->dpq_size - nicInfo->last_dpq_size;
+	nicInfo->last_dpq_size = nicInfo->dpq_size;
+
+
 	futex_lock(&(nicInfo->dpq_lock));
 	//while () {
 		if(nicInfo->done_packet_q_head != NULL) {
@@ -911,6 +918,11 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 			//info("dpq_size = %lld",nicInfo->dpq_size);
 			nicInfo->dpq_size--;
 			futex_unlock(&(nicInfo->dpq_lock));
+
+
+			////debug counters
+			nicInfo->last_deq_dpq_call_valid=true;
+			nicInfo->conseq_valid_deq_dpq_count++;
 				
 			uint64_t end_cycle = dp->end_cycle;
 
@@ -1011,9 +1023,12 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 				info("all packets received");
 			}
 		//std::cout << "Packet Tag: " << ptag << ", core "<<core_id << ", start_cycle: " << start_cycle << ", end_cycle: " << end_cycle << ", p_latency: " << p_latency << std::endl;
+		
 		}
 		else {
 			futex_unlock(&(nicInfo->dpq_lock));
+			nicInfo->last_deq_dpq_call_valid=false;
+			nicInfo->conseq_valid_deq_dpq_count=0;
 		}
 	//}
 
