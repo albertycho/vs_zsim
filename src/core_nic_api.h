@@ -893,14 +893,6 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
 
-
-	//debug count
-	futex_lock(&(nicInfo->ptag_dbug_lock));
-	nicInfo->deq_dpq_count++;
-	futex_unlock(&(nicInfo->ptag_dbug_lock));
-
-
-
 	futex_lock(&(nicInfo->dpq_lock));
 	//while () {
 		if(nicInfo->done_packet_q_head != NULL) {
@@ -972,6 +964,12 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 				info("deq_dpq: tc_mam[%d] is already empty",ptag);
 			}
 			///////////////
+
+			//debug count
+			futex_lock(&(nicInfo->ptag_dbug_lock));
+			nicInfo->deq_dpq_count++;
+			futex_unlock(&(nicInfo->ptag_dbug_lock));
+
 
 			lg_p->tc_map[ptag].core_id=0;
 			//lg_p->tc_map_core->erase(ptag);
