@@ -290,7 +290,7 @@ struct glob_nic_elements {
 	bool last_deq_dpq_call_valid=false;
 	int delta_dpq_size=0;
 	int last_dpq_size=0;
-	int delta_dpq_sizes[100];
+	int delta_dpq_sizes[1000];
 	uint64_t delta_dpq_index=0;
 	lock_t ptag_dbug_lock;
 
