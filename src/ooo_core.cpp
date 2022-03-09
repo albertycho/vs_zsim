@@ -1212,7 +1212,8 @@ void cycle_increment_routine(uint64_t& curCycle, int core_id) {
         //uint32_t srcId = getCid(tid);
         //assert(srcId == 0);
         OOOCore* core = nicInfo->nicCore_egress;
-        deq_dpq(1, core, &(core->cRec), core->l1d/*MemObject* dest*/, core->curCycle, core->egr_type);
+        OOOCoreRecorder* cRec = core->get_cRec_ptr;
+        deq_dpq(1, core, cRec, core->l1d/*MemObject* dest*/, curCycle, core->egr_type);
     }
     
 

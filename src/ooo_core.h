@@ -470,6 +470,9 @@ class OOOCore : public Core {
         uint64_t getPhaseCycles() const;
         uint64_t getCycles() const {return cRec.getUnhaltedCycles(curCycle);}
 
+        OOOCoreRecorder * get_cRec_ptr(){return &cRec;}
+        
+
         //new getCycle for synching during bound
         uint64_t getCycles_forSynch() { return curCycle; }
 
