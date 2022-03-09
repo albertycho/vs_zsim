@@ -285,6 +285,7 @@ struct glob_nic_elements {
 	uint64_t process_wq_entry_count=0;
 	uint64_t rmc_send_count=0;
 	uint64_t deq_dpq_count=0;
+	uint64_t enq_dpq_count=0;
 	lock_t ptag_dbug_lock;
 
 	PAD();

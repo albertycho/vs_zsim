@@ -72,6 +72,8 @@ int tc_map_insert(uint64_t in_ptag, uint64_t issue_cycle, uint64_t core_id) {
 		info("free rb called		  %d",nicInfo->free_rb_call_count);
 		info("rmc_send_withptag count %d",nicInfo->rmc_send_count);
 		info("valid deq_dpqCall count %d",nicInfo->deq_dpq_count);
+		info("enq_dpq count      	  %d",nicInfo->enq_dpq_count);
+		info("dpq size				  %d", nicInfo->dpq_size);
 		panic("already have %lld", ptag);
 	}
 
@@ -880,6 +882,11 @@ int enq_dpq(uint64_t lbuf_addr, uint64_t end_time, uint64_t ptag, uint64_t lengt
 	nicInfo->dpq_size++;
 	//info("dpq_size = %d", nicInfo->dpq_size);
 	futex_unlock(&(nicInfo->dpq_lock));
+	
+	///debug count
+	futex_lock(&(nicInfo->ptag_dbug_lock));
+	nicInfo->enq_dpq_count++;
+	futex_unlock(&(nicInfo->ptag_dbug_lock));
 
 	return 0;
 }
