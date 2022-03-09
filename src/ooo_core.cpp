@@ -636,11 +636,11 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) {
         ///////////////CALL DEQ_DPQ//////////////////////
     }
-    if ((nicInfo->nic_egress_pid == procIdx) && (nicInfo->nic_init_done) && nicInfo->ready_for_inj==0xabcd) {
-        uint32_t srcId = getCid(tid);
-        //assert(srcId == 0);
-        deq_dpq(srcId, core, &(core->cRec), core->l1d/*MemObject* dest*/, core->curCycle, core->egr_type);
-    }
+    // if ((nicInfo->nic_egress_pid == procIdx) && (nicInfo->nic_init_done) && nicInfo->ready_for_inj==0xabcd) {
+    //     uint32_t srcId = getCid(tid);
+    //     //assert(srcId == 0);
+    //     deq_dpq(srcId, core, &(core->cRec), core->l1d/*MemObject* dest*/, core->curCycle, core->egr_type);
+    // }
     
     // Simple synchronization mechanism for enforcing producer consumer order for NIC_Ingress and other cores
     if ((nicInfo->nic_ingress_pid != procIdx) && (nicInfo->nic_init_done)) {
@@ -1207,6 +1207,11 @@ void cycle_increment_routine(uint64_t& curCycle, int core_id) {
 
     if (!(nicInfo->nic_elem[core_id].cq_valid)) {
         return;
+    }
+    if ((nicInfo->nic_egress_pid == procIdx) && (nicInfo->nic_init_done) && nicInfo->ready_for_inj==0xabcd) {
+        uint32_t srcId = getCid(tid);
+        //assert(srcId == 0);
+        deq_dpq(srcId, core, &(core->cRec), core->l1d/*MemObject* dest*/, core->curCycle, core->egr_type);
     }
     
 
