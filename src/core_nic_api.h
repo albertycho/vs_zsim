@@ -71,7 +71,7 @@ int tc_map_insert(uint64_t in_ptag, uint64_t issue_cycle, uint64_t core_id) {
 		info("process_wq_entry called %d",nicInfo->process_wq_entry_count);
 		info("free rb called		  %d",nicInfo->free_rb_call_count);
 		info("rmc_send_withptag count %d",nicInfo->rmc_send_count);
-		info("deq_dpq call count      %d",nicInfo->deq_dpq_count);
+		info("valid deq_dpqCall count %d",nicInfo->deq_dpq_count);
 		panic("already have %lld", ptag);
 	}
 
