@@ -884,12 +884,21 @@ int enq_dpq(uint64_t lbuf_addr, uint64_t end_time, uint64_t ptag, uint64_t lengt
 }
 
 int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l1d/*MemObject* dest*/, uint64_t core_cycle, uint16_t level, uint16_t inval = 0) {
+	
 	/*
 	* deq_dpq - run by nic_core in bbl(). gets the packet latency info from tc_map
 	*			uarch access to memobject and record
 	*/
 	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
+
+
+	//debug count
+	futex_lock(&(nicInfo->ptag_dbug_lock));
+	nicInfo->deq_dpq_count++;
+	futex_unlock(&(nicInfo->ptag_dbug_lock));
+
+
 
 	futex_lock(&(nicInfo->dpq_lock));
 	//while () {
@@ -955,6 +964,13 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 			uint64_t core_id = tmstmp.core_id;
 			uint32_t start_phase = tmstmp.phase;
 			//uint32_t start_bbl = (*(lg_p->tc_map))[ptag].bbl;
+
+			//debug
+			if(ptag>65536) info("ptag > 65536 in deq_dpq");
+			if(lg_p->tc_map[ptag].core_id==0){
+				info("deq_dpq: tc_mam[%d] is already empty",ptag);
+			}
+			///////////////
 
 			lg_p->tc_map[ptag].core_id=0;
 			//lg_p->tc_map_core->erase(ptag);
