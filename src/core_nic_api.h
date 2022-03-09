@@ -76,6 +76,9 @@ int tc_map_insert(uint64_t in_ptag, uint64_t issue_cycle, uint64_t core_id) {
 		info("dpq size				  %d", nicInfo->dpq_size);
 		info("conseq_validDeqDpqCall  %d",nicInfo->conseq_valid_deq_dpq_count);
 		info("delat dpq size          %d",nicInfo->delta_dpq_size);
+		for(int iii=0; iii<100;iii++){
+			info("delta_dpq_sizes[%d]: %d",iii, nicInfo->delta_dpq_sizes[iii]);
+		}
 		panic("already have %lld", ptag);
 	}
 
@@ -905,6 +908,8 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 	//debug 
 	nicInfo->delta_dpq_size = nicInfo->dpq_size - nicInfo->last_dpq_size;
 	nicInfo->last_dpq_size = nicInfo->dpq_size;
+	nicInfo->delta_dpq_sizes[((nicInfo->delta_dpq_index++) % 100)]=nicInfo->delta_dpq_size;
+
 
 
 	futex_lock(&(nicInfo->dpq_lock));
