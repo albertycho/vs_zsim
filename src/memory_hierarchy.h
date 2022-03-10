@@ -45,7 +45,8 @@ typedef enum {
     GETS, // get line, exclusive permission not needed (triggered by a processor load)
     GETX, // get line, exclusive permission needed (triggered by a processor store o atomic access)
     PUTS, // clean writeback (lower cache is evicting this line, line was not modified)
-    PUTX  // dirty writeback (lower cache is evicting this line, line was modified)
+    PUTX,  // dirty writeback (lower cache is evicting this line, line was modified)
+    CLEAN
 } AccessType;
 
 /* Types of Invalidation. An Invalidation is a request issued from upper to lower
@@ -116,7 +117,9 @@ struct MemReq {
         PKTIN         = (1<<7),
         PKTOUT        = (1<<8),
         NETRELATED    = (1<<9),
-        READNINV      = (1<<10)
+        READNINV      = (1<<10),
+        NETRELATED_EGR= (1<<11),
+        NETRELATED_ING= (1<<12),
     };
     uint32_t flags;
 
