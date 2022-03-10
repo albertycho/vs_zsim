@@ -100,12 +100,16 @@ uint64_t MESIBottomCC::passToNext( Address lineAddr, AccessType type, uint32_t c
 uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessType type, uint64_t cycle, uint32_t srcId, uint32_t flags, bool is_llc) {
     uint64_t respCycle = cycle;
     MESIState* state;
+    bool isMiss = false;
+    bool isEgrToMem = false;
     if (lineId != -1) {
         state = &array[lineId];
     }
     else {
+        assert(flags & MemReq::PKTOUT || type == CLEAN);
         state = (MESIState*)malloc(sizeof(MESIState));
         *state = I;
+        isEgrToMem = true;
     }
     switch (type) {
         // A PUTS/PUTX does nothing w.r.t. higher coherence levels --- it dies here
@@ -119,6 +123,7 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
                 //Silent transition, record that block was written to
                 *state = M;
             }
+            isMiss = (*state == I);
             profPUTX.inc();
             break;
         case GETS:
@@ -131,6 +136,7 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
                 profGETNetLat.inc(netLat);
                 respCycle += nextLevelLat + netLat;
                 profGETSMiss.inc();
+                isMiss = true;
                 assert(*state == S || *state == E || (*state == I && (req.flags & MemReq::PKTOUT)));
             } else {
                 profGETSHit.inc();
@@ -164,6 +170,8 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
                     
                     if (*state == I) profGETXMissIM.inc();
                     else profGETXMissSM.inc();
+                    
+                    isMiss = true;
 
                     if ((flags & MemReq::PKTIN) && (flags >> 16 == 0)) {    // this is an ingress packed that is directed to the LLC and it missed, so we don't go to memory
                         //info("ddio ingress missed in llc, don't go to mem, state %s",MESIStateName(*state));
