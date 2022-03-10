@@ -203,24 +203,39 @@ class FilterCache : public Cache {
 			//info("filtercache: gm_seg_size: %d",gm_seg_size);
             Address nicLineAddr_bot = gm_base_addr >> lineBits;
             Address nicLineAddr_top = (gm_base_addr + gm_seg_size) >> lineBits;
-            if (vLineAddr >= nicLineAddr_bot && vLineAddr <= nicLineAddr_top) {
+            
+            //if (vLineAddr >= nicLineAddr_bot && vLineAddr <= nicLineAddr_top) {
             //if ((vLineAddr >= nicLineAddr_bot && vLineAddr <= nicLineAddr_top) && (source!=0)) { //just counting core access
             //    //std::cout << "app accessing nic element " << std::hex << vLineAddr << std::endl;
-                procMask_f = 0;
-                flags = flags | MemReq::NETRELATED;
-            }
-
-            //if read for RB from core (and inval_read_rb set)
-            if(isLoad && (nicInfo->inval_read_rb==1) &&(srcId>2)){
-                uint64_t rb_base = (uint64_t) (nicInfo->nic_elem[srcId].recv_buf);
-                uint64_t rb_top  = (uint64_t) rb_base + nicInfo->recv_buf_pool_size;
-                uint64_t rb_base_line=rb_base>>lineBits;
-                uint64_t rb_top_line =rb_top>>lineBits;
-                if (vLineAddr >= rb_base_line && vLineAddr <= rb_top_line) {
-                    flags = flags | MemReq::READNINV;
+            //    procMask_f = 0;
+                //flags = flags | MemReq::NETRELATED;
+            //}
+            
+            int i=3;
+            //glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+            while (i < nicInfo->expected_core_count + 3){
+                Address base_ing = (Address)(nicInfo->nic_elem[i].recv_buf) >> lineBits;
+                uint64_t size_ing = nicInfo->recv_buf_pool_size; 
+                Address top_ing = ((Address)(nicInfo->nic_elem[i].recv_buf) + size_ing) >> lineBits;
+                Address base_egr = (Address)(nicInfo->nic_elem[i].lbuf) >> lineBits;
+                uint64_t size_egr = 256*nicInfo->forced_packet_size;
+                Address top_egr = ((Address)(nicInfo->nic_elem[i].lbuf) + size_egr) >> lineBits;
+                if (vLineAddr >= base_ing && vLineAddr <= top_ing) {
+                    assert(vLineAddr >= nicLineAddr_bot && vLineAddr <= nicLineAddr_top);
+                    flags = flags | MemReq::NETRELATED_ING;
+                    procMask_f = 0;
+                    break;
                 }
-            }
-
+                else if (vLineAddr >= base_egr && vLineAddr <= top_egr) {
+                    assert(vLineAddr >= nicLineAddr_bot && vLineAddr <= nicLineAddr_top);
+                    flags = flags | MemReq::NETRELATED_EGR;
+                    procMask_f = 0;
+                    break;
+                }
+                i++;
+            }           
+            
+            
             Address pLineAddr = procMask_f | vLineAddr;
             MESIState dummyState = MESIState::I;
             futex_lock(&filterLock);

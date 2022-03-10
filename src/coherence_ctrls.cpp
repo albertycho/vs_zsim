@@ -197,6 +197,60 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
 
         default: panic("!?");
     }
+    if (type != PUTS && type != PUTX && type != CLEAN) {
+        if (flags & MemReq::NETRELATED_ING) {
+            if (srcId > 1) {
+                if(isMiss)
+                    netMiss_core_rb.inc();
+                else
+                    netHit_core_rb.inc();
+            }
+            else {
+                assert (flags & MemReq::PKTIN);
+                if(isMiss)
+                    netMiss_nic_rb.inc();
+                else 
+                    netHit_nic_rb.inc();
+            } 
+        }   
+        else if (flags & MemReq::NETRELATED_EGR) {          
+            if (srcId > 1) {
+                if(isMiss)
+                    netMiss_core_lb.inc();
+                else 
+                    netHit_core_lb.inc();
+            }
+            else {
+                assert(flags & MemReq::PKTOUT);
+                if(isMiss)
+                    netMiss_nic_lb.inc();
+                else
+                    netHit_nic_lb.inc();
+            }
+                        
+        }
+        else {
+            if (srcId > 1) {
+                if(isMiss)
+                    appMiss.inc();
+                else 
+                    appHit.inc();
+            }
+            else {
+                if(isMiss)
+                    nicMiss.inc();
+                else
+                    nicHit.inc();
+            }
+        }
+    }
+    else if (srcId > 1 && type != CLEAN) {
+        if(isMiss)
+            appPutMiss.inc();
+        else 
+            appPutHit.inc(); 
+    }
+    
     assert_msg(respCycle >= cycle, "XXX %ld %ld", respCycle, cycle);
     return respCycle;
 }
