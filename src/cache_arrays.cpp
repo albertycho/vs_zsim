@@ -53,27 +53,27 @@ SetAssocArray::SetAssocArray(uint32_t _numLines, uint32_t _assoc, ReplPolicy* _r
 void SetAssocArray::initStats(AggregateStat* parentStat) {
     AggregateStat* objStats = new AggregateStat();
     objStats->init("array", "CacheArray stats");
-    netMisses_nic_rb.init("netMiss_nic_rb", "Requests associated with network functionality from nic for recv buffer, misses");
-    netMisses_nic_lb.init("netMiss_nic_lb", "Requests associated with network functionality from nic for local buffer, misses");
-    netMisses_core.init("netMiss_core", "Requests associated with network functionality from core, misses");
-    netHits_nic_rb.init("netHit_nic_rb", "Requests associated with network functionality from nic for recv buffer, hits");
-    netHits_nic_lb.init("netHit_nic_lb", "Requests associated with network functionality from nic for local buffer, hits");
-    netHits_core.init("netHit_core", "Requests associated with network functionality from core, hits");
-    appMisses.init("appMiss", "Requests associated with app functionality, misses");
-    appHits.init("appHit", "Requests associated with app functionality, hits");
+	//netMisses_nic_rb.init("netMiss_nic_rb", "Requests associated with network functionality from nic for recv buffer, misses");
+    //netMisses_nic_lb.init("netMiss_nic_lb", "Requests associated with network functionality from nic for local buffer, misses");
+    //netMisses_core.init("netMiss_core", "Requests associated with network functionality from core, misses");
+    //netHits_nic_rb.init("netHit_nic_rb", "Requests associated with network functionality from nic for recv buffer, hits");
+    //netHits_nic_lb.init("netHit_nic_lb", "Requests associated with network functionality from nic for local buffer, hits");
+    //netHits_core.init("netHit_core", "Requests associated with network functionality from core, hits");
+    //appMisses.init("appMiss", "Requests associated with app functionality, misses");
+    //appHits.init("appHit", "Requests associated with app functionality, hits");
     way_misses.init("way_inserts", "Insertions per cache way",assoc);
     way_hits.init("way_hits", "Hits per cache way",assoc);
     nic_rb_way_hits.init("nic_rb_way_hits", "Hits per cache way",assoc);
     nic_rb_way_misses.init("nic_rb_way_inserts", "Insertions per cache way",assoc);
-    objStats->append(&netMisses_nic_rb);
-    objStats->append(&netMisses_nic_lb);
-    objStats->append(&netMisses_core);
-    //objStats->append(&netHits_nic);
-    objStats->append(&netHits_nic_rb);
-    objStats->append(&netHits_nic_lb);
-    objStats->append(&netHits_core);
-    objStats->append(&appMisses);
-    objStats->append(&appHits);
+    //objStats->append(&netMisses_nic_rb);
+    //objStats->append(&netMisses_nic_lb);
+    //objStats->append(&netMisses_core);
+    ////objStats->append(&netHits_nic);
+    //objStats->append(&netHits_nic_rb);
+    //objStats->append(&netHits_nic_lb);
+    //objStats->append(&netHits_core);
+    //objStats->append(&appMisses);
+    //objStats->append(&appHits);
     objStats->append(&way_misses);
     objStats->append(&way_hits);
     objStats->append(&nic_rb_way_hits);
@@ -94,16 +94,16 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
                 if (req->flags & MemReq::NETRELATED) {
                     array[id].nicType = NETWORK;
                     if (req->srcId > 1) {
-                        netHits_core.atomicInc();
+                        //netHits_core.atomicInc();
                     }
                     else {
                         //netHits_nic.atomicInc();
                         if(req->flags & MemReq::PKTIN){
-                            netHits_nic_rb.atomicInc();
+                            //netHits_nic_rb.atomicInc();
                             nic_rb_way_hits.inc(id-first);
                         }
                         else if(req->flags & MemReq::PKTOUT){
-                            netHits_nic_lb.atomicInc();
+                            //netHits_nic_lb.atomicInc();
                         }
                         else{
                             printf("NETWORK related access from nic but not PKTIN or PKTOUT? shouldn't happen\n");
@@ -112,7 +112,7 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
                 }
                 else {
                     array[id].nicType = DATA;
-                    appHits.atomicInc();
+                    //appHits.atomicInc();
                 }
             }
             way_hits.inc(id-first);
@@ -124,14 +124,14 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
     if (req != nullptr) {
         if (req->flags & MemReq::NETRELATED) {
             if (req->srcId > 1) {
-                netMisses_core.atomicInc();
+                //netMisses_core.atomicInc();
             }
             else {
                 if(req->flags & MemReq::PKTIN){
-                    netMisses_nic_rb.atomicInc();
+                    //netMisses_nic_rb.atomicInc();
                 }
                 else if(req->flags & MemReq::PKTOUT){
-                    netMisses_nic_lb.atomicInc();
+                    //netMisses_nic_lb.atomicInc();
                 }
                 else{
                     printf("NETWORK related access from nic but not PKTIN or PKTOUT? shouldn't happen\n");
@@ -139,7 +139,7 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
             }
         }
         else {
-            appMisses.atomicInc();
+            //appMisses.atomicInc();
         }
     }
     return -1;

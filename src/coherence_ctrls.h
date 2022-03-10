@@ -98,6 +98,10 @@ class MESIBottomCC : public GlobAlloc {
         //Counter profWBIncl, profWBCoh /* writebacks due to inclusion or coherence, received from downstream, does not include PUTS */;
         // TODO: Measuring writebacks is messy, do if needed
         Counter profGETNextLevelLat, profGETNetLat;
+        Counter netMiss_core_rb, netMiss_core_lb, netMiss_nic_rb, netMiss_nic_lb;
+        Counter netHit_core_rb, netHit_core_lb, netHit_nic_rb, netHit_nic_lb;
+        Counter appMiss, appHit, nicMiss, nicHit;
+        Counter appPutMiss, appPutHit;
 
         bool nonInclusiveHack;
 
@@ -138,7 +142,19 @@ class MESIBottomCC : public GlobAlloc {
             profFWD.init("FWD", "Forwards (from upper level)");
             profGETNextLevelLat.init("latGETnl", "GET request latency on next level");
             profGETNetLat.init("latGETnet", "GET request latency on network to next level");
-
+            netMiss_core_rb.init("netMiss_core_rb", "Ingress GET misses, app cores");
+            netHit_core_rb.init("netHit_core_rb", "Ingress GET hits, app cores");
+            netMiss_core_lb.init("netMiss_core_lb", "Egress GET misses, app cores");
+            netHit_core_lb.init("netHit_core_lb", "Egress GET hits, app cores");
+            netMiss_nic_rb.init("netMiss_nic_rb", "Ingress GET misses, NIC");
+            netHit_nic_rb.init("netHit_nic_rb", "Ingress GET hits, NIC");
+            netMiss_nic_lb.init("netMiss_nic_lb", "Egress GET misses, NIC");
+            netHit_nic_lb.init("netHit_nic_lb", "Egress GET hits, NIC");
+            appMiss.init("appMiss","App data-related GET misses");
+            appHit.init("appHit","App data-related GET hits");
+            appPutMiss.init("appPutMiss","App data-related PUT misses");
+            appPutHit.init("appPutHit","App data-related PUT hits");
+            
             parentStat->append(&profGETSHit);
             parentStat->append(&profGETXHit);
             parentStat->append(&profGETSMiss);
@@ -151,6 +167,20 @@ class MESIBottomCC : public GlobAlloc {
             parentStat->append(&profFWD);
             parentStat->append(&profGETNextLevelLat);
             parentStat->append(&profGETNetLat);
+            parentStat->append(&netMiss_core_lb);
+            parentStat->append(&netHit_core_lb);
+            parentStat->append(&netMiss_core_rb);
+            parentStat->append(&netHit_core_rb);
+            parentStat->append(&netMiss_nic_lb);
+            parentStat->append(&netHit_nic_lb);
+            parentStat->append(&netMiss_nic_rb);
+            parentStat->append(&netHit_nic_rb);
+            parentStat->append(&appMiss);
+            parentStat->append(&appHit);
+            parentStat->append(&appPutHit);
+            parentStat->append(&appPutMiss);
+            //parentStat->append(&nicMiss);
+            //parentStat->append(&nicHit);
         }
 
         uint64_t processEviction(Address wbLineAddr, int32_t lineId, bool lowerLevelWriteback, uint64_t cycle, uint32_t srcId, bool no_record);
