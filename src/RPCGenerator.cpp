@@ -207,7 +207,7 @@ RPCGenerator::generatePackedRPC(char* userBuffer, uint32_t packet_size) const {
 		/* Create the ipv6 exact match flow */
 		memset(&entry, 0, sizeof(entry));
 		entry = ipv6_l3fwd_em_route_array[port];
-			if(key_i>63){
+		if(key_i>63){
 			for(int j=0; j<IPV6_ADDR_LEN-1;j++){
 				uint64_t a=key_i>>(j*2);
 				uint8_t b =a&3;
@@ -215,8 +215,8 @@ RPCGenerator::generatePackedRPC(char* userBuffer, uint32_t packet_size) const {
 				entry.key.ip_src[j]+=b;
 			}
 		}
-		//entry.key.ip_dst[15] = (key_i + 1) % 256;//BYTE_VALUE_MAX;
-		entry.key.ip_dst[15] = (port+1) % 256;//BYTE_VALUE_MAX;
+		entry.key.ip_dst[15] = (key_i + 1) % 256;//BYTE_VALUE_MAX;
+		//entry.key.ip_dst[15] = (port+1) % 256;//BYTE_VALUE_MAX;
 		convert_ipv6_5tuple(&entry.key, &newkey);
 		memcpy(userBuffer, &newkey, sizeof(newkey));
 		//return sizeof(newkey);
