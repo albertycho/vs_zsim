@@ -243,18 +243,18 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
             if (srcId > 1) {
                 if (isMiss) {
                     appMiss.inc();
-                    if (nicInfo->nic_elem[req->srcId].app_l3_access_flag != 1) {
+                    if (nicInfo->nic_elem[srcId].app_l3_access_flag != 1) {
                         info("cachearray lookup was not called, but CC got access");
                     }
-                    nicInfo->nic_elem[req->srcId].app_l3_access_flag = 0;
+                    nicInfo->nic_elem[srcId].app_l3_access_flag = 0;
                 }
                     
                 else {
                     appHit.inc();
-                    if (nicInfo->nic_elem[req->srcId].app_l3_access_flag != 1) {
+                    if (nicInfo->nic_elem[srcId].app_l3_access_flag != 1) {
                         info("cachearray lookup was not called, but CC got access");
                     }
-                    nicInfo->nic_elem[req->srcId].app_l3_access_flag = 0;
+                    nicInfo->nic_elem[srcId].app_l3_access_flag = 0;
                 }
             }
             else {
