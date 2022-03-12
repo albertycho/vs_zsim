@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
                 break;     
             default:                                                            
                 printf("Invalid argument %d\n", c);                             
-                assert(false);                                                  
+                //assert(false);                                                  
         }                                                                       
     }                                                                           
                 
