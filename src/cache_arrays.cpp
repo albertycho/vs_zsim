@@ -116,6 +116,9 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
 					if (req->srcId > 1) {
 						if(req->type == GETS || req->type == GETX){
 						    appHits.atomicInc();
+                            if (nicInfo->nic_elem[req->srcId].app_l3_access_flag != 0) {
+                                //info("previous access flag has not been unset");
+                            }
                             nicInfo->nic_elem[req->srcId].app_l3_access_flag = 1;
 						}
 					}
@@ -149,7 +152,7 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
 				if(req->type == GETS || req->type == GETX){
 				appMisses.atomicInc();
                 if (nicInfo->nic_elem[req->srcId].app_l3_access_flag != 0) {
-                    info("cachearray lookup was not called, but CC got access");
+                    //info("previous access flag has not been unset");
                 }
                 nicInfo->nic_elem[req->srcId].app_l3_access_flag = 1;
 				}
