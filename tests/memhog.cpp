@@ -16,6 +16,8 @@ int main(int argc, char* argv[]) {
 	uint64_t core_id=15;
 	uint64_t ws_size=33554432; //32MB, want larger than LLC cap
 
+	int c;
+
 	static const struct option opts[] = {                                        
 		{.name = "core_id", .has_arg = 1, .flag = NULL, .val = 's'},         
 		{.name = "ws_size", .has_arg = 1,.flag = NULL, .val = 'K'},            
@@ -68,7 +70,7 @@ int main(int argc, char* argv[]) {
 
 	uint64_t array_size = ws_size / sizeof(uint64_t);
 
-	uint64_t * hog_arr = malloc(array_size*sizeof(uint64_t));
+	uint64_t * hog_arr = (uint64_t*)malloc(array_size*sizeof(uint64_t));
 
 
 	bool* zsim_done;
@@ -81,7 +83,7 @@ int main(int argc, char* argv[]) {
 		hog_arr[i]=i;
 	}
 	
-	uint_64_t dummy=0;
+	uint64_t dummy=0;
 	uint64_t sum=0;
 	while (!(*zsim_done)) {
 		sum+=hog_arr[(dummy%array_size)];
