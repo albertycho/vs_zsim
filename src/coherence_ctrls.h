@@ -152,6 +152,11 @@ class MESIBottomCC : public GlobAlloc {
             netHit_nic_lb.init("netHit_nic_lb", "Egress GET hits, NIC");
             appMiss.init("appMiss","App data-related GET misses");
             appHit.init("appHit","App data-related GET hits");
+            nicMiss.init("nicMiss","App data-related GET misses");
+            nicHit.init("nicHit","App data-related GET hits");
+
+
+
             appPutMiss.init("appPutMiss","App data-related PUT misses");
             appPutHit.init("appPutHit","App data-related PUT hits");
             
@@ -179,8 +184,8 @@ class MESIBottomCC : public GlobAlloc {
             parentStat->append(&appHit);
             parentStat->append(&appPutHit);
             parentStat->append(&appPutMiss);
-            //parentStat->append(&nicMiss);
-            //parentStat->append(&nicHit);
+            parentStat->append(&nicMiss);
+            parentStat->append(&nicHit);
         }
 
         uint64_t processEviction(Address wbLineAddr, int32_t lineId, bool lowerLevelWriteback, uint64_t cycle, uint32_t srcId, bool no_record);

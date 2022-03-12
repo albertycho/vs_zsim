@@ -59,8 +59,8 @@ void SetAssocArray::initStats(AggregateStat* parentStat) {
     //netHits_nic_rb.init("netHit_nic_rb", "Requests associated with network functionality from nic for recv buffer, hits");
     //netHits_nic_lb.init("netHit_nic_lb", "Requests associated with network functionality from nic for local buffer, hits");
     //netHits_core.init("netHit_core", "Requests associated with network functionality from core, hits");
-    //appMisses.init("appMiss", "Requests associated with app functionality, misses");
-    //appHits.init("appHit", "Requests associated with app functionality, hits");
+    appMisses.init("oldappMiss", "Requests associated with app functionality, misses");
+    appHits.init("oldappHit", "Requests associated with app functionality, hits");
     way_misses.init("way_inserts", "Insertions per cache way",assoc);
     way_hits.init("way_hits", "Hits per cache way",assoc);
     nic_rb_way_hits.init("nic_rb_way_hits", "Hits per cache way",assoc);
@@ -72,8 +72,8 @@ void SetAssocArray::initStats(AggregateStat* parentStat) {
     //objStats->append(&netHits_nic_rb);
     //objStats->append(&netHits_nic_lb);
     //objStats->append(&netHits_core);
-    //objStats->append(&appMisses);
-    //objStats->append(&appHits);
+    objStats->append(&appMisses);
+    objStats->append(&appHits);
     objStats->append(&way_misses);
     objStats->append(&way_hits);
     objStats->append(&nic_rb_way_hits);
@@ -112,7 +112,11 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
                 }
                 else {
                     array[id].nicType = DATA;
-                    //appHits.atomicInc();
+					if (req->srcId > 1) {
+						if(req->type == GETS || req->type == GETX){
+						appHits.atomicInc();
+						}
+					}
                 }
             }
             way_hits.inc(id-first);
@@ -123,7 +127,7 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
     }
     if (req != nullptr) {
         if (req->flags & MemReq::NETRELATED) {
-            if (req->srcId > 1) {
+            if (req->srcId > 2) {
                 //netMisses_core.atomicInc();
             }
             else {
@@ -139,7 +143,11 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
             }
         }
         else {
-            //appMisses.atomicInc();
+         	if (req->srcId > 2) {
+				if(req->type == GETS || req->type == GETX){
+				appMisses.atomicInc();
+				}
+			}
         }
     }
     return -1;
