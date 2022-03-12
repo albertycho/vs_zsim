@@ -92,7 +92,7 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
                     array[id].lastUSer = APP;
                 else                // coming from NIC
                     array[id].lastUSer = NIC;
-                if (req->flags & MemReq::NETRELATED) {
+                if (req->flags & MemReq::NETRELATED_ING || req->flags & MemReq::NETRELATED_EGR) {
                     array[id].nicType = NETWORK;
                     if (req->srcId > 1) {
                         //netHits_core.atomicInc();
@@ -113,7 +113,7 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
                 }
                 else {
                     array[id].nicType = DATA;
-					if (req->srcId > 1) {
+					if (req->srcId > 2) {
 						if(req->type == GETS || req->type == GETX){
 						    appHits.atomicInc();
 						}
@@ -127,7 +127,7 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
         }
     }
     if (req != nullptr) {
-        if (req->flags & MemReq::NETRELATED) {
+        if (req->flags & MemReq::NETRELATED_ING || req->flags & MemReq::NETRELATED_EGR) {
             if (req->srcId > 2) {
                 //netMisses_core.atomicInc();
             }
