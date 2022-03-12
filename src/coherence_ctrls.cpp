@@ -244,7 +244,7 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
                 if (isMiss) {
                     appMiss.inc();
                     if (nicInfo->nic_elem[srcId].app_l3_access_flag != 1) {
-                        info("cachearray lookup was not called, but CC got access");
+                        info("cachearray lookup was not called, but CC got access\n ADDR: %lx",lineAddr<<6);
                     }
                     nicInfo->nic_elem[srcId].app_l3_access_flag = 0;
                 }
@@ -252,7 +252,7 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
                 else {
                     appHit.inc();
                     if (nicInfo->nic_elem[srcId].app_l3_access_flag != 1) {
-                        info("cachearray lookup was not called, but CC got access");
+                        info("cachearray lookup was not called, but CC got access\n ADDR: %lx", lineAddr<<6);
                     }
                     nicInfo->nic_elem[srcId].app_l3_access_flag = 0;
                 }
