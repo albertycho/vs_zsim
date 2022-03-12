@@ -26,6 +26,7 @@
 #include "coherence_ctrls.h"
 #include "cache.h"
 #include "network.h"
+#include "zsim.h"
 
 /* Do a simple XOR block hash on address to determine its bank. Hacky for now,
  * should probably have a class that deals with this with a real hash function
@@ -205,7 +206,8 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
 
         default: panic("!?");
     }
-    if (type != PUTS && type != PUTX && type != CLEAN) {
+    //if (type != PUTS && type != PUTX && type != CLEAN) {
+    if(type==GETS || type==GETX){
         if (flags & MemReq::NETRELATED_ING) {
             if (srcId > 1) {
                 if(isMiss)
@@ -239,10 +241,21 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
         }
         else {
             if (srcId > 1) {
-                if(isMiss)
+                if (isMiss) {
                     appMiss.inc();
-                else 
+                    if (nicInfo->nic_elem[req->srcId].app_l3_access_flag != 1) {
+                        info("cachearray lookup was not called, but CC got access");
+                    }
+                    nicInfo->nic_elem[req->srcId].app_l3_access_flag = 0;
+                }
+                    
+                else {
                     appHit.inc();
+                    if (nicInfo->nic_elem[req->srcId].app_l3_access_flag != 1) {
+                        info("cachearray lookup was not called, but CC got access");
+                    }
+                    nicInfo->nic_elem[req->srcId].app_l3_access_flag = 0;
+                }
             }
             else {
                 if(isMiss)

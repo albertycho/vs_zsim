@@ -28,6 +28,7 @@
 #include "repl_policies.h"
 
 #include <math.h>   
+#include "zsim.h"
 
 /* Set-associative array implementation */
 
@@ -114,7 +115,8 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
                     array[id].nicType = DATA;
 					if (req->srcId > 1) {
 						if(req->type == GETS || req->type == GETX){
-						appHits.atomicInc();
+						    appHits.atomicInc();
+                            nicInfo->nic_elem[req->srcId].app_l3_access_flag = 1;
 						}
 					}
                 }
@@ -146,6 +148,10 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
          	if (req->srcId > 2) {
 				if(req->type == GETS || req->type == GETX){
 				appMisses.atomicInc();
+                if (nicInfo->nic_elem[req->srcId].app_l3_access_flag != 0) {
+                    info("cachearray lookup was not called, but CC got access");
+                }
+                nicInfo->nic_elem[req->srcId].app_l3_access_flag = 1;
 				}
 			}
         }

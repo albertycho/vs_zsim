@@ -185,6 +185,9 @@ struct nic_element {
 	bool service_in_progress;
 	PAD();
 
+	//debugging old appmis vs new appmiss ratio count diff
+	uint64_t app_l3_access_flag = 0;
+
 	// per-core
 	uint32_t ts_queue[1000000];	//timestamps coming from app calling timestamp() + core request pickup
 	uint32_t ts_nic_queue[1000000];	// timestamps recorded in nic functions (injection, answer pickup)
