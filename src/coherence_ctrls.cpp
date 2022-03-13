@@ -28,6 +28,58 @@
 #include "network.h"
 #include "zsim.h"
 
+
+uint64_t get_stat_group(uint64_t srcId){
+    //assuming we will only run upto 2 distinct loadgen
+    void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
+    load_generator* lg_p = (load_generator*)lg_p_vp;
+    
+    uin64_t num_lg = lg_p->num_loadgen;
+    for(uint64_t i=0; i<num_lg;i++){
+        for(uint64_t j=0;j<lg_p->lgs[i].num_cores;j++){
+            if(srcId==lg_p->lgs[i].core_ids[j]){
+                return i;
+            }
+        }
+    }
+    
+
+    return NNF; //didn't belong to a server for NF
+}
+
+int get_target_core_id_from_rb_addr(Address lineaddr){
+    uint64_t num_cores = zinfo->numCores;
+    for(int i=0; i<num_cores;i++){
+        uint64_t rb_base=(uint64_t) nicInfo->nic_elem[i].recv_buf;
+        uint64_t rb_top =rb_base+nicInfo->recv_buf_pool_size;
+        uint64_t rb_base_line=rb_base>>lineBits;
+        uint64_t rb_top_line = rb_top>>lineBits;
+        if (lineaddr >= rb_base_line && lineaddr <= rb_top_line) {
+            return i;
+        }
+    }
+    
+    return -1;
+}
+
+int get_target_core_id_from_lb_addr(Address lineaddr){
+    uint64_t num_cores = zinfo->numCores;
+    for(int i=0; i<num_cores;i++){
+        uint64_t lb_base=(uint64_t) nicInfo->nic_elem[i].lbuf;
+        uint64_t lb_top =lb_base+256*nicInfo->forced_packet_size;
+        uint64_t lb_base_line=lb_base>>lineBits;
+        uint64_t lb_top_line = lb_top>>lineBits;
+        
+        if (lineaddr >= lb_base_line && lineaddr <= lb_top_line) {
+            return i;
+        }
+    }
+    
+    return -1;
+}
+
+
+
 /* Do a simple XOR block hash on address to determine its bank. Hacky for now,
  * should probably have a class that deals with this with a real hash function
  * (TODO)
@@ -206,48 +258,119 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
 
         default: panic("!?");
     }
+
+    uint64_t stat_group=get_stat_group(srcId);
     //if (type != PUTS && type != PUTX && type != CLEAN) {
     if(type==GETS || type==GETX){
         if (flags & MemReq::NETRELATED_ING) {
             if (srcId > 1) {
-                if(isMiss)
-                    netMiss_core_rb.inc();
-                else
-                    netHit_core_rb.inc();
+                switch (stat_group) {
+                    case NF0: 
+                        if(isMiss)
+                            netMiss_core_rb.inc();
+                        else 
+                            netHit_core_rb.inc();
+                        break;
+                    case NF1:
+                        if(isMiss)
+                            netMiss_core_rb_grp1.inc();
+                        else 
+                            netHit_core_rb_grp1.inc();
+                        break;
+                    default: panic("core rb should be for NF0 or NF1");
+                }
+
             }
             else {
                 assert (flags & MemReq::PKTIN);
-                if(isMiss)
-                    netMiss_nic_rb.inc();
-                else 
-                    netHit_nic_rb.inc();
+                int core_id=get_target_core_id_from_rb_addr(lineAddr);
+                assert(core_id>=0);
+                uint64_t nic_stat_group=get_stat_group(core_id);
+                
+                switch (nic_stat_group) {
+                    case NF0: 
+                        if(isMiss)
+                            netMiss_nic_rb.inc();
+                        else 
+                            netHit_nic_rb.inc();
+                        break;
+                    case NF1:
+                        if(isMiss)
+                            netMiss_nic_rb_grp1.inc();
+                        else 
+                            netHit_nic_rb_grp1.inc();
+                        break;
+                    default: panic("nic rb should be for NF0 or NF1");
+                }
             } 
         }   
         else if (flags & MemReq::NETRELATED_EGR) {          
             if (srcId > 1) {
-                if(isMiss)
-                    netMiss_core_lb.inc();
-                else 
-                    netHit_core_lb.inc();
+
+                switch (stat_group) {
+                    case NF0: 
+                        if(isMiss)
+                            netMiss_core_lb.inc();
+                        else 
+                            netHit_core_lb.inc();
+                        break;
+                    case NF1:
+                        if(isMiss)
+                            netMiss_core_lb_grp1.inc();
+                        else 
+                            netHit_core_lb_grp1.inc();
+                        break;
+                    default: panic("core lb should be for NF0 or NF1");
+                }
             }
             else {
                 assert(flags & MemReq::PKTOUT);
-                if(isMiss)
-                    netMiss_nic_lb.inc();
-                else
-                    netHit_nic_lb.inc();
+                int core_id=get_target_core_id_from_lb_addr(lineAddr);
+                assert(core_id>=0);
+                uint64_t nic_stat_group=get_stat_group(core_id);
+                
+                switch (nic_stat_group) {
+                    case NF0: 
+                        if(isMiss)
+                            netMiss_nic_lb.inc();
+                        else 
+                            netHit_nic_lb.inc();
+                        break;
+                    case NF1:
+                        if(isMiss)
+                            netMiss_nic_lb_grp1.inc();
+                        else 
+                            netHit_nic_lb_grp1.inc();
+                        break;
+                    default: panic("nic lb should be for NF0 or NF1");
+                }
             }
                         
         }
         else {
             if (srcId > 1) {
-                if (isMiss) {
-                    appMiss.inc();
+                switch (stat_group) {
+                    case NF0: 
+                        if(isMiss)
+                            appMiss.inc();
+                        else 
+                            appHit.inc();
+                        break;
+                    case NF1:
+                        if(isMiss)
+                            appMiss_grp1.inc();
+                        else 
+                            appHit_grp1.inc();
+                        break;
+                    case NNF:
+                        if(isMiss)
+                            appMiss_NNF.inc();
+                        else 
+                            appHit_NNF.inc();
+                        break;
+                    default: panic("app access didn't belong to any grp?");
                 }
-                    
-                else {
-                    appHit.inc();
-                }
+
             }
             else {
                 if(isMiss)
@@ -258,10 +381,27 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
         }
     }
     else if (srcId > 1 && type != CLEAN) {
-        if(isMiss)
-            appPutMiss.inc();
-        else 
-            appPutHit.inc(); 
+        switch (stat_group) {
+            case NF0: 
+                if(isMiss)
+                    appPutMiss.inc();
+                else 
+                    appPutHit.inc();
+                break;
+            case NF1:
+                if(isMiss)
+                    appPutMiss_grp1.inc();
+                else 
+                    appPutHit_grp1.inc();
+                break;
+            case NNF:
+                if(isMiss)
+                    appPutMiss_NNF.inc();
+                else 
+                    appPutHit_NNF.inc();
+                break;
+            default: panic("appPut didn't belong to any grp?");
+        }
     }
     
     assert_msg(respCycle >= cycle, "XXX %ld %ld", respCycle, cycle);

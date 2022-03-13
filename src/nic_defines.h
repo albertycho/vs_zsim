@@ -52,6 +52,10 @@
 
 #define RCP_EQ			nicInfo->nic_elem[core_id].rcp_eq
 
+#define NF0 0
+#define NF1 1
+#define NNF 2 //non network function server
+
 /*
 #define NOTIFY_WQ_WRITE 0xA
 

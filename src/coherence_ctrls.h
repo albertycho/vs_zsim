@@ -97,11 +97,24 @@ class MESIBottomCC : public GlobAlloc {
         Counter profINV, profINVX, profFWD /*received from upstream*/;
         //Counter profWBIncl, profWBCoh /* writebacks due to inclusion or coherence, received from downstream, does not include PUTS */;
         // TODO: Measuring writebacks is messy, do if needed
+        //NF grp 0: main NF to profile (loadgen 0)
         Counter profGETNextLevelLat, profGETNetLat;
         Counter netMiss_core_rb, netMiss_core_lb, netMiss_nic_rb, netMiss_nic_lb;
         Counter netHit_core_rb, netHit_core_lb, netHit_nic_rb, netHit_nic_lb;
         Counter appMiss, appHit, nicMiss, nicHit;
         Counter appPutMiss, appPutHit;
+
+        //NF grp 1: second group to create LLC contention
+        Counter netMiss_core_rb_grp1, netMiss_core_lb_grp1, netMiss_nic_rb_grp1, netMiss_nic_lb_grp1;
+        Counter netHit_core_rb_grp1, netHit_core_lb_grp1, netHit_nic_rb_grp1, netHit_nic_lb_grp1;
+        Counter appMiss_grp1, appHit_grp1, nicMiss_grp1, nicHit_grp1;
+        Counter appPutMiss_grp1, appPutHit_grp1;
+
+        //NNF: servers doing non network function to create LLC contention
+        Counter netMiss_core_rb_NNF, netMiss_core_lb_NNF, netMiss_nic_rb_NNF, netMiss_nic_lb_NNF;
+        Counter netHit_core_rb_NNF, netHit_core_lb_NNF, netHit_nic_rb_NNF, netHit_nic_lb_NNF;
+        Counter appMiss_NNF, appHit_NNF, nicMiss_NNF, nicHit_NNF;
+        Counter appPutMiss_NNF, appPutHit_NNF;
 
         bool nonInclusiveHack;
 
@@ -152,14 +165,41 @@ class MESIBottomCC : public GlobAlloc {
             netHit_nic_lb.init("netHit_nic_lb", "Egress GET hits, NIC");
             appMiss.init("appMiss","App data-related GET misses");
             appHit.init("appHit","App data-related GET hits");
-            nicMiss.init("nicMiss","App data-related GET misses");
-            nicHit.init("nicHit","App data-related GET hits");
-
-
+            //nicMiss.init("nicMiss","App data-related GET misses");
+            //nicHit.init("nicHit","App data-related GET hits");
 
             appPutMiss.init("appPutMiss","App data-related PUT misses");
             appPutHit.init("appPutHit","App data-related PUT hits");
             
+            netMiss_core_rb_grp1.init("netMiss_core_rb_grp1", "Ingress GET misses, app cores, loadgen1");
+            netHit_core_rb_grp1.init("netHit_core_rb_grp1", "Ingress GET hits, app cores");
+            netMiss_core_lb_grp1.init("netMiss_core_lb_grp1", "Egress GET misses, app cores");
+            netHit_core_lb_grp1.init("netHit_core_lb_grp1", "Egress GET hits, app cores");
+            netMiss_nic_rb_grp1.init("netMiss_nic_rb_grp1", "Ingress GET misses, NIC");
+            netHit_nic_rb_grp1.init("netHit_nic_rb_grp1", "Ingress GET hits, NIC");
+            netMiss_nic_lb_grp1.init("netMiss_nic_lb_grp1", "Egress GET misses, NIC");
+            netHit_nic_lb_grp1.init("netHit_nic_lb_grp1", "Egress GET hits, NIC");
+            appMiss_grp1.init("appMiss_grp1","App data-related GET misses");
+            appHit_grp1.init("appHit_grp1","App data-related GET hits");
+            appPutMiss_grp1.init("appPutMiss_grp1","App data-related PUT misses");
+            appPutHit_grp1.init("appPutHit_grp1","App data-related PUT hits");
+
+
+            netMiss_core_rb_NNF.init("netMiss_core_rb_NNF", "Ingress GET misses, app cores, non-network-function");
+            netHit_core_rb_NNF.init("netHit_core_rb_NNF", "Ingress GET hits, app cores");
+            netMiss_core_lb_NNF.init("netMiss_core_lb_NNF", "Egress GET misses, app cores");
+            netHit_core_lb_NNF.init("netHit_core_lb_NNF", "Egress GET hits, app cores");
+            netMiss_nic_rb_NNF.init("netMiss_nic_rb_NNF", "Ingress GET misses, NIC");
+            netHit_nic_rb_NNF.init("netHit_nic_rb_NNF", "Ingress GET hits, NIC");
+            netMiss_nic_lb_NNF.init("netMiss_nic_lb_NNF", "Egress GET misses, NIC");
+            netHit_nic_lb_NNF.init("netHit_nic_lb_NNF", "Egress GET hits, NIC");
+            appMiss_NNF.init("appMiss_NNF","App data-related GET misses");
+            appHit_NNF.init("appHit_NNF","App data-related GET hits");
+            appPutMiss_NNF.init("appPutMiss_NNF","App data-related PUT misses");
+            appPutHit_NNF.init("appPutHit_NNF","App data-related PUT hits");
+
+
+
             parentStat->append(&profGETSHit);
             parentStat->append(&profGETXHit);
             parentStat->append(&profGETSMiss);
@@ -184,8 +224,37 @@ class MESIBottomCC : public GlobAlloc {
             parentStat->append(&appHit);
             parentStat->append(&appPutHit);
             parentStat->append(&appPutMiss);
-            parentStat->append(&nicMiss);
-            parentStat->append(&nicHit);
+            //parentStat->append(&nicMiss);
+            //parentStat->append(&nicHit);
+            
+            parentStat->append(&netMiss_core_lb_grp1);
+            parentStat->append(&netHit_core_lb_grp1);
+            parentStat->append(&netMiss_core_rb_grp1);
+            parentStat->append(&netHit_core_rb_grp1);
+            parentStat->append(&netMiss_nic_lb_grp1);
+            parentStat->append(&netHit_nic_lb_grp1);
+            parentStat->append(&netMiss_nic_rb_grp1);
+            parentStat->append(&netHit_nic_rb_grp1);
+            parentStat->append(&appMiss_grp1);
+            parentStat->append(&appHit_grp1);
+            parentStat->append(&appPutHit_grp1);
+            parentStat->append(&appPutMiss_grp1);
+
+
+            parentStat->append(&netMiss_core_lb_NNF);
+            parentStat->append(&netHit_core_lb_NNF);
+            parentStat->append(&netMiss_core_rb_NNF);
+            parentStat->append(&netHit_core_rb_NNF);
+            parentStat->append(&netMiss_nic_lb_NNF);
+            parentStat->append(&netHit_nic_lb_NNF);
+            parentStat->append(&netMiss_nic_rb_NNF);
+            parentStat->append(&netHit_nic_rb_NNF);
+            parentStat->append(&appMiss_NNF);
+            parentStat->append(&appHit_NNF);
+            parentStat->append(&appPutHit_NNF);
+            parentStat->append(&appPutMiss_NNF);
+
+
         }
 
         uint64_t processEviction(Address wbLineAddr, int32_t lineId, bool lowerLevelWriteback, uint64_t cycle, uint32_t srcId, bool no_record);
