@@ -34,7 +34,7 @@ uint64_t get_stat_group(uint64_t srcId){
     void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
     load_generator* lg_p = (load_generator*)lg_p_vp;
     
-    uin64_t num_lg = lg_p->num_loadgen;
+    uint64_t num_lg = lg_p->num_loadgen;
     for(uint64_t i=0; i<num_lg;i++){
         for(uint64_t j=0;j<lg_p->lgs[i].num_cores;j++){
             if(srcId==lg_p->lgs[i].core_ids[j]){
