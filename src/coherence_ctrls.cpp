@@ -348,7 +348,7 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
                         
         }
         else {
-            if (srcId > 1) {
+            if (srcId > 2) {
                 switch (stat_group) {
                     case NF0: 
                         if(isMiss)
