@@ -14,7 +14,7 @@
 #define DLog(M, ...)
 #endif
 
-#define MAX_NUM_WQ 128
+#define MAX_NUM_WQ 512
 #define NOTIFY_WQ_WRITE 0xA
 
 /* op types */

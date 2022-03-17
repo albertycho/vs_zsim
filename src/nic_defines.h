@@ -354,11 +354,7 @@ struct load_generator {
 	//uint64_t last_core;
 	uint64_t ptag;
 	lock_t ptc_lock;	   // keeping code for DBG/Comparison purpose
-	//std::shared_ptr<std::map<uint64_t, uint64_t>> tc_map;
-	//std::shared_ptr<std::map<uint64_t, uint64_t>> tc_map_core;
-	//std::shared_ptr<std::map<uint64_t, uint64_t>> tc_map_phase;
-	//std::shared_ptr<std::map<uint64_t, std::pair<uint64_t,uint64_t>>> tc_map;
-	//std::shared_ptr<std::map<uint64_t, timestamp>> tc_map;
+
 	timestamp_str* tc_map;
 	//RPCGenerator* RPCGen;
 };

@@ -1146,6 +1146,11 @@ int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
                             nicInfo->closed_loop_done=true;
 			*/
                         }
+                        //////// target_cq_len /////////////
+                        // check cq len of target cores, if len < target, set next injection cycle to cur_cycle +1
+                        // how to handle multi cores? - schedule injection if ANY core has len < target,
+                        //  let assign_core prioritize core with len<target
+                        //  @update_loadgen, just set next cycle far away, the above checker will reschedule when needed
                         if (lg_p->lgs[ii].next_cycle <= injection_cycle /*&& idle_core > 1*/) {
                             //uint32_t core_iterator = assign_core(core_iterator);
                             uint32_t core_iterator = assign_core(ii);
