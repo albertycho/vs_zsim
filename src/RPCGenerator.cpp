@@ -134,8 +134,8 @@ RPCGenerator::generatePackedRPC_batch(char* userBuffer, uint32_t numreqs) const 
 
 int
 RPCGenerator::generatePackedRPC(char* userBuffer, uint32_t packet_size) const {
-	bool is_update = true; //(std::rand() % 100) < (int)update_fraction ? true : false;
-	//bool is_update = (std::rand() % 100) < (int)update_fraction ? true : false;
+	//bool is_update = true; //(std::rand() % 100) < (int)update_fraction ? true : false;
+	bool is_update = (std::rand() % 100) < (int)update_fraction ? true : false;
 	int key_i;
 
 	if(load_dist_type==ZIPF_DIST){
