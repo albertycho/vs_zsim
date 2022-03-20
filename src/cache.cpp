@@ -88,7 +88,8 @@ uint64_t Cache::access(MemReq& req) {
 
                 //Evictions are not in the critical path in any sane implementation -- we do not include their delays
                 //NOTE: We might be "evicting" an invalid line for all we know. Coherence controllers will know what to do
-                cc->processEviction(req, wbLineAddr, lineId, respCycle); //1. if needed, send invalidates/downgrades to lower level
+                
+                cc->processEviction(req, wbLineAddr, lineId, respCycle); //if needed, send invalidates/downgrades to lower level, and wb to upper level
 
                 array->postinsert(req.lineAddr, &req, lineId); //do the actual insertion. NOTE: Now we must split insert into a 2-phase thing because cc unlocks us.
             }
@@ -161,9 +162,10 @@ void Cache::startInvalidate() {
 uint64_t Cache::finishInvalidate(const InvReq& req) {
     int32_t lineId = array->lookup(req.lineAddr, nullptr, false);
     uint64_t respCycle = req.cycle;
+    size_t found = name.find("l3");
     if (lineId == -1) {
-        size_t found = name.find("l3");     // am I the llc?
-        if (found != std::string::npos) {   //not the llc, kill the received invalidation
+        // am I the llc?
+        if (found == std::string::npos) {   //not the llc, kill the received invalidation
             cc->finishInv();
         }
         else {          // i am the llc but don't have the line; someone above me might have it though
@@ -173,11 +175,13 @@ uint64_t Cache::finishInvalidate(const InvReq& req) {
                 respCycle -= invLat;
         }
     }
-    else {
+    else {  // line is present
         //assert_msg(lineId != -1, "[%s] Invalidate on non-existing address 0x%lx type %s lineId %d, reqWriteback %d", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback);
         respCycle = req.cycle + invLat;
         //trace(Cache, "[%s] Invalidate start 0x%lx type %s lineId %d, reqWriteback %d", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback);
         respCycle = cc->processInv(req, lineId, respCycle); //send invalidates or downgrades to children, and adjust our own state
+        if (found == std::string::npos) // if i'm not the llc, release the bcc lock
+            cc->finishInv();
         //trace(Cache, "[%s] Invalidate end 0x%lx type %s lineId %d, reqWriteback %d, latency %ld", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback, respCycle - req.cycle);
     }
     return respCycle;

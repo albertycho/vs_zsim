@@ -493,7 +493,7 @@ class OOOCore : public Core {
         uint32_t cycle_adj_idx=0;
         uint32_t start_cnt_phases = 0;
 
-        uint16_t ingr_type, egr_type, egr_inval;
+        uint16_t ingr_type, egr_type, egr_inval=0;
 
     private:
         inline void load(Address addr);

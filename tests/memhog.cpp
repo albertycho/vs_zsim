@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
 
 	bool* zsim_done;
 
-	register_buffer((void*)(&zsim_done), (void*)0x17);
+	register_buffer((void*)(&zsim_done), (void*)0x18);
 
 	//std::cout<<"pid: "<<pid<<", setresult: " <<setresult<<std::endl;
 

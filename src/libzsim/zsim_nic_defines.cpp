@@ -12,8 +12,7 @@
 #include <limits.h>
 #include <errno.h>
 
-
-void register_buffer(void * val, void* field)
+[[gnu::noinline]] void register_buffer(void * val, void* field)
 {
 //variables: start addr of WQ/CQ
 //			 size of WQ/CQ
@@ -50,11 +49,11 @@ successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
 
 	int outer_loop_count=0;
 	do{
-		outer_loop_count++;
-		if(outer_loop_count>1){
+		//outer_loop_count++;
+		//if(outer_loop_count>1){
 			//increment outterloop count for zsim stat
-			register_buffer((void*)1, (void*)0x12);
-		}
+		//	register_buffer((void*)1, (void*)0x12);
+		//}
 
 		//dbgprint
 		//std::cout << "inside rmc_check_cq, first while loop" << std::endl;
@@ -63,14 +62,14 @@ successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
 		cq_entry_t raw_cqe_entry = cq->q[cq_tail];
 		bool tail_SR=raw_cqe_entry.SR;
 
-		int inner_loop_count=0;
+		//int inner_loop_count=0;
 		while((tail_SR==cq->SR) && (ret.success!=0))
 		{
-			inner_loop_count++;
-			if(inner_loop_count>1){
+			//inner_loop_count++;
+			//if(inner_loop_count>1){
 				//increment innerloop count for zsim stat
-				register_buffer((void*)1, (void*)0x11);
-			}
+			//	register_buffer((void*)1, (void*)0x11);
+			//}
 			//dbgprint
 			//std::cout << "inside rmc_check_cq, second while loop" << std::endl;
 			//FIXME: okay to unset cq valid here?
@@ -187,6 +186,9 @@ int rmc_hw_recv(rmc_wq_t *wq, uint32_t ctx_id, void *recv_buf, uint64_t length){
 	if(wq->q[wq_head].valid!=0){
 		return -1;
 	}
+
+	register_buffer((void*)(recv_buf), (void*)0x16);
+	
 	create_wq_entry(RMC_RECV, wq->SR, ctx_id, 0, (uint64_t)recv_buf, 0, length, (uint64_t)&(wq->q[wq_head])); // node id and ctx offset don't care
 
 	wq->head =  wq->head + 1;
@@ -198,6 +200,9 @@ int rmc_hw_recv(rmc_wq_t *wq, uint32_t ctx_id, void *recv_buf, uint64_t length){
 		//std::cout<<"APP - flips wq SR"<<std::endl;
 	}
 
+	// clean recvb
+	
+	
 	//register_buffer((void*)(NULL), (void*)0x14);
 
 	return 0;

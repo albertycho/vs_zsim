@@ -106,11 +106,11 @@ void MESIBottomCC::init(const g_vector<MemObject*>& _parents, Network* network, 
 }
 
 
-uint64_t MESIBottomCC::processEviction(Address wbLineAddr, int32_t lineId, bool lowerLevelWriteback, uint64_t cycle, uint32_t srcId, bool no_record) {
+uint64_t MESIBottomCC::processEviction(Address wbLineAddr, int32_t lineId, bool lowerLevelWriteback, uint64_t cycle, uint32_t srcId, uint32_t flags) {
 
-    uint32_t norecord_flag = 0;
-    if (no_record) {
-        norecord_flag = MemReq::NORECORD;
+    uint32_t evict_flag = 0;
+    if (flags & MemReq::NORECORD) {
+        evict_flag |= MemReq::NORECORD;
     }
     assert(lineId > -1);
     MESIState* state = &array[lineId];
@@ -126,13 +126,13 @@ uint64_t MESIBottomCC::processEviction(Address wbLineAddr, int32_t lineId, bool 
         case S:
         case E:
             {
-                MemReq req = {wbLineAddr, PUTS, selfId, state, cycle, &ccLock, *state, srcId,  norecord_flag /*0 no flags*/};
+                MemReq req = {wbLineAddr, PUTS, selfId, state, cycle, &ccLock, *state, srcId,  evict_flag /*0 no flags*/};
                 respCycle = parents[getParentId(wbLineAddr)]->access(req);
             }
             break;
         case M:
             {
-                MemReq req = {wbLineAddr, PUTX, selfId, state, cycle, &ccLock, *state, srcId, norecord_flag /*0 no flags*/};
+                MemReq req = {wbLineAddr, PUTX, selfId, state, cycle, &ccLock, *state, srcId, evict_flag /*0 no flags*/};
                 respCycle = parents[getParentId(wbLineAddr)]->access(req);
             }
             break;
@@ -150,7 +150,7 @@ uint64_t MESIBottomCC::passToNext( Address lineAddr, AccessType type, uint32_t c
     return parents[parentId]->access(req);
 }
 
-uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessType type, uint64_t cycle, uint32_t srcId, uint32_t flags, bool is_llc) {
+uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessType type, uint64_t cycle, uint32_t srcId, uint32_t flags) {
     uint64_t respCycle = cycle;
     MESIState* state;
     bool isMiss = false;
@@ -171,43 +171,49 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
             profPUTS.inc();
             break;
         case PUTX: //Dirty writeback
-            assert(*state == M || *state == E);
-            if (*state == E) {
+            assert(*state == M || *state == E || (*state == I && nonInclusiveHack));
+            isMiss = (*state == I);
+            if (*state == E || *state == I) {
                 //Silent transition, record that block was written to
                 *state = M;
             }
-            isMiss = (*state == I);
             profPUTX.inc();
             break;
         case GETS:
             if (*state == I) {
-                uint32_t parentId = getParentId(lineAddr);
-                MemReq req = {lineAddr, GETS, selfId, state, cycle, &ccLock, *state, srcId, flags};    
-                uint32_t nextLevelLat = parents[parentId]->access(req) - cycle;
-                uint32_t netLat = parentRTTs[parentId];
-                profGETNextLevelLat.inc(nextLevelLat);
-                profGETNetLat.inc(netLat);
-                respCycle += nextLevelLat + netLat;
-                profGETSMiss.inc();
-                isMiss = true;
-                assert(*state == S || *state == E || (*state == I && (req.flags & MemReq::PKTOUT)));
+                if (!(flags & MemReq::PKTOUT) || (flags & MemReq::PKTOUT && isEgrToMem)) {  // Egress DDIO tried to read from llc, missed and there is no copy in private caches
+                    uint32_t parentId = getParentId(lineAddr);
+                    MemReq req = {lineAddr, GETS, selfId, state, cycle, &ccLock, *state, srcId, flags};    
+                    uint32_t nextLevelLat = parents[parentId]->access(req) - cycle;
+                    uint32_t netLat = parentRTTs[parentId];
+                    profGETNextLevelLat.inc(nextLevelLat);
+                    profGETNetLat.inc(netLat);
+                    respCycle += nextLevelLat + netLat;
+                    profGETSMiss.inc();
+                    isMiss = true;
+                    assert(*state == S || *state == E || (*state == I && flags & MemReq::PKTOUT && isEgrToMem));
+                }
+                else if (flags & MemReq::PKTOUT && !isEgrToMem) { // Egress DDIO tried to read from llc, missed but there is a copy in private caches, bring it to the llc
+                    *state = E; // assume that the priv copy  is clean, if not the inducedWriteback will take care of it
+                }
             } else {
                 profGETSHit.inc();
             }
             //TODO: Albert - add invaliate if flags & READNINV here?
-            if((flags & MemReq::READNINV) && (is_llc)){
-                //downgrade from M to E. Assume Recv buffers are affiliated to cores so no shared
-                //considered setting to INV, but coherence won't work for inclusive cache
-                *state=E;
-            }
+            //if((flags & MemReq::READNINV) && (is_llc)){
+            //    //downgrade from M to E. Assume Recv buffers are affiliated to cores so no shared
+            //    //considered setting to INV, but coherence won't work for inclusive cache
+            //    *state=E;
+            //}
             break;
         case GETX:
             if (flags & MemReq::PKTOUT) { // this is an eggress access directed to the LLC that also invalidates
                 assert(flags >> 16 == 0);
-                if (*state == S || *state == E || *state == M) { // data is present in the core's cache hierarchy, invalidate them
+                if (*state == S || *state == E || *state == M) { // data is present in the LLC, invalidate them
                     *state = I;
                 }
-                else {  // go to memory 
+                
+                else if (isEgrToMem){  //  data not present in the private caches or the llc, go to memory 
                     uint32_t parentId = getParentId(lineAddr);
                     MemReq req = {lineAddr, GETX, selfId, state, cycle, &ccLock, *state, srcId, flags};  // we have reached the correct level for ingress, the following requests downwards should have the pktin flag set
                     uint32_t nextLevelLat = parents[parentId]->access(req) - cycle;
@@ -215,7 +221,13 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
                     profGETNextLevelLat.inc(nextLevelLat);
                     profGETNetLat.inc(netLat);
                     respCycle += nextLevelLat + netLat;
+                    isMiss = true;
                 }
+                /*
+                else {  // data isn't present in the llc, but is in private caches
+                    assert(*state == I);
+                }
+                */
                 assert(*state == I);
             } else {
                 if (*state == I || *state == S) {
@@ -253,13 +265,24 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
                     profGETXHit.inc();
                 }
             }
-            assert_msg(*state == M, "Wrong final state on GETX, lineId %d numLines %d, finalState %s", lineId, numLines, MESIStateName(*state));
+            assert_msg(*state == M || (flags & MemReq::PKTOUT && *state == I), "Wrong final state on GETX, lineId %d numLines %d, finalState %s", lineId, numLines, MESIStateName(*state));
             break;
-
+        case CLEAN:
+            {
+                //*state = I;     // invalidate copy
+                uint32_t parentId = getParentId(lineAddr);
+                MemReq req = {lineAddr, CLEAN, selfId, state, cycle, &ccLock, *state, srcId, flags};  // we have reached the correct level for ingress, the following requests downwards should have the pktin flag set
+                uint32_t nextLevelLat = parents[parentId]->access(req) - cycle;
+                uint32_t netLat = parentRTTs[parentId];
+                respCycle += nextLevelLat + netLat;
+            }
+            break;
         default: panic("!?");
     }
 
     uint64_t stat_group=get_stat_group(srcId);
+
+
     //if (type != PUTS && type != PUTX && type != CLEAN) {
     if(type==GETS || type==GETX){
         if (flags & MemReq::NETRELATED_ING) {
@@ -419,7 +442,10 @@ void MESIBottomCC::processWritebackOnAccess(Address lineAddr, int32_t lineId, Ac
 }
 
 void MESIBottomCC::processInval(Address lineAddr, int32_t lineId, InvType type, bool* reqWriteback) {
-    assert(lineId > -1);
+    //assert(lineId > -1);
+    if (lineId == -1) {
+        return;
+    }
     MESIState* state = &array[lineId];
     //assert(*state != I);
     if (*state == I) {
@@ -496,17 +522,20 @@ uint64_t MESITopCC::sendInvalidates(Address lineAddr, int32_t lineId, InvType ty
     */
     Entry* e;
     
-    if (lineId == -1) {
-        panic("!?");
-        if (evicted_lines.count(lineAddr) > 0) {
-            e = &evicted_lines[lineAddr];
-            assert(!e->isEmpty());
+    if (lineId == -1) {     // i don't have the line (i must be the llc)
+        //panic("!?");
+        if (!evicted_lines.empty() && evicted_lines.count(lineAddr) > 0) {      // private copies exist above me
+            e = (Entry*)malloc(sizeof(Entry));
+            *e = evicted_lines[lineAddr];
+            evicted_lines.erase(lineAddr);
+            //e = &evicted_lines[lineAddr];
+            //assert(!e->isEmpty());
         }
-        else {
+        else {      // no private copies above me
             return cycle;
         }
     }
-    else {
+    else {          // i have the line
         e = &array[lineId];
     }
      
@@ -544,7 +573,7 @@ uint64_t MESITopCC::sendInvalidates(Address lineAddr, int32_t lineId, InvType ty
 
 void MESITopCC::processNonInclusiveWriteback(Address lineAddr, uint64_t srcId) {
     if (!nonInclusiveHack) panic("this cache should be inclusive");
-    if (evicted_lines.count(lineAddr) > 0) {
+    if (!evicted_lines.empty() &&  evicted_lines.count(lineAddr) > 0) {
         Entry *e = &evicted_lines[lineAddr];
         assert(e->sharers[srcId]);
         if(e->numSharers == 1)
@@ -561,7 +590,9 @@ uint64_t MESITopCC::processEviction(Address wbLineAddr, int32_t lineId, bool* re
     if (nonInclusiveHack) {
         // Don't invalidate anything, just clear our entry
         assert(lineId > -1);
-        assert(evicted_lines.count(wbLineAddr)==0);
+        if(!evicted_lines.empty()) {
+            assert(evicted_lines.count(wbLineAddr)==0);
+        }
         if (array[lineId].numSharers > 0) {
             evicted_lines[wbLineAddr] = array[lineId];
         }
@@ -580,33 +611,55 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
     if (lineId != -1)
         e = &array[lineId];
     else {
-        e = nullptr; //(Entry*)malloc(sizeof(Entry));
+        e = (Entry*)malloc(sizeof(Entry));
+        e->clear();
     }
 
     uint64_t respCycle = cycle;
     switch (type) {
         case PUTX:
-            assert(e->isExclusive());
+            assert(e->isExclusive() || nonInclusiveHack);
             if (flags & MemReq::PUTX_KEEPEXCL) {
                 assert(e->sharers[childId]);
                 assert(*childState == M);
                 *childState = E; //they don't hold dirty data anymore
                 break; //don't remove from sharer set. It'll keep exclusive perms.
             }
+            else if (!e->sharers[childId]) {    // PUTX for a line that didn't exist in the LLC (i have already allocated it in bcc)
+                assert(nonInclusiveHack);
+                assert(lineId != -1);
+                assert(!evicted_lines.empty() && evicted_lines.count(lineAddr) > 0);
+                Entry* evct = &evicted_lines[lineAddr];
+                assert(evct->sharers[childId]);
+                assert(evct->numSharers == 1);
+                e->sharers[childId] = false;
+                e->numSharers = 0;
+                e->exclusive = true;
+                *childState = I;
+                if(!evicted_lines.empty() && evicted_lines.count(lineAddr) > 0)
+                    evicted_lines.erase(lineAddr);
+                assert(evicted_lines.count(lineAddr) == 0);
+            }
             //note NO break in general
         case PUTS:
-            assert(e->sharers[childId]);
-            e->sharers[childId] = false;
-            e->numSharers--;
-            *childState = I;
+            assert(e->sharers[childId] || nonInclusiveHack);
+            if (e->sharers[childId]) {      // if the llc already has info on that line, then it was a put hit
+                e->sharers[childId] = false;
+                 assert(e->numSharers>0);
+                e->numSharers--;
+                *childState = I;
+                assert(e->numSharers>=0);
+            }
             break;
         case GETS:
         assert(!(flags & MemReq::PKTIN));
             // should a GETS from the NIC modify any cache state? I think not (unless it finds an invalid line, which we deal with in bcc)
+            // apparently it should, if it misses and the line is in a private cache
             if(!(flags & MemReq::PKTOUT)) {
-
-                if ((e->isEmpty() && haveExclusive && !(flags & MemReq::NOEXCL) && evicted_lines.count(lineAddr) == 0)
-                    || (e->isEmpty() && evicted_lines.count(lineAddr) == 1 && evicted_lines[lineAddr].sharers[childId] == true && evicted_lines[lineAddr].numSharers == 1)) {
+                assert(lineId > -1);
+                // either none has a priv copy of a line, or only one has is and it is the requester 
+                if ((e->isEmpty() && haveExclusive && !(flags & MemReq::NOEXCL) && !evicted_lines.empty() && evicted_lines.count(lineAddr) == 0)
+                    || (e->isEmpty() && !evicted_lines.empty() && evicted_lines.count(lineAddr) == 1 && evicted_lines[lineAddr].sharers[childId] == true && evicted_lines[lineAddr].numSharers == 1)) {
                     //Give in E state
                     e->exclusive = true;
                     e->sharers[childId] = true;
@@ -617,7 +670,8 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
                     //Give in S state
                     assert(e->sharers[childId] == false);
 
-                    if (evicted_lines.count(lineAddr) > 0) {
+                    // find whether we have info about an exclusive sharer above us
+                    if (!evicted_lines.empty() && evicted_lines.count(lineAddr) > 0) {
                         Entry* evct = &evicted_lines[lineAddr];
                         uint32_t numChildren = children.size();
                         for (uint32_t c = 0; c < numChildren; c++) {
@@ -630,7 +684,7 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
                                 }
                             }
                         }
-                        evicted_lines.erase(lineAddr);
+                        evicted_lines.erase(lineAddr);    
                     }
 
                     if (e->isExclusive()) {
@@ -648,11 +702,52 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
                     *childState = S;
                 }
             }
+            else {
+                if (lineId > -1) {
+                    // case 1: miss in the llc, hit in priv caches
+                    // we have allocated a line in the llc, currently it is in E, retrieve info about priv owner
+                    if (!evicted_lines.empty() && evicted_lines.count(lineAddr) > 0) {
+                        Entry* evct = &evicted_lines[lineAddr];
+                        uint32_t numChildren = children.size();
+                        for (uint32_t c = 0; c < numChildren; c++) {
+                            if (evct->sharers[c]) {
+                                e->sharers[c] = true;
+                                e->numSharers++;
+                                if (evct->exclusive) {
+                                    assert(!e->exclusive);
+                                    e->exclusive = true;
+                                }
+                            }
+                        }
+                        evicted_lines.erase(lineAddr); 
+                        assert(e->isExclusive());
+                    }
+                
+                    // case 2: hit in the llc
+                    // we also do this for case 1
+                    if (e->isExclusive()) {
+                        //Downgrade the exclusive sharer
+                        // for case 1, in bcc we have assumed that there exists 1 private copy in E/M state, if it is M inducedWriteback will turn llc to M
+                        respCycle = sendInvalidates(lineAddr, lineId, INVX, inducedWriteback, cycle, srcId);
+                    }
+                }
+                // case 3: miss everywhere
+                else {
+                    assert(!this->existsInPrivate(lineAddr)); // nothing to do, chack we are invalid and none has the line above us
+                }
+                    
+            }
+
             break;
         case GETX:
             assert((flags & MemReq::PKTOUT) || haveExclusive); //the current cache better have exclusive access to this line
 
-            if (evicted_lines.count(lineAddr) > 0) {
+            if (lineId == -1)   {   // this has to be a dma pktout that missed in the llc  
+                assert (flags & MemReq::PKTOUT);
+                e = (Entry*)malloc(sizeof(Entry));
+            }
+
+            if (!evicted_lines.empty() && evicted_lines.count(lineAddr) > 0) {      // check if someone above the llc has the line
                 Entry* evct = &evicted_lines[lineAddr];
                 uint32_t numChildren = children.size();
                 for (uint32_t c = 0; c < numChildren; c++) {
@@ -661,37 +756,24 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
                         e->numSharers++;
                     }
                 }
-                evicted_lines.erase(lineAddr);
+                if (lineId > -1) {
+                    evicted_lines.erase(lineAddr);
+                }
             }
 
             // if we write directly to the l2/llc, we want all children to be invalidated
-            if (!((flags & MemReq::PKTIN) && childId > MAX_CACHE_CHILDREN)) {
+            if (!((flags & MemReq::PKTIN && childId > MAX_CACHE_CHILDREN) || (flags & MemReq::PKTOUT))) {
                 // If child is in sharers list (this is an upgrade miss), take it out
                 if (e->sharers[childId]) {
                     assert_msg(!e->isExclusive(), "Spurious GETX, childId=%d numSharers=%d isExcl=%d excl=%d", childId, e->numSharers, e->isExclusive(), e->exclusive);
                     e->sharers[childId] = false;
+                     assert(e->numSharers>0);
                     e->numSharers--;
                     assert(e->numSharers>=0);
                 }
             }
-/*
-            if (childId == 0xDA0000) {//direct access
-                //info("directAccess");
-                // Invalidate all other copies
-                respCycle = sendInvalidates(lineAddr, lineId, INV, inducedWriteback, cycle, srcId);
-                assert(e->numSharers == 0);
-                e->exclusive = true;
-            }
-            else {
-                // If child is in sharers list (this is an upgrade miss), take it out
-                if (e->sharers[childId]) {
-                    assert_msg(!e->isExclusive(), "Spurious GETX, childId=%d numSharers=%d isExcl=%d excl=%d", childId, e->numSharers, e->isExclusive(), e->exclusive);
-                    e->sharers[childId] = false;
-                    e->numSharers--;
-                }
-*/
 
-                // Invalidate all other copies
+            // Invalidate all other copies
             respCycle = sendInvalidates(lineAddr, lineId, INV, inducedWriteback, cycle, srcId);
             
             if (flags & MemReq::PKTOUT)
@@ -699,7 +781,7 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
             else
                 e->exclusive = true;
 
-            if (!((flags & MemReq::PKTIN) && childId > MAX_CACHE_CHILDREN)) {
+            if (!(((flags & MemReq::PKTIN) && childId > MAX_CACHE_CHILDREN)|| (flags & MemReq::PKTOUT)))  {
                 // Set current sharer, mark exclusive
                 e->sharers[childId] = true;
                 e->numSharers++;
@@ -720,6 +802,51 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
 */
             }
 
+            break;
+
+        case CLEAN:
+            {
+                if (lineId == -1)   { 
+                    e = (Entry*)malloc(sizeof(Entry));
+                    e->clear();
+                    if (!evicted_lines.empty() && evicted_lines.count(lineAddr) > 0) {      // check if someone above the llc has the line
+                        Entry* evct = &evicted_lines[lineAddr];
+                        e = &evicted_lines[lineAddr];
+                        /*if (evct->sharers[childId]) {
+                            evct->sharers[childId] = false;
+                             assert(evct->numSharers>0);
+                            evct->numSharers--;
+                            if(evct->numSharers == 0)  {
+                                evicted_lines.erase(lineAddr);
+                            }
+                        }*/
+                    }
+                }
+                else {
+                    assert(evicted_lines.count(lineAddr) == 0);
+                }
+                
+                if (e->sharers[childId]) {
+                    e->sharers[childId] = false;
+                    assert(e->numSharers>0);
+                    e->numSharers--;
+                    
+                    assert(e->numSharers>=0);
+                }
+
+                // Invalidate all copies
+                respCycle = sendInvalidates(lineAddr, lineId, INV, inducedWriteback, cycle, srcId);
+
+                *childState = I;
+                if(lineId > -1) {
+                    array[lineId].clear();
+                }
+                if(!evicted_lines.empty()) {
+                    assert(evicted_lines.count(lineAddr) == 0);
+                }
+                //e->exclusive = false;
+                //assert(e->numSharers == 0);      
+            }
             break;
 
         default: panic("!?");

@@ -116,16 +116,14 @@ struct MemReq {
         NORECORD      = (1<<6),
         PKTIN         = (1<<7),
         PKTOUT        = (1<<8),
-        NETRELATED    = (1<<9),
-        READNINV      = (1<<10),
-        NETRELATED_EGR= (1<<11),
-        NETRELATED_ING= (1<<12),
+        NETRELATED_ING    = (1<<9),
+        NETRELATED_EGR = (1<<10)
     };
     uint32_t flags;
 
     inline void set(Flag f) {flags |= f;}
     inline bool is (Flag f) const {return flags & f;}
-    inline void clear(Flag f) {flags ^= f;}
+    inline void clear(Flag f) {flags &= (~f);}
 };
 
 /* Invalidation/downgrade request */

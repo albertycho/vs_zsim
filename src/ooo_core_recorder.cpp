@@ -257,7 +257,7 @@ void OOOCoreRecorder::recordAccess(uint64_t curCycle, uint64_t dispatchCycle, ui
         futureResponses.push({zllStartCycle, respEvent});
     } else {
         //info("Handling PUT: curCycle %ld", curCycle);
-        assert(IsPut(tr.type));
+        //assert(IsPut(tr.type));
 
         //Link request
         DelayEvent* putUp = new (eventRecorder) DelayEvent(tr.reqCycle-curCycle);

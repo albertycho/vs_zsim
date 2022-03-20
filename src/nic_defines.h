@@ -14,7 +14,7 @@
 #include <queue>
 #include "g_std/g_list.h"
 #include <chrono>
-
+#include "g_std/g_unordered_map.h"
 
 #ifndef _NIC_DEFINES_H_
 #define _NIC_DEFINES_H_
@@ -229,6 +229,7 @@ struct glob_nic_elements {
 
 	uint64_t dpq_size=0;
 	uint64_t recv_buf_pool_size;
+	bool  clean_recv;
 
 	uint32_t expected_core_count;
 	uint32_t registered_core_count;
@@ -278,7 +279,7 @@ struct glob_nic_elements {
 	uint32_t next_phase_sampling_cycle=0;
 	//dbg
 	uint32_t lg_clk_slack[100000];
-	uint32_t cq_size_cores_per_phase[16][100000];
+	uint32_t cq_size_cores_per_phase[18][100000];
 	uint64_t last_zsim_pahse;
 
 	uint32_t last_phase_sent_packets=0;
@@ -355,7 +356,7 @@ struct load_generator {
 	uint64_t ptag;
 	lock_t ptc_lock;	   // keeping code for DBG/Comparison purpose
 
-	timestamp_str* tc_map;
+	timestamp* tc_map;
 	//RPCGenerator* RPCGen;
 };
 

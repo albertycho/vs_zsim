@@ -1093,7 +1093,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
         nicInfo->nic_elem[i].rb_dir = gm_calloc<recv_buf_dir_t>(recv_buf_pool_size);
     }
 
-
+    nicInfo->clean_recv = config.get<bool>("sim.clean_recv", false);
 
 
     zinfo->numDomains = config.get<uint32_t>("sim.domains", 1);

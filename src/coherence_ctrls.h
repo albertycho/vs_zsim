@@ -53,7 +53,7 @@ class CC : public GlobAlloc {
         virtual bool startAccess(MemReq& req) = 0; //initial locking, address races; returns true if access should be skipped; may change req!
         virtual bool shouldAllocate(const MemReq& req) = 0; //called when we don't find req's lineAddr in the array
         virtual uint64_t processEviction(const MemReq& triggerReq, Address wbLineAddr, int32_t lineId, uint64_t startCycle) = 0; //called iff shouldAllocate returns true
-        virtual uint64_t processAccess(const MemReq& req, int32_t lineId, uint64_t startCycle, bool correct_level, uint64_t* getDoneCycle = nullptr, bool is_llc=false) = 0;
+        virtual uint64_t processAccess(const MemReq& req, int32_t lineId, uint64_t startCycle, bool correct_level, uint64_t* getDoneCycle = nullptr, uint64_t* invalOnAccCycle = nullptr) = 0;
         virtual void endAccess(const MemReq& req) = 0;
 
         //Inv methods
@@ -257,11 +257,11 @@ class MESIBottomCC : public GlobAlloc {
 
         }
 
-        uint64_t processEviction(Address wbLineAddr, int32_t lineId, bool lowerLevelWriteback, uint64_t cycle, uint32_t srcId, bool no_record);
+        uint64_t processEviction(Address wbLineAddr, int32_t lineId, bool lowerLevelWriteback, uint64_t cycle, uint32_t srcId, uint32_t flags);
 
         uint64_t passToNext(Address lineAddr, AccessType type, uint32_t childId, uint32_t srcId, uint32_t flags, uint64_t cycle);
 
-        uint64_t processAccess(Address lineAddr, int32_t lineId, AccessType type, uint64_t cycle, uint32_t srcId, uint32_t flags, bool is_llc=false);
+        uint64_t processAccess(Address lineAddr, int32_t lineId, AccessType type, uint64_t cycle, uint32_t srcId, uint32_t flags);
 
         void processWritebackOnAccess(Address lineAddr, int32_t lineId, AccessType type);
 
@@ -369,6 +369,10 @@ class MESITopCC : public GlobAlloc {
             return array[lineId].numSharers;
         }
 
+        bool existsInPrivate(uint64_t lineAddr) {
+            return (!evicted_lines.empty() && evicted_lines.count(lineAddr) > 0);
+        }
+
         void processNonInclusiveWriteback(Address lineAddr, uint64_t srcId);
 
     private:
@@ -443,7 +447,7 @@ class MESICC : public CC {
 
         //Access methods
         bool startAccess(MemReq& req) {
-            assert((req.type == GETS) || (req.type == GETX) || (req.type == PUTS) || (req.type == PUTX));
+            assert((req.type == GETS) || (req.type == GETX) || (req.type == PUTS) || (req.type == PUTX) || (req.type == CLEAN));
 
             /* Child should be locked when called. We do hand-over-hand locking when going
              * down (which is why we require the lock), but not when going up, opening the
@@ -459,32 +463,49 @@ class MESICC : public CC {
             /* The situation is now stable, true race-wise. No one can touch the child state, because we hold
              * both parent's locks. So, we first handle races, which may cause us to skip the access.
              */
-            bool skipAccess = CheckForMESIRace(req.type /*may change*/, req.state, req.initialState);
+            bool skipAccess;
+            if (req.type != CLEAN) {
+                skipAccess = CheckForMESIRace(req.type /*may change*/, req.state, req.initialState); 
+            }
+            else {
+                skipAccess = false;
+            }
             return skipAccess;
         }
 
         bool shouldAllocate(const MemReq& req) {
-            if ((req.type == GETS) || (req.type == GETX)) {
-                return true;
-            } else {
+            if (req.type == GETX) {
+                return !(req.is(MemReq::PKTOUT));
+            }
+            else if  (req.type == GETS) {
+                if(req.is(MemReq::PKTOUT)) {
+                     return tcc->existsInPrivate(req.lineAddr);
+                }
+                else {
+                    return true;
+                }
+            }
+            else if (req.type == CLEAN) {
+                return false;
+            }
+            else {
                 assert((req.type == PUTS) || (req.type == PUTX));
                 if (!nonInclusiveHack) {
                     panic("[%s] We lost inclusion on this line! 0x%lx, type %s, childId %d, childState %s", name.c_str(),
                             req.lineAddr, AccessTypeName(req.type), req.childId, MESIStateName(*req.state));
                 }
-                return false;
+                return req.type == PUTX ? true : false;//false;
             }
         }
 
         uint64_t processEviction(const MemReq& triggerReq, Address wbLineAddr, int32_t lineId, uint64_t startCycle) {
             bool lowerLevelWriteback = false;
-            bool no_record = ((triggerReq.flags) & (MemReq::NORECORD)) != 0;
             uint64_t evCycle = tcc->processEviction(wbLineAddr, lineId, &lowerLevelWriteback, startCycle, triggerReq.srcId); //1. if needed, send invalidates/downgrades to lower level
-            evCycle = bcc->processEviction(wbLineAddr, lineId, lowerLevelWriteback, evCycle, triggerReq.srcId, no_record); //2. if needed, write back line to upper level
+            evCycle = bcc->processEviction(wbLineAddr, lineId, lowerLevelWriteback, evCycle, triggerReq.srcId, triggerReq.flags); //2. if needed, write back line to upper level
             return evCycle;
         }
 
-        uint64_t processAccess(const MemReq& req, int32_t lineId, uint64_t startCycle, bool correct_level, uint64_t* getDoneCycle = nullptr, bool is_llc=false) {
+        uint64_t processAccess(const MemReq& req, int32_t lineId, uint64_t startCycle, bool correct_level, uint64_t* getDoneCycle = nullptr, uint64_t* invalOnAccCycle = nullptr) {
 
             uint64_t respCycle = startCycle;
             //Handle non-inclusive writebacks by bypassing
@@ -493,9 +514,9 @@ class MESICC : public CC {
             //but if we do proper NI/EX mid-level caches backed by directories, this may start becoming more common (and it is perfectly acceptable to
             //upgrade without any interaction with the parent... the child had the permissions!)
             if (correct_level) {
-                if ((lineId == -1 && !(req.flags & MemReq::PKTOUT)) || (((req.type == PUTS) || (req.type == PUTX)) && !bcc->isValid(lineId))) { //can only be a non-inclusive wback
+                if ((lineId == -1 && !(req.flags & MemReq::PKTOUT || req.type == CLEAN)) || (((req.type == PUTS) /*|| (req.type == PUTX)*/) && !bcc->isValid(lineId))) { //can only be a non-inclusive wback
                     assert(nonInclusiveHack);
-                    assert((req.type == PUTS) || (req.type == PUTX));
+                    assert((req.type == PUTS));// || (req.type == PUTX));
                     respCycle = bcc->processNonInclusiveWriteback(req.lineAddr, req.type, startCycle, req.state, req.srcId, req.flags);
                     tcc->processNonInclusiveWriteback(req.lineAddr, req.childId);
                     if (getDoneCycle) *getDoneCycle = 0;
@@ -505,7 +526,7 @@ class MESICC : public CC {
                     assert(!isPrefetch || req.type == GETS);
                     uint32_t flags = req.flags & ~MemReq::PREFETCH; //always clear PREFETCH, this flag cannot propagate up
                     //if needed, fetch line or upgrade miss from upper level
-                    respCycle = bcc->processAccess(req.lineAddr, lineId, req.type, startCycle, req.srcId, flags, is_llc);
+                    respCycle = bcc->processAccess(req.lineAddr, lineId, req.type, startCycle, req.srcId, flags);
                     if (getDoneCycle) *getDoneCycle = respCycle;
                     if (!isPrefetch) { //prefetches only touch bcc; the demand request from the core will pull the line to lower level
                         //At this point, the line is in a good state w.r.t. upper levels
@@ -516,8 +537,14 @@ class MESICC : public CC {
                         respCycle = tcc->processAccess(req.lineAddr, lineId, req.type, req.childId, bcc->isExclusive(lineId), req.state,
                                 &lowerLevelWriteback, respCycle, req.srcId, flags);
                         if (lowerLevelWriteback) {
-                            //Essentially, if tcc induced a writeback, bcc may need to do an E->M transition to reflect that the cache now has dirty data
-                            bcc->processWritebackOnAccess(req.lineAddr, lineId, req.type);
+                            if (req.is(MemReq::PKTOUT) && req.type == GETX) {   // non-DDIO egress access that invalidates all caches
+                                                                                // i need to writeback the line to memory
+                                *invalOnAccCycle = bcc->processNonInclusiveWriteback(req.lineAddr, PUTX, respCycle, req.state, req.srcId, 0); // basically does a 
+                            }
+                            else if (req.type != CLEAN) {
+                                //Essentially, if tcc induced a writeback, bcc may need to do an E->M transition to reflect that the cache now has dirty data
+                                bcc->processWritebackOnAccess(req.lineAddr, lineId, req.type);
+                            }
                         }
                     }
                 }
@@ -552,7 +579,7 @@ class MESICC : public CC {
             uint64_t respCycle = tcc->processInval(req.lineAddr, lineId, req.type, req.writeback, startCycle, req.srcId); //send invalidates or downgrades to children
             bcc->processInval(req.lineAddr, lineId, req.type, req.writeback); //adjust our own state
 
-            bcc->unlock();
+            //bcc->unlock();
             return respCycle;
         }
 
@@ -602,7 +629,7 @@ class MESITerminalCC : public CC {
 
         //Access methods
         bool startAccess(MemReq& req) {
-            assert((req.type == GETS) || (req.type == GETX)); //no puts!
+            assert((req.type == GETS) || (req.type == GETX) || (req.type == CLEAN)); //no puts!
 
             /* Child should be locked when called. We do hand-over-hand locking when going
              * down (which is why we require the lock), but not when going up, opening the
@@ -628,12 +655,11 @@ class MESITerminalCC : public CC {
 
         uint64_t processEviction(const MemReq& triggerReq, Address wbLineAddr, int32_t lineId, uint64_t startCycle) {
             bool lowerLevelWriteback = false;
-            bool no_record = ((triggerReq.flags) & (MemReq::NORECORD)) != 0;
-            uint64_t endCycle = bcc->processEviction(wbLineAddr, lineId, lowerLevelWriteback, startCycle, triggerReq.srcId, no_record); //2. if needed, write back line to upper level
+            uint64_t endCycle = bcc->processEviction(wbLineAddr, lineId, lowerLevelWriteback, startCycle, triggerReq.srcId, triggerReq.flags); //2. if needed, write back line to upper level
             return endCycle;  // critical path unaffected, but TimingCache needs it
         }
 
-        uint64_t processAccess(const MemReq& req, int32_t lineId, uint64_t startCycle, bool correct_level, uint64_t* getDoneCycle = nullptr, bool is_llc=false) {
+        uint64_t processAccess(const MemReq& req, int32_t lineId, uint64_t startCycle, bool correct_level, uint64_t* getDoneCycle = nullptr, uint64_t* invalOnAccCycle = nullptr) {
             if (correct_level) {
                 assert(lineId != -1);
                 assert(!getDoneCycle);
@@ -664,7 +690,7 @@ class MESITerminalCC : public CC {
 
         uint64_t processInv(const InvReq& req, int32_t lineId, uint64_t startCycle) {
             bcc->processInval(req.lineAddr, lineId, req.type, req.writeback); //adjust our own state
-            bcc->unlock();
+            //bcc->unlock();
             return startCycle; //no extra delay in terminal caches
         }
 

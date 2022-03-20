@@ -239,6 +239,8 @@ void DDRMemory::initStats(AggregateStat* parentStat) {
     profWrites.init("wr", "Write requests"); memStats->append(&profWrites);
     profTotalRdLat.init("rdlat", "Total latency experienced by read requests"); memStats->append(&profTotalRdLat);
     profTotalWrLat.init("wrlat", "Total latency experienced by write requests"); memStats->append(&profTotalWrLat);
+    dirty_evict_ing.init("recv_dirty_evict", "dirty evicted recv lines"); memStats->append(&dirty_evict_ing);
+    dirty_evict_egr.init("lbuf_dirty_evict", "dirty evicted lbuf lines"); memStats->append(&dirty_evict_egr);
     total_access_count.init("total_accesses", "count all requests at access method"); memStats->append(&total_access_count);
     profReadHits.init("rdhits", "Read row hits"); memStats->append(&profReadHits);
     profWriteHits.init("wrhits", "Write row hits"); memStats->append(&profWriteHits);
@@ -323,6 +325,12 @@ bool is_rb_addr(Address lineaddr){
 
 uint64_t DDRMemory::access(MemReq& req) {
     
+    if(req.type == CLEAN) {
+        *req.state = I;
+        return req.cycle;
+    }
+        
+
     if (nicInfo->ready_for_inj==0xabcd && zinfo->numPhases > lastPhase) {
         futex_lock(&statsLock);
         //Recheck, someone may have updated already
@@ -387,6 +395,35 @@ uint64_t DDRMemory::access(MemReq& req) {
         if (no_record) {
             return no_latency? req.cycle : respCycle;
         }
+        
+        if(req.type == PUTX) {
+            int i=3;
+            glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+            while (i < nicInfo->expected_core_count + 3){
+                Address base_ing = (Address)(nicInfo->nic_elem[i].recv_buf) >> lineBits;
+                uint64_t size_ing = nicInfo->recv_buf_pool_size; 
+                Address top_ing = ((Address)(nicInfo->nic_elem[i].recv_buf) + size_ing) >> lineBits;
+                Address base_egr = (Address)(nicInfo->nic_elem[i].lbuf) >> lineBits;
+                uint64_t size_egr = 256*nicInfo->forced_packet_size;
+                Address top_egr = ((Address)(nicInfo->nic_elem[i].lbuf) + size_egr) >> lineBits;
+		base_ing = base_ing/(nicInfo->num_controllers);  
+		top_ing = top_ing/(nicInfo->num_controllers);  
+		base_egr = base_egr/(nicInfo->num_controllers);
+		top_egr = top_egr /(nicInfo->num_controllers);  		
+
+                if (req.lineAddr >= base_ing && req.lineAddr <= top_ing) {
+                    dirty_evict_ing.inc();
+                    break;
+                }
+                else if (req.lineAddr >= base_egr && req.lineAddr <= top_egr) {
+                    dirty_evict_egr.inc();
+                    break;
+                }
+                i++;
+            }
+                
+        }
+
         if (!no_bw && zinfo->eventRecorders[req.srcId]) {
             DDRMemoryAccEvent* memEv = new (zinfo->eventRecorders[req.srcId]) DDRMemoryAccEvent(this,
                     isWrite, req.lineAddr, domain, preDelay, isWrite? postDelayWr : postDelayRd);

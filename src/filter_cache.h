@@ -193,6 +193,28 @@ class FilterCache : public Cache {
             }
         }
 
+        inline uint64_t clean(Address vAddr, uint64_t curCycle, uint32_t flags = 0) {
+            Address vLineAddr = vAddr >> lineBits;
+            uint32_t idx = vLineAddr & setMask;
+
+            if (vLineAddr == filterArray[idx].rdAddr) {
+                filterArray[idx].rdAddr = -1L;
+            } 
+            if (vLineAddr == filterArray[idx].wrAddr) {
+                filterArray[idx].wrAddr = -1L;
+            } 
+
+            Address procMask_f = 0;
+            Address pLineAddr = procMask_f | vLineAddr;
+            MESIState dummyState = MESIState::I;
+            futex_lock(&filterLock);
+            MemReq req = {pLineAddr, CLEAN, 0, &dummyState, curCycle, &filterLock, dummyState, srcId, flags | (level<<16)};
+            
+            uint64_t respCycle  = access(req);
+            futex_unlock(&filterLock);
+            return respCycle;
+        }
+
         uint64_t replace(Address vLineAddr, uint32_t idx, bool isLoad, uint64_t curCycle, uint32_t source, uint32_t childId, uint32_t flags, int lvl) {
             Address procMask_f = procMask;
             //Don't apply mask if it's a NIC related address

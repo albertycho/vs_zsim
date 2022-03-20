@@ -7,5 +7,6 @@ tests/nic_egress_proxy_app
 tests/nic_proxy_app
 tests/qp_test
 tests/qp_test_thread_ver
+tests/memhog
 
 .vscode/settings.json

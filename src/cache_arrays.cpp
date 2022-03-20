@@ -92,7 +92,7 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
                     array[id].lastUSer = APP;
                 else                // coming from NIC
                     array[id].lastUSer = NIC;
-                if (req->flags & MemReq::NETRELATED_ING || req->flags & MemReq::NETRELATED_EGR) {
+                if (req->is(MemReq::NETRELATED_ING) || req->is(MemReq::NETRELATED_EGR)){
                     array[id].nicType = NETWORK;
                     if (req->srcId > 1) {
                         //netHits_core.atomicInc();
@@ -107,7 +107,7 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
                             //netHits_nic_lb.atomicInc();
                         }
                         else{
-                            printf("NETWORK related access from nic but not PKTIN or PKTOUT? shouldn't happen\n");
+                            //printf("NETWORK related access from nic but not PKTIN or PKTOUT? shouldn't happen\n");
                         }
                     }
                 }
@@ -176,7 +176,7 @@ void SetAssocArray::postinsert(const Address lineAddr, const MemReq* req, uint32
             array[candidate].lastUSer = APP;
         else                // coming from NIC
             array[candidate].lastUSer = NIC;
-        if (req->flags & MemReq::NETRELATED)
+        if (req->is(MemReq::NETRELATED_ING) || req->is(MemReq::NETRELATED_EGR))
             array[candidate].nicType = NETWORK;
         else
             array[candidate].nicType = DATA;
