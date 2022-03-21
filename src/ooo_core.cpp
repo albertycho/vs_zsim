@@ -692,9 +692,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
 			int safety_counter = 0;
 
 			while (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch())) {
-				//while (core->curCycle > ((((OOOCore*)(nicInfo->nicCore_ingress))->getCycles()) + 50) ) { 
-				// +50this could be a performance optmiziation, not sure how significant correctness hazard is
-				//info("thisCore curCycle = %lu, nicCore curcycle = %lu", core->curCycle, ((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch());
+				
 				usleep(1); // short delay seems to work sufficient
 				safety_counter++;
 				if (safety_counter > 10) { // >2 seems to work in current env. May need to be adjusted when running on different machine
@@ -970,7 +968,50 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
 		}
 
 
+        bool check_cq_depth(uint32_t lg_i, uint64_t injection_cycle){
+            //check if cq_depth is shorter than depth specified to maintain
+            //if shorter, schedule incoming packet for this cycle
+            //(will hang if target depth is smaller than batchsize of the app)
 
+
+			glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+			void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
+			load_generator* lg_p = (load_generator*)lg_p_vp;
+            uint32_t numCores = lg_p->lgs[lg_i].num_cores;
+            uint32_t core_iterator = lg_p->lgs[lg_i].last_core;
+
+            for (uint32_t i = 0; i < numCores; i++) {
+				uint32_t core_id_l = lg_p->lgs[lg_i].core_ids[core_iterator];
+				if (nicInfo->nic_elem[core_id_l].cq_valid == true) {
+					uint32_t cq_head = nicInfo->nic_elem[core_id_l].cq_head;
+					uint32_t cq_tail = nicInfo->nic_elem[core_id_l].cq->tail;
+					if (cq_head < cq_tail) {
+						cq_head += MAX_NUM_WQ;
+					}
+					uint32_t cq_size = cq_head - cq_tail;
+                    uint32_t total_q_size = cq_size + nicInfo->nic_elem[core_id_l].ceq_size;
+					if ((total_q_size) < lg_p->lgs[lg_i].q_depth) {
+                        //there is a core with q_depth smaller than target.
+                        lg_p->lgs[lg_i].next_cycle=injection_cycle;			
+                        return true;
+						
+					}
+
+				}
+
+				core_iterator++;
+				if (core_iterator >= numCores) {
+					core_iterator = 0;
+				}
+
+			}
+            //all cores are at wanted q_depth. set next_cycle far
+            // (this function will reset it to cur_cycle when needed)
+            lg_p->lgs[lg_i].next_cycle=injection_cycle+1000;	
+            return false;
+
+
+        }
 
 		uint32_t assign_core(uint32_t lg_i) {
 
@@ -1191,6 +1232,9 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
 								// how to handle multi cores? - schedule injection if ANY core has len < target,
 								//  let assign_core prioritize core with len<target
 								//  @update_loadgen, just set next cycle far away, the above checker will reschedule when needed
+                                if(lg_p->lgs[ii].arrival_dist==3){ //sustain q_depth
+                                    check_cq_depth(ii, injection_cycle);
+                                }
 								if (lg_p->lgs[ii].next_cycle <= injection_cycle /*&& idle_core > 1*/) {
 									//uint32_t core_iterator = assign_core(core_iterator);
 									uint32_t core_iterator = assign_core(ii);
@@ -1205,23 +1249,6 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
 									}
 								}
 								}
-								/*
-								   if (lg_p->next_cycle <= injection_cycle) {
-								//uint32_t core_iterator = assign_core(core_iterator);
-								uint32_t core_iterator = assign_core(((load_generator*)lg_p)->last_core);
-								if (nicInfo->nic_elem[core_iterator].packet_pending == false) {
-								((load_generator*)lg_p)->last_core = core_iterator;
-								//uint32_t srcId = getCid(tid);
-								int inj_attempt;
-								if (core->ingr_type < 2)
-								inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), core->l1d, core->ingr_type);
-								else
-								inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), l1d_caches[core_iterator], core->ingr_type);
-
-								return inj_attempt;
-								}
-								}
-								*/
 
 							}
 						}

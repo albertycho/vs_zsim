@@ -223,7 +223,7 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0) {
 	uint32_t lambda = lg_p->lgs[lg_i].interval;
 	double U = drand48();
 
-	switch(lg_p->arrival_dist){
+	switch(lg_p->lgs[lg_i].arrival_dist){
 		case 0: //uniform arrival rate
 			interval = lg_p->lgs[lg_i].interval;
 			break;
@@ -254,6 +254,11 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0) {
 
 			}
 			break;
+		case 3: // keep queue_depth
+			interval=1000; //set far away, check_cq_depth function in ooo_core.cpp will reset next_cycle
+
+
+			break;
 		default:
 			interval = lg_p->lgs[lg_i].interval;
 		break;
@@ -278,7 +283,10 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0) {
 		}
 	}
 	else{
-		((load_generator*)lg_p)->sum_interval = ((load_generator*)lg_p)->sum_interval + interval;
+		//((load_generator*)lg_p)->sum_interval = ((load_generator*)lg_p)->sum_interval + interval;
+		//can do same thing for normal sends
+		lg_p->sum_interval = lg_p->sum_interval + (cur_cycle-(lg_p->prev_cycle));
+		lg_p->lgs[lg_i].sum_interval = lg_p->lgs[lg_i].sum_interval + (cur_cycle-(lg_p->lgs[lg_i].prev_cycle));
 	}
 
 
@@ -305,6 +313,7 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0) {
 	
 
 	((load_generator*)lg_p)->prev_cycle = cur_cycle;
+	((load_generator*)lg_p)->lgs[lg_i].prev_cycle = cur_cycle;
 	return 0;
 }
 

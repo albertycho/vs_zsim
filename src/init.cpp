@@ -1225,6 +1225,15 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
         uint32_t IR = config.get<uint32_t>(lg_prefix + lgi + ".packet_injection_rate", 10);
         uint32_t update_fraction = config.get<uint32_t>(lg_prefix + lgi + ".update_fraction", 25);
         uint32_t assoc_cores = config.get<uint32_t>(lg_prefix + lgi + ".assoc_cores", 16);
+        uint32_t q_depth = config.get<uint32_t>(lg_prefix + lgi + ".q_depth", 1); 
+        uint32_t arrival_dist_mod = config.get<uint32_t>(lg_prefix + lgi + ".arrival_dist", 100); //100 for not given
+        if(arrival_dist_mod==100){
+            lgp->lgs[tmp].arrival_dist=lgp->arrival_dist;
+        }
+        else{
+            lgp->lgs[tmp].arrival_dist = arrival_dist_mod;
+        }
+        lgp->lgs[tmp].q_depth = q_depth;
         lgp->lgs[tmp].lg_type = lg_type;
         lgp->lgs[tmp].next_cycle = 0;
         lgp->lgs[tmp].interval = (zinfo->phaseLength) / (IR);

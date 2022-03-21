@@ -330,6 +330,12 @@ typedef struct load_gen_mod {
 	uint32_t interval;
 	uint32_t burst_count=0;
 	uint32_t burst_len=0;
+	
+	uint32_t arrival_dist=0;
+	uint32_t q_depth=1; //for arrival dist==3, sustain q_depth
+	uint64_t sum_interval;
+	uint32_t prev_cycle;
+
 	RPCGenerator* RPCGen;
 	uint64_t last_core;
 	uint32_t num_cores;
