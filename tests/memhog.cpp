@@ -46,8 +46,6 @@ int main(int argc, char* argv[]) {
                 
 
 	const pid_t pid = getpid();
-//	const pid_t pid = gettid();
-	//const pid_t pid = syscall(SYS_gettid);
 
 	// cpu_set_t: This data set is a bitset where each bit represents a CPU.
 
