@@ -15,6 +15,9 @@ g++ -g nic_egress_proxy_app.cpp ../src/libzsim/zsim_nic_defines.cpp -std=c++11 -
 rm memhog
 g++ -g memhog.cpp ../src/libzsim/zsim_nic_defines.cpp -std=c++11 -o memhog -pthread 
 
+rm memhog_mt
+g++ -g memhog_mt_wrapper.cpp memhog_mt.cpp ../src/libzsim/zsim_nic_defines.cpp -std=c++11 -o memhog_mt -pthread
+
 #g++ -g qp_test_mt_wrapper.cpp qp_test_thread_ver.cpp ../src/libzsim/zsim_nic_defines.cpp -std=c++11 -O3 -Wall -o qp_test_thread_ver -pthread
 
 #rm ma_uarch_check
