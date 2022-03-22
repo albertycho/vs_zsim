@@ -481,6 +481,19 @@ void generate_raw_timestamp_files(bool run_success){
 	std::cout<<"average interval: "<<average_interval<<std::endl;
 
 	latency_hist_file <<"average interval: "<<average_interval<<std::endl;
+
+    int num_lgs = lg_p->num_loadgen;
+    for(int i=0; i<num_lgs;i++){
+        if(lg_p->lgs[i].sent_packets==0){
+            info("WARNING - loadgen %d sent 0 packets?",i);
+        }
+        else{
+            uint64_t nf_average_interval = lg_p->lgs[i].sum_interval / lg_p->lgs[i].sent_packets;
+            std::cout<<"NF"<<i<<" average interval: "<<nf_average_interval<<std::endl;
+            latency_hist_file <<"NF"<<i<<"_average interval: "<<nf_average_interval<<std::endl;
+        }
+    }
+
 	latency_hist_file.close();
 }
 

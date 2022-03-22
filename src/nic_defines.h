@@ -335,6 +335,7 @@ typedef struct load_gen_mod {
 	uint32_t q_depth=1; //for arrival dist==3, sustain q_depth
 	uint64_t sum_interval;
 	uint32_t prev_cycle;
+	uint64_t sent_packets=0;
 
 	RPCGenerator* RPCGen;
 	uint64_t last_core;

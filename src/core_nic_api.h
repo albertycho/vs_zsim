@@ -296,6 +296,7 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0) {
 	((load_generator*)lg_p)->ptag++;
 
 	((load_generator*)lg_p)->sent_packets++;
+	lg_p->lgs[lg_i].sent_packets++;
 	//for debugging
 	uint64_t packet_size=512;//default
 	if(nicInfo->forced_packet_size!=0){
