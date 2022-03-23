@@ -154,6 +154,22 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
     return -1;
 }
 
+
+bool is_rb_addr(Address lineaddr){
+    uint64_t num_cores = zinfo->numCores;
+    for(int i=0; i<num_cores;i++){
+        uint64_t rb_base=(uint64_t) nicInfo->nic_elem[i].recv_buf;
+        uint64_t rb_top =rb_base+nicInfo->recv_buf_pool_size;
+        uint64_t rb_base_line=rb_base>>lineBits;
+        uint64_t rb_top_line = rb_top>>lineBits;
+        if (lineaddr >= rb_base_line && lineaddr <= rb_top_line) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
 uint32_t SetAssocArray::preinsert(const Address lineAddr, const MemReq* req, Address* wbLineAddr) { //TODO: Give out valid bit of wb cand?
     uint32_t set = (hf->hash(0, lineAddr) & setMask) % numSets;
     uint32_t first = set*assoc;
@@ -162,6 +178,9 @@ uint32_t SetAssocArray::preinsert(const Address lineAddr, const MemReq* req, Add
     way_misses.inc(candidate-first);
     //info("eviction candidate is %lld, with index %ld", array[candidate], candidate);
     if(req->flags & MemReq::PKTIN){
+        nic_rb_way_misses.inc(candidate-first);
+    }
+    else if(is_rb_addr(lineAddr)){ //brought in by core after tight leaky DMA
         nic_rb_way_misses.inc(candidate-first);
     }
     *wbLineAddr = array[candidate].addr;
