@@ -73,7 +73,7 @@ class SetAssocArray : public CacheArray {
         uint32_t assoc;
         uint32_t setMask;
 
-        Counter appMisses,appHits;
+        Counter appMisses,appHits, rb_insert_server;
         VectorCounter way_misses, way_hits, nic_rb_way_misses, nic_rb_way_hits;
 
 

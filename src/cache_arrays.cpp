@@ -66,6 +66,7 @@ void SetAssocArray::initStats(AggregateStat* parentStat) {
     way_hits.init("way_hits", "Hits per cache way",assoc);
     nic_rb_way_hits.init("nic_rb_way_hits", "Hits per cache way",assoc);
     nic_rb_way_misses.init("nic_rb_way_inserts", "Insertions per cache way",assoc);
+    rb_insert_server.init("rb_insert_server", "Insertions per cache way");
     //objStats->append(&netMisses_nic_rb);
     //objStats->append(&netMisses_nic_lb);
     //objStats->append(&netMisses_core);
@@ -79,6 +80,7 @@ void SetAssocArray::initStats(AggregateStat* parentStat) {
     objStats->append(&way_hits);
     objStats->append(&nic_rb_way_hits);
     objStats->append(&nic_rb_way_misses);
+    objStats->append(&rb_insert_server);
     parentStat->append(objStats);
 }
 
@@ -182,6 +184,7 @@ uint32_t SetAssocArray::preinsert(const Address lineAddr, const MemReq* req, Add
     }
     else if(is_rb_addr(lineAddr)){ //brought in by core after tight leaky DMA
         nic_rb_way_misses.inc(candidate-first);
+        rb_insert_server.atomicInc();
     }
     *wbLineAddr = array[candidate].addr;
     return candidate;
