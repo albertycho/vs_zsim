@@ -93,6 +93,6 @@ int main(int argc, char* argv[]) {
 
 
 	//register_buffer((void*) 0, (void*) 0xdead);
-	std::cout<<"nic ingress proxy app - terminating, dummy="<<dummy<<std::endl;
+	std::cout<<"memhog - terminating, dummy="<<dummy<<", sum="<<sum<<std::endl;
     return 0;
 }

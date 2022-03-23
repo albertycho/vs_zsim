@@ -55,6 +55,9 @@ void* memhog_thread(void* inarg) {
 
 	for(uint64_t i=0;i<array_size;i++){
 		hog_arr[i]=i;
+		//if (i % 10000 == 0) {
+		//	std::cout<<"memhog at core "<<core_id<<" initializing, i="<<i<<std::endl;
+		//}
 	}
 	
 	uint64_t dummy=0;
@@ -62,13 +65,15 @@ void* memhog_thread(void* inarg) {
 	while (!(*zsim_done)) {
 		sum+=hog_arr[(dummy%array_size)];
 		dummy++;
-		//if (dummy % 10000 == 0) {
-		//}
+		if (dummy % 10000 == 0) {
+			std::cout<<"memhog at core "<<core_id<<" , dummy="<<dummy<<", sum="<<sum<<std::endl;
+
+		}
 	}
 
 
 
-	std::cout<<"memhog at core "<<core_id<<" terminating, dummy="<<dummy<<std::endl;
+	std::cout<<"memhog at core "<<core_id<<" terminating, dummy="<<dummy<<", sum="<<sum<<std::endl;
     return 0;
 
 }
