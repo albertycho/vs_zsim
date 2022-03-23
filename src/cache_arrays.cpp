@@ -157,7 +157,7 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
 }
 
 
-bool is_rb_addr(Address lineaddr){
+bool is_rb_addr_ca(Address lineaddr){
     uint64_t num_cores = zinfo->numCores;
     for(int i=0; i<num_cores;i++){
         uint64_t rb_base=(uint64_t) nicInfo->nic_elem[i].recv_buf;
@@ -182,7 +182,7 @@ uint32_t SetAssocArray::preinsert(const Address lineAddr, const MemReq* req, Add
     if(req->flags & MemReq::PKTIN){
         nic_rb_way_misses.inc(candidate-first);
     }
-    else if(is_rb_addr(lineAddr)){ //brought in by core after tight leaky DMA
+    else if(is_rb_addr_ca(lineAddr)){ //brought in by core after tight leaky DMA
         nic_rb_way_misses.inc(candidate-first);
         rb_insert_server.atomicInc();
     }
