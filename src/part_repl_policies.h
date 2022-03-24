@@ -793,7 +793,12 @@ class DDIOPartReplPolicy : public PartReplPolicy, public LegacyReplPolicy {
                 if ((wayPartIndex[way])[incomingLinePart]) {
                     if (best == nullptr) {
                         bestId = id;
-                    } else {
+                    }
+                    else if (c->ts < best->ts) {
+                        bestId = id;
+                    }
+                    /*
+                    else {
                         //NOTE: This is actually not feasible without tagging. But what IS feasible is to stop updating the LRU position on new fills. We could kill this, and profile the differences.
                         if (c->p == incomingLinePart && best->p == incomingLinePart) {
                             if (c->ts < best->ts) bestId = id;
@@ -806,6 +811,7 @@ class DDIOPartReplPolicy : public PartReplPolicy, public LegacyReplPolicy {
                             if (c->ts < best->ts) bestId = id;
                         }
                     }
+                    */
                 }
             }
         }
