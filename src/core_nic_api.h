@@ -510,8 +510,8 @@ void get_IRSR_stat(uint64_t cur_cycle, load_generator* lg_p, glob_nic_elements* 
 
 	if((cur_cycle > nicInfo->next_phase_sampling_cycle) && (nicInfo->ready_for_inj==0xabcd)){
 		if((cur_cycle - (nicInfo->next_phase_sampling_cycle)) > 200){
-			info("cur_cycle is too far ahead of phase sampling cycle by %d", (cur_cycle - (nicInfo->next_phase_sampling_cycle)));
-			info("zsim_phases since last sampling phase: %d", ((zinfo->numPhases) - (nicInfo->last_zsim_pahse)));
+			//info("cur_cycle is too far ahead of phase sampling cycle by %d", (cur_cycle - (nicInfo->next_phase_sampling_cycle)));
+			//info("zsim_phases since last sampling phase: %d", ((zinfo->numPhases) - (nicInfo->last_zsim_pahse)));
 		}
 		uint32_t ii=nicInfo->sampling_phase_index;
 		nicInfo->sampling_phase_index++;
@@ -566,7 +566,9 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 
 	uint32_t core_i = lg_p->lgs[lg_i].last_core;
 	uint32_t cq_size = get_cq_size(core_i);
-	get_IRSR_stat(cur_cycle, lg_p, nicInfo, core_i, cq_size);
+	if(nicInfo->sampling_phase_index < 100000 ){ 
+		get_IRSR_stat(cur_cycle, lg_p, nicInfo, core_i, cq_size);
+	}
 
 	uint32_t herd_msg_size = 512;
 	uint32_t packet_size = herd_msg_size;
