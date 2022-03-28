@@ -714,7 +714,9 @@ int main(int argc, char *argv[]) {
     else{
         load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
         if (lg_p->num_loadgen > 0) {
-            generate_raw_timestamp_files(true);
+			if(lg_p->all_packets_completed){
+            	generate_raw_timestamp_files(true);
+			}
         }
     }
     dump_IR_SR_stat();
