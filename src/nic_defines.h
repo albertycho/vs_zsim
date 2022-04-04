@@ -229,7 +229,8 @@ struct glob_nic_elements {
 
 	uint64_t dpq_size=0;
 	uint64_t recv_buf_pool_size;
-	bool  clean_recv;
+	//bool  clean_recv;
+	uint32_t  clean_recv;
 
 	uint32_t expected_core_count;
 	uint32_t registered_core_count;
