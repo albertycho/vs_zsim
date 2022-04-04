@@ -99,7 +99,7 @@ uint64_t Cache::access(MemReq& req) {
                         req.set(MemReq::INGR_EVCT);
                         break;
                     }
-                    if (wbLineAddr >= base_ing && wbLineAddr <= top_ing) {
+                    if (wbLineAddr >= base_egr && wbLineAddr <= top_egr) {
                         req.set(MemReq::EGR_EVCT);
                         break;
                     }
