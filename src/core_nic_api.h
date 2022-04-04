@@ -970,6 +970,7 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 				}
 				/// add cleaning for lbuf
 				if(nicInfo->clean_recv){
+					addr = dp->lbuf_addr;
 					lsize = dp->len;
 					while (lsize) {
 						reqSatisfiedCycle = l1d->clean(addr, core_cycle, nicInfo->clean_recv) + L1D_LAT;
