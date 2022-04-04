@@ -248,7 +248,7 @@ class DDRMemory : public MemObject {
         // R/W stats
         PAD();
         Counter profReads, profWrites, profAccs;
-        Counter profTotalRdLat, profTotalWrLat, total_access_count, dirty_evict_ing, dirty_evict_egr, nic_ingr_get,rb_dirty_evic_count;
+        Counter profTotalRdLat, profTotalWrLat, total_access_count, dirty_evict_ing, dirty_evict_egr,dirty_evict_app, nic_ingr_get,rb_dirty_evic_count;
         Counter profReadHits, profWriteHits;  // row buffer hits
         VectorCounter latencyHist;
         static const uint32_t BINSIZE = 10, NUMBINS = 100;

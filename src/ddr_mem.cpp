@@ -241,6 +241,7 @@ void DDRMemory::initStats(AggregateStat* parentStat) {
     profTotalWrLat.init("wrlat", "Total latency experienced by write requests"); memStats->append(&profTotalWrLat);
     dirty_evict_ing.init("recv_dirty_evict", "dirty evicted recv lines"); memStats->append(&dirty_evict_ing);
     dirty_evict_egr.init("lbuf_dirty_evict", "dirty evicted lbuf lines"); memStats->append(&dirty_evict_egr);
+    dirty_evict_app.init("app_dirty_evict", "dirty evicted app data lines"); memStats->append(&dirty_evict_app);
     nic_ingr_get.init("nic_ingr_get", "dma nic writes"); memStats->append(&nic_ingr_get);
     total_access_count.init("total_accesses", "count all requests at access method"); memStats->append(&total_access_count);
     profReadHits.init("rdhits", "Read row hits"); memStats->append(&profReadHits);
@@ -406,6 +407,9 @@ uint64_t DDRMemory::access(MemReq& req) {
             }
             else if (req.is(MemReq::EGR_EVCT)) {
                 dirty_evict_egr.inc();
+            }
+            else{ //everything else
+                dirty_evict_app.inc();
             }
         }
 
