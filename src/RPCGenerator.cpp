@@ -170,14 +170,15 @@ RPCGenerator::generatePackedRPC(char* userBuffer, uint32_t packet_size) const {
 	}
 
 
-	if(lg_type==0){ //herd
+	if(lg_type==0){ //herd	
 		struct mica_op req;
+
+		//uint64_t mica_max_value = packet_size - (sizeof(struct mica_key) + sizeof(uint16_t) + sizeof(uint16_t));
 
 		uint128 hval = CityHash128((char*)&key_arr[key_i], 4);
 
 		req.opcode = is_update ? HERD_OP_PUT : HERD_OP_GET;
-		//req.val_len = is_update ? MICA_MAX_VALUE : 0;
-		req.val_len = is_update ? (packet_size - 512 + (MICA_MAX_VALUE)) : 0;
+		req.val_len = is_update ? MICA_MAX_VALUE : 0;
 		/*
 		   if (is_update) {
 		   for (size_t i = 0; i < MICA_MAX_VALUE; i++) {
@@ -187,9 +188,9 @@ RPCGenerator::generatePackedRPC(char* userBuffer, uint32_t packet_size) const {
 		   */
 		//sizeof mica_op is 64
 		memcpy(&req, &hval, sizeof(hval));
-		//int copy_size = is_update? sizeof(req) : (sizeof(req) - MICA_MAX_VALUE);
+		int copy_size = is_update? sizeof(req) : (sizeof(req) - MICA_MAX_VALUE);
 		//int copy_size = sizeof(req); //packet size is a test variable now, use uniform size per req
-		int copy_size = packet_size; //packet size is a test variable now, use uniform size per req
+		//int copy_size = packet_size; //packet size is a test variable now, use uniform size per req
 		memcpy(userBuffer, &(req), copy_size);
 
 		//printf("Generated packet with opcode %d, val_len %d, key %llx\n", req.opcode, req.val_len, hval);

@@ -46,8 +46,14 @@ int main() {
 	register_buffer((void*)(&nic_proc_on), (void*)0xC);
 
 	//std::cout<<"pid: "<<pid<<", setresult: " <<setresult<<std::endl;
-
 	int dummy=0;
+
+	while ((*nic_proc_on == 1)) {
+		dummy++;
+	}
+
+	// dump stats
+
 	while ((*nic_proc_on)) {
 		dummy++;
 		//if (dummy % 10000 == 0) {

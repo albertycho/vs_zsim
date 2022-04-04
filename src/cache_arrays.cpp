@@ -105,12 +105,6 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
                             //netHits_nic_rb.atomicInc();
                             nic_rb_way_hits.inc(id-first);
                         }
-                        else if(req->flags & MemReq::PKTOUT){
-                            //netHits_nic_lb.atomicInc();
-                        }
-                        else{
-                            //printf("NETWORK related access from nic but not PKTIN or PKTOUT? shouldn't happen\n");
-                        }
                     }
                 }
                 else {

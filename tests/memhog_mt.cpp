@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <cstdint>
 #include <stdlib.h>
 #include <stdint.h>
@@ -32,7 +33,7 @@ void* memhog_thread(void* inarg) {
 
 	cpu_set_t cpuset;
 	CPU_ZERO(&cpuset);
-	
+
 	CPU_SET(core_id, &cpuset);
 
 	int setresult = sched_setaffinity(pid, sizeof(cpuset), &cpuset);
@@ -47,37 +48,50 @@ void* memhog_thread(void* inarg) {
 
 	uint64_t * hog_arr = (uint64_t*)malloc(array_size*sizeof(uint64_t));
 
+	std::cout << "memhog - ws_size = " << ws_size<< std::endl;
+	std::cout << "memhog - array_size = " << array_size<< std::endl;
 
 	bool* zsim_done;
 
 	register_buffer((void*)(&zsim_done), (void*)0x18);
 
 
-	for(uint64_t i=0;i<array_size;i++){
-		hog_arr[i]=i;
-		if(*zsim_done){
-			break;
-		}
-		//if (i % 10000 == 0) {
-		//	std::cout<<"memhog at core "<<core_id<<" initializing, i="<<i<<std::endl;
-		//}
-	}
-	
-	uint64_t dummy=0;
+	uint64_t dummy1=0;
 	uint64_t sum=0;
 	while (!(*zsim_done)) {
-		sum+=hog_arr[(dummy%array_size)];
-		dummy++;
-		if (dummy % 10000 == 0) {
-			//std::cout<<"memhog at core "<<core_id<<" , dummy="<<dummy<<", sum="<<sum<<std::endl;
-
+		for(uint64_t i=0;i<array_size;i++){
+			hog_arr[i]=dummy1;
+			sum+=dummy1;
+			dummy1++;
+			if(*zsim_done){
+				break;
+			}
+			//if (i % 10000 == 0) {
+			//	std::cout<<"memhog at core "<<core_id<<" initializing, i="<<i<<std::endl;
+			//}
 		}
 	}
 
+	//doing mostly READ ONLY doesn't seem to have significant effect
+	//uint64_t dummy=0;
+	//while (!(*zsim_done)) {
+	//	sum+=hog_arr[(dummy%array_size)];
+	//	dummy++;
+	//	//if (dummy % 10000 == 0) {
+	//	//	//std::cout<<"memhog at core "<<core_id<<" , dummy="<<dummy<<", sum="<<sum<<std::endl;
 
+	//	//}
+	//}
 
-	std::cout<<"memhog at core "<<core_id<<" terminating, dummy="<<dummy<<", sum="<<sum<<std::endl;
-    return 0;
+	uint64_t rdp=hog_arr[(dummy1%array_size)];
+
+	std::cout<<"memhog at core "<<core_id<<" terminating, dummy1="<<dummy1<<", sum="<<sum<<", rdp="<<rdp<<std::endl;
+	ofstream f("memhog_"+std::to_string(core_id)+"_iter_count.txt");
+	f<<(dummy1)<<std::endl;
+
+	f.close();
+
+	return 0;
 
 }
 

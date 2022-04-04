@@ -136,8 +136,6 @@ uint64_t TimingCache::access(MemReq& req) {
     //info("In cache access, req type is %s, my level is %d, input level is %d, childId is %d",AccessTypeName(req.type),level,req_level, req.childId);
     bool no_record = 0;//((req.flags) & (MemReq::NORECORD)) != 0;
 
-
-
     EventRecorder* evRec = zinfo->eventRecorders[req.srcId];
     assert_msg(evRec, "TimingCache is not connected to TimingCore");
 
@@ -210,11 +208,33 @@ uint64_t TimingCache::access(MemReq& req) {
                 Address wbLineAddr;
                 lineId = array->preinsert(req.lineAddr, &req, &wbLineAddr); //find the lineId to replace
                 //info("[%s] Evicting 0x%lx", name.c_str(), wbLineAddr);
+                int i=3;
+                glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+                while (i < nicInfo->expected_core_count + 3){
+                    Address base_ing = (Address)(nicInfo->nic_elem[i].recv_buf) >> lineBits;
+                    uint64_t size_ing = nicInfo->recv_buf_pool_size; 
+                    Address top_ing = ((Address)(nicInfo->nic_elem[i].recv_buf) + size_ing) >> lineBits;
+                    Address base_egr = (Address)(nicInfo->nic_elem[i].lbuf) >> lineBits;
+                    uint64_t size_egr = 256*nicInfo->forced_packet_size;
+                    Address top_egr = ((Address)(nicInfo->nic_elem[i].lbuf) + size_egr) >> lineBits;
+                    if (wbLineAddr >= base_ing && wbLineAddr <= top_ing) {
+                        req.set(MemReq::INGR_EVCT);
+                        break;
+                    }
+                    if (wbLineAddr >= base_ing && wbLineAddr <= top_ing) {
+                        req.set(MemReq::EGR_EVCT);
+                        break;
+                    }
+                    i++;
+                }
 
+                
                 //Evictions are not in the critical path in any sane implementation -- we do not include their delays
                 //NOTE: We might be "evicting" an invalid line for all we know. Coherence controllers will know what to do
-                
                 evDoneCycle = cc->processEviction(req, wbLineAddr, lineId, respCycle); //if needed, send invalidates/downgrades to lower level, and wb to upper level
+
+                req.clear(MemReq::INGR_EVCT);
+                req.clear(MemReq::EGR_EVCT);
 
                 array->postinsert(req.lineAddr, &req, lineId); //do the actual insertion. NOTE: Now we must split insert into a 2-phase thing because cc unlocks us.
 
@@ -227,11 +247,11 @@ uint64_t TimingCache::access(MemReq& req) {
             uint64_t invalOnAccCycle = 0;
             respCycle = cc->processAccess(req, lineId, respCycle, correct_level, &getDoneCycle, &invalOnAccCycle);
 
-            if (no_record || req.type == CLEAN) {
+            if (no_record || req.type == CLEAN || req.type == CLEAN_S) {
                 assert(!(evRec->hasRecord()));
             }
             else {
-                if (getDoneCycle != 0 || req.type != CLEAN) {
+                if (getDoneCycle != 0 || req.type != CLEAN || req.type != CLEAN) {
                     // normal accesses
                     if (!(req.is(MemReq::PKTOUT) && req.type == GETX)) {
 
@@ -394,8 +414,11 @@ uint64_t TimingCache::access(MemReq& req) {
             if(req.type == GETX && req.is(MemReq::PKTIN)) {  // ingress dma write, might need to invalidate self/upper levels
                 bool reqWriteback = false;
                 respCycle += accLat;
-                InvReq invreq = {req.lineAddr, INV, &reqWriteback, respCycle, 1742};
-                invalCycle = MAX(this->finishInvalidate(invreq),respCycle);      // check if LLC has a copy + propagate to children
+                //InvReq invreq = {req.lineAddr, INV, &reqWriteback, respCycle, 1742};
+                //invalCycle = MAX(this->finishInvalidate(invreq),respCycle);      // check if LLC has a copy + propagate to children
+                int32_t templineId = array->lookup(req.lineAddr, nullptr, false);
+                MemReq invreq = {req.lineAddr, CLEAN, req.childId, req.state, respCycle, req.childLock, req.initialState, req.srcId};
+                invalCycle = cc->processAccess(invreq, templineId, respCycle, true);
                 /*
                 if (reqWriteback) {     // writeback to mem in case the invalidations caused evictions
                     assert(!correct_level);

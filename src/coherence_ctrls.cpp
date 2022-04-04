@@ -80,6 +80,8 @@ int get_target_core_id_from_lb_addr(Address lineaddr){
 
 
 
+#include "zsim.h"
+
 /* Do a simple XOR block hash on address to determine its bank. Hacky for now,
  * should probably have a class that deals with this with a real hash function
  * (TODO)
@@ -111,6 +113,12 @@ uint64_t MESIBottomCC::processEviction(Address wbLineAddr, int32_t lineId, bool 
     uint32_t evict_flag = 0;
     if (flags & MemReq::NORECORD) {
         evict_flag |= MemReq::NORECORD;
+    }
+    if (flags & MemReq::INGR_EVCT) {
+        evict_flag |= MemReq::INGR_EVCT;
+    }
+    if (flags & MemReq::EGR_EVCT) {
+        evict_flag |= MemReq::EGR_EVCT;
     }
     assert(lineId > -1);
     MESIState* state = &array[lineId];
@@ -159,7 +167,7 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
         state = &array[lineId];
     }
     else {
-        assert(flags & MemReq::PKTOUT || type == CLEAN);
+        assert(flags & MemReq::PKTOUT || type == CLEAN || type == CLEAN_S);
         state = (MESIState*)malloc(sizeof(MESIState));
         *state = I;
         isEgrToMem = true;
@@ -277,14 +285,22 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
                 respCycle += nextLevelLat + netLat;
             }
             break;
+        case CLEAN_S:
+            {
+                //*state = I;     // invalidate copy
+                uint32_t parentId = getParentId(lineAddr);
+                MemReq req = {lineAddr, CLEAN_S, selfId, state, cycle, &ccLock, *state, srcId, flags};  // we have reached the correct level for ingress, the following requests downwards should have the pktin flag set
+                uint32_t nextLevelLat = parents[parentId]->access(req) - cycle;
+                uint32_t netLat = parentRTTs[parentId];
+                respCycle += nextLevelLat + netLat;
+            }
+            break;
         default: panic("!?");
     }
 
     uint64_t stat_group=get_stat_group(srcId);
-
-
-    //if (type != PUTS && type != PUTX && type != CLEAN) {
-    if(type==GETS || type==GETX){
+    
+    if (type != PUTS && type != PUTX && type != CLEAN  && type != CLEAN_S) {
         if (flags & MemReq::NETRELATED_ING) {
             if (srcId > 1) {
                 switch (stat_group) {
@@ -403,7 +419,7 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
             }
         }
     }
-    else if (srcId > 1 && type != CLEAN) {
+    else if (srcId > 1 && type != CLEAN && type != CLEAN_S) {
         switch (stat_group) {
             case NF0: 
                 if(isMiss)
@@ -848,7 +864,47 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
                 //assert(e->numSharers == 0);      
             }
             break;
+        case CLEAN_S:
+            {
+                if (lineId == -1)   { 
+                    e = (Entry*)malloc(sizeof(Entry));
+                    e->clear();
+                    if (!evicted_lines.empty() && evicted_lines.count(lineAddr) > 0) {      // check if someone above the llc has the line
+                        Entry* evct = &evicted_lines[lineAddr];
+                        e = &evicted_lines[lineAddr];
+                    }
+                }
+                else {
+                    assert(evicted_lines.count(lineAddr) == 0);
+                }
+                
+                bool include = false;
+                if (e->sharers[childId]) {
+                    e->sharers[childId] = false;
+                    assert(e->numSharers>0);
+                    e->numSharers--; 
+                    include = true;   
+                    assert(e->numSharers>=0);
+                }
 
+                // Invalidate all copies
+
+                if (e->isExclusive()) {
+                    //Downgrade the exclusive sharer
+                    respCycle = sendInvalidates(lineAddr, lineId, INVX, inducedWriteback, cycle, srcId);
+                }
+
+                assert_msg(!e->isExclusive(), "Can't have exclusivity here. isExcl=%d excl=%d numSharers=%d", e->isExclusive(), e->exclusive, e->numSharers);
+
+                if(include) {
+                    assert(!e->sharers[childId]);
+                    e->sharers[childId] = true;
+                    e->numSharers++;
+                    e->exclusive = false; //dsm: Must set, we're explicitly non-exclusive
+                    *childState = S;
+                }
+            }
+            break;
         default: panic("!?");
     }
 

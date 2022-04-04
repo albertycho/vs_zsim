@@ -61,9 +61,11 @@ class FilterCache : public Cache {
         lock_t filterLock;
         uint64_t fGETSHit, fGETXHit;
 
+        uint32_t extra_latency;
+
     public:
         FilterCache(uint32_t _numSets, uint32_t _numLines, CC* _cc, CacheArray* _array,
-                ReplPolicy* _rp, uint32_t _accLat, uint32_t _invLat, g_string& _name, int _level)
+                ReplPolicy* _rp, uint32_t _accLat, uint32_t _invLat, g_string& _name, int _level, uint32_t _extra_latency)
             : Cache(_numLines, _cc, _array, _rp, _accLat, _invLat, _name, _level)
         {
             numSets = _numSets;
@@ -74,6 +76,7 @@ class FilterCache : public Cache {
             fGETSHit = fGETXHit = 0;
             srcId = -1;
             reqFlags = 0;
+            extra_latency = _extra_latency;
         }
 
         void setSourceId(uint32_t id) {
@@ -134,7 +137,7 @@ class FilterCache : public Cache {
                 Address nicLineAddr_bot = gm_base_addr >> lineBits;
                 Address nicLineAddr_top = (gm_base_addr + gm_seg_size) >> lineBits;
                 if (vLineAddr >= nicLineAddr_bot && vLineAddr <= nicLineAddr_top) {
-                    return curCycle;
+                    return curCycle + extra_latency;
                 }
                 else {
                     lvl = level;
@@ -180,7 +183,7 @@ class FilterCache : public Cache {
                 Address nicLineAddr_bot = gm_base_addr >> lineBits;
                 Address nicLineAddr_top = (gm_base_addr + gm_seg_size) >> lineBits;
                 if (vLineAddr >= nicLineAddr_bot && vLineAddr <= nicLineAddr_top) {
-                    return curCycle;
+                    return curCycle + extra_latency;
                 }
                 else {
                     lvl = level;
@@ -193,7 +196,7 @@ class FilterCache : public Cache {
             }
         }
 
-        inline uint64_t clean(Address vAddr, uint64_t curCycle, uint32_t flags = 0) {
+        inline uint64_t clean(Address vAddr, uint64_t curCycle, uint32_t clean_type, uint32_t flags = 0) {
             Address vLineAddr = vAddr >> lineBits;
             uint32_t idx = vLineAddr & setMask;
 
@@ -208,7 +211,14 @@ class FilterCache : public Cache {
             Address pLineAddr = procMask_f | vLineAddr;
             MESIState dummyState = MESIState::I;
             futex_lock(&filterLock);
-            MemReq req = {pLineAddr, CLEAN, 0, &dummyState, curCycle, &filterLock, dummyState, srcId, flags | (level<<16)};
+            
+            MemReq req;
+            if (clean_type == 1) {      // turn to I
+                req = {pLineAddr, CLEAN, 0, &dummyState, curCycle, &filterLock, dummyState, srcId, flags | (level<<16)};
+            }
+            else if (clean_type == 2) { // turn to S
+                req = {pLineAddr, CLEAN_S, 0, &dummyState, curCycle, &filterLock, dummyState, srcId, flags | (level<<16)};
+            }
             
             uint64_t respCycle  = access(req);
             futex_unlock(&filterLock);

@@ -275,7 +275,7 @@ struct mica_key {
 };
 
 struct mica_op {
-	struct mica_key key; /* This must be the 1st field and 16B aligned */
+	struct mica_key key; // This must be the 1st field and 16B aligned 
 	uint16_t opcode;
 	uint16_t val_len;
 	uint8_t value[MICA_MAX_VALUE];

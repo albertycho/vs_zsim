@@ -447,7 +447,7 @@ class MESICC : public CC {
 
         //Access methods
         bool startAccess(MemReq& req) {
-            assert((req.type == GETS) || (req.type == GETX) || (req.type == PUTS) || (req.type == PUTX) || (req.type == CLEAN));
+            assert((req.type == GETS) || (req.type == GETX) || (req.type == PUTS) || (req.type == PUTX) || (req.type == CLEAN)|| (req.type == CLEAN_S));
 
             /* Child should be locked when called. We do hand-over-hand locking when going
              * down (which is why we require the lock), but not when going up, opening the
@@ -464,7 +464,7 @@ class MESICC : public CC {
              * both parent's locks. So, we first handle races, which may cause us to skip the access.
              */
             bool skipAccess;
-            if (req.type != CLEAN) {
+            if (req.type != CLEAN && req.type != CLEAN_S) {
                 skipAccess = CheckForMESIRace(req.type /*may change*/, req.state, req.initialState); 
             }
             else {
@@ -485,7 +485,7 @@ class MESICC : public CC {
                     return true;
                 }
             }
-            else if (req.type == CLEAN) {
+            else if (req.type == CLEAN || req.type == CLEAN_S) {
                 return false;
             }
             else {
@@ -514,7 +514,7 @@ class MESICC : public CC {
             //but if we do proper NI/EX mid-level caches backed by directories, this may start becoming more common (and it is perfectly acceptable to
             //upgrade without any interaction with the parent... the child had the permissions!)
             if (correct_level) {
-                if ((lineId == -1 && !(req.flags & MemReq::PKTOUT || req.type == CLEAN)) || (((req.type == PUTS) /*|| (req.type == PUTX)*/) && !bcc->isValid(lineId))) { //can only be a non-inclusive wback
+                if ((lineId == -1 && !(req.flags & MemReq::PKTOUT || req.type == CLEAN || req.type == CLEAN_S)) || (((req.type == PUTS) /*|| (req.type == PUTX)*/) && !bcc->isValid(lineId))) { //can only be a non-inclusive wback
                     assert(nonInclusiveHack);
                     assert((req.type == PUTS));// || (req.type == PUTX));
                     respCycle = bcc->processNonInclusiveWriteback(req.lineAddr, req.type, startCycle, req.state, req.srcId, req.flags);
@@ -541,7 +541,7 @@ class MESICC : public CC {
                                                                                 // i need to writeback the line to memory
                                 *invalOnAccCycle = bcc->processNonInclusiveWriteback(req.lineAddr, PUTX, respCycle, req.state, req.srcId, 0); // basically does a 
                             }
-                            else if (req.type != CLEAN) {
+                            else if (req.type != CLEAN && req.type != CLEAN_S) {
                                 //Essentially, if tcc induced a writeback, bcc may need to do an E->M transition to reflect that the cache now has dirty data
                                 bcc->processWritebackOnAccess(req.lineAddr, lineId, req.type);
                             }
@@ -629,7 +629,7 @@ class MESITerminalCC : public CC {
 
         //Access methods
         bool startAccess(MemReq& req) {
-            assert((req.type == GETS) || (req.type == GETX) || (req.type == CLEAN)); //no puts!
+            assert((req.type == GETS) || (req.type == GETX) || (req.type == CLEAN) || (req.type == CLEAN_S)); //no puts!
 
             /* Child should be locked when called. We do hand-over-hand locking when going
              * down (which is why we require the lock), but not when going up, opening the

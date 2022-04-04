@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <cstdint>
 #include <stdlib.h>
 #include <stdint.h>
@@ -94,5 +95,11 @@ int main(int argc, char* argv[]) {
 
 	//register_buffer((void*) 0, (void*) 0xdead);
 	std::cout<<"memhog - terminating, dummy="<<dummy<<", sum="<<sum<<std::endl;
+	
+	ofstream f("memhog_"+std::to_string(core_id)+"_iter_count.txt");
+	f<<dummy<<std::endl;
+
+	f.close();
+
     return 0;
 }

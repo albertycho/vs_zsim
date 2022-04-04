@@ -650,7 +650,7 @@ class DDIOPartReplPolicy : public PartReplPolicy, public LegacyReplPolicy {
         uint32_t totalSize;
         uint32_t waySize;
         uint32_t ways;
-        uint32_t ddio_ways;
+        uint32_t ddio_ways, policy;
 
         struct DDIOPartInfo {
             Address addr; //FIXME: This is redundant due to the replacement policy interface
@@ -676,7 +676,7 @@ class DDIOPartReplPolicy : public PartReplPolicy, public LegacyReplPolicy {
         uint64_t timestamp;
 
     public:
-        DDIOPartReplPolicy(PartitionMonitor* _monitor, PartMapper* _mapper, uint64_t _lines, uint32_t _ways, bool _testMode, uint32_t _ddio_ways)
+        DDIOPartReplPolicy(PartitionMonitor* _monitor, PartMapper* _mapper, uint64_t _lines, uint32_t _ways, bool _testMode, uint32_t _ddio_ways, uint32_t _policy)
                 : PartReplPolicy(_monitor, _mapper), totalSize(_lines), ways(_ways), testMode(_testMode)
         {
             partitions = mapper->getNumPartitions();
@@ -694,6 +694,9 @@ class DDIOPartReplPolicy : public PartReplPolicy, public LegacyReplPolicy {
             }
 
             array = gm_calloc<DDIOPartInfo>(totalSize); //all have ts, p == 0...
+            for (int i=0; i<totalSize; i++) {
+                array[i].p = 100;
+            }
 
             ddio_ways = _ddio_ways;
                         
@@ -726,6 +729,8 @@ class DDIOPartReplPolicy : public PartReplPolicy, public LegacyReplPolicy {
             candIdx = 0;
             bestId = -1;
             timestamp = 1;
+
+            policy = _policy;
         }
 
         void initStats(AggregateStat* parentStat) {
@@ -784,37 +789,78 @@ class DDIOPartReplPolicy : public PartReplPolicy, public LegacyReplPolicy {
             uint32_t way = candIdx++;
             //In test mode, this works as LRU
             if (testMode || incomingLinePart == 1 || incomingLinePart == 2) {    /* if process 0,1 do lru on all ways*/
-                if (best == nullptr) {
+                if (best == nullptr || !cc->isValid(id)) {
                     bestId = id;
                 } else if (c->ts < best->ts) {
                     bestId = id;
                 }
             } else  {
                 if ((wayPartIndex[way])[incomingLinePart]) {
-                    if (best == nullptr) {
+                    if (best == nullptr || !cc->isValid(id)) {
                         bestId = id;
-                    }
-                    else if (c->ts < best->ts) {
-                        bestId = id;
-                    }
-                    
-					/////////////////////////////
-					/*
-                    else {
-                        //NOTE: This is actually not feasible without tagging. But what IS feasible is to stop updating the LRU position on new fills. We could kill this, and profile the differences.
-                        if (c->p == incomingLinePart && best->p == incomingLinePart) {
-                            if (c->ts < best->ts) bestId = id;
-                        } else if (c->p == incomingLinePart && best->p != incomingLinePart) {
-                            //c wins
-                        } else if (c->p != incomingLinePart && best->p == incomingLinePart) {
-                            //c loses
-                            bestId = id;
-                        } else { //none in our partition, this should be transient but at least enforce LRU
-                            if (c->ts < best->ts) bestId = id;
+                    } else {
+                        switch (policy) {
+                            case 0:   // lru
+                                if (c->ts < best->ts) {
+                                    bestId = id;
+                                }
+                                break;
+                            case 1: // prioritize opposite partition
+                                if (c->p == incomingLinePart && best->p == incomingLinePart) {
+                                    if (c->ts < best->ts) bestId = id;
+                                } else if (c->p == incomingLinePart && best->p != incomingLinePart) {
+                                    //c wins
+                                } else if (c->p != incomingLinePart && best->p == incomingLinePart) {
+                                    //c loses
+                                    bestId = id;
+                                } else { //none in our partition, this should be transient but at least enforce LRU
+                                    if (c->ts < best->ts) bestId = id;
+                                }
+                                break;
+                            case 2:     // ddio lines evicted first
+                                if (c->p == 0 && best->p == 0) {
+                                    // both candidates are ddio lines
+                                    if (c->ts < best->ts) bestId = id;
+                                }
+                                else if (c->p == 0) {
+                                    // new candidate is ddio line, use it
+                                    bestId = id;
+                                }
+                                else if (c->p != 0) {
+                                    // new candidate is app line
+                                    if (best->p == 0) {
+                                        // current best is ddio line, use it
+                                    }
+                                    else {
+                                        // current best us app line
+                                        if (c->ts < best->ts) bestId = id;
+                                    }
+                                }
+                                break;
+                            case 3:       // app lines evicted first 
+                                if (c->p != 0 && best->p != 0) {
+                                    // both candidates are app lines
+                                    if (c->ts < best->ts) bestId = id;
+                                }
+                                else if (c->p != 0) {
+                                    // new candidate is app line, use it
+                                    bestId = id;
+                                }
+                                else if (c->p == 0) {
+                                    // new candidate is ddio line
+                                    if (best->p != 0) {
+                                        // current best is app line, use it
+                                    }
+                                    else {
+                                        // current best us ddio line
+                                        if (c->ts < best->ts) bestId = id;
+                                    }
+                                }
+                                break;
                         }
+
                     }
-					*/
-                    /////////////////// 
+
                 }
             }
         }

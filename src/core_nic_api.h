@@ -577,7 +577,6 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 		packet_size = nicInfo->forced_packet_size;
 	}
 
-	uint32_t numreqs = packet_size / herd_msg_size;
 	//if (packet_size % herd_msg_size != 0) {
 	//	info("WARNING: packet size is not a multiple of msg size!");
 	//}
@@ -606,13 +605,6 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	// write message to recv buffer via load generator/RPCGen
 	int size = ((load_generator*) lg_p)->lgs[lg_i].RPCGen->generatePackedRPC((char*)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head].line_seg[0])), packet_size);
 	update_loadgen(lg_p, cur_cycle, lg_i);
-
-	//if(nicInfo->forced_packet_size!=0){
-	//	size = nicInfo->forced_packet_size;
-	//}
-
-
-	//acho: I need to think through timing and clock cycle assignment/adjustment 
 
 	uint64_t reqSatisfiedCycle = cur_cycle;
 	uint64_t temp;

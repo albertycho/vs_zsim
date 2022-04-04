@@ -224,7 +224,8 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
         } else if (replType == "DDIOPart") {
             bool testMode = config.get<bool>(prefix + "repl.testMode", false);
             uint32_t ddio_ways = config.get<uint32_t>(prefix + "repl.ddio_ways", 0);
-            prp = new DDIOPartReplPolicy(mon, pm, numLines, ways, testMode, ddio_ways);
+            uint32_t policy = config.get<uint32_t>(prefix + "repl.policy", 0);
+            prp = new DDIOPartReplPolicy(mon, pm, numLines, ways, testMode, ddio_ways, policy);
         } else { //Vantage
             uint32_t assoc = (arrayType == "Z")? candidates : ways;
             allocPortion = .85;
@@ -307,7 +308,8 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
         //Filter cache optimization
         if (type != "Simple") panic("Terminal cache %s can only have type == Simple", name.c_str());
         if (arrayType != "SetAssoc" || hashType != "None" || replType != "LRU") panic("Invalid FilterCache config %s", name.c_str());
-        cache = new FilterCache(numSets, numLines, cc, array, rp, accLat, invLat, name, level);
+        uint32_t extra_latency = config.get<uint32_t>(prefix + "extra_latency", 0);
+        cache = new FilterCache(numSets, numLines, cc, array, rp, accLat, invLat, name, level, extra_latency);
     }
 
 #if 0
@@ -1022,6 +1024,8 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     Config config(configFile);
 
 
+
+
     //Debugging
     //NOTE: This should be as early as possible, so that we can attach to the debugger before initialization.
     zinfo->attachDebugger = config.get<bool>("sim.attachDebugger", false);
@@ -1093,7 +1097,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
         nicInfo->nic_elem[i].rb_dir = gm_calloc<recv_buf_dir_t>(recv_buf_pool_size);
     }
 
-    nicInfo->clean_recv = config.get<bool>("sim.clean_recv", false);
+    nicInfo->clean_recv = config.get<uint32_t>("sim.clean_recv", 0);
 
 
     zinfo->numDomains = config.get<uint32_t>("sim.domains", 1);

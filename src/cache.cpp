@@ -86,11 +86,33 @@ uint64_t Cache::access(MemReq& req) {
                 lineId = array->preinsert(req.lineAddr, &req, &wbLineAddr); //find the lineId to replace
                 trace(Cache, "[%s] Evicting 0x%lx", name.c_str(), wbLineAddr);
 
+                int i=3;
+                glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+                while (i < nicInfo->expected_core_count + 3){
+                    Address base_ing = (Address)(nicInfo->nic_elem[i].recv_buf) >> lineBits;
+                    uint64_t size_ing = nicInfo->recv_buf_pool_size; 
+                    Address top_ing = ((Address)(nicInfo->nic_elem[i].recv_buf) + size_ing) >> lineBits;
+                    Address base_egr = (Address)(nicInfo->nic_elem[i].lbuf) >> lineBits;
+                    uint64_t size_egr = 256*nicInfo->forced_packet_size;
+                    Address top_egr = ((Address)(nicInfo->nic_elem[i].lbuf) + size_egr) >> lineBits;
+                    if (wbLineAddr >= base_ing && wbLineAddr <= top_ing) {
+                        req.set(MemReq::INGR_EVCT);
+                        break;
+                    }
+                    if (wbLineAddr >= base_ing && wbLineAddr <= top_ing) {
+                        req.set(MemReq::EGR_EVCT);
+                        break;
+                    }
+                    i++;
+                }
                 //Evictions are not in the critical path in any sane implementation -- we do not include their delays
                 //NOTE: We might be "evicting" an invalid line for all we know. Coherence controllers will know what to do
                 
                 cc->processEviction(req, wbLineAddr, lineId, respCycle); //if needed, send invalidates/downgrades to lower level, and wb to upper level
 
+                req.clear(MemReq::INGR_EVCT);
+                req.clear(MemReq::EGR_EVCT);
+                
                 array->postinsert(req.lineAddr, &req, lineId); //do the actual insertion. NOTE: Now we must split insert into a 2-phase thing because cc unlocks us.
             }
             // Enforce single-record invariant: Writeback access may have a timing

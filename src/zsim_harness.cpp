@@ -325,6 +325,7 @@ void dump_rb_use_counters(){
 }
 
 void dump_IR_SR_stat(){
+    
     load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
     if (lg_p->num_loadgen==0) {
         return;
@@ -345,13 +346,13 @@ void dump_IR_SR_stat(){
 
     std::ofstream f3("cq_sizes_all_cores.txt");
     for (uint32_t ii = 0; ii < nicInfo->sampling_phase_index; ii++) {
-        for (uint32_t jj = 0; jj < 16; jj++) {
+        for (uint32_t jj = 0; jj < 18; jj++) {
             f3 << nicInfo->cq_size_cores_per_phase[jj][ii] << ",";
         }
         f3 << std::endl;
     }
     f3.close();
-
+    
 }
 
 void generate_raw_timestamp_files(bool run_success){
@@ -440,7 +441,7 @@ void generate_raw_timestamp_files(bool run_success){
             }
             //f << nicInfo->nic_elem[i].phase_queue[((nicInfo->nic_elem[i].ts_nic_idx) - 2) / 2] << " ";
             f.close();
-
+            /*
             f.open("bound_phase_core_"+std::to_string(i)+".txt");
             temp=0;
             for (int j=0; j<nicInfo->nic_elem[i].phase_nic_idx; j+=2) {
@@ -451,10 +452,10 @@ void generate_raw_timestamp_files(bool run_success){
                 temp++;
             }
             f.close();
-			if(run_success){
+    		if(run_success){
            			assert(nicInfo->nic_elem[i].phase_nic_idx==nicInfo->nic_elem[i].phase_idx*2);
 			}
-
+            */
         }
     }
 
@@ -661,6 +662,7 @@ int main(int argc, char *argv[]) {
         nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
 
         if (!nicInfo->nic_egress_proc_on) {
+            assert(nicInfo->registered_core_count == 0);
             int temp=0;
             for (int i = 0; i < MAX_CHILDREN; i++) {
                 if (childInfo[i].status == PS_RUNNING) {
@@ -720,7 +722,6 @@ int main(int argc, char *argv[]) {
         }
     }
     dump_IR_SR_stat();
-    //dump_rb_use_counters();
 
 
     uint32_t exitCode = 0;

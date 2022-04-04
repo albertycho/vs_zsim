@@ -18,6 +18,10 @@ g++ -g memhog.cpp ../src/libzsim/zsim_nic_defines.cpp -std=c++11 -o memhog -pthr
 rm memhog_mt
 g++ -g memhog_mt_wrapper.cpp memhog_mt.cpp ../src/libzsim/zsim_nic_defines.cpp -std=c++11 -o memhog_mt -pthread
 
+rm matmul
+g++ -g matmul_wrapper.cpp matmul.cpp ../src/libzsim/zsim_nic_defines.cpp -std=c++11 -o matmul -pthread
+
+
 #g++ -g qp_test_mt_wrapper.cpp qp_test_thread_ver.cpp ../src/libzsim/zsim_nic_defines.cpp -std=c++11 -O3 -Wall -o qp_test_thread_ver -pthread
 
 #rm ma_uarch_check

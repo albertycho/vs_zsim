@@ -241,6 +241,7 @@ void DDRMemory::initStats(AggregateStat* parentStat) {
     profTotalWrLat.init("wrlat", "Total latency experienced by write requests"); memStats->append(&profTotalWrLat);
     dirty_evict_ing.init("recv_dirty_evict", "dirty evicted recv lines"); memStats->append(&dirty_evict_ing);
     dirty_evict_egr.init("lbuf_dirty_evict", "dirty evicted lbuf lines"); memStats->append(&dirty_evict_egr);
+    nic_ingr_get.init("nic_ingr_get", "dma nic writes"); memStats->append(&nic_ingr_get);
     total_access_count.init("total_accesses", "count all requests at access method"); memStats->append(&total_access_count);
     profReadHits.init("rdhits", "Read row hits"); memStats->append(&profReadHits);
     profWriteHits.init("wrhits", "Write row hits"); memStats->append(&profWriteHits);
@@ -329,7 +330,11 @@ uint64_t DDRMemory::access(MemReq& req) {
         *req.state = I;
         return req.cycle;
     }
-        
+
+    if(req.type == CLEAN_S) {
+        *req.state = S;
+        return req.cycle;
+    }   
 
     if (nicInfo->ready_for_inj==0xabcd && zinfo->numPhases > lastPhase) {
         futex_lock(&statsLock);
@@ -340,7 +345,6 @@ uint64_t DDRMemory::access(MemReq& req) {
         futex_unlock(&statsLock);
     }
     
-
     bool no_record = ((req.flags) & (MemReq::NORECORD)) != 0;
 
     switch (req.type) {
@@ -397,31 +401,16 @@ uint64_t DDRMemory::access(MemReq& req) {
         }
         
         if(req.type == PUTX) {
-            int i=3;
-            glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-            while (i < nicInfo->expected_core_count + 3){
-                Address base_ing = (Address)(nicInfo->nic_elem[i].recv_buf) >> lineBits;
-                uint64_t size_ing = nicInfo->recv_buf_pool_size; 
-                Address top_ing = ((Address)(nicInfo->nic_elem[i].recv_buf) + size_ing) >> lineBits;
-                Address base_egr = (Address)(nicInfo->nic_elem[i].lbuf) >> lineBits;
-                uint64_t size_egr = 256*nicInfo->forced_packet_size;
-                Address top_egr = ((Address)(nicInfo->nic_elem[i].lbuf) + size_egr) >> lineBits;
-		base_ing = base_ing/(nicInfo->num_controllers);  
-		top_ing = top_ing/(nicInfo->num_controllers);  
-		base_egr = base_egr/(nicInfo->num_controllers);
-		top_egr = top_egr /(nicInfo->num_controllers);  		
-
-                if (req.lineAddr >= base_ing && req.lineAddr <= top_ing) {
-                    dirty_evict_ing.inc();
-                    break;
-                }
-                else if (req.lineAddr >= base_egr && req.lineAddr <= top_egr) {
-                    dirty_evict_egr.inc();
-                    break;
-                }
-                i++;
+            if (req.is(MemReq::INGR_EVCT)) {
+                dirty_evict_ing.inc();
             }
-                
+            else if (req.is(MemReq::EGR_EVCT)) {
+                dirty_evict_egr.inc();
+            }
+        }
+
+        if(req.is(MemReq::PKTIN)){
+            nic_ingr_get.inc();
         }
 
         if (!no_bw && zinfo->eventRecorders[req.srcId]) {
