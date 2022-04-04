@@ -352,9 +352,9 @@ uint64_t DDRMemory::access(MemReq& req) {
         case PUTS:
             //total_access_count.inc(); // no break, so it will be counted by PUTX case
         case PUTX:
-            total_access_count.inc();
             *req.state = I;
             if(req.type == PUTX){ // PUTS case doesn't break, so add this if
+                total_access_count.inc();
                 if(is_rb_addr(req.lineAddr)){
                     //increment rb dirty eviction count
                     rb_dirty_evic_count.inc();
