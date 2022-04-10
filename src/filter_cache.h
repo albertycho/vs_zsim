@@ -41,6 +41,38 @@
  * it is fine to do this without grabbing a lock.
  */
 
+
+//helper function to find if matrix addr
+bool is_mat_addr(Address LineAddr) {
+    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+    uint32_t matN = nicInfo->mat_N;
+    uint32_t matLen = matN * matN;
+    if (matLen == 0) {
+        return false;
+    }
+    Address matAbot = nicInfo->matA;
+    Address matAtop = &(nicInfo->matA[matLen-1]);
+
+    Address matBbot = nicInfo->matB;
+    Address matBtop = &(nicInfo->matB[matLen - 1]);
+
+    Address matCbot = nicInfo->matC;
+    Address matCtop = &(nicInfo->matC[matLen - 1]);
+
+    Address shiftedAddr = LineAddr << lineBits;
+    if (shiftedAddr >= matAbot && shiftedAddr <= matAtop) {
+        return true;
+    }
+    if (shiftedAddr >= matBbot && shiftedAddr <= matBtop) {
+        return true;
+    }
+    if (shiftedAddr >= matCbot && shiftedAddr <= matCtop) {
+        return true;
+    }
+
+}
+
+
 class FilterCache : public Cache {
     private:
         struct FilterEntry {
