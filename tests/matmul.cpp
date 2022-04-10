@@ -104,7 +104,7 @@ void* matmul_thread(void* inarg) {
 	//connect check
 	if (A[10] == 0xc0ffee) {
 		//std::cout << "matmul: COFFEe check good" << std::endl;
-		printf("matmul: COFFEE check good\n")
+		printf("matmul: COFFEE check good\n");
 	}
 
 	uint64_t dummy=0;
