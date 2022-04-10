@@ -1103,9 +1103,13 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     // mat_N 0 if no mat mult, else allocate matrixes
     if (nicInfo->mat_N > 0) {
         uint32_t mat_N = nicInfo->mat_N;
-        nicInfo->matA = gm_malloc<uint64_t>(mat_N*mat_N);
+        nicInfo->matA = gm_malloc<uint64_t>(mat_N * mat_N);
         nicInfo->matB = gm_malloc<uint64_t>(mat_N * mat_N);
         nicInfo->matC = gm_malloc<uint64_t>(mat_N * mat_N);
+        for (int i = 0; i < mat_N * mat_N; i++) {
+            matA[i] = i;
+            matB[i] = i;
+        }
         info("matrix A,B,C allocated");
     }
 
