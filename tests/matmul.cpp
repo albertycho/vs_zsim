@@ -108,11 +108,13 @@ void* matmul_thread(void* inarg) {
 	}
 
 	uint64_t dummy=0;
+	uint64_t mm_full_iter_count= 0;
 	std::cout<<"matmul while loop begin"<<std::endl;
 
 	while (!(*zsim_done)) {
 		tiled_mm(A, B, C, mlen, mlen, mlen, zsim_done);
 		dummy += rand() % mlen;
+		mm_full_iter_count++;
 	}
 
 
@@ -122,7 +124,7 @@ void* matmul_thread(void* inarg) {
 	//uint64_t dj=dummy % mlen;
 	T rdp = C[dummy];
 	//std::cout<<"matmult at core "<<core_id<<" terminating, dummy="<<dummy<<", rdp="<<rdp<<std::endl;
-	printf("matmul at core %d terminating, rdp=%d\n", core_id, rdp);
+	printf("matmul at core %d terminating, tiled_mm called %d times, rdp=%d\n", core_id, mm_full_iter_count, rdp);
 
 	return 0;
 }
