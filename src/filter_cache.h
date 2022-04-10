@@ -70,8 +70,8 @@
 //        return true;
 //    }
 //    return false;
-
-}
+//
+//}
 
 
 class FilterCache : public Cache {
@@ -201,7 +201,8 @@ class FilterCache : public Cache {
             	Address gm_seg_size = nicInfo->gm_size;
                 Address nicLineAddr_bot = gm_base_addr >> lineBits;
                 Address nicLineAddr_top = (gm_base_addr + gm_seg_size) >> lineBits;
-                if (vLineAddr >= nicLineAddr_bot && vLineAddr <= nicLineAddr_top) {
+                bool is_MatAddr = is_mat_addr(vLineAddr);
+                if ((vLineAddr >= nicLineAddr_bot && vLineAddr <= nicLineAddr_top) && (!is_MatAddr)) {
                     return curCycle + extra_latency;
                 }
                 else {
@@ -332,7 +333,10 @@ class FilterCache : public Cache {
                 i++;
             }           
             
-            
+            bool is_MatAddr = is_mat_addr(vLineAddr);
+            if (is_MatAddr) {
+                procMask_f = procMask_f + ((uint64_t)source)<<(64-lineBits)
+            }
             Address pLineAddr = procMask_f | vLineAddr;
             MESIState dummyState = MESIState::I;
             futex_lock(&filterLock);
