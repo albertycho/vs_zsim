@@ -42,34 +42,34 @@
  */
 
 
-//helper function to find if matrix addr
-bool is_mat_addr(Address LineAddr) {
-    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-    uint32_t matN = nicInfo->mat_N;
-    uint32_t matLen = matN * matN;
-    if (matLen == 0) {
-        return false;
-    }
-    Address matAbot = (Address) nicInfo->matA;
-    Address matAtop = (Address) &(nicInfo->matA[matLen-1]);
-
-    Address matBbot = (Address) nicInfo->matB;
-    Address matBtop = (Address) &(nicInfo->matB[matLen - 1]);
-
-    Address matCbot = (Address) nicInfo->matC;
-    Address matCtop = (Address) &(nicInfo->matC[matLen - 1]);
-
-    Address shiftedAddr = LineAddr << lineBits;
-    if (shiftedAddr >= matAbot && shiftedAddr <= matAtop) {
-        return true;
-    }
-    if (shiftedAddr >= matBbot && shiftedAddr <= matBtop) {
-        return true;
-    }
-    if (shiftedAddr >= matCbot && shiftedAddr <= matCtop) {
-        return true;
-    }
-    return false;
+////helper function to find if matrix addr
+//bool is_mat_addr(Address LineAddr) {
+//    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+//    uint32_t matN = nicInfo->mat_N;
+//    uint32_t matLen = matN * matN;
+//    if (matLen == 0) {
+//        return false;
+//    }
+//    Address matAbot = (Address) nicInfo->matA;
+//    Address matAtop = (Address) &(nicInfo->matA[matLen-1]);
+//
+//    Address matBbot = (Address) nicInfo->matB;
+//    Address matBtop = (Address) &(nicInfo->matB[matLen - 1]);
+//
+//    Address matCbot = (Address) nicInfo->matC;
+//    Address matCtop = (Address) &(nicInfo->matC[matLen - 1]);
+//
+//    Address shiftedAddr = LineAddr << lineBits;
+//    if (shiftedAddr >= matAbot && shiftedAddr <= matAtop) {
+//        return true;
+//    }
+//    if (shiftedAddr >= matBbot && shiftedAddr <= matBtop) {
+//        return true;
+//    }
+//    if (shiftedAddr >= matCbot && shiftedAddr <= matCtop) {
+//        return true;
+//    }
+//    return false;
 
 }
 
@@ -134,6 +134,38 @@ class FilterCache : public Cache {
             initCacheStats(cacheStat);
             parentStat->append(cacheStat);
         }
+
+        //helper function to find if matrix addr
+        bool is_mat_addr(Address LineAddr) {
+            glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+            uint32_t matN = nicInfo->mat_N;
+            uint32_t matLen = matN * matN;
+            if (matLen == 0) {
+                return false;
+            }
+            Address matAbot = (Address)nicInfo->matA;
+            Address matAtop = (Address) & (nicInfo->matA[matLen - 1]);
+
+            Address matBbot = (Address)nicInfo->matB;
+            Address matBtop = (Address) & (nicInfo->matB[matLen - 1]);
+
+            Address matCbot = (Address)nicInfo->matC;
+            Address matCtop = (Address) & (nicInfo->matC[matLen - 1]);
+
+            Address shiftedAddr = LineAddr << lineBits;
+            if (shiftedAddr >= matAbot && shiftedAddr <= matAtop) {
+                return true;
+            }
+            if (shiftedAddr >= matBbot && shiftedAddr <= matBtop) {
+                return true;
+            }
+            if (shiftedAddr >= matCbot && shiftedAddr <= matCtop) {
+                return true;
+            }
+            return false;
+
+        }
+
 
         // source: the id of the core issuing the request, used to signify which recorder is used
 
