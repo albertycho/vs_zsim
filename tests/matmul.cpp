@@ -120,7 +120,7 @@ void* matmul_thread(void* inarg) {
 	dummy=dummy % (mlen*mlen);
 	uint64_t di=dummy / mlen;
 	uint64_t dj=dummy % mlen;
-	uint64_t rdp = C[di][dj];
+	T rdp = C[di][dj];
 	//std::cout<<"matmult at core "<<core_id<<" terminating, dummy="<<dummy<<", rdp="<<rdp<<std::endl;
 	printf("matmul at core %d terminating, rdp=%d\n", core_id, rdp);
 
