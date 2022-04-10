@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <pthread.h>
-#include "memhog_mt.hpp"
+#include "matmul.hpp"
 //#include "zsim_nic_defines.hpp"
 #include "../src/libzsim/zsim_nic_defines.hpp"                                  
 #include <sys/syscall.h>                                                        
