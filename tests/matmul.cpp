@@ -16,7 +16,7 @@ using namespace std;
 
 //////////////////////////// CODE START ///////////////////
 #define MIN(a, b) ( (a) < (b) ? (a) : (b) )
-typedef double T;
+typedef uint64_t T;
 typedef uint64_t ITYPE;
 
 
