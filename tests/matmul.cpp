@@ -111,7 +111,7 @@ void* matmul_thread(void* inarg) {
 	std::cout<<"matmul while loop begin"<<std::endl;
 
 	while (!(*zsim_done)) {
-		tiled_mm(A, B, C, mlen, mlen, mlen);
+		tiled_mm(A, B, C, mlen, mlen, mlen, zsim_done);
 		dummy += rand() % mlen;
 	}
 
