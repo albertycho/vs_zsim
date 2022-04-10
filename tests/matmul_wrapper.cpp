@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
 
 	int numthreads = 1;
 	uint64_t start_core = 3;
-	uint64_t ws_size=33554432;
+	uint64_t meln=640;
 	//if(argc>1){
 	//	numthreads=atoi(argv[1]);
 	//}
@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
 	static const struct option opts[] = {                                       
 		{.name = "num-threads", .has_arg = 1, .flag = NULL, .val = 't'},        
 		{.name = "start-core", .has_arg = 1, .flag = NULL, .val = 's'},         
-		{.name = "ws_size", .has_arg = 1,.flag = NULL, .val = 'd'} };           
+		{.name = "mlen", .has_arg = 1,.flag = NULL, .val = 'd'} };           
 
 	int c;
 
@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
 				printf("matmul start_core %d\n", start_core);          
 				break;
 			case 'd':                                                           
-				ws_size = atol(optarg);                      
+				mlen = atol(optarg);                      
 				break; 
 
 			default:                                                            
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
 	int i;
 	for (i = 0; i < numthreads; i++) {
 		tpa[i].core_id = i + start_core;
-		tpa[i].ws_size = ws_size;
+		tpa[i].mlen = mlen;
 		//int core_id = i + 2;
 		int err = pthread_create(&thread_arr[i], NULL, matmul_thread, (void*)&(tpa[i]));
 		if (err != 0) std::cout << "pthread_create failed" << std::endl;

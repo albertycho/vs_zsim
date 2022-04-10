@@ -935,6 +935,7 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 			break;
 
 		case 0x30: //30~32: register matrix for matrix mult
+			nicInfo->matA[10] = 0xc0ffee; // connect check
 			*static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(nicInfo->matA);
 			info("matA registered");
 			break;
