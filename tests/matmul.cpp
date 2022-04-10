@@ -118,9 +118,9 @@ void* matmul_thread(void* inarg) {
 
 	//print random element from mul - avoid possible unwatned optimization?
 	dummy=dummy % (mlen*mlen);
-	uint64_t di=dummy / mlen;
-	uint64_t dj=dummy % mlen;
-	T rdp = C[di][dj];
+	//uint64_t di=dummy / mlen;
+	//uint64_t dj=dummy % mlen;
+	T rdp = C[dummy];
 	//std::cout<<"matmult at core "<<core_id<<" terminating, dummy="<<dummy<<", rdp="<<rdp<<std::endl;
 	printf("matmul at core %d terminating, rdp=%d\n", core_id, rdp);
 
