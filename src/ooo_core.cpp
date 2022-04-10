@@ -934,6 +934,18 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 
 			break;
 
+		case 0x30: //30~32: register matrix for matrix mult
+			*static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(nicInfo->matA);
+			info("matA registered");
+			break;
+		case 0x31: //30~32: register matrix for matrix mult
+			*static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(nicInfo->matB);
+			info("matB registered");
+			break;
+		case 0x32: //30~32: register matrix for matrix mult
+			*static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(nicInfo->matC);
+			info("matC registered");
+			break;
 
 
 		case 0xdead: //invalidate entries after test app terminates
