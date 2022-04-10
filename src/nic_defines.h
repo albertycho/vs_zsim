@@ -289,6 +289,12 @@ struct glob_nic_elements {
 	std::chrono::system_clock::time_point sim_start_time;
 	std::chrono::system_clock::time_point sim_end_time;
 
+	//matrixes for mat mult. Malloc here and pass down, because malloc from pin launched app is slow
+	uint64_t* matA; 
+	uint64_t* matB;
+	uint64_t* matC;
+	uint32_t mat_N; //lenght of row and column (NxN matrix)
+
 	//temp debug counters
 	uint64_t free_rb_call_count=0;
 	uint64_t process_wq_entry_count=0;

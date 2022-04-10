@@ -1099,6 +1099,15 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 
     nicInfo->clean_recv = config.get<uint32_t>("sim.clean_recv", 0);
 
+    nicInfo->mat_N = config.get<uint32_t>("sim.mat_N", 0);
+    // mat_N 0 if no mat mult, else allocate matrixes
+    if (nicInfo->mat_N > 0) {
+        uint32_t mat_N = nicInfo->mat_N;
+        nicInfo->matA = gm_malloc<uint64_t>(mat_N*mat_N);
+        nicInfo->matB = gm_malloc<uint64_t>(mat_N * mat_N);
+        nicInfo->matC = gm_malloc<uint64_t>(mat_N * mat_N);
+    }
+
 
     zinfo->numDomains = config.get<uint32_t>("sim.domains", 1);
     uint32_t numSimThreads = config.get<uint32_t>("sim.contentionThreads", MAX((uint32_t)1, zinfo->numDomains/2)); //gives a bit of parallelism, TODO tune
