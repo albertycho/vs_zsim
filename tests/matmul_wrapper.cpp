@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
 
 	int numthreads = 1;
 	uint64_t start_core = 3;
-	uint64_t meln=640;
+	uint64_t mlen=640;
 	//if(argc>1){
 	//	numthreads=atoi(argv[1]);
 	//}
