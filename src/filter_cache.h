@@ -50,14 +50,14 @@ bool is_mat_addr(Address LineAddr) {
     if (matLen == 0) {
         return false;
     }
-    Address matAbot = nicInfo->matA;
-    Address matAtop = &(nicInfo->matA[matLen-1]);
+    Address matAbot = (Address) nicInfo->matA;
+    Address matAtop = (Address) &(nicInfo->matA[matLen-1]);
 
-    Address matBbot = nicInfo->matB;
-    Address matBtop = &(nicInfo->matB[matLen - 1]);
+    Address matBbot = (Address) nicInfo->matB;
+    Address matBtop = (Address) &(nicInfo->matB[matLen - 1]);
 
-    Address matCbot = nicInfo->matC;
-    Address matCtop = &(nicInfo->matC[matLen - 1]);
+    Address matCbot = (Address) nicInfo->matC;
+    Address matCtop = (Address) &(nicInfo->matC[matLen - 1]);
 
     Address shiftedAddr = LineAddr << lineBits;
     if (shiftedAddr >= matAbot && shiftedAddr <= matAtop) {
