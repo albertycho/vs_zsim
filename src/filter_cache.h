@@ -335,7 +335,7 @@ class FilterCache : public Cache {
             
             bool is_MatAddr = is_mat_addr(vLineAddr);
             if (is_MatAddr) {
-                procMask_f = procMask_f + ((uint64_t)source)<<(64-lineBits)
+                procMask_f = procMask_f + ((uint64_t)source) << (64 - lineBits);
             }
             Address pLineAddr = procMask_f | vLineAddr;
             MESIState dummyState = MESIState::I;
