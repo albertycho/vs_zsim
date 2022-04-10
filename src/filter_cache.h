@@ -69,6 +69,7 @@ bool is_mat_addr(Address LineAddr) {
     if (shiftedAddr >= matCbot && shiftedAddr <= matCtop) {
         return true;
     }
+    return false;
 
 }
 
