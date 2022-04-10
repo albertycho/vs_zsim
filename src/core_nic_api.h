@@ -285,8 +285,10 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0) {
 	else{
 		//((load_generator*)lg_p)->sum_interval = ((load_generator*)lg_p)->sum_interval + interval;
 		//can do same thing for normal sends
+		if(!(lg_p->prev_cycle==0)){
 		lg_p->sum_interval = lg_p->sum_interval + (cur_cycle-(lg_p->prev_cycle));
 		lg_p->lgs[lg_i].sum_interval = lg_p->lgs[lg_i].sum_interval + (cur_cycle-(lg_p->lgs[lg_i].prev_cycle));
+		}
 	}
 
 

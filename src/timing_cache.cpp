@@ -454,6 +454,29 @@ uint64_t TimingCache::access(MemReq& req) {
                 tr.endEvent = mre; // note the end event is the response, not the wback
             }
             else {
+				/////// dbg
+				int is_rb = 0;
+				int is_lb=0;
+				int i=3;
+				while (i < nicInfo->expected_core_count + 3){
+                    Address base_ing = (Address)(nicInfo->nic_elem[i].recv_buf) >> lineBits;
+                    uint64_t size_ing = nicInfo->recv_buf_pool_size; 
+                    Address top_ing = ((Address)(nicInfo->nic_elem[i].recv_buf) + size_ing) >> lineBits;
+                    Address base_egr = (Address)(nicInfo->nic_elem[i].lbuf) >> lineBits;
+                    uint64_t size_egr = 256*nicInfo->forced_packet_size;
+                    Address top_egr = ((Address)(nicInfo->nic_elem[i].lbuf) + size_egr) >> lineBits;
+                    if (req.lineAddr >= base_ing && req.lineAddr <= top_ing) {
+                        is_rb=1;
+                        break;
+                    }
+                    if (req.lineAddr >= base_egr && req.lineAddr <= top_egr) {
+                        is_lb=1;
+                        break;
+                    }
+                    i++;
+                }
+
+				info("req type: %d, flags: %x, is_lb=%d, is_rb=%d",req.type, req.flags, is_lb,is_rb);
                 panic("?!");
             }
         }
