@@ -99,15 +99,18 @@ void* matmul_thread(void* inarg) {
 	T* C;
 	register_buffer((void*)(&A), (void*)0x30);
 	register_buffer((void*)(&B), (void*)0x31);
+	register_buffer((void*)(&C), (void*)0x32);
 	//warmup:
 	uint64_t dummy2 = 0;
 	for (uint64_t iii = 0; iii < mlen * mlen; iii++) {
 		dummy2 += A[iii];
 		dummy2 += B[iii];
+		dummy2 += C[iii];
 	}
 	//printf to avoid optimization
 	printf("matmul dummy2 = %d\n",dummy2);
-	register_buffer((void*)(&C), (void*)0x32);
+	rigster_buffer(NULL, (void*)0x33);
+	
 
 	//connect check
 	if (A[10] == 0xc0ffee) {

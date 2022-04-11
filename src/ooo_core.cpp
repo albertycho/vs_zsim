@@ -945,12 +945,14 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 			break;
 		case 0x32: //30~32: register matrix for matrix mult
 			*static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(nicInfo->matC);
+			info("matC registered");
+			break;
+		case 0x33: //0x33 informs init done for MM
 			futex_lock(&nicInfo->mm_core_lock);
 			nicInfo->registered_mm_cores++;
 			futex_unlock(&nicInfo->mm_core_lock);
-			info("matC registered");
+			info("MM init done");
 			break;
-
 
 		case 0xdead: //invalidate entries after test app terminates
 			nicInfo->registered_core_count = nicInfo->registered_core_count - 1;
