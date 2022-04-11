@@ -109,7 +109,7 @@ void* matmul_thread(void* inarg) {
 	}
 	//printf to avoid optimization
 	printf("matmul dummy2 = %d\n",dummy2);
-	rigster_buffer(NULL, (void*)0x33);
+	register_buffer(NULL, (void*)0x33);
 	
 
 	//connect check
