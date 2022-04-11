@@ -60,7 +60,25 @@ void tiled_mm(T* A, T* B, T* C, ITYPE M, ITYPE N, ITYPE K, bool * zsim_done)
 	}
 
 }
-
+void simple_mm(T* A, T* B, T* C, ITYPE M, ITYPE N, ITYPE K, bool* zsim_done)
+{
+	for (ITYPE i = 0; i < M; i++) {
+		for (ITYPE j = 0; j < N; j++) {
+			for (ITYPE k = 0; k < K; k++) {
+				C[i * K + k] += A[i * N + j] * B[j * K + k];
+				if (*zsim_done) {
+					break;
+				}
+			}
+			if (*zsim_done) {
+				break;
+			}
+		}
+		if (*zsim_done) {
+			break;
+		}
+	}
+}
 
 
 void* matmul_thread(void* inarg) {
@@ -123,7 +141,8 @@ void* matmul_thread(void* inarg) {
 	std::cout<<"matmul while loop begin"<<std::endl;
 
 	while (!(*zsim_done)) {
-		tiled_mm(A, B, C, mlen, mlen, mlen, zsim_done);
+		//tiled_mm(A, B, C, mlen, mlen, mlen, zsim_done);
+		simple_mm(A, B, C, mlen, mlen, mlen, zsim_done);
 		dummy += rand() % mlen;
 		mm_full_iter_count++;
 	}
