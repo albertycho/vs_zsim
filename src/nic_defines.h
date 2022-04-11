@@ -294,6 +294,9 @@ struct glob_nic_elements {
 	uint64_t* matB;
 	uint64_t* matC;
 	uint32_t mat_N; //lenght of row and column (NxN matrix)
+	uint32_t num_mm_cores = 0;
+	uint32_t registered_mm_cores = 0;
+	lock_t mm_core_lock;
 
 	//temp debug counters
 	uint64_t free_rb_call_count=0;

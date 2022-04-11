@@ -945,6 +945,9 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 			break;
 		case 0x32: //30~32: register matrix for matrix mult
 			*static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(nicInfo->matC);
+			futex_lock(&nicInfo->mm_core_lock);
+			nicInfo->registered_mm_cores++;
+			futex_unlock(&nicInfo->mm_core_lock);
 			info("matC registered");
 			break;
 
@@ -1142,6 +1145,9 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 		load_generator* lg_p = (load_generator*) lg_p_vp;
 		OOOCore* core = static_cast<OOOCore*>(nicInfo->nicCore_ingress);
 
+		if (nicInfo->num_mm_cores > nicInfo->registered_mm_cores) {
+			return 0;
+		}
 		if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) { //only run for nic_core
 			//assert(srcId == 0);
 			if (nicInfo->registered_core_count == 0) { // we're done, don't do anything

@@ -1110,6 +1110,8 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
             nicInfo->matA[i] = i;
             nicInfo->matB[i] = i;
         }
+        nicInfo->num_mm_cores = config.get<uint32_t>("sim.mm_cores", 0);
+        futex_init(&(nicInfo->mm_core_lock));
         info("matrix A,B,C allocated");
     }
 
