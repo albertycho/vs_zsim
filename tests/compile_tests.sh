@@ -21,6 +21,11 @@ g++ -g memhog_mt_wrapper.cpp memhog_mt.cpp ../src/libzsim/zsim_nic_defines.cpp -
 rm matmul
 g++ -g matmul_wrapper.cpp matmul.cpp ../src/libzsim/zsim_nic_defines.cpp -std=c++11 -o matmul -pthread
 
+rm matmul_alone
+g++ -g matmul_wrapper_alone.cpp matmul_alone.cpp ../src/libzsim/zsim_nic_defines.cpp -std=c++11 -o matmul_alone -pthread
+
+
+
 rm mm
 g++ -std=c++11 -o mm -g -O2 mm_tiled.c 
 

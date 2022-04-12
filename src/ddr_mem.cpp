@@ -315,9 +315,10 @@ bool is_rb_addr(Address lineaddr){
         uint64_t rb_top =rb_base+nicInfo->recv_buf_pool_size;
         uint64_t rb_base_line=rb_base>>lineBits;
         uint64_t rb_top_line = rb_top>>lineBits;
+		//disabled splitter
         //mem uses address splitter, so apply same to rb addresses
-        rb_base_line = rb_base_line / (nicInfo->num_controllers);               
-        rb_top_line = rb_top_line / (nicInfo->num_controllers); 
+        //rb_base_line = rb_base_line / (nicInfo->num_controllers);               
+        //rb_top_line = rb_top_line / (nicInfo->num_controllers); 
         if (lineaddr >= rb_base_line && lineaddr <= rb_top_line) {
             return true;
         }
