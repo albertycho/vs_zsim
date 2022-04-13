@@ -37,6 +37,7 @@
 #include "stats.h"
 
 #include <unordered_map>
+#include <iostream>
 
 //TODO: Now that we have a pure CC interface, the MESI controllers should go on different files.
 
@@ -104,6 +105,8 @@ class MESIBottomCC : public GlobAlloc {
         Counter appMiss, appHit, nicMiss, nicHit;
         Counter appPutMiss, appPutHit;
 
+        Counter profCleanHit, profCleanMiss;
+
         //NF grp 1: second group to create LLC contention
         Counter netMiss_core_rb_grp1, netMiss_core_lb_grp1, netMiss_nic_rb_grp1, netMiss_nic_lb_grp1;
         Counter netHit_core_rb_grp1, netHit_core_lb_grp1, netHit_nic_rb_grp1, netHit_nic_lb_grp1;
@@ -134,9 +137,9 @@ class MESIBottomCC : public GlobAlloc {
 
         void init(const g_vector<MemObject*>& _parents, Network* network, const char* name);
 
-        inline bool isExclusive(int32_t lineId) {
+        inline bool isExclusive(int32_t lineId) { // this function is used at tcc to decide whether a GETS will be answered with the line in S or E
             if(lineId == -1) {
-                return false;
+                return true;  // we don't have the line in the llc. if someone above us has it, numSharers will take care of it
             }
             MESIState state = array[lineId];
             return (state == E) || (state == M);
@@ -167,6 +170,9 @@ class MESIBottomCC : public GlobAlloc {
             appHit.init("appHit","App data-related GET hits");
             //nicMiss.init("nicMiss","App data-related GET misses");
             //nicHit.init("nicHit","App data-related GET hits");
+
+            profCleanHit.init("cleanHit", "Clean_S hits");
+            profCleanMiss.init("cleanMiss", "Clean_S misses");
 
             appPutMiss.init("appPutMiss","App data-related PUT misses");
             appPutHit.init("appPutHit","App data-related PUT hits");
@@ -227,6 +233,9 @@ class MESIBottomCC : public GlobAlloc {
             //parentStat->append(&nicMiss);
             //parentStat->append(&nicHit);
             
+            parentStat->append(&profCleanHit);
+            parentStat->append(&profCleanMiss);
+
             parentStat->append(&netMiss_core_lb_grp1);
             parentStat->append(&netHit_core_lb_grp1);
             parentStat->append(&netMiss_core_rb_grp1);
@@ -261,7 +270,7 @@ class MESIBottomCC : public GlobAlloc {
 
         uint64_t passToNext(Address lineAddr, AccessType type, uint32_t childId, uint32_t srcId, uint32_t flags, uint64_t cycle);
 
-        uint64_t processAccess(Address lineAddr, int32_t lineId, AccessType type, uint64_t cycle, uint32_t srcId, uint32_t flags);
+        uint64_t processAccess(Address lineAddr, int32_t lineId, AccessType type, uint64_t cycle, uint32_t srcId, uint32_t flags, bool existsInPriv = true);
 
         void processWritebackOnAccess(Address lineAddr, int32_t lineId, AccessType type);
 
@@ -307,11 +316,13 @@ class MESITopCC : public GlobAlloc {
             int32_t numSharers;
             std::bitset<MAX_CACHE_CHILDREN> sharers;
             bool exclusive;
+            bool exists;
 
             void clear() {
                 exclusive = false;
                 numSharers = 0;
                 sharers.reset();
+                exists = false;
             }
 
             bool isEmpty() {
@@ -328,7 +339,7 @@ class MESITopCC : public GlobAlloc {
         g_vector<uint32_t> childrenRTTs;
         uint32_t numLines;
 
-        g_unordered_map<uint64_t,Entry> evicted_lines;
+        g_unordered_map<uint64_t,Entry> directory;
 
         bool nonInclusiveHack;
 
@@ -343,6 +354,7 @@ class MESITopCC : public GlobAlloc {
                 array[i].clear();
             }
 
+            directory[0].clear();
             futex_init(&ccLock);
         }
 
@@ -370,7 +382,10 @@ class MESITopCC : public GlobAlloc {
         }
 
         bool existsInPrivate(uint64_t lineAddr) {
-            return (!evicted_lines.empty() && evicted_lines.count(lineAddr) > 0);
+            if (nonInclusiveHack)
+                return (!directory.empty() && directory.count(lineAddr) > 0);
+            else
+                return true;
         }
 
         void processNonInclusiveWriteback(Address lineAddr, uint64_t srcId);
@@ -474,6 +489,32 @@ class MESICC : public CC {
         }
 
         bool shouldAllocate(const MemReq& req) {
+            if (nonInclusiveHack) {
+                if (req.type == GETX) {
+                    if (req.is(MemReq::PKTOUT)) {
+                        return false;
+                    }
+                    else if (req.is(MemReq::PKTIN)){
+                        return true;
+                    }
+                    return tcc->existsInPrivate(req.lineAddr);//false;   // non-allocating reads
+                }
+                else if  (req.type == GETS) {
+                    if(req.is(MemReq::PKTOUT)) {
+                        return tcc->existsInPrivate(req.lineAddr);
+                    }
+                    else {
+                        return tcc->existsInPrivate(req.lineAddr);///false;
+                    }
+                }
+                else if (req.type == CLEAN || req.type == CLEAN_S) {
+                    return false;
+                }
+                else {
+                    return true;    // both clean and dirty writebacks allocate
+                }
+            }
+
             if (req.type == GETX) {
                 return !(req.is(MemReq::PKTOUT));
             }
@@ -514,7 +555,7 @@ class MESICC : public CC {
             //but if we do proper NI/EX mid-level caches backed by directories, this may start becoming more common (and it is perfectly acceptable to
             //upgrade without any interaction with the parent... the child had the permissions!)
             if (correct_level) {
-                if ((lineId == -1 && !(req.flags & MemReq::PKTOUT || req.type == CLEAN || req.type == CLEAN_S)) || (((req.type == PUTS) /*|| (req.type == PUTX)*/) && !bcc->isValid(lineId))) { //can only be a non-inclusive wback
+                if (0){//(lineId == -1 && !(req.flags & MemReq::PKTOUT || req.type == CLEAN || req.type == CLEAN_S)) || (((req.type == PUTS) /*|| (req.type == PUTX)*/) && !bcc->isValid(lineId))) { //can only be a non-inclusive wback
                     assert(nonInclusiveHack);
                     assert((req.type == PUTS));// || (req.type == PUTX));
                     respCycle = bcc->processNonInclusiveWriteback(req.lineAddr, req.type, startCycle, req.state, req.srcId, req.flags);
@@ -526,14 +567,12 @@ class MESICC : public CC {
                     assert(!isPrefetch || req.type == GETS);
                     uint32_t flags = req.flags & ~MemReq::PREFETCH; //always clear PREFETCH, this flag cannot propagate up
                     //if needed, fetch line or upgrade miss from upper level
-                    respCycle = bcc->processAccess(req.lineAddr, lineId, req.type, startCycle, req.srcId, flags);
+                    respCycle = bcc->processAccess(req.lineAddr, lineId, req.type, startCycle, req.srcId, flags, tcc->existsInPrivate(req.lineAddr));
                     if (getDoneCycle) *getDoneCycle = respCycle;
                     if (!isPrefetch) { //prefetches only touch bcc; the demand request from the core will pull the line to lower level
                         //At this point, the line is in a good state w.r.t. upper levels
                         bool lowerLevelWriteback = false;
                         //change directory info, invalidate other children if needed, tell requester about its state
-                        if ((req.type == PUTS) || (req.type == PUTX))
-                            assert(bcc->isValid(lineId));
                         respCycle = tcc->processAccess(req.lineAddr, lineId, req.type, req.childId, bcc->isExclusive(lineId), req.state,
                                 &lowerLevelWriteback, respCycle, req.srcId, flags);
                         if (lowerLevelWriteback) {

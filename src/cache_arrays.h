@@ -85,6 +85,7 @@ class SetAssocArray : public CacheArray {
         void postinsert(const Address lineAddr, const MemReq* req, uint32_t candidate);
 
         void initStats(AggregateStat* parentStat);
+        bool isCons(const Address lineAddr);
 };
 
 /* The cache array that started this simulator :) */

@@ -194,7 +194,7 @@ uint64_t TimingCache::access(MemReq& req) {
             int temp = req_level - 1;
             req.flags  = (req.flags & 0xffff) | (temp << 16);
             
-            bool updateReplacement = (req.type == GETS) || (req.type == GETX);
+            bool updateReplacement = (req.type == GETS) || (req.type == GETX) || (req.type == CLEAN_S);
             lineId = array->lookup(req.lineAddr, &req, updateReplacement);                                   
             respCycle += accLat;
 
@@ -208,6 +208,8 @@ uint64_t TimingCache::access(MemReq& req) {
                 Address wbLineAddr;
                 lineId = array->preinsert(req.lineAddr, &req, &wbLineAddr); //find the lineId to replace
                 //info("[%s] Evicting 0x%lx", name.c_str(), wbLineAddr);
+                req.clear(MemReq::INGR_EVCT);
+                req.clear(MemReq::EGR_EVCT);
                 int i=3;
                 glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
                 while (i < nicInfo->expected_core_count + 3){
@@ -251,7 +253,7 @@ uint64_t TimingCache::access(MemReq& req) {
                 assert(!(evRec->hasRecord()));
             }
             else {
-                if (getDoneCycle != 0 || req.type != CLEAN || req.type != CLEAN) {
+                if (getDoneCycle != 0) {
                     // normal accesses
                     if (!(req.is(MemReq::PKTOUT) && req.type == GETX)) {
 
@@ -259,10 +261,6 @@ uint64_t TimingCache::access(MemReq& req) {
 
                         // At this point we have all the info we need to hammer out the timing record
                         TimingRecord tr = { req.lineAddr << lineBits, req.cycle, respCycle, req.type, nullptr, nullptr}; //note the end event is the response, not the wback
-                        if(req.type == CLEAN) {
-                            assert(getDoneCycle - req.cycle == accLat);
-                        }
-
 
                         if (getDoneCycle - req.cycle == accLat && !alloc) {
                             // Hit
@@ -419,6 +417,7 @@ uint64_t TimingCache::access(MemReq& req) {
                 int32_t templineId = array->lookup(req.lineAddr, nullptr, false);
                 MemReq invreq = {req.lineAddr, CLEAN, req.childId, req.state, respCycle, req.childLock, req.initialState, req.srcId};
                 invalCycle = cc->processAccess(invreq, templineId, respCycle, true);
+                assert(!evRec->hasRecord());
                 /*
                 if (reqWriteback) {     // writeback to mem in case the invalidations caused evictions
                     assert(!correct_level);
@@ -429,7 +428,7 @@ uint64_t TimingCache::access(MemReq& req) {
                 */
 
                 respCycle = cc->processAccess(req, lineId, respCycle, correct_level);
-
+                assert(evRec->hasRecord());
                 // Timing simulation
                 TimingRecord tr = { req.lineAddr << lineBits, req.cycle, respCycle, req.type, nullptr, nullptr}; //note the end event is the response, not the wback
 
@@ -452,6 +451,8 @@ uint64_t TimingCache::access(MemReq& req) {
 
                 tr.startEvent = mse;
                 tr.endEvent = mre; // note the end event is the response, not the wback
+
+                evRec->pushRecord(tr);
             }
             else {
 				/////// dbg

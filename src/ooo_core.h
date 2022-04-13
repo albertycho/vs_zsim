@@ -408,8 +408,12 @@ class OOOCore : public Core {
         //buffers, but we split the associative component from the limited-size modeling.
         //NOTE: We do not model the 10-entry fill buffer here; the weave model should take care
         //to not overlap more than 10 misses.
-        ReorderBuffer<72, 4> loadQueue;
-        ReorderBuffer<56, 4> storeQueue;
+        // Cascade Lake
+        //ReorderBuffer<72, 4> loadQueue;
+        //ReorderBuffer<56, 4> storeQueue;
+        // Ice Lake
+        ReorderBuffer<128, 4> loadQueue;
+        ReorderBuffer<72, 4> storeQueue;
 
         uint32_t curCycleRFReads; //for RF read stalls
         uint32_t curCycleIssuedUops; //for uop issue limits
@@ -417,9 +421,12 @@ class OOOCore : public Core {
         //This would be something like the Atom... (but careful, the iw probably does not allow 2-wide when configured with 1 slot)
         //WindowStructure<1024, 1 /*size*/, 2 /*width*/> insWindow; //this would be something like an Atom, except all the instruction pairing business...
 
-        //Nehalem
-        WindowStructure<1024, 97 /*size*/> insWindow; //NOTE: IW width is implicitly determined by the decoder, which sets the port masks according to uop type
-        ReorderBuffer<224, 4> rob;
+        // Cascade Lake
+        //WindowStructure<1024, 97 /*size*/> insWindow; //NOTE: IW width is implicitly determined by the decoder, which sets the port masks according to uop type
+        //ReorderBuffer<224, 4> rob;
+        // Ice Lake
+        WindowStructure<1024, 160 /*size*/> insWindow; //NOTE: IW width is implicitly determined by the decoder, which sets the port masks according to uop type
+        ReorderBuffer<352, 5> rob;
 
         // Agner's guide says it's a 2-level pred and BHSR is 18 bits, so this is the config that makes sense;
         // in practice, this is probably closer to the Pentium M's branch predictor, (see Uzelac and Milenkovic,
@@ -435,7 +442,9 @@ class OOOCore : public Core {
         Address branchNotTakenNpc;
 
         uint64_t decodeCycle;
-        CycleQueue<128> uopQueue;  // models issue queue
+        //CycleQueue<128> uopQueue;  // models issue queue
+        // Ice Lake
+        CycleQueue<140> uopQueue;  // models issue queue
 
         uint64_t instrs, uops, bbls, approxInstrs, mispredBranches;
 

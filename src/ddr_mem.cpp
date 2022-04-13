@@ -365,7 +365,7 @@ uint64_t DDRMemory::access(MemReq& req) {
         case GETS:
             if(!(req.flags & MemReq::PKTOUT))
                 *req.state = req.is(MemReq::NOEXCL)? S : E;
-	    total_access_count.inc();
+	        total_access_count.inc();
             break;
         case GETX:
             total_access_count.inc();
@@ -822,7 +822,22 @@ void DDRMemory::initTech(const char* techName) {
     // tBL's below are for 64-byte lines; we adjust as needed
 
     // Please keep this orderly; go from faster to slower technologies
-    if(tech == "DDR4-2400"){
+    if(tech == "DDR4-3200"){
+        tCK = 0.625; // ns; all other in mem cycles
+        tBL = 4;//8;
+        tCL = 22; 
+        tRCD = 22;
+        tRTP = 12;//4;
+        tRP = 22;//17;
+        tRRD = 4;
+        tRAS = 52;
+        tFAW = 16;
+        tWTR = 4;
+        tWR = 24;
+        tRFC = 256;
+        tREFI = 12480; //3.9us according to spec. divided by ns
+    }
+    else if(tech == "DDR4-2400"){
         tCK = 0.833; // ns; all other in mem cycles
         tBL = 4;//8;
         tCL = 18; 

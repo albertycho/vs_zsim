@@ -757,6 +757,10 @@ class DDIOPartReplPolicy : public PartReplPolicy, public LegacyReplPolicy {
 
         void update(uint32_t id, const MemReq* req) {
             DDIOPartInfo* e = &array[id];
+            if (req->type == CLEAN_S) {
+                //e->ts = 1; //set to LRU  
+                return;  
+            }
             if (e->ts > 0) { //this is a hit update
                 partInfo[e->p].profHits.inc();
             } else { //post-miss update, old line has been removed, this is empty

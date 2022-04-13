@@ -76,7 +76,7 @@ uint64_t Cache::access(MemReq& req) {
         if (correct_level) {
             uint32_t temp = req_level - 1;
             req.flags  = (req.flags & 0xffff) | (temp << 16);
-            bool updateReplacement = (req.type == GETS) || (req.type == GETX);
+            bool updateReplacement = (req.type == GETS) || (req.type == GETX) || (req.type == CLEAN_S);
             lineId = array->lookup(req.lineAddr, &req, updateReplacement);
             respCycle += accLat;
 
@@ -86,6 +86,8 @@ uint64_t Cache::access(MemReq& req) {
                 lineId = array->preinsert(req.lineAddr, &req, &wbLineAddr); //find the lineId to replace
                 trace(Cache, "[%s] Evicting 0x%lx", name.c_str(), wbLineAddr);
 
+                req.clear(MemReq::INGR_EVCT);
+                req.clear(MemReq::EGR_EVCT);
                 int i=3;
                 glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
                 while (i < nicInfo->expected_core_count + 3){

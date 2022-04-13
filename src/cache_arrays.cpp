@@ -84,6 +84,19 @@ void SetAssocArray::initStats(AggregateStat* parentStat) {
     parentStat->append(objStats);
 }
 
+bool SetAssocArray::isCons(const Address lineAddr) {
+    uint32_t set = (hf->hash(0, lineAddr) & setMask) % numSets;
+    uint32_t first = set*assoc;
+    for (uint32_t id = first; id < first + assoc; id++) {
+        if (array[id].addr ==  lineAddr) {
+            if(array[id].lastUSer == APP)
+                return true;
+            else
+                return false;
+        }
+    }
+}
+
 int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool updateReplacement) {
     uint32_t set = (hf->hash(0, lineAddr) & setMask) % numSets;
     uint32_t first = set*assoc;
