@@ -353,7 +353,10 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
                         else 
                             netHit_core_rb_grp1.inc();
                         break;
-                    default: panic("core rb should be for NF0 or NF1");
+                    default: 
+                		int core_id=get_target_core_id_from_rb_addr(lineAddr);
+						info("srcId: %d, rb_coreID: %d",srcId, core_id);
+						panic("core rb should be for NF0 or NF1");
                 }
 
             }

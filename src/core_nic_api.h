@@ -590,11 +590,17 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 	//info("allocate_recv_buf - rb_head = %d", rb_head);
 
 	futex_unlock(&nicInfo->nic_elem[core_id].rb_lock);
+
+	uint64_t rbuf_count = (nicInfo->recv_buf_pool_size) / (nicInfo->forced_packet_size);
+	uint64_t outstanding_rb = rbuf_count - nicInfo->nic_elem[core_id].rb_left;
+
 	if (rb_head > RECV_BUF_POOL_SIZE) {
+	//if (outstanding_rb > 200 && ((lg_p->lgs[lg_i].arrival_dist) != 3) ) {
 		//panic("core %d out of recv buffer, cycle %lu", core_id, cur_cycle);
 		/* Try graceful exit */
 		if(nicInfo->out_of_rbuf==false){
-			info("core %d out of recv buffer, cycle %lu", core_id, cur_cycle);
+			//info("core %d out of recv buffer, cycle %lu", core_id, cur_cycle);
+			info("core %d getting queue builtup, cycle %lu", core_id, cur_cycle);
 		}
 
 		lg_p->all_packets_completed=true;

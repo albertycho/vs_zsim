@@ -835,7 +835,8 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 		case 3: //get buf_size for lbuf. Is called before case 2 (but this was coded later)
 			num_cline = (((UINT64)(val)) / (sizeof(z_cacheline))); //+1 in case remainder..
 			//num_cline = num_cline * 4;
-			NICELEM.lbuf = gm_calloc<z_cacheline>(num_cline);
+			//NICELEM.lbuf = gm_calloc<z_cacheline>(num_cline);
+			NICELEM.lbuf = gm_memalign<z_cacheline>(CACHE_LINE_BYTES, num_cline);
 			break;
 
 		case NOTIFY_WQ_WRITE://NOTIFY WQ WRITE from application
@@ -921,6 +922,7 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 						nicInfo->nic_init_done = true;
 					}
 				}
+				info("registered_non_net_core_count: %d, expected_non_net_core_count: %d\n", nicInfo->expected_non_net_core_count ,nicInfo->expected_core_count);
 				break;
 			}
 

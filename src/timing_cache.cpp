@@ -95,7 +95,7 @@ TimingCache::TimingCache(uint32_t _numLines, CC* _cc, CacheArray* _array, ReplPo
     assert(numMSHRs > 0);
     activeMisses = 0;
     domain = _domain;
-    info("%s: mshrs %d domain %d", name.c_str(), numMSHRs, domain);
+    //info("%s: mshrs %d domain %d", name.c_str(), numMSHRs, domain);
 }
 
 void TimingCache::initStats(AggregateStat* parentStat) {

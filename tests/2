@@ -155,11 +155,7 @@ sim = {
     // attachDebugger = True;
     //procStatsFilter = "l1.*|l2.*";
     num_cores_serving_nw = 18; //num_server
-    num_non_net_cores = 0;
-
-    //packet_injection_rate = 16;
-    //num_keys=1024;
-    //update_fraction=25;
+    num_non_net_cores = 1;
 
     send_in_loop=false;
 	load_dist=0; //0: uniform, 1: skew(zipf)
@@ -169,15 +165,15 @@ sim = {
 	recv_buf_pool_size = 1048576
 
 	clean_recv=0;
-    //mat_N = 640;
-    //mm_cores = 6;
+    mat_N = 10;
+    mm_cores = 1;
     
 	gmMBytes=65536;
 
     load_gen = {
         lg1={
             //type=0; //0: HERD
-            type=1; //0: l3fwd
+            type=1; //1: l3fwd
             packet_injection_rate=10;
             num_keys=1024;
             update_fraction=5; 
@@ -217,12 +213,41 @@ dumpHeartbeats=18L;
 --log-capacity-bytes 4194304";
 };
 
-process3={
-	command = "/shared/spec2017/spec2017/exes/620.omnetpp_s/run/omnetpp_s -c General -r 0"
-//    command = "./matmul --start-core 21 --num-threads 6 \
-//    --mlen 640 \
-//    ";
+process3 = {
+    command = "./xmem-linux-x64 -t -r -R -j1 -d21 -u \
+	-w12288 \
+	"
 }
+//process4 = {
+//    command = "./xmem-linux-x64 -t -r -R -j1 -d22 -u \
+//	-w2048 \
+//	"
+//}
+//process5 = {
+//    command = "./xmem-linux-x64 -t -r -R -j1 -d23 -u \
+//	-w2048 \
+//	"
+//}
+//process6 = {
+//    command = "./xmem-linux-x64 -t -r -R -j1 -d24 -u \
+//	-w2048 \
+//	"
+//}
+//process7 = {
+//    command = "./xmem-linux-x64 -t -r -R -j1 -d25 -u \
+//	-w2048 \
+//	"
+//}
+//process8 = {
+//    command = "./xmem-linux-x64 -t -r -R -j1 -d26 -u \
+//	-w2048 \
+//	"
+//}
+//#process3={
+//#    command = "./matmul --start-core 21 --num-threads 6 \
+//#    --mlen 640 \
+//#    ";
+//#}
 
 
 

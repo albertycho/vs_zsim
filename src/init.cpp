@@ -1063,7 +1063,8 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 
     //init nic_elements ptr
     //glob_nic_elements* nicInfo= gm_calloc<glob_nic_elements>();
-    nicInfo = gm_calloc<glob_nic_elements>();
+    //nicInfo = gm_calloc<glob_nic_elements>();
+    nicInfo = gm_memalign<glob_nic_elements>(CACHE_LINE_BYTES);
     futex_init(&(nicInfo->dpq_lock));
     futex_init(&(nicInfo->ptag_dbug_lock));
     
@@ -1072,8 +1073,10 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     futex_init(&(nicInfo->nic_lock));
     
     for (uint64_t i = 0; i < zinfo->numCores; i++) {
-        nicInfo->nic_elem[i].wq = gm_calloc<rmc_wq_t>();
-        nicInfo->nic_elem[i].cq = gm_calloc<rmc_cq_t>();
+        //nicInfo->nic_elem[i].wq = gm_calloc<rmc_wq_t>();
+        //nicInfo->nic_elem[i].cq = gm_calloc<rmc_cq_t>();
+        nicInfo->nic_elem[i].cq = gm_memalign<rmc_cq_t>(CACHE_LINE_BYTES);
+        nicInfo->nic_elem[i].wq = gm_memalign<rmc_wq_t>(CACHE_LINE_BYTES);
         futex_init(&nicInfo->nic_elem[i].rb_lock);
         futex_init(&nicInfo->nic_elem[i].ceq_lock);
         futex_init(&nicInfo->nic_elem[i].rcp_lock);
@@ -1084,7 +1087,8 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
         nicInfo->nic_elem[i].packet_pending = false;
         futex_init(&nicInfo->nic_elem[i].packet_pending_lock);
     }
-    nicInfo->latencies = gm_calloc<uint64_t>(LAT_ARR_SIZE);
+    //nicInfo->latencies = gm_calloc<uint64_t>(LAT_ARR_SIZE);
+    nicInfo->latencies = gm_memalign<uint64_t>(CACHE_LINE_BYTES, LAT_ARR_SIZE);
     //nicInfo->latencies_list = gm_calloc<uint64_t>(LAT_ARR_SIZE);
     nicInfo->latencies_capa = LAT_ARR_SIZE;
     //nicInfo->latencies_list_capa = LAT_ARR_SIZE;
@@ -1093,8 +1097,10 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     nicInfo->recv_buf_pool_size = recv_buf_pool_size;
     //nicInfo->latencies = gm_calloc<uint64_t>(LAT_ARR_SIZE);
     for (uint64_t i = 0; i < zinfo->numCores; i++) {
-        nicInfo->nic_elem[i].recv_buf = gm_calloc<z_cacheline>(recv_buf_pool_size);
-        nicInfo->nic_elem[i].rb_dir = gm_calloc<recv_buf_dir_t>(recv_buf_pool_size);
+        //nicInfo->nic_elem[i].recv_buf = gm_calloc<z_cacheline>(recv_buf_pool_size);
+        //nicInfo->nic_elem[i].rb_dir = gm_calloc<recv_buf_dir_t>(recv_buf_pool_size);
+        nicInfo->nic_elem[i].recv_buf = gm_memalign<z_cacheline>(CACHE_LINE_BYTES, recv_buf_pool_size);
+        nicInfo->nic_elem[i].rb_dir =   gm_memalign<recv_buf_dir_t>(CACHE_LINE_BYTES, recv_buf_pool_size);
     }
 
     nicInfo->clean_recv = config.get<uint32_t>("sim.clean_recv", 0);
@@ -1103,9 +1109,13 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     // mat_N 0 if no mat mult, else allocate matrixes
     if (nicInfo->mat_N > 0) {
         uint32_t mat_N = nicInfo->mat_N;
-        nicInfo->matA = gm_malloc<uint64_t>(mat_N * mat_N);
-        nicInfo->matB = gm_malloc<uint64_t>(mat_N * mat_N);
-        nicInfo->matC = gm_malloc<uint64_t>(mat_N * mat_N);
+        //nicInfo->matA = gm_malloc<uint64_t>(mat_N * mat_N);
+        //nicInfo->matB = gm_malloc<uint64_t>(mat_N * mat_N);
+        //nicInfo->matC = gm_malloc<uint64_t>(mat_N * mat_N);
+        nicInfo->matA = gm_memalign<uint64_t>(CACHE_LINE_BYTES, mat_N * mat_N);
+        nicInfo->matB = gm_memalign<uint64_t>(CACHE_LINE_BYTES, mat_N * mat_N);
+        nicInfo->matC = gm_memalign<uint64_t>(CACHE_LINE_BYTES, mat_N * mat_N);
+
         for (int i = 0; i < mat_N * mat_N; i++) {
             nicInfo->matA[i] = i;
             nicInfo->matB[i] = i;
@@ -1196,7 +1206,8 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 
     /// init Load Generator //
     void* lgp_void;
-    lgp_void = gm_calloc<load_generator>();
+    //lgp_void = gm_calloc<load_generator>();
+    lgp_void = gm_memalign<load_generator>(CACHE_LINE_BYTES);
     load_generator* lgp = (load_generator*)lgp_void;
 
     //((load_generator*)lgp)->next_cycle = 0;
@@ -1204,7 +1215,8 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     //((load_generator*)lgp)->RPCGen = new RPCGenerator(100, 10); //moved to individual LG
 
 
-    lgp->tc_map = gm_calloc<timestamp>(65536);
+    //lgp->tc_map = gm_calloc<timestamp>(65536);
+    lgp->tc_map = gm_memalign<timestamp>(CACHE_LINE_BYTES,65536);
 
     futex_init(&(((load_generator*)lgp)->ptc_lock));
     gm_set_lg_ptr(lgp_void);
@@ -1235,7 +1247,8 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     string lg_prefix = "sim.load_gen.";
     uint32_t num_loadgen = loadGenNames.size();
     lgp->num_loadgen = num_loadgen;
-    lgp->lgs = (load_gen_mod*)(gm_calloc<load_gen_mod>(num_loadgen));
+    //lgp->lgs = (load_gen_mod*)(gm_calloc<load_gen_mod>(num_loadgen));
+    lgp->lgs = (load_gen_mod*)(gm_memalign<load_gen_mod>(CACHE_LINE_BYTES,num_loadgen));
     uint32_t tmp = 0;
     uint32_t start_core = 3; //2 nic cores + core for thread spawning master threads
     for (const char* lgi : loadGenNames) {
