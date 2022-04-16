@@ -691,8 +691,10 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
 			int safety_counter = 0;
 
 			while (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch())+100) {
-
-				nanosleep(10); // short delay seems to work sufficient
+				struct timespec tim, tim2;
+   				tim.tv_sec = 0;
+   				tim.tv_nsec = 10;
+				nanosleep(&tim, &tim2); // short delay seems to work sufficient
 				safety_counter++;
 				if (safety_counter > 10) { // >2 seems to work in current env. May need to be adjusted when running on different machine
 					break;
