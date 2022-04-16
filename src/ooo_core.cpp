@@ -690,9 +690,9 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
 			// Sometime this check gets stuck at the end of the phase, adding safety break
 			int safety_counter = 0;
 
-			while (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch())) {
+			while (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch())+100) {
 
-				usleep(1); // short delay seems to work sufficient
+				nanosleep(10); // short delay seems to work sufficient
 				safety_counter++;
 				if (safety_counter > 10) { // >2 seems to work in current env. May need to be adjusted when running on different machine
 					break;
