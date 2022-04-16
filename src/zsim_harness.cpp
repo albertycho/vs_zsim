@@ -703,8 +703,8 @@ int main(int argc, char *argv[]) {
     std::cout << "sim elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
 
     load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
-    uint64_t total_nic_rb_writes=(lg_p->target_packet_count)*(nicInfo->forced_packet_size)/64 //linesize64
-    if((nicInfo->spillover_count) >(total_nic_rb_writes)/20 ){ // spillover hit > 5% of injection
+    uint64_t total_nic_rb_writes=(lg_p->target_packet_count)*(nicInfo->forced_packet_size)/64; //linesize64
+    if((nicInfo->spillover_count) >((total_nic_rb_writes)/20) ){ // spillover hit > 5% of injection
         std::cout<<"\
          :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n\
          :::::THIS RUN HAD SPILLOVER (MORE THAN 5\% OF ALL NIC RB WRITES OUTSIDE DDIO WAYS):::::\n\
