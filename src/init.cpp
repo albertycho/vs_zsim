@@ -881,6 +881,9 @@ static void InitSystem(Config& config) {
     nicInfo->load_balance = load_balance;
 	uint32_t forced_packet_size = config.get<uint32_t>("sim.forced_packet_size",512);
 	nicInfo->forced_packet_size = forced_packet_size;
+
+    nicInfo->num_ddio_ways = config.get<uint32_t>("sys.sim.caches.l3.repl.ddio_ways", 2);
+    info("nicInfo->num_ddio_ways: %d", nicInfo->num_ddio_ways);
 	
     uint32_t inval_read_rb = config.get<uint32_t>("sim.inval_read_rb",0);
     nicInfo->inval_read_rb = inval_read_rb;

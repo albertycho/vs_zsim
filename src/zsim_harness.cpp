@@ -702,19 +702,28 @@ int main(int argc, char *argv[]) {
     std::chrono::duration<double> elapsed_seconds = (nicInfo->sim_end_time) - (nicInfo->sim_start_time);
     std::cout << "sim elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
 
+    load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
+    uint64_t total_nic_rb_writes=(lg_p->target_packet_count)*(nicInfo->forced_packet_size)/64 //linesize64
+    if((nicInfo->spillover_count) >(total_nic_rb_writes)/20 ){ // spillover hit > 5% of injection
+        std::cout<<"\
+         :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n\
+         :::::THIS RUN HAD SPILLOVER (MORE THAN 5\% OF ALL NIC RB WRITES OUTSIDE DDIO WAYS):::::\n\
+         :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"<<std::endl;
+    }
+    
     if(nicInfo->out_of_rbuf){
         std::cout<<"\
          :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n\
          :::::SIM TERMINATED WITH OUT OF RECV BUFFER sim terminated with out of recv_buffer:::::\n\
          :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"<<std::endl;
-		load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
+
         if (lg_p->num_loadgen > 0) {
             generate_raw_timestamp_files(false);
         }
 
     }
     else{
-        load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
+        //load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
         if (lg_p->num_loadgen > 0) {
 			if(lg_p->all_packets_completed){
             	generate_raw_timestamp_files(true);

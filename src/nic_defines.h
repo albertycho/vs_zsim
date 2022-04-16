@@ -264,6 +264,10 @@ struct glob_nic_elements {
 	uint32_t pp_policy;
 	bool send_in_loop;
 	bool out_of_rbuf=false;
+	bool spillover = false;
+	uint64_t spillover_count=0;
+	uint32_t num_ddio_ways=2;
+	
 	bool closed_loop_done=false;
 	uint32_t load_balance=0;
 	uint32_t forced_packet_size=0;

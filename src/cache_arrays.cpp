@@ -117,6 +117,9 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
                         if(req->flags & MemReq::PKTIN){
                             //netHits_nic_rb.atomicInc();
                             nic_rb_way_hits.inc(id-first);
+                            if((id-first) < (12 - (nicInfo->num_ddio_ways))){
+                                nicInfo->spillover_count++;
+                            }
                         }
                     }
                 }
