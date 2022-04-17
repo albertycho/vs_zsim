@@ -1238,6 +1238,7 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 								info("done with closed loop warmup!, sampling phase: %d", nicInfo->sampling_phase_index);
 								lg_p->lgs[ii].next_cycle = core->curCycle + 1;
 								flag_t=false;
+								info("Spillover count during warmup: %d",nicInfo->spillover_count)
 								/*
 								   if(nicInfo->closed_loop_done==false){
 								   uint32_t cycle_diff = injection_cycle- (lg_p->lgs[0].next_cycle);
