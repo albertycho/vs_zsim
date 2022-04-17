@@ -182,7 +182,7 @@ struct nic_element {
 	PAD();
 
 	//uint64_t* service_times;
-	uint32_t service_times[1000000]; //as of now, I can't run more than 60k packets :(
+	uint32_t service_times[10000000]; //as of now, I can't run more than 60k packets :(
 	uint64_t st_size;
 	//uint64_t st_capa;
 	uint32_t cur_service_start_time;
@@ -193,11 +193,11 @@ struct nic_element {
 	uint64_t app_l3_access_flag = 0;
 
 	// per-core
-	uint32_t ts_queue[10000000];	//timestamps coming from app calling timestamp() + core request pickup
-	uint32_t ts_nic_queue[10000000];	// timestamps recorded in nic functions (injection, answer pickup)
-	uint32_t bbl_queue[1000000];	// amount of bbls between injection and completion of a request
-	uint32_t phase_nic_queue[1000000];	// bound phase recording per request: injection, answer pickup
-	uint32_t phase_queue[1000000];	// bound phase recording per request: core pickup
+	uint32_t ts_queue[100000000];	//timestamps coming from app calling timestamp() + core request pickup
+	uint32_t ts_nic_queue[100000000];	// timestamps recorded in nic functions (injection, answer pickup)
+	uint32_t bbl_queue[10000000];	// amount of bbls between injection and completion of a request
+	uint32_t phase_nic_queue[10000000];	// bound phase recording per request: injection, answer pickup
+	uint32_t phase_queue[10000000];	// bound phase recording per request: core pickup
 	int ts_idx = 0, ts_nic_idx = 0, phase_idx = 0, phase_nic_idx = 0, bbl_idx = 0;
 
 	bool packet_pending;

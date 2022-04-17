@@ -709,9 +709,13 @@ int main(int argc, char *argv[]) {
          :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n\
          :::::THIS RUN HAD SPILLOVER (MORE THAN 5\% OF ALL NIC RB WRITES OUTSIDE DDIO WAYS):::::\n\
          :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"<<std::endl;
+        if (lg_p->num_loadgen > 0) {
+            generate_raw_timestamp_files(false);
+        }
+
     }
     
-    if(nicInfo->out_of_rbuf){
+	else if(nicInfo->out_of_rbuf){
         std::cout<<"\
          :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n\
          :::::SIM TERMINATED WITH OUT OF RECV BUFFER sim terminated with out of recv_buffer:::::\n\
