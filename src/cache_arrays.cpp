@@ -67,6 +67,9 @@ void SetAssocArray::initStats(AggregateStat* parentStat) {
     nic_rb_way_hits.init("nic_rb_way_hits", "Hits per cache way",assoc);
     nic_rb_way_misses.init("nic_rb_way_inserts", "Insertions per cache way",assoc);
     rb_insert_server.init("rb_insert_server", "Insertions per cache way");
+    NNF_way_hits.init("NNF_way_hits", "Hits per cache way by NNF",assoc);
+    NNF_way_misses.init("NNF_way_misses", "misses per cache way by NNF",assoc);
+
     //objStats->append(&netMisses_nic_rb);
     //objStats->append(&netMisses_nic_lb);
     //objStats->append(&netMisses_core);
@@ -81,6 +84,8 @@ void SetAssocArray::initStats(AggregateStat* parentStat) {
     objStats->append(&nic_rb_way_hits);
     objStats->append(&nic_rb_way_misses);
     objStats->append(&rb_insert_server);
+    objStats->append(&NNF_way_hits);
+    objStats->append(&NNF_way_misses);
     parentStat->append(objStats);
 }
 
@@ -129,6 +134,12 @@ int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool up
 						if(req->type == GETS || req->type == GETX){
 						    appHits.atomicInc();
 						}
+					}
+					if(req->srcId > 14){
+						if(req->type == GETS || req->type == GETX){
+							NNF_way_hits.inc(id-first);
+						}
+
 					}
                 }
             }

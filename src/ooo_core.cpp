@@ -689,7 +689,8 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
 		else {
 			// Sometime this check gets stuck at the end of the phase, adding safety break
 			int safety_counter = 0;
-
+	
+			
 			while (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch())+100) {
 				struct timespec tim, tim2;
    				tim.tv_sec = 0;
@@ -700,6 +701,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
 					break;
 				}
 			}
+			
 
 		}
 	}

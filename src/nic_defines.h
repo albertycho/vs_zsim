@@ -165,6 +165,7 @@ struct nic_element {
 	int rb_left;
 	z_cacheline* recv_buf;
 	z_cacheline *lbuf;
+	uint64_t * rb_pad;
 	//recv_buf_dir_t rb_dir[RECV_BUF_POOL_SIZE];
 	recv_buf_dir_t* rb_dir;
 	uint32_t rb_iterator;

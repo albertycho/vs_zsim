@@ -1103,8 +1103,15 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
         //nicInfo->nic_elem[i].recv_buf = gm_calloc<z_cacheline>(recv_buf_pool_size);
         //nicInfo->nic_elem[i].rb_dir = gm_calloc<recv_buf_dir_t>(recv_buf_pool_size);
         nicInfo->nic_elem[i].recv_buf = gm_memalign<z_cacheline>(CACHE_LINE_BYTES, recv_buf_pool_size);
-        nicInfo->nic_elem[i].rb_dir =   gm_memalign<recv_buf_dir_t>(CACHE_LINE_BYTES, recv_buf_pool_size);
+		//assuming linear memory allocation, add skew to avoid set conflicts among buffers from different cores
+		//nicInfo->nic_elem[i].rb_pad = gm_memalign<uint64_t>(CACHE_LINE_BYTES, 680*8);
     }
+
+    for (uint64_t i = 0; i < zinfo->numCores; i++) {
+        nicInfo->nic_elem[i].rb_dir =   gm_memalign<recv_buf_dir_t>(CACHE_LINE_BYTES, recv_buf_pool_size);
+	}
+
+
 
     nicInfo->clean_recv = config.get<uint32_t>("sim.clean_recv", 0);
 
