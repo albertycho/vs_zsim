@@ -361,7 +361,7 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
 
             }
             else {
-                if(!(nicInfo->zeroCopy){
+                if(!(nicInfo->zeroCopy)){
                     assert (flags & MemReq::PKTIN);
                 }
                 else{
