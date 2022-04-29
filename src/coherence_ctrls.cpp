@@ -388,7 +388,7 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
                 }
                 }
                 else if(flags & MemReq::PKTOUT){//zero copy, count these as LB miss
-                switch (stat_group) {
+                switch (nic_stat_group) {
                     case NF0: 
                         if(isMiss)
                             netMiss_core_lb.inc();
