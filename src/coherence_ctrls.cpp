@@ -739,7 +739,9 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
                             }
                         }
                     }
-                    assert(!this->existsInPrivate(lineAddr)); // nothing to do, chack we are invalid and none has the line above us
+                    if(!(nicInfo->zeroCopy)){
+                        assert(!this->existsInPrivate(lineAddr)); // nothing to do, chack we are invalid and none has the line above us
+                    }
                 }
                     
             }
