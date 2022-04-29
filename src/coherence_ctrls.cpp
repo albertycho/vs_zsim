@@ -720,6 +720,7 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
                     if(this->existsInPrivate(lineAddr)){
                         info("lbuf exists in private cache, numsharers = %d",directory[lineAddr].numSharers);
                         uint32_t numChildren = children.size();
+                        info("numchildren: %d",numChildren);
                         for (uint32_t c = 0; c < numChildren; c++) {
                             if (e->sharers[c]) {
                                 info("line owned by: %s",children[c]->getName());
