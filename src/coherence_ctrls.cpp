@@ -365,7 +365,7 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
                     assert (flags & MemReq::PKTIN);
                 }
                 else{
-                    assert (flags & MemReq::PKTOUT);
+                    assert ((flags & MemReq::PKTOUT)||(flags & MemReq::PKTIN));
                 }
                 int core_id=get_target_core_id_from_rb_addr(lineAddr);
                 assert(core_id>=0);
