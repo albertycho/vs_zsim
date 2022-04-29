@@ -731,7 +731,7 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
                         //info(directory.find(lineAddr)->getName());
                         info("first: %d",directory.find(lineAddr)->first);
                         
-                        info("second: ",)
+                        //info("second: ",)
 
                         for(int ii=0; ii<27;ii++){
                             if(directory[lineAddr].sharers[ii]){
