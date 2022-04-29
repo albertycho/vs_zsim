@@ -726,6 +726,7 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
                                 info("line owned by: %s",children[c]->getName());
                             }
                         }
+                        info(directory.find(lineAddr)->getName());
 
                         for(int ii=0; ii<27;ii++){
                             if(directory[lineAddr].sharers[ii]){
