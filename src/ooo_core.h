@@ -504,8 +504,11 @@ class OOOCore : public Core {
 
         uint16_t ingr_type, egr_type, egr_inval=0;
 
-        ReorderBuffer * get_sq_ptr(){
-            return &(storeQueue);
+        uint64_t get_sq_minAllocCycle(){
+            storeQueue.minAllocCycle();
+        }
+        void sq_markRetire(uint64_t minRetireCycle){
+            storeQueue.markRetire(minRetireCycle);
         }
 
     private:

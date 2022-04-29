@@ -1019,7 +1019,7 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 
 				if (nicInfo->clean_recv != 0) {
 					//TODO: storeQ and related vars - how to wire into this part
-					ReorderBuffer* storeQueue = core->get_sq_ptr();
+					//ReorderBuffer* storeQueue = core->get_sq_ptr();
 
 					uint64_t size = nicInfo->forced_packet_size;
 					size += CACHE_BLOCK_SIZE - 1;
@@ -1028,6 +1028,7 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 					uint64_t dispatchCycle = reqSatisfiedCycle;
 
 					//uint64_t sqCycle = storeQueue.minAllocCycle();
+					uint64_t sqCycle = core->get_sq_minAllocCycle();
 					//if (sqCycle > dispatchCycle) {
 #ifdef LSU_IW_BACKPRESSURE
 						//insWindow.poisonRange(curCycle, sqCycle, 0x10 /*PORT_4, stores*/, core_id);
