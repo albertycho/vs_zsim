@@ -1046,7 +1046,7 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 					reqSatisfiedCycle = dispatchCycle;
 					while (size) {
 						reqSatisfiedCycle = max(l1d->clean(addr, dispatchCycle, nicInfo->clean_recv) + L1D_LAT, reqSatisfiedCycle);
-						cRec->record(dispatchCycle, dispatchCycle, reqSatisfiedCycle);
+						cRec->record(core_cycle, core_cycle, reqSatisfiedCycle);
 						addr += 64;
 						size--;
 					}
