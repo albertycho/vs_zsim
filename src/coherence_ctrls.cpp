@@ -721,10 +721,10 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
                         uint32_t numChildren = children.size();
                         uint32_t sentInvs = 0;
                         for (uint32_t c = 0; c < numChildren; c++) {
-                        if (e->sharers[c]) {
-                            info("line owned by: %s",children[c]->getName());
+                            if (e->sharers[c]) {
+                                info("line owned by: %s",children[c]->getName());
+                            }
                         }
-
 
                         for(int ii=0; ii<27;ii++){
                             if(directory[lineAddr].sharers[ii]){
