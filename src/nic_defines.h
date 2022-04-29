@@ -264,6 +264,7 @@ struct glob_nic_elements {
 
 	uint32_t pp_policy;
 	bool send_in_loop;
+	bool zeroCopy = false;
 	bool out_of_rbuf=false;
 	bool spillover = false;
 	uint64_t spillover_count=0;

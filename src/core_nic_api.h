@@ -977,6 +977,7 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 					addr += 64;
 				}
 			}
+			uint64_t lb_addr = dp->lbuf_addr;
 			
 			//////// get packet latency info from tag-starttime map //////
 			uint64_t ptag = dp->tag;
@@ -1013,6 +1014,46 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 
 
 			futex_unlock(&lg_p->ptc_lock);
+			
+			if (nicInfo->zeroCopy) { // free recv buf and send clean here
+				free_recv_buf_addr(lb_addr, core_id);
+				if (nicInfo->clean_recv != 0) {
+					//TODO: storeQ and related vars - how to wire into this part
+					uint64_t size = nicInfo->forced_packet_size;
+					size += CACHE_BLOCK_SIZE - 1;
+					size >>= CACHE_BLOCK_BITS;  //number of cache lines
+					//uint64_t dispatchCycle = core_cycle;
+					uint64_t dispatchCycle = reqSatisfiedCycle;
+
+					//uint64_t sqCycle = storeQueue.minAllocCycle();
+					//if (sqCycle > dispatchCycle) {
+#ifdef LSU_IW_BACKPRESSURE
+						//insWindow.poisonRange(curCycle, sqCycle, 0x10 /*PORT_4, stores*/, core_id);
+#endif
+						//dispatchCycle = sqCycle;
+					//}
+
+					// Wait for all previous store addresses to be resolved (not just ours :))
+					//dispatchCycle = MAX(lastStoreAddrCommitCycle + 1, dispatchCycle);
+
+					Address addr = val;
+
+					//uint64_t reqSatisfiedCycle = dispatchCycle;
+					//reqSatisfiedCycle = dispatchCycle;
+					while (size) {
+						reqSatisfiedCycle = max(l1d->clean(addr, dispatchCycle, nicInfo->clean_recv) + L1D_LAT, reqSatisfiedCycle);
+						cRec.record(dispatchCycle, dispatchCycle, reqSatisfiedCycle);
+						addr += 64;
+						size--;
+					}
+
+					uint64_t commitCycle = reqSatisfiedCycle;
+
+					//lastStoreCommitCycle = MAX(lastStoreCommitCycle, reqSatisfiedCycle);
+
+					//storeQueue.markRetire(commitCycle);
+				}
+			}
 
 			//uint32_t span_phase = ending_phase - start_phase + 1;
 
