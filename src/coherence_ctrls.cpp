@@ -370,7 +370,7 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
                 int core_id=get_target_core_id_from_rb_addr(lineAddr);
                 assert(core_id>=0);
                 uint64_t nic_stat_group=get_stat_group(core_id);
-                
+                if(flags & MemReq::PKTIN){
                 switch (nic_stat_group) {
                     case NF0: 
                         if(isMiss)
@@ -385,6 +385,25 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
                             netHit_nic_rb_grp1.inc();
                         break;
                     default: panic("nic rb should be for NF0 or NF1");
+                }
+                }
+                else if(flags & MemReq::PKTOUT){//zero copy, count these as LB miss
+                switch (stat_group) {
+                    case NF0: 
+                        if(isMiss)
+                            netMiss_core_lb.inc();
+                        else 
+                            netHit_core_lb.inc();
+                        break;
+                    case NF1:
+                        if(isMiss)
+                            netMiss_core_lb_grp1.inc();
+                        else 
+                            netHit_core_lb_grp1.inc();
+                        break;
+                    default: panic("core lb should be for NF0 or NF1");
+                }
+
                 }
             } 
         }   
@@ -720,6 +739,10 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
                     if(this->existsInPrivate(lineAddr)){
                         info("lbuf exists in private cache, numsharers = %d",directory[lineAddr].numSharers);
                         info("lbuf directory hit count = %d", directory.count(lineAddr));
+                        info("e->numsharers: %d", e->numSharers);
+                        if(e->isExclusive){
+                            info("e is exclusive");
+                        }
                         uint32_t numChildren = children.size();
                         info("numchildren: %d",numChildren);
                         for (uint32_t c = 0; c < numChildren; c++) {
