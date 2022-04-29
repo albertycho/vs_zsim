@@ -1037,7 +1037,8 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 					}
 
 					// Wait for all previous store addresses to be resolved (not just ours :))
-					//dispatchCycle = MAX(lastStoreAddrCommitCycle + 1, dispatchCycle);
+					uint64_t lastStoreAddrCommitCycle = core->get_lastStoreAddrCommitCycle();
+					dispatchCycle = MAX(lastStoreAddrCommitCycle + 1, dispatchCycle);
 
 					Address addr = lb_addr;
 
@@ -1052,7 +1053,8 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 
 					uint64_t commitCycle = reqSatisfiedCycle;
 
-					//lastStoreCommitCycle = MAX(lastStoreCommitCycle, reqSatisfiedCycle);
+					uint64_t lastStoreCommitCycle = core->get_lastStoreCommitCycle();
+					core->set_lastStoreCommitCycle(MAX(lastStoreCommitCycle, reqSatisfiedCycle));
 
 					//storeQueue.markRetire(commitCycle);
 					core->sq_markRetire(commitCycle);

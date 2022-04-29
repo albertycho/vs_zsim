@@ -514,6 +514,17 @@ class OOOCore : public Core {
         void iw_poisonRange(int64_t curCycle_t, uint64_t targetCycle_t, uint8_t portMask_t, int core_id_t){
             insWindow.poisonRange(curCycle_t,targetCycle_t, portMask_t, core_id_t);
         }
+        
+        uint64_t get_lastStoreCommitCycle(){
+            return lastStoreCommitCycle
+        }
+        void set_lastStoreCommitCycle(uint64_t cycle_val){
+            lastStoreCommitCycle = cycle_val;
+        }
+        uint64_t get_lastStoreAddrCommitCycle(){
+            return lastStoreAddrCommitCycle
+        }
+
 
     private:
         inline void load(Address addr);
