@@ -391,15 +391,15 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
                     switch (nic_stat_group) {
                         case NF0: 
                             if(isMiss)
-                                netMiss_core_lb.inc();
+                                netMiss_nic_lb.inc();
                             else 
-                                netHit_core_lb.inc();
+                                netHit_nic_lb.inc();
                             break;
                         case NF1:
                             if(isMiss)
-                                netMiss_core_lb_grp1.inc();
+                                netMiss_nic_lb_grp1.inc();
                             else 
-                                netHit_core_lb_grp1.inc();
+                                netHit_nic_lb_grp1.inc();
                             break;
                         default: 
                             info("core_id: %d, Addr: %X, nic_stat_group: %d", core_id, lineAddr<<lineBits, nic_stat_group);
