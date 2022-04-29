@@ -401,7 +401,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
 					glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 
 					if (field == 0x16) {
-						if (nicInfo->clean_recv) {
+						if ((nicInfo->clean_recv) && (!(nicInfo->zeroCopy))) {
 
 							uint64_t size = nicInfo->forced_packet_size;
 							size += CACHE_BLOCK_SIZE - 1;
