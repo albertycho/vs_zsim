@@ -978,7 +978,7 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 				}
 			}
 			uint64_t lb_addr = dp->lbuf_addr;
-			
+
 			//////// get packet latency info from tag-starttime map //////
 			uint64_t ptag = dp->tag;
 			uint32_t ending_phase = dp->ending_phase;
@@ -1057,9 +1057,14 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 					core->set_lastStoreCommitCycle(MAX(lastStoreCommitCycle, reqSatisfiedCycle));
 
 					//storeQueue.markRetire(commitCycle);
-					core->sq_markRetire(commitCycle);
+					core->sq_emarkRetire(commitCycle);
 				}
 				free_recv_buf_addr(lb_addr, core_id);
+					if(nicInfo->nic_elem[core_id].packet_pending==true) {
+						futex_lock(&nicInfo->nic_elem[core_id].packet_pending_lock);
+						nicInfo->nic_elem[core_id].packet_pending=false;
+						futex_unlock(&nicInfo->nic_elem[core_id].packet_pending_lock);
+					}
 			}
 
 			//uint32_t span_phase = ending_phase - start_phase + 1;
