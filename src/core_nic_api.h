@@ -1029,12 +1029,12 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 
 					//uint64_t sqCycle = storeQueue.minAllocCycle();
 					uint64_t sqCycle = core->get_sq_minAllocCycle();
-					//if (sqCycle > dispatchCycle) {
+					if (sqCycle > dispatchCycle) {
 #ifdef LSU_IW_BACKPRESSURE
-						//insWindow.poisonRange(curCycle, sqCycle, 0x10 /*PORT_4, stores*/, core_id);
+						core->iw_poisonRange(curCycle, sqCycle, 0x10 /*PORT_4, stores*/, core_id);
 #endif
-						//dispatchCycle = sqCycle;
-					//}
+						dispatchCycle = sqCycle;
+					}
 
 					// Wait for all previous store addresses to be resolved (not just ours :))
 					//dispatchCycle = MAX(lastStoreAddrCommitCycle + 1, dispatchCycle);

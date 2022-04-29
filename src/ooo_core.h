@@ -511,6 +511,10 @@ class OOOCore : public Core {
             storeQueue.markRetire(minRetireCycle);
         }
 
+        void iw_poisonRange(int64_t curCycle, uint64_t targetCycle, uint8_t portMask, int core_id){
+            insWindow.poisonRange(int64_t curCycle, uint64_t targetCycle, uint8_t portMask, int core_id);
+        }
+
     private:
         inline void load(Address addr);
         inline void store(Address addr);
