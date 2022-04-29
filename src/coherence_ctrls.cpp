@@ -719,6 +719,7 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
                 else {
                     if(this->existsInPrivate(lineAddr)){
                         info("lbuf exists in private cache, numsharers = %d",directory[lineAddr].numSharers);
+                        info("lbuf directory hit count = %d", directory.count(lineAddr));
                         uint32_t numChildren = children.size();
                         info("numchildren: %d",numChildren);
                         for (uint32_t c = 0; c < numChildren; c++) {
@@ -726,7 +727,7 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
                                 info("line owned by: %s",children[c]->getName());
                             }
                         }
-                        this->find(lineAddr)->getName());
+                        //info(directory.find(lineAddr)->getName());
 
                         for(int ii=0; ii<27;ii++){
                             if(directory[lineAddr].sharers[ii]){
