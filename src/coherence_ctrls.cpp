@@ -740,7 +740,7 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
                         info("lbuf exists in private cache, numsharers = %d",directory[lineAddr].numSharers);
                         info("lbuf directory hit count = %d", directory.count(lineAddr));
                         info("e->numsharers: %d", e->numSharers);
-                        if(e->isExclusive){
+                        if(e->isExclusive()){
                             info("e is exclusive");
                         }
                         uint32_t numChildren = children.size();
