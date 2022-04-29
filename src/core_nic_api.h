@@ -1057,7 +1057,7 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 					core->set_lastStoreCommitCycle(MAX(lastStoreCommitCycle, reqSatisfiedCycle));
 
 					//storeQueue.markRetire(commitCycle);
-					core->sq_emarkRetire(commitCycle);
+					core->sq_markRetire(commitCycle);
 				}
 				free_recv_buf_addr(lb_addr, core_id);
 					if(nicInfo->nic_elem[core_id].packet_pending==true) {
