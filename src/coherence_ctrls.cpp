@@ -401,7 +401,9 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
                         else 
                             netHit_core_lb_grp1.inc();
                         break;
-                    default: panic("core lb should be for NF0 or NF1");
+                    default: 
+                        info("core_id: %d, lineAddr: %X", core_id, lineAddr<<lineBits)
+                        panic("core lb should be for NF0 or NF1");
                 }
 
                 }
