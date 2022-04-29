@@ -1016,7 +1016,7 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 			futex_unlock(&lg_p->ptc_lock);
 			
 			if (nicInfo->zeroCopy) { // free recv buf and send clean here
-				free_recv_buf_addr(lb_addr, core_id);
+
 				if (nicInfo->clean_recv != 0) {
 					//TODO: storeQ and related vars - how to wire into this part
 					uint64_t size = nicInfo->forced_packet_size;
@@ -1036,13 +1036,13 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 					// Wait for all previous store addresses to be resolved (not just ours :))
 					//dispatchCycle = MAX(lastStoreAddrCommitCycle + 1, dispatchCycle);
 
-					Address addr = val;
+					Address addr = lb_addr;
 
 					//uint64_t reqSatisfiedCycle = dispatchCycle;
 					//reqSatisfiedCycle = dispatchCycle;
 					while (size) {
 						reqSatisfiedCycle = max(l1d->clean(addr, dispatchCycle, nicInfo->clean_recv) + L1D_LAT, reqSatisfiedCycle);
-						cRec.record(dispatchCycle, dispatchCycle, reqSatisfiedCycle);
+						cRec->record(dispatchCycle, dispatchCycle, reqSatisfiedCycle);
 						addr += 64;
 						size--;
 					}
@@ -1053,6 +1053,7 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 
 					//storeQueue.markRetire(commitCycle);
 				}
+				free_recv_buf_addr(lb_addr, core_id);
 			}
 
 			//uint32_t span_phase = ending_phase - start_phase + 1;
