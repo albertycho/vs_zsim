@@ -371,40 +371,40 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
                 assert(core_id>=0);
                 uint64_t nic_stat_group=get_stat_group(core_id);
                 if(flags & MemReq::PKTIN){
-                switch (nic_stat_group) {
-                    case NF0: 
-                        if(isMiss)
-                            netMiss_nic_rb.inc();
-                        else 
-                            netHit_nic_rb.inc();
-                        break;
-                    case NF1:
-                        if(isMiss)
-                            netMiss_nic_rb_grp1.inc();
-                        else 
-                            netHit_nic_rb_grp1.inc();
-                        break;
-                    default: panic("nic rb should be for NF0 or NF1");
-                }
+                    switch (nic_stat_group) {
+                        case NF0: 
+                            if(isMiss)
+                                netMiss_nic_rb.inc();
+                            else 
+                                netHit_nic_rb.inc();
+                            break;
+                        case NF1:
+                            if(isMiss)
+                                netMiss_nic_rb_grp1.inc();
+                            else 
+                                netHit_nic_rb_grp1.inc();
+                            break;
+                        default: panic("nic rb should be for NF0 or NF1");
+                    }
                 }
                 else if(flags & MemReq::PKTOUT){//zero copy, count these as LB miss
-                switch (nic_stat_group) {
-                    case NF0: 
-                        if(isMiss)
-                            netMiss_core_lb.inc();
-                        else 
-                            netHit_core_lb.inc();
-                        break;
-                    case NF1:
-                        if(isMiss)
-                            netMiss_core_lb_grp1.inc();
-                        else 
-                            netHit_core_lb_grp1.inc();
-                        break;
-                    default: 
-                        info("core_id: %d, Addr: %X", core_id, lineAddr<<lineBits)
-                        panic("core lb should be for NF0 or NF1");
-                }
+                    switch (nic_stat_group) {
+                        case NF0: 
+                            if(isMiss)
+                                netMiss_core_lb.inc();
+                            else 
+                                netHit_core_lb.inc();
+                            break;
+                        case NF1:
+                            if(isMiss)
+                                netMiss_core_lb_grp1.inc();
+                            else 
+                                netHit_core_lb_grp1.inc();
+                            break;
+                        default: 
+                            info("core_id: %d, Addr: %X, nic_stat_group: %d", core_id, lineAddr<<lineBits, nic_stat_group);
+                            panic("core lb should be for NF0 or NF1");
+                    }
 
                 }
             } 
