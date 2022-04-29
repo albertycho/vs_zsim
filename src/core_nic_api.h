@@ -1042,7 +1042,7 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 					Address addr = lb_addr;
 
 					//uint64_t reqSatisfiedCycle = dispatchCycle;
-					//reqSatisfiedCycle = dispatchCycle;
+					reqSatisfiedCycle = dispatchCycle;
 					while (size) {
 						reqSatisfiedCycle = max(l1d->clean(addr, dispatchCycle, nicInfo->clean_recv) + L1D_LAT, reqSatisfiedCycle);
 						cRec->record(dispatchCycle, dispatchCycle, reqSatisfiedCycle);
@@ -1055,6 +1055,7 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 					//lastStoreCommitCycle = MAX(lastStoreCommitCycle, reqSatisfiedCycle);
 
 					//storeQueue.markRetire(commitCycle);
+					core->sq_markRetire(commitCycle);
 				}
 				free_recv_buf_addr(lb_addr, core_id);
 			}
