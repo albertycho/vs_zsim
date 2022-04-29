@@ -1019,6 +1019,8 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 
 				if (nicInfo->clean_recv != 0) {
 					//TODO: storeQ and related vars - how to wire into this part
+					ReorderBuffer* storeQueue = core->get_sq_ptr();
+
 					uint64_t size = nicInfo->forced_packet_size;
 					size += CACHE_BLOCK_SIZE - 1;
 					size >>= CACHE_BLOCK_BITS;  //number of cache lines

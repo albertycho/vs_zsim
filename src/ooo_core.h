@@ -504,6 +504,10 @@ class OOOCore : public Core {
 
         uint16_t ingr_type, egr_type, egr_inval=0;
 
+        ReorderBuffer * get_sq_ptr(){
+            return &(storeQueue);
+        }
+
     private:
         inline void load(Address addr);
         inline void store(Address addr);
