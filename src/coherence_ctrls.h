@@ -383,7 +383,7 @@ class MESITopCC : public GlobAlloc {
 
         bool existsInPrivate(uint64_t lineAddr) {
             if (nonInclusiveHack)
-                return (!directory.empty() && directory.count(lineAddr) > 0);
+                return ((!directory.empty() && directory.count(lineAddr) > 0 && directory[lineAddr].numSharers>0)  );
             else
                 return true;
         }
