@@ -516,13 +516,13 @@ class OOOCore : public Core {
         }
         
         uint64_t get_lastStoreCommitCycle(){
-            return lastStoreCommitCycle
+            return lastStoreCommitCycle;
         }
         void set_lastStoreCommitCycle(uint64_t cycle_val){
             lastStoreCommitCycle = cycle_val;
         }
         uint64_t get_lastStoreAddrCommitCycle(){
-            return lastStoreAddrCommitCycle
+            return lastStoreAddrCommitCycle;
         }
 
 
