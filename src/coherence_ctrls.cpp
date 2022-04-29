@@ -361,7 +361,12 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
 
             }
             else {
-                assert (flags & MemReq::PKTIN);
+                if(!(nicInfo->zeroCopy){
+                    assert (flags & MemReq::PKTIN);
+                }
+                else{
+                    assert (flags & MemReq::PKTOUT);
+                }
                 int core_id=get_target_core_id_from_rb_addr(lineAddr);
                 assert(core_id>=0);
                 uint64_t nic_stat_group=get_stat_group(core_id);
