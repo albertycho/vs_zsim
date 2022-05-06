@@ -793,20 +793,36 @@ class DDIOPartReplPolicy : public PartReplPolicy, public LegacyReplPolicy {
             uint32_t way = candIdx++;
             //In test mode, this works as LRU
             if (testMode || incomingLinePart == 1 || incomingLinePart == 2) {    /* if process 0,1 do lru on all ways*/
-                if (best == nullptr || !cc->isValid(id)) {
+                if (best == nullptr) {
                     bestId = id;
-                } else if (c->ts < best->ts) {
-                    bestId = id;
+                } else if (!cc->isValid(id)) {
+                    if (cc->isValid(bestId)) {
+                        bestId = id;
+                    }
+                }
+                else if (c->ts < best->ts) {
+                    assert(cc->isValid(id));
+                    if (cc->isValid(bestId)) {
+                      bestId = id;  
+                    }
                 }
             } else  {
                 if ((wayPartIndex[way])[incomingLinePart]) {
-                    if (best == nullptr || !cc->isValid(id)) {
+                    if (best == nullptr) {
                         bestId = id;
-                    } else {
+                    } else if (!cc->isValid(id)) {
+                        if (cc->isValid(bestId)) {
+                            bestId = id;
+                        }
+                    }
+                    else {
                         switch (policy) {
                             case 0:   // lru
                                 if (c->ts < best->ts) {
-                                    bestId = id;
+                                    assert(cc->isValid(id));
+                                    if (cc->isValid(bestId)) {
+                                        bestId = id;  
+                                    }
                                 }
                                 break;
                             case 1: // prioritize opposite partition
