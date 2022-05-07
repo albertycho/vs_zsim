@@ -1165,7 +1165,7 @@ int process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_element
 	}
 }
 
-int nic_rgp_action(uint64_t core_id, glob_nic_elements* nicInfo)
+int nic_rgp_action_old(uint64_t core_id, glob_nic_elements* nicInfo)
 {
 	/*
 	* nic_rgp_action - called when app(core) notifies of new wq_entry
@@ -1182,7 +1182,7 @@ int nic_rgp_action(uint64_t core_id, glob_nic_elements* nicInfo)
 
 	return 0;
 }
-int nic_rgp_action_new(uint64_t core_id, glob_nic_elements* nicInfo)
+int nic_rgp_action(uint64_t curCycle, glob_nic_elements* nicInfo)
 {
 	/*
 	* nic_rgp_action - called when app(core) notifies of new wq_entry
@@ -1194,29 +1194,38 @@ int nic_rgp_action_new(uint64_t core_id, glob_nic_elements* nicInfo)
 	*/
 	/////////////// TODO this is prototype code with variables yet to be defined
 	if(nicInfo->egr_interval != 0){
-		//if((nicInfo->next_egr_cycle) > cur_cycle){
-			if((nicInfo->next_egr_cycle) > 10000000){
+		if((nicInfo->next_egr_cycle) > curCycle){
 			//can't do anything
 			return -1;		
 		}
 	}
 	uint64_t sent_packets=0;
 	uint64_t pwq_res=0;
+	uint64_t start_core=3;
 
-	if (!check_wq(core_id, nicInfo))
-	{
-		info("nic_rgp_action called but nothing in wq");
-		//nothing in wq, return
-		return 0;
+	for(uint64_t ii=start_core; ii<(start_core+(nicInfo->expected_core_count));i++){
+		if (!check_wq(ii, nicInfo))
+		{
+			//info("nic_rgp_action called but nothing in wq");
+			//nothing in wq, return
+			continue;
+		}
+		wq_entry_t cur_wq_entry = deq_wq_entry(ii, nicInfo);
+		pwq_res = process_wq_entry(cur_wq_entry, ii, nicInfo);
+		sent_packets+=pwq_res;
 	}
-	wq_entry_t cur_wq_entry = deq_wq_entry(core_id, nicInfo);
-	pwq_res = process_wq_entry(cur_wq_entry, core_id, nicInfo);
-	sent_packets+=pwq_res;
 
 
 	/*TODO: add interval X number of packets sent to get "cycle egress is allowed to send again"
 	 */
+	if(nicInfo->next_egr_cycle==0){
+		nicInfo->next_egr_cycle = curCycle;
+	}
 	nicInfo->next_egr_cycle+=(nicInfo->egr_interval)*sent_packets;
+	//if next_egr_cycle is too old, ff it
+	if(nicInfo->next_egr_cycle < curCycle - 1000){
+		nicInfo->next_egr_cycle = curCycle;
+	}
 	return 0;
 }
 

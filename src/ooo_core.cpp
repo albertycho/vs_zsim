@@ -845,7 +845,8 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 
 		case NOTIFY_WQ_WRITE://NOTIFY WQ WRITE from application
 			//info("notify_wq_write")
-			nic_rgp_action(core_id, nicInfo);
+			//nic_rgp_action call moved to cycle routine
+			//nic_rgp_action(core_id, nicInfo);
 			break;
 		case 0xB: //indicate app is nic_proxy_process (INGRESS)
 			*static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_ingress_proc_on));
@@ -1316,6 +1317,7 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 				//assert(srcId == 0);
 				OOOCore* egcore = (OOOCore*)(nicInfo->nicCore_egress);
 				OOOCoreRecorder* egcRec = egcore->get_cRec_ptr();
+				nic_rgp_action(curCycle, nicInfo);
 				deq_dpq(1, egcore, egcRec, egcore->l1d/*MemObject* dest*/, curCycle, egcore->egr_type);
 			}
 
