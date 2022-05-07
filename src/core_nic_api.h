@@ -1193,8 +1193,9 @@ int nic_rgp_action_new(uint64_t core_id, glob_nic_elements* nicInfo)
 	/*TODO: check wq & porcess wq for all cores
 	*/
 	/////////////// TODO this is prototype code with variables yet to be defined
-	if(nicInfo->eger_interval != 0){
-		if((nicInfo->next_egr_cycle) > cur_cycle){
+	if(nicInfo->egr_interval != 0){
+		//if((nicInfo->next_egr_cycle) > cur_cycle){
+			if((nicInfo->next_egr_cycle) > 10000000){
 			//can't do anything
 			return -1;		
 		}
