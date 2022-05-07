@@ -885,6 +885,15 @@ static void InitSystem(Config& config) {
 	uint32_t forced_packet_size = config.get<uint32_t>("sim.forced_packet_size",512);
 	nicInfo->forced_packet_size = forced_packet_size;
 
+    //zinfo->freqMHz = config.get<uint32_t>("sys.frequency", 2000);
+    info("freqMhz: %d",zinfo->freqMHz);
+    uint32_t NBW = config.get<uint32_t>("sim.NBW", 0); //NBW in Gbps
+    if(NBW!=){
+        nicInfo->egr_interval = (zinfo->freqMHz) /((NBW/8) * (1024/forced_packet_size)) 
+        info("egr_interval: %d", nicInfo->egr_interval);
+
+    }
+
     nicInfo->num_ddio_ways = config.get<uint32_t>("sys.caches.l3.repl.ddio_ways", 2);
     info("nicInfo->num_ddio_ways: %d", nicInfo->num_ddio_ways);
 	
@@ -1153,6 +1162,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     zinfo->phaseLength = config.get<uint32_t>("sim.phaseLength", 10000);
     zinfo->statsPhaseInterval = config.get<uint32_t>("sim.statsPhaseInterval", 100);
     zinfo->freqMHz = config.get<uint32_t>("sys.frequency", 2000);
+
 
     //Maxima/termination conditions
     zinfo->maxPhases = config.get<uint64_t>("sim.maxPhases", 0);

@@ -304,6 +304,10 @@ struct glob_nic_elements {
 	uint32_t registered_mm_cores = 0;
 	lock_t mm_core_lock;
 
+	//EGR cap
+	uint64_t egr_interval=0;
+	uint64_t next_egr_cycle=0;
+
 	//temp debug counters
 	uint64_t free_rb_call_count=0;
 	uint64_t process_wq_entry_count=0;

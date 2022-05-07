@@ -1107,7 +1107,8 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 	return 0;
 }
 
-void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elements* nicInfo)
+//void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elements* nicInfo)
+int process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elements* nicInfo)
 {
 	//debug count
 	futex_lock(&(nicInfo->ptag_dbug_lock));
@@ -1126,7 +1127,7 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
 			futex_unlock(&nicInfo->nic_elem[core_id].packet_pending_lock);
 		}
 		
-		return;
+		return 0;
 	}
 
 	if (cur_wq_entry.op == RMC_SEND)
@@ -1160,7 +1161,7 @@ void process_wq_entry(wq_entry_t cur_wq_entry, uint64_t core_id, glob_nic_elemen
 		enq_dpq(lbuf_addr, q_cycle, ptag, length);
 
 		enq_rcp_event(rcp_q_cycle, lbuf_addr, lbuf_data, nicInfo, core_id);
-		return;
+		return 1;
 	}
 }
 
@@ -1181,7 +1182,42 @@ int nic_rgp_action(uint64_t core_id, glob_nic_elements* nicInfo)
 
 	return 0;
 }
+int nic_rgp_action_new(uint64_t core_id, glob_nic_elements* nicInfo)
+{
+	/*
+	* nic_rgp_action - called when app(core) notifies of new wq_entry
+	*       dequeues the wq_entry and processes it (take appropriate action)
+	*/
+	//TODO: this should be called in ooo_core.cpp where "deq_dpq is called"
+	//TODO: check if cur_cycle > "next_cycle" (can send if true)
+	/*TODO: check wq & porcess wq for all cores
+	*/
+	/////////////// TODO this is prototype code with variables yet to be defined
+	if(nicInfo->eger_interval != 0){
+		if((nicInfo->next_egr_cycle) > cur_cycle){
+			//can't do anything
+			return -1;		
+		}
+	}
+	uint64_t sent_packets=0;
+	uint64_t pwq_res=0;
 
+	if (!check_wq(core_id, nicInfo))
+	{
+		info("nic_rgp_action called but nothing in wq");
+		//nothing in wq, return
+		return 0;
+	}
+	wq_entry_t cur_wq_entry = deq_wq_entry(core_id, nicInfo);
+	pwq_res = process_wq_entry(cur_wq_entry, core_id, nicInfo);
+	sent_packets+=pwq_res;
+
+
+	/*TODO: add interval X number of packets sent to get "cycle egress is allowed to send again"
+	 */
+	nicInfo->next_egr_cycle+=(nicInfo->egr_interval)*sent_packets;
+	return 0;
+}
 
 ////////////////////////////////////////////////////////////////////
 
