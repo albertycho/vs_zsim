@@ -1203,7 +1203,7 @@ int nic_rgp_action(uint64_t curCycle, glob_nic_elements* nicInfo)
 	uint64_t pwq_res=0;
 	uint64_t start_core=3;
 
-	for(uint64_t ii=start_core; ii<(start_core+(nicInfo->expected_core_count));i++){
+	for(uint64_t ii=start_core; ii<(start_core+(nicInfo->expected_core_count));ii++){
 		if (!check_wq(ii, nicInfo))
 		{
 			//info("nic_rgp_action called but nothing in wq");
