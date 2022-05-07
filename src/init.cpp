@@ -889,7 +889,7 @@ static void InitSystem(Config& config) {
     info("freqMhz: %d",zinfo->freqMHz);
     uint32_t NBW = config.get<uint32_t>("sim.NBW", 0); //NBW in Gbps
     if(NBW!=){
-        nicInfo->egr_interval = (zinfo->freqMHz) /((NBW/8) * (1024/forced_packet_size)) 
+        nicInfo->egr_interval = (zinfo->freqMHz) /((NBW/8) * (1024/forced_packet_size)); 
         info("egr_interval: %d", nicInfo->egr_interval);
 
     }
