@@ -1018,7 +1018,8 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 			futex_unlock(&lg_p->ptc_lock);
 			
 			if (nicInfo->zeroCopy) { // free recv buf and send clean here
-
+			
+				//TODO FIGURE OUT STORE QUEUE SITCH
 				if (nicInfo->clean_recv != 0) {
 					//TODO: storeQ and related vars - how to wire into this part
 					//ReorderBuffer* storeQueue = core->get_sq_ptr();
@@ -1029,23 +1030,25 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 					//uint64_t dispatchCycle = core_cycle;
 					uint64_t dispatchCycle = reqSatisfiedCycle;
 
-					//uint64_t sqCycle = storeQueue.minAllocCycle();
-					uint64_t sqCycle = core->get_sq_minAllocCycle();
-					if (sqCycle > dispatchCycle) {
+					//uint64_t sqCycle = core->get_sq_minAllocCycle();
+					//if (sqCycle > dispatchCycle) {
 #ifdef LSU_IW_BACKPRESSURE
-						core->iw_poisonRange(curCycle, sqCycle, 0x10 /*PORT_4, stores*/, core_id);
+					//	info("calling poisonragne");
+					//	core->iw_poisonRange(curCycle, sqCycle, 0x10 /*PORT_4, stores*/, core_id);
+					//	info("returned from poisonragne");
 #endif
-						dispatchCycle = sqCycle;
-					}
+					//	dispatchCycle = sqCycle;
+					//}
 
 					// Wait for all previous store addresses to be resolved (not just ours :))
-					uint64_t lastStoreAddrCommitCycle = core->get_lastStoreAddrCommitCycle();
-					dispatchCycle = MAX(lastStoreAddrCommitCycle + 1, dispatchCycle);
+					//uint64_t lastStoreAddrCommitCycle = core->get_lastStoreAddrCommitCycle();
+					//dispatchCycle = MAX(lastStoreAddrCommitCycle + 1, dispatchCycle);
 
 					Address addr = lb_addr;
 
 					//uint64_t reqSatisfiedCycle = dispatchCycle;
 					reqSatisfiedCycle = dispatchCycle;
+
 					while (size) {
 						reqSatisfiedCycle = max(l1d->clean(addr, dispatchCycle, nicInfo->clean_recv) + L1D_LAT, reqSatisfiedCycle);
 						cRec->record(core_cycle, dispatchCycle, reqSatisfiedCycle);
@@ -1055,11 +1058,13 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 
 					uint64_t commitCycle = reqSatisfiedCycle;
 
-					uint64_t lastStoreCommitCycle = core->get_lastStoreCommitCycle();
-					core->set_lastStoreCommitCycle(MAX(lastStoreCommitCycle, reqSatisfiedCycle));
+					//uint64_t lastStoreCommitCycle = core->get_lastStoreCommitCycle();
+					//core->set_lastStoreCommitCycle(MAX(lastStoreCommitCycle, reqSatisfiedCycle));
 
 					//storeQueue.markRetire(commitCycle);
-					core->sq_markRetire(commitCycle);
+					//info("call mark retire");
+					//core->sq_markRetire(commitCycle);
+					//info("returned from mark retire");
 				}
 				free_recv_buf_addr(lb_addr, core_id);
 					if(nicInfo->nic_elem[core_id].packet_pending==true) {

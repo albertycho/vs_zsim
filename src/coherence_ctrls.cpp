@@ -66,7 +66,8 @@ int get_target_core_id_from_lb_addr(Address lineaddr){
     uint64_t num_cores = zinfo->numCores;
     for(int i=0; i<num_cores;i++){
         uint64_t lb_base=(uint64_t) nicInfo->nic_elem[i].lbuf;
-        uint64_t lb_top =lb_base+256*nicInfo->forced_packet_size;
+        //uint64_t lb_top =lb_base+256*nicInfo->forced_packet_size;
+        uint64_t lb_top =lb_base+64*nicInfo->forced_packet_size;
         uint64_t lb_base_line=lb_base>>lineBits;
         uint64_t lb_top_line = lb_top>>lineBits;
         

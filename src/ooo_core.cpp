@@ -829,6 +829,7 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 					info("nic init completed");
 				}
 			}
+			//info("registered core count: %d, expected core count: %d, reg nonnetcore: %d, exp nonntecore: %d, ingress_on:%d",nicInfo->registered_core_count, nicInfo->expected_core_count, nicInfo->registered_non_net_core_count, nicInfo->expected_non_net_core_count, nicInfo->nic_ingress_proc_on ? 1:0);
 			info("core %d registered CQ at addrs %lld", core_id, nicInfo->nic_elem[core_id].cq);
 			break;
 		case 2: // lbuf

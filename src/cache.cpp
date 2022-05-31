@@ -95,7 +95,8 @@ uint64_t Cache::access(MemReq& req) {
                     uint64_t size_ing = nicInfo->recv_buf_pool_size; 
                     Address top_ing = ((Address)(nicInfo->nic_elem[i].recv_buf) + size_ing) >> lineBits;
                     Address base_egr = (Address)(nicInfo->nic_elem[i].lbuf) >> lineBits;
-                    uint64_t size_egr = 256*nicInfo->forced_packet_size;
+                    //uint64_t size_egr = 256*nicInfo->forced_packet_size;
+                    uint64_t size_egr = 64*nicInfo->forced_packet_size;
                     Address top_egr = ((Address)(nicInfo->nic_elem[i].lbuf) + size_egr) >> lineBits;
                     if (wbLineAddr >= base_ing && wbLineAddr <= top_ing) {
                         req.set(MemReq::INGR_EVCT);

@@ -888,11 +888,17 @@ static void InitSystem(Config& config) {
     //zinfo->freqMHz = config.get<uint32_t>("sys.frequency", 2000);
     info("freqMhz: %d",zinfo->freqMHz);
     uint32_t NBW = config.get<uint32_t>("sim.NBW", 0); //NBW in Gbps
+	info("NBW=%d", NBW);
     if(NBW!=0){
-        nicInfo->egr_interval = (zinfo->freqMHz) /((NBW/8) * (1024/forced_packet_size)); 
-        info("egr_interval: %d", nicInfo->egr_interval);
+		//info("forced packet size: %d", forced_packet_size);
+		//float egr_interval_f = (zinfo->freqMHz) /((NBW/8) * (1024/forced_packet_size)); 
+		float egr_interval_f = ((zinfo->freqMHz)*8*forced_packet_size) /(NBW*1024); 
+        nicInfo->egr_interval = egr_interval_f; 
+		//info("egr_interval_f: %f", egr_interval_f);
+        //info("egr_interval: %d", nicInfo->egr_interval);
 
     }
+	//info("hello");
 
     nicInfo->num_ddio_ways = config.get<uint32_t>("sys.caches.l3.repl.ddio_ways", 2);
     info("nicInfo->num_ddio_ways: %d", nicInfo->num_ddio_ways);

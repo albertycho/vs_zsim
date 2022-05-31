@@ -285,7 +285,8 @@ class FilterCache : public Cache {
                 uint64_t size_ing = nicInfo->recv_buf_pool_size; 
                 Address top_ing = ((Address)(nicInfo->nic_elem[i].recv_buf) + size_ing) >> lineBits;
                 Address base_egr = (Address)(nicInfo->nic_elem[i].lbuf) >> lineBits;
-                uint64_t size_egr = 256*nicInfo->forced_packet_size;
+                //uint64_t size_egr = 256*nicInfo->forced_packet_size;
+                uint64_t size_egr = 64*nicInfo->forced_packet_size;
                 Address top_egr = ((Address)(nicInfo->nic_elem[i].lbuf) + size_egr) >> lineBits;
                 if (vLineAddr >= base_ing && vLineAddr <= top_ing) {
                     assert(vLineAddr >= nicLineAddr_bot && vLineAddr <= nicLineAddr_top);
