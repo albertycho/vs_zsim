@@ -96,7 +96,12 @@ uint64_t DRAMSimMemory::access(MemReq& req) {
 
     bool no_record = ((req.flags) & (MemReq::NORECORD)) != 0;
 
+	
+
     switch (req.type) {
+		case CLEAN:
+		case CLEAN_S:
+			return req.cycle;
         case PUTS:
         case PUTX:
             *req.state = I;

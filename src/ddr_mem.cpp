@@ -163,10 +163,10 @@ DDRMemory::DDRMemory(uint32_t _lineSize, uint32_t _colSize, uint32_t _ranksPerCh
 {
     sysFreqKHz = 1000 * _sysFreqMHz;
     initTech(tech);  // sets all tXX and memFreqKHz
-    if (memFreqKHz >= sysFreqKHz/2) {
-        panic("You may need to tweak the scheduling code, which works with system cycles." \
-            "With these frequencies, events (which run on system cycles) can't hit us every memory cycle.");
-    }
+    //if (memFreqKHz >= sysFreqKHz/2) {
+    //    panic("You may need to tweak the scheduling code, which works with system cycles." \
+    //        "With these frequencies, events (which run on system cycles) can't hit us every memory cycle.");
+    //}
 
     minRdLatency = no_latency? 0 : controllerSysLatency + memToSysCycle(tCL+tBL-1);
     minWrLatency = no_latency? 0 : controllerSysLatency;
@@ -338,10 +338,23 @@ uint64_t DDRMemory::access(MemReq& req) {
         return req.cycle;
     }   
 
-    if (nicInfo->ready_for_inj==0xabcd && zinfo->numPhases > lastPhase) {
+	bool call_eb=false;
+	if(nicInfo->expected_core_count>0){
+    	if (nicInfo->ready_for_inj==0xabcd && zinfo->numPhases > lastPhase) {
+			call_eb=true;
+		}
+	}
+	else{
+    	if (zinfo->numPhases > lastPhase) {
+			call_eb=true;
+		}
+	}
+    //if (nicInfo->ready_for_inj==0xabcd && zinfo->numPhases > lastPhase) {
+    if (call_eb) {
         futex_lock(&statsLock);
         //Recheck, someone may have updated already
         if (zinfo->numPhases > lastPhase) {
+			//info("estimatebw");
             EstimateBandwidth();
         }
         futex_unlock(&statsLock);
@@ -582,6 +595,10 @@ void DDRMemory::queue(Request* req, uint64_t memCycle) {
 // For external ticks
 uint64_t DDRMemory::tick(uint64_t sysCycle) {
     uint64_t memCycle = sysToMemCycle(sysCycle);
+	//info("memCycle: %ld, nextSchedCycle: %ld", memCycle, nextSchedCycle);
+	if(memCycle!=nextSchedCycle){
+		memCycle++;
+	}
     assert_msg(memCycle == nextSchedCycle, "%ld != %ld", memCycle, nextSchedCycle);
 
     uint64_t minSchedCycle = trySchedule(memCycle, sysCycle);
@@ -917,5 +934,6 @@ void DDRMemory::initTech(const char* techName) {
     }
 
     memFreqKHz = (uint64_t)(1e9/tCK/1e3);
+	info("memFreqKHz: %ld", memFreqKHz);
 }
 

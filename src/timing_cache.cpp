@@ -456,6 +456,7 @@ uint64_t TimingCache::access(MemReq& req) {
                 evRec->pushRecord(tr);
             }
             else {
+				//seems to not work with prefetcher, comment out and see
 				/////// dbg
 				int is_rb = 0;
 				int is_lb=0;

@@ -46,6 +46,7 @@ class ClockStat : public ScalarStat {
     private:
         uint64_t startNs;
         uint64_t totalNs;
+		bool assert_once_flag=true;
 
     public:
         ClockStat() : ScalarStat(), startNs(0), totalNs(0) {}
@@ -58,7 +59,14 @@ class ClockStat : public ScalarStat {
         void end() {
             assert(startNs);
             uint64_t endNs = getNs();
-            assert(endNs >= startNs)
+            //assert(endNs >= startNs)
+			if(!(endNs >= startNs)){
+				if(assert_once_flag){
+					assert_once_flag=false;
+					info("WARNING: endNS(%ld) >= startNs(%ld)",endNs, startNs);
+				}
+			}
+
             totalNs += (endNs - startNs);
             startNs = 0;
         }

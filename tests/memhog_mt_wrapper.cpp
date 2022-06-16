@@ -13,8 +13,9 @@
 int main(int argc, char* argv[]) {
 
 	int numthreads = 1;
-	uint64_t start_core = 3;
-	uint64_t ws_size=33554432;
+	uint64_t start_core = 0;
+	//uint64_t ws_size=33554432;
+	uint64_t ws_size=8388608;
 	//if(argc>1){
 	//	numthreads=atoi(argv[1]);
 	//}
@@ -22,7 +23,7 @@ int main(int argc, char* argv[]) {
 	const pid_t pid = getpid();                                                 
 	cpu_set_t cpuset;                                                           
 	CPU_ZERO(&cpuset);                                                          
-	CPU_SET(2,&cpuset); //just pin thread-spawning thread to core 2             
+	CPU_SET(0,&cpuset); //just pin thread-spawning thread to core0 
 	int error = sched_setaffinity(pid, sizeof(cpu_set_t), &cpuset);             
 	if (error) {                                                                
 		printf("Could not bind memhog_mt main thread to core 2! (error %d)\n", error);
@@ -51,7 +52,7 @@ int main(int argc, char* argv[]) {
 				break;                                                          
 			case 's':                                                           
 				start_core = atol(optarg);                                      
-				printf("memhog start_core %d\n", start_core);          
+				printf("memhog start_core %ld\n", start_core);          
 				break;
 			case 'd':                                                           
 				ws_size = atol(optarg);                      
@@ -63,18 +64,32 @@ int main(int argc, char* argv[]) {
 		}                                                                       
 	}  
 
+	//enter ff for mallocing arrays
+	__asm__ __volatile__("xchg %%rcx, %%rcx;" : : "c"(1026));
 
-
-
-
-
-
+	
 	pthread_t *thread_arr = (pthread_t*)malloc(numthreads * sizeof(pthread_t));
 
 	struct thread_params* tpa;
 	tpa = (struct thread_params*)malloc(numthreads * sizeof(struct thread_params));
 
 	int i;
+
+	uint64_t arrsize = ws_size / (sizeof(uint64_t));
+	arrsize=arrsize/2; //2arrays
+	for(i=0;i<numthreads;i++){
+		uint64_t * marr = (uint64_t *)malloc(arrsize * (sizeof(uint64_t)));
+		uint64_t * marr2 = (uint64_t *)malloc(arrsize * (sizeof(uint64_t)));
+		for(int ii=0;ii<arrsize;ii++){
+			marr[ii]=i*arrsize+ii;
+		}
+		tpa[i].marr=marr;
+		tpa[i].marr2=marr2;
+	}
+
+	//exit ff
+	__asm__ __volatile__("xchg %%rcx, %%rcx;" : : "c"(1025));	
+
 	for (i = 0; i < numthreads; i++) {
 		tpa[i].core_id = i + start_core;
 		tpa[i].ws_size = ws_size;

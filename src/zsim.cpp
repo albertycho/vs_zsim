@@ -355,6 +355,10 @@ VOID FFIAdvance() {
 
 VOID FFIBasicBlock(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     ffiInstrsDone += bblInfo->instrs;
+	if( ffiInstrsDone > (nicInfo->ffinst_flag)){
+		nicInfo->ffinst_flag+=100000000;
+		info("ffiInstrsDone: %ld", ffiInstrsDone);
+	}
     if (unlikely(ffiInstrsDone >= ffiInstrsLimit)) {
         FFIAdvance();
         assert(procTreeNode->isInFastForward());

@@ -375,7 +375,11 @@ void generate_raw_timestamp_files(bool run_success){
     	    while (zinfo->mem_bwdth[i][j]!=1000000.0){
     	        f << zinfo->mem_bwdth[i][j] << std::endl;
     	        j++;
-    	        
+    	        if(j>((zinfo->numPhases)+1000)){
+					info("mbw file is corrupt or didn't dump anything");
+					break;
+				}
+
     	    }
     	    info("%d",j);
     	    f.close();
@@ -660,7 +664,9 @@ int main(int argc, char *argv[]) {
         }
 
         nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
-
+	
+		if(nicInfo->expected_core_count > 0){
+			info("expected_core_count: %d", nicInfo->expected_core_count);
         if (!nicInfo->nic_egress_proc_on) {
             assert(nicInfo->registered_core_count == 0);
             int temp=0;
@@ -695,6 +701,7 @@ int main(int argc, char *argv[]) {
                 }
             }
         }
+		}
     }
 
 
@@ -736,7 +743,24 @@ int main(int argc, char *argv[]) {
         }
     }
     dump_IR_SR_stat();
+    if(nicInfo->expected_core_count==0){
+		if(nicInfo->memtype!=0){ // this hangs when using simple mem
+			for(int i=0; i<(nicInfo->num_controllers); i++) {
+				std::ofstream f("memory_controller_"+std::to_string(i)+"_bandwidth.txt");
+				int j=0;
+				while (zinfo->mem_bwdth[i][j]!=1000000.0){
+					f << zinfo->mem_bwdth[i][j] << std::endl;
+					j++;	
+					if(j>((zinfo->numPhases)+1000)){
+						break;
+					}
 
+				}
+				info("%d",j);
+				f.close();
+			}
+		}
+	}
 
     uint32_t exitCode = 0;
     if (termStatus == OK) {

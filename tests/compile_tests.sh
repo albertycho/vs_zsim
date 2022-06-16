@@ -16,7 +16,7 @@ rm memhog
 g++ -g memhog.cpp ../src/libzsim/zsim_nic_defines.cpp -std=c++11 -o memhog -pthread 
 
 rm memhog_mt
-g++ -g memhog_mt_wrapper.cpp memhog_mt.cpp ../src/libzsim/zsim_nic_defines.cpp -std=c++11 -o memhog_mt -pthread
+g++ -g memhog_mt_wrapper.cpp memhog_mt.cpp ../src/libzsim/zsim_nic_defines.cpp -std=c++11 -o memhog_mt -O3 -pthread
 
 rm matmul
 g++ -g matmul_wrapper.cpp matmul.cpp ../src/libzsim/zsim_nic_defines.cpp -std=c++11 -o matmul -pthread

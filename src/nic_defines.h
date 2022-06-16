@@ -19,7 +19,8 @@
 #ifndef _NIC_DEFINES_H_
 #define _NIC_DEFINES_H_
 
-#define MAX_NUM_CORES 64 //probably will support more
+//#define MAX_NUM_CORES 128 //probably will support more
+#define MAX_NUM_CORES 70 //probably will support more
 
 //#define MAX_NUM_WQ 8
 
@@ -327,6 +328,7 @@ struct glob_nic_elements {
 
 	uint32_t ready_for_inj=0;
 	uint32_t first_injection = 0;
+	uint64_t ffinst_flag = 0;
 	//adding additional elements to this struct below nic_elem causes segfault at gm_calloc for unknown reason
 };
 

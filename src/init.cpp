@@ -856,7 +856,8 @@ static void InitSystem(Config& config) {
     nicInfo->record_nic_access = record_nic_access;
 
     //uint32_t num_cores_serving_nw = config.get<uint32_t>("sim.num_cores_serving_nw", (zinfo->numCores - 1));
-    uint32_t num_cores_serving_nw = config.get<uint32_t>("sim.num_cores_serving_nw", (zinfo->numCores - 3));
+    //uint32_t num_cores_serving_nw = config.get<uint32_t>("sim.num_cores_serving_nw", (zinfo->numCores - 3));
+    uint32_t num_cores_serving_nw = config.get<uint32_t>("sim.num_cores_serving_nw", 0);
 	info("num server cores: %d\n", num_cores_serving_nw);
     nicInfo->expected_core_count = num_cores_serving_nw;
     nicInfo->registered_core_count = 0;
@@ -917,6 +918,7 @@ static void InitSystem(Config& config) {
 	nicInfo->gm_size = (uint64_t)gmSize << 20;
 	info("init: gmSize: %d gm_size: %d",gmSize, nicInfo->gm_size);
 
+	nicInfo->sim_start_time = std::chrono::system_clock::now();
 
     //load_generator* lgp;
     //lgp=(load_generator*)gm_get_lg_ptr();

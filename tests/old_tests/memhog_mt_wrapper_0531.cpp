@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <pthread.h>
-#include "matmul.hpp"
+#include "memhog_mt.hpp"
 #include <getopt.h>
 //#include "zsim_nic_defines.hpp"
 
@@ -13,8 +13,9 @@
 int main(int argc, char* argv[]) {
 
 	int numthreads = 1;
-	uint64_t start_core = 0;
-	uint64_t mlen=640;
+	uint64_t start_core = 3;
+	//uint64_t ws_size=33554432;
+	uint64_t ws_size=8388608;
 	//if(argc>1){
 	//	numthreads=atoi(argv[1]);
 	//}
@@ -22,19 +23,19 @@ int main(int argc, char* argv[]) {
 	const pid_t pid = getpid();                                                 
 	cpu_set_t cpuset;                                                           
 	CPU_ZERO(&cpuset);                                                          
-	CPU_SET(0,&cpuset); //just pin thread-spawning thread to core 0 
+	CPU_SET(2,&cpuset); //just pin thread-spawning thread to core 2             
 	int error = sched_setaffinity(pid, sizeof(cpu_set_t), &cpuset);             
 	if (error) {                                                                
-		printf("Could not bind matmul_mt main thread to core 2! (error %d)\n", error);
+		printf("Could not bind memhog_mt main thread to core 2! (error %d)\n", error);
 	} else {                                                                    
-		printf("Bound matmul_mt main thread to core\n");                             
+		printf("Bound memhog_mt main thread to core\n");                             
 	}            
 
 
 	static const struct option opts[] = {                                       
 		{.name = "num-threads", .has_arg = 1, .flag = NULL, .val = 't'},        
 		{.name = "start-core", .has_arg = 1, .flag = NULL, .val = 's'},         
-		{.name = "mlen", .has_arg = 1,.flag = NULL, .val = 'd'} };           
+		{.name = "ws_size", .has_arg = 1,.flag = NULL, .val = 'd'} };           
 
 	int c;
 
@@ -47,14 +48,14 @@ int main(int argc, char* argv[]) {
 		switch (c) {                                                            
 			case 't':                                                           
 				numthreads = atol(optarg);    
-				printf("matmul threads %d\n", numthreads);          
+				printf("memhog threads %d\n", numthreads);          
 				break;                                                          
 			case 's':                                                           
 				start_core = atol(optarg);                                      
-				printf("matmul start_core %d\n", start_core);          
+				printf("memhog start_core %d\n", start_core);          
 				break;
 			case 'd':                                                           
-				mlen = atol(optarg);                      
+				ws_size = atol(optarg);                      
 				break; 
 
 			default:                                                            
@@ -77,9 +78,9 @@ int main(int argc, char* argv[]) {
 	int i;
 	for (i = 0; i < numthreads; i++) {
 		tpa[i].core_id = i + start_core;
-		tpa[i].mlen = mlen;
+		tpa[i].ws_size = ws_size;
 		//int core_id = i + 2;
-		int err = pthread_create(&thread_arr[i], NULL, matmul_thread, (void*)&(tpa[i]));
+		int err = pthread_create(&thread_arr[i], NULL, memhog_thread, (void*)&(tpa[i]));
 		if (err != 0) std::cout << "pthread_create failed" << std::endl;
 	}
 
@@ -91,7 +92,7 @@ int main(int argc, char* argv[]) {
 	free(thread_arr);
 
 
-	std::cout << "matmul_mt wrapper done" << std::endl;
+	std::cout << "memhog_mt wrapper done" << std::endl;
 	return 0;
 }
 
