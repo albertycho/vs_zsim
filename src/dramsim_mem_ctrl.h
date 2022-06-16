@@ -57,6 +57,8 @@ class DRAMSimMemory : public MemObject { //one DRAMSim controller
         Counter profWrites;
         Counter profTotalRdLat;
         Counter profTotalWrLat;
+        Counter profAccs;
+        Counter total_access_count, dirty_evict_ing, dirty_evict_egr, dirty_evict_app, nic_ingr_get;
         PAD();
 
     public:
