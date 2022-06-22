@@ -390,9 +390,9 @@ void generate_raw_timestamp_files(bool run_success){
     for(int i=0; i<MAX_NUM_CORES; i++) {
         if(nicInfo->nic_elem[i].ts_nic_idx) {
 			if(run_success){
-            	assert(nicInfo->nic_elem[i].ts_idx*2 == nicInfo->nic_elem[i].ts_nic_idx*4);
-            	assert(nicInfo->nic_elem[i].phase_nic_idx == nicInfo->nic_elem[i].ts_nic_idx);
-            	assert(nicInfo->nic_elem[i].ts_idx/4 == nicInfo->nic_elem[i].phase_idx);
+            	//assert(nicInfo->nic_elem[i].ts_idx*2 == nicInfo->nic_elem[i].ts_nic_idx*4);
+            	//assert(nicInfo->nic_elem[i].phase_nic_idx == nicInfo->nic_elem[i].ts_nic_idx);
+            	//assert(nicInfo->nic_elem[i].ts_idx/4 == nicInfo->nic_elem[i].phase_idx);
 			}
 			else{
 				//run failed. sync counts for ts and ts_nic
@@ -484,6 +484,7 @@ void generate_raw_timestamp_files(bool run_success){
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
 	uint64_t average_interval = (lg_p->sum_interval) / (nicInfo->latencies_size);
 	std::cout<<"average interval: "<<average_interval<<std::endl;
+	std::cout<<"lgp->sum_interval: "<<lg_p->sum_interval<<", latencies_size: "<<nicInfo->latencies_size<<std::endl;
 
 	latency_hist_file <<"average interval: "<<average_interval<<std::endl;
 
@@ -495,6 +496,7 @@ void generate_raw_timestamp_files(bool run_success){
         else{
             uint64_t nf_average_interval = lg_p->lgs[i].sum_interval / lg_p->lgs[i].sent_packets;
             std::cout<<"NF"<<i<<" average interval: "<<nf_average_interval<<std::endl;
+			std::cout<<"NF0->sum_interval: "<<lg_p->lgs[i].sum_interval<<", lg0.sent_packets: "<<lg_p->lgs[i].sent_packets<<std::endl;
             latency_hist_file <<"NF"<<i<<"_average interval: "<<nf_average_interval<<std::endl;
         }
     }
@@ -711,19 +713,9 @@ int main(int argc, char *argv[]) {
 
     load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
     uint64_t total_nic_rb_writes=(lg_p->target_packet_count)*(nicInfo->forced_packet_size)/64; //linesize64
-    if((nicInfo->spillover_count) >((total_nic_rb_writes)/20) ){ // spillover hit > 5% of injection
-        std::cout<<"\
-         :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n\
-         :::::THIS RUN HAD SPILLOVER (MORE THAN 5\% OF ALL NIC RB WRITES OUTSIDE DDIO WAYS):::::\n\
-         :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"<<std::endl;
-        if (lg_p->num_loadgen > 0) {
-			//lets count it as run success...
-            generate_raw_timestamp_files(true);
-        }
 
-    }
     
-	else if(nicInfo->out_of_rbuf){
+	if(nicInfo->out_of_rbuf){
         std::cout<<"\
          :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n\
          :::::SIM TERMINATED WITH OUT OF RECV BUFFER sim terminated with out of recv_buffer:::::\n\
@@ -731,6 +723,18 @@ int main(int argc, char *argv[]) {
 
         if (lg_p->num_loadgen > 0) {
             generate_raw_timestamp_files(false);
+        }
+
+    }
+	else if((nicInfo->spillover_count) >((total_nic_rb_writes)/20) ){ // spillover hit > 5% of injection
+        std::cout<<"\
+         :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n\
+         :::::THIS RUN HAD SPILLOVER (MORE THAN 5\% OF ALL NIC RB WRITES OUTSIDE DDIO WAYS):::::\n\
+         :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"<<std::endl;
+		std::cout<<"spillover "<< ((nicInfo->spillover_count) * 100) / (total_nic_rb_writes) << std::endl;
+        if (lg_p->num_loadgen > 0) {
+			//lets count it as run success...
+            generate_raw_timestamp_files(true);
         }
 
     }
