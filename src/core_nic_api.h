@@ -605,10 +605,22 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 			info("core %d getting queue builtup, cycle %lu", core_id, cur_cycle);
 		}
 
+
+		////TODO: if we allow packet drops, handle differently
+		if(nicInfo->allow_packet_drop){
+			//increment drop counter
+			//update loadgen to count packet as sent and set next injection time
+			//timestamps are added 
+			//assertions for timestamp count at zsim_harness dump timestamp may need suppression?
+
+		}
+		else{
+
 		lg_p->all_packets_completed=true;
 		nicInfo->out_of_rbuf=true;
 
 		return -1;
+		}
 	}
 
 	uint64_t recv_buf_addr = (uint64_t)(&(nicInfo->nic_elem[core_id].recv_buf[rb_head]));

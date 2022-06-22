@@ -877,6 +877,10 @@ static void InitSystem(Config& config) {
 
     bool send_in_loop = config.get<bool>("sim.send_in_loop", false);
 	nicInfo->send_in_loop = send_in_loop;
+    
+    bool allow_packet_drop = config.get<bool>("sim.allow_packet_drop", false);
+	nicInfo->allow_packet_drop = allow_packet_drop;
+
 
     bool zeroCopy = config.get<bool>("sim.zeroCopy", false);
     nicInfo->zeroCopy = zeroCopy;

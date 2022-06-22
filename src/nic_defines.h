@@ -268,7 +268,9 @@ struct glob_nic_elements {
 	bool zeroCopy = false;
 	bool out_of_rbuf=false;
 	bool spillover = false;
+	bool allow_packet_drop = false;
 	uint64_t spillover_count=0;
+	uint64_t dropped_packets=0;
 	uint32_t num_ddio_ways=2;
 	
 	bool closed_loop_done=false;
