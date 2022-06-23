@@ -299,10 +299,12 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0, bool pack
 	((load_generator*)lg_p)->prev_cycle = cur_cycle;
 	((load_generator*)lg_p)->lgs[lg_i].prev_cycle = cur_cycle;
 	
-	if(!packet_dropped){ // just update scheduled cycles and return
+	if(packet_dropped){ // just update scheduled cycles and return
 		return 0;
 		//((load_generator*)lg_p)->ptag++;
 	}
+	
+	((load_generator*)lg_p)->ptag++;
 
 	((load_generator*)lg_p)->sent_packets++;
 	lg_p->lgs[lg_i].sent_packets++;
