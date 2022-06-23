@@ -59,29 +59,60 @@ int tc_map_insert(uint64_t in_ptag, uint64_t issue_cycle, uint64_t core_id) {
 	uint16_t ptag = (uint16_t) in_ptag;
 	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
 	futex_lock(&lg_p->ptc_lock);
-	
-	if((lg_p->tc_map[ptag].core_id) != 0){
-		info("duplicate ptag found");
-		glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
-		uint64_t sent_p = lg_p->sent_packets;
-		uint64_t done_p = nicInfo->latencies_size;
-		info("sent: %d, completed: %d",sent_p, done_p)
-		info("already have %lld", ptag);
-		info("remining rb on current core: %d", nicInfo->remaining_rb[nicInfo->sampling_phase_index-1]);
-		info("process_wq_entry called %d",nicInfo->process_wq_entry_count);
-		info("free rb called		  %d",nicInfo->free_rb_call_count);
-		info("rmc_send_withptag count %d",nicInfo->rmc_send_count);
-		info("valid deq_dpqCall count %d",nicInfo->deq_dpq_count);
-		info("enq_dpq count      	  %d",nicInfo->enq_dpq_count);
-		info("dpq size				  %d", nicInfo->dpq_size);
-		info("conseq_validDeqDpqCall  %d",nicInfo->conseq_valid_deq_dpq_count);
-		info("delat dpq size          %d",nicInfo->delta_dpq_size);
-		for(int iii=0; iii<1000;iii++){
-			info("delta_dpq_sizes[%d]: %d",iii, nicInfo->delta_dpq_sizes[iii]);
+
+
+	uint16_t orig_ptag = ptag;
+
+	while((lg_p->tc_map[ptag].core_id) != 0){
+		ptag++;
+		if(ptag==orig_ptag){
+			info("2^16 pending requests (out of ptag). Let's just call it quits");
+			glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
+			uint64_t sent_p = lg_p->sent_packets;
+			uint64_t done_p = nicInfo->latencies_size;
+			info("sent: %d, completed: %d",sent_p, done_p)
+			info("already have %lld", ptag);
+			info("remining rb on current core: %d", nicInfo->remaining_rb[nicInfo->sampling_phase_index-1]);
+			info("process_wq_entry called %d",nicInfo->process_wq_entry_count);
+			info("free rb called		  %d",nicInfo->free_rb_call_count);
+			info("rmc_send_withptag count %d",nicInfo->rmc_send_count);
+			info("valid deq_dpqCall count %d",nicInfo->deq_dpq_count);
+			info("enq_dpq count      	  %d",nicInfo->enq_dpq_count);
+			info("dpq size				  %d", nicInfo->dpq_size);
+			info("conseq_validDeqDpqCall  %d",nicInfo->conseq_valid_deq_dpq_count);
+			info("delat dpq size          %d",nicInfo->delta_dpq_size);
+			for(int iii=0; iii<1000;iii++){
+				info("delta_dpq_sizes[%d]: %d",iii, nicInfo->delta_dpq_sizes[iii]);
+			}
+			info("dropped_packets: 		  %d",nicInfo->dropped_packets);
+			panic("2^16 pending requests (out of ptag). Let's just call it quits");
+
 		}
-		info("dropped_packets: 		  %d",nicInfo->dropped_packets);
-		panic("already have %lld", ptag);
 	}
+	//readjust loadgen's ptag
+	lg_p->ptag = ptag;
+	//if((lg_p->tc_map[ptag].core_id) != 0){
+	//	info("duplicate ptag found");
+	//	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
+	//	uint64_t sent_p = lg_p->sent_packets;
+	//	uint64_t done_p = nicInfo->latencies_size;
+	//	info("sent: %d, completed: %d",sent_p, done_p)
+	//	info("already have %lld", ptag);
+	//	info("remining rb on current core: %d", nicInfo->remaining_rb[nicInfo->sampling_phase_index-1]);
+	//	info("process_wq_entry called %d",nicInfo->process_wq_entry_count);
+	//	info("free rb called		  %d",nicInfo->free_rb_call_count);
+	//	info("rmc_send_withptag count %d",nicInfo->rmc_send_count);
+	//	info("valid deq_dpqCall count %d",nicInfo->deq_dpq_count);
+	//	info("enq_dpq count      	  %d",nicInfo->enq_dpq_count);
+	//	info("dpq size				  %d", nicInfo->dpq_size);
+	//	info("conseq_validDeqDpqCall  %d",nicInfo->conseq_valid_deq_dpq_count);
+	//	info("delat dpq size          %d",nicInfo->delta_dpq_size);
+	//	for(int iii=0; iii<1000;iii++){
+	//		info("delta_dpq_sizes[%d]: %d",iii, nicInfo->delta_dpq_sizes[iii]);
+	//	}
+	//	info("dropped_packets: 		  %d",nicInfo->dropped_packets);
+	//	panic("already have %lld", ptag);
+	//}
 
 	timestamp ts;
 	ts.core_id = core_id;
