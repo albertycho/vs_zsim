@@ -612,6 +612,9 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 			//update loadgen to count packet as sent and set next injection time
 			//timestamps are added 
 			//assertions for timestamp count at zsim_harness dump timestamp may need suppression?
+			nicInfo->dropped_packets++;
+			update_loadgen(lg_p, cur_cycle, lg_i);
+			return 0;
 
 		}
 		else{
