@@ -1320,6 +1320,9 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 			if(procIdx==nicInfo->nic_ingress_pid){
 				//std::cout<<"procIdx available in cycle_increment routine"<<std::endl;
 				((OOOCore *)(nicInfo->nicCore_ingress))->nic_ingress_routine_per_cycle(core_id);
+				if(nicInfo->pd_flag){
+					//info("returned from nic_ingress_routine_per_cycle");
+				}
 				/*void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
 				  load_generator* lg_p = (load_generator*)lg_p_vp;
 				  if (lg_p->all_packets_sent && !(lg_p->all_packets_completed)) {
@@ -1347,6 +1350,11 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 			core_ceq_routine(curCycle, nicInfo, core_id);
 
 			RCP_routine(curCycle, nicInfo, core_id);
+			
+			if(nicInfo->pd_flag){
+			//info("returning from cycle_increment routine");
+			nicInfo->pd_flag=false;
+			}
 
 			return;
 

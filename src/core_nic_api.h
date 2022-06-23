@@ -79,6 +79,7 @@ int tc_map_insert(uint64_t in_ptag, uint64_t issue_cycle, uint64_t core_id) {
 		for(int iii=0; iii<1000;iii++){
 			info("delta_dpq_sizes[%d]: %d",iii, nicInfo->delta_dpq_sizes[iii]);
 		}
+		info("dropped_packets: 		  %d",nicInfo->dropped_packets);
 		panic("already have %lld", ptag);
 	}
 
@@ -613,7 +614,9 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 			//timestamps are added 
 			//assertions for timestamp count at zsim_harness dump timestamp may need suppression?
 			nicInfo->dropped_packets++;
+			nicInfo->pd_flag = true; //for printing.. debug
 			update_loadgen(lg_p, cur_cycle, lg_i);
+			info("packet dropped");
 			return 0;
 
 		}
