@@ -209,7 +209,7 @@ uint32_t get_cq_size(uint32_t core_i){
 
 //functions for interfacing load_generator
 
-int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0) {
+int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0, bool packet_dropped=false) {
 /*
 * update_loadgen- updates cycle and tag for load gen
 *					packet creation is done in RPCGEN::generatePackedRPC
@@ -296,7 +296,9 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0) {
 
 	((load_generator*)lg_p)->lgs[lg_i].next_cycle = ((load_generator*)lg_p)->lgs[lg_i].next_cycle + interval;
 
-	((load_generator*)lg_p)->ptag++;
+	if(!packet_dropped){
+		((load_generator*)lg_p)->ptag++;
+	}
 
 	((load_generator*)lg_p)->sent_packets++;
 	lg_p->lgs[lg_i].sent_packets++;
