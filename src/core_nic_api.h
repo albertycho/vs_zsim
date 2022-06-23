@@ -296,8 +296,12 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0, bool pack
 
 	((load_generator*)lg_p)->lgs[lg_i].next_cycle = ((load_generator*)lg_p)->lgs[lg_i].next_cycle + interval;
 
-	if(!packet_dropped){
-		((load_generator*)lg_p)->ptag++;
+	((load_generator*)lg_p)->prev_cycle = cur_cycle;
+	((load_generator*)lg_p)->lgs[lg_i].prev_cycle = cur_cycle;
+	
+	if(!packet_dropped){ // just update scheduled cycles and return
+		return 0;
+		//((load_generator*)lg_p)->ptag++;
 	}
 
 	((load_generator*)lg_p)->sent_packets++;
@@ -318,8 +322,7 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0, bool pack
 	}
 	
 
-	((load_generator*)lg_p)->prev_cycle = cur_cycle;
-	((load_generator*)lg_p)->lgs[lg_i].prev_cycle = cur_cycle;
+
 	return 0;
 }
 
@@ -612,10 +615,6 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 			//timestamps are added 
 			//assertions for timestamp count at zsim_harness dump timestamp may need suppression?
 			nicInfo->dropped_packets++;
-			lg_p->target_packet_count--;
-			if(lg_p->target_packet_count<=nicInfo->latencies_size){
-				lg_p->all_packets_completed=true;
-			}
 			nicInfo->pd_flag = true; //for printing.. debug
 			update_loadgen(lg_p, cur_cycle, lg_i, true);
 			//info("packet dropped");
