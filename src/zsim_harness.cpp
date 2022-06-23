@@ -501,6 +501,9 @@ void generate_raw_timestamp_files(bool run_success){
         }
     }
 
+    latency_hist_file << "dropped_packets : "<<nicInfo->dropped_packets<<std::endl;
+    latency_hist_file << "packet_drop_rate: "<<((nicInfo->dropped_packets)*100)/(lg_p->lgs[0].sent_packets)<<"%"<<std::endl;
+
 	latency_hist_file.close();
 }
 
