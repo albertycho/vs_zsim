@@ -65,6 +65,7 @@ int tc_map_insert(uint64_t in_ptag, uint64_t issue_cycle, uint64_t core_id) {
 
 	while((lg_p->tc_map[ptag].core_id) != 0){
 		ptag++;
+		assert(ptag<65536);
 		if(ptag==orig_ptag){
 			info("2^16 pending requests (out of ptag). Let's just call it quits");
 			glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
@@ -90,7 +91,9 @@ int tc_map_insert(uint64_t in_ptag, uint64_t issue_cycle, uint64_t core_id) {
 		}
 	}
 	//readjust loadgen's ptag
-	lg_p->ptag = ptag;
+	if(ptag!=orig_ptag){
+		lg_p->ptag = ptag;
+	}
 	//if((lg_p->tc_map[ptag].core_id) != 0){
 	//	info("duplicate ptag found");
 	//	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
@@ -334,9 +337,9 @@ int update_loadgen(void* in_lg_p, uint64_t cur_cycle, uint32_t lg_i=0, bool pack
 		return 0;
 		//((load_generator*)lg_p)->ptag++;
 	}
-	
+	futex_lock(&lg_p->ptc_lock);
 	((load_generator*)lg_p)->ptag++;
-
+	futex_unlock(&lg_p->ptc_lock);
 	((load_generator*)lg_p)->sent_packets++;
 	lg_p->lgs[lg_i].sent_packets++;
 	//for debugging
