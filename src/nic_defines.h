@@ -285,7 +285,7 @@ struct glob_nic_elements {
 	
 	lock_t txts_lock;	   // keeping code for DBG/Comparison purpose
 	
-	uint32_t ** txts_map; //lineaddr, timestamp pair
+	uint64_t ** txts_map; //lineaddr, timestamp pair
 
 
 	//for stat printing
