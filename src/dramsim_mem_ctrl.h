@@ -120,18 +120,21 @@ class SplitAddrMemory : public MemObject {
             if(nicInfo->zeroCopy){
                 if(req.is(MemReq::INGR_EVCT)){
                     futex_lock(&(nicInfo->txts_lock));
-                        
-                        if(tx_ts_pair ==nicInfo->txts_map.end()){
-                            info("ZCP - @ RX buffer evict, no TX timestamp found");
+                    uint64_t c_id=0;
+                    uint64_t clid=0;
+                    int get_rb_ind = get_rb_cid_clid_line(addr,c_id, clid);
+                    if(get_rb_ind==0){
+                        uint64_t tx_ts = nicInfo->txts_map[c_id][clid];
+                        if(tx_ts==0){
+                            info("Warning ZCP - RB evicted before TX");
                         }
-                        else{
-                            uint64_t tx_ts = tx_ts_pair->second;
-                            if(tx_ts > respCycle){
-                                info("Warning: tx cycle > eviction cycle for RX Buffer in ZCP");
-                            }
-                            nicInfo->tx2ev[nicInfo->tx2ev_i] = respCycle - tx_ts;
-                            nicInfo->tx2ev_i = nicInfo->tx2ev_i+1;
-                        }
+                        nicInfo->tx2ev[nicInfo->tx2ev_i] = respCycle - tx_ts;
+                        nicInfo->tx2ev_i = nicInfo->tx2ev_i+1;
+
+                    }
+                    else{
+                        info("Warning ZCP - @ RX buffer evict, no RB match");
+                    }
                     futex_unlock(&(nicInfo->txts_lock));
                 }
             }
