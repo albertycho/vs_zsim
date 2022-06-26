@@ -368,6 +368,14 @@ void generate_raw_timestamp_files(bool run_success){
     GlobSimInfo* zinfo  = static_cast<GlobSimInfo*>(gm_get_glob_ptr());
 	glob_nic_elements* nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
 
+    if(nicInfo->zeroCopy){
+        std::ofstream f_zcp_tx2ev("zcp_tx2ev.csv");
+        for(int i=0;i<nicInfo->tx2ev_i;i++){
+            f_zcp_tx2ev<< nicInfo->tx2ev[i]<<','<<std::endl;
+        }
+        f_zcp_tx2ev.close();
+    }
+
 	if(nicInfo->memtype!=0){ // this hangs when using simple mem
     	for(int i=0; i<(nicInfo->num_controllers); i++) {
     	    std::ofstream f("memory_controller_"+std::to_string(i)+"_bandwidth.txt");

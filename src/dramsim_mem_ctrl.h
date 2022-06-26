@@ -32,6 +32,7 @@
 #include "memory_hierarchy.h"
 #include "pad.h"
 #include "stats.h"
+#include "zsim.h"
 
 namespace DRAMSim {
     class MultiChannelMemorySystem;
@@ -98,11 +99,12 @@ class SplitAddrMemory : public MemObject {
             req.lineAddr = ctrlAddr;
             uint64_t respCycle = mems[mem]->access(req);
             req.lineAddr = addr;
+            glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
             if(nicInfo->zeroCopy){
                 if(req.is(MemReq::INGR_EVCT)){
                     futex_lock(&(nicInfo->txts_lock));
                         auto tx_ts_pair = nicInfo->txts_map.find(addr);
-                        if(tx_ts_pair ==nicInfo->txts_map.end){
+                        if(tx_ts_pair ==nicInfo->txts_map.end()){
                             info("ZCP - @ RX buffer evict, no TX timestamp found");
                         }
                         else{
