@@ -83,21 +83,21 @@ class DRAMSimMemory : public MemObject { //one DRAMSim controller
 };
 
 //in this func, RB is in line addr, unlike the same func in core_nic_api
-int get_rb_cid_clid_line(uint64_t line_addr, uint64_t &core_i, uint64_t &clid){
-    uint64_t rb_addr = line_addr << lineBits;
-	for(int i=0; i<zinfo->numCores;i++){
-		uint64_t rb_base = (uint64_t) nicInfo->nic_elem[i].recv_buf;
-		uint64_t rb_top =rb_base+nicInfo->recv_buf_pool_size;
-		if(rb_addr >= rb_base && rb_addr <= rb_top){
-			core_i=i;
-			uint64_t offset = rb_addr - rb_base;
-			clid = offset >> lineBits;
-			return 0;
-		}
-	}
-
-	return -1;
-}
+//int get_rb_cid_clid_line(uint64_t line_addr, uint64_t &core_i, uint64_t &clid){
+//    uint64_t rb_addr = line_addr << lineBits;
+//	for(int i=0; i<zinfo->numCores;i++){
+//		uint64_t rb_base = (uint64_t) nicInfo->nic_elem[i].recv_buf;
+//		uint64_t rb_top =rb_base+nicInfo->recv_buf_pool_size;
+//		if(rb_addr >= rb_base && rb_addr <= rb_top){
+//			core_i=i;
+//			uint64_t offset = rb_addr - rb_base;
+//			clid = offset >> lineBits;
+//			return 0;
+//		}
+//	}
+//
+//	return -1;
+//}
 
 //DRAMSIM does not support non-pow2 channels, so:
 // - Encapsulate multiple DRAMSim controllers
