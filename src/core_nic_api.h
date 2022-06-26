@@ -7,7 +7,7 @@
 #include "trace_driver.h"
 #include <iostream>
 #include <fstream>
-
+#include <unordered_map>
 
 #ifndef _CORE_NIC_API_H_
 #define _CORE_NIC_API_H_
@@ -1037,7 +1037,13 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 					lsize--;
 					if(nicInfo->zeroCopy){
 						futex_lock(&(nicInfo->txts_lock));
-						nicInfo->txts_map.insert({addr,reqSatisfiedCycle});
+						info("dbg_print before map.insert to see if things break");
+						//auto findelem = nicInfo->txts_map.find(addr);
+						//if(findelem == nicInfo->txts_map.end()){
+						//	nicInfo->txts_map.erase(addr);
+						//}
+						//nicInfo->txts_map.insert({addr,reqSatisfiedCycle});
+						nicInfo->txts_map[addr] = reqSatisfiedCycle;
 						futex_unlock(&(nicInfo->txts_lock));
 					}
 
