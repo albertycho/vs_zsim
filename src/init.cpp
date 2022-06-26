@@ -1134,6 +1134,8 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 
     for (uint64_t i = 0; i < zinfo->numCores; i++) {
         nicInfo->nic_elem[i].rb_dir =   gm_memalign<recv_buf_dir_t>(CACHE_LINE_BYTES, recv_buf_pool_size);
+        //for each core, entries match number of cachelines in RB pool
+        nicInfo->txts_map[i] = gm_memalign<uint32_t>(CACHE_LINE_BYTES, (recv_buf_pool_size/CACHE_LINE_BYTES))
 	}
 
 

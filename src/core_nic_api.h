@@ -933,7 +933,20 @@ int insert_latency_stat(uint64_t p_latency) {
 	return 0;
 }
 
+int get_rb_cid_clid(uint64_t rb_addr, uint64_t &core_i, uint64_t &clid){
+	for(int i=0; i<zinfo->numCores;i++){
+		uint64_t rb_base = (uint64_t) nicInfo->nic_elem[i].recv_buf;
+		uint64_t rb_top =rb_base+nicInfo->recv_buf_pool_size;
+		if(rb_addr >= rb_base && rb_addr <= rb_top){
+			core_i=i;
+			uint64_t offset = rb_addr - rb_base;
+			clid = offset >> lineBits;
+			return 0;
+		}
+	}
 
+	return -1;
+}
 
 int enq_dpq(uint64_t lbuf_addr, uint64_t end_time, uint64_t ptag, uint64_t length) {
 	done_packet_info* dpq_entry = gm_calloc<done_packet_info>();
@@ -1037,13 +1050,16 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 					lsize--;
 					if(nicInfo->zeroCopy){
 						futex_lock(&(nicInfo->txts_lock));
-						info("dbg_print before map.insert to see if things break");
-						//auto findelem = nicInfo->txts_map.find(addr);
-						//if(findelem == nicInfo->txts_map.end()){
-						//	nicInfo->txts_map.erase(addr);
-						//}
-						//nicInfo->txts_map.insert({addr,reqSatisfiedCycle});
-						nicInfo->txts_map[addr] = reqSatisfiedCycle;
+						//info("dbg_print before map.insert to see if things break");
+						uint64_t c_id=0;
+						uint64_t clid=0;
+						int find_inds = get_rb_cid_clid(addr, c_id,clid);
+						if(find_inds==0){
+							nicInfo->txts_map[c_id][clid]=reqSatisfiedCycle;
+						}
+						else{
+							info("Warning, didn't find RB index in TX");
+						}
 						futex_unlock(&(nicInfo->txts_lock));
 					}
 
