@@ -1131,7 +1131,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 		//assuming linear memory allocation, add skew to avoid set conflicts among buffers from different cores
 		//nicInfo->nic_elem[i].rb_pad = gm_memalign<uint64_t>(CACHE_LINE_BYTES, 680*8);
     }
-
+	nicInfo->txts_map=gm_memalign<uint64_t*>(CACHE_LINE_BYTES, (sizeof(uint64_t*)*zinfo->numCores));
     for (uint64_t i = 0; i < zinfo->numCores; i++) {
         nicInfo->nic_elem[i].rb_dir =   gm_memalign<recv_buf_dir_t>(CACHE_LINE_BYTES, recv_buf_pool_size);
         //for each core, entries match number of cachelines in RB pool
