@@ -98,6 +98,24 @@ class SplitAddrMemory : public MemObject {
             req.lineAddr = ctrlAddr;
             uint64_t respCycle = mems[mem]->access(req);
             req.lineAddr = addr;
+            if(nicInfo->zeroCopy){
+                if(req.is(MemReq::INGR_EVCT)){
+                    futex_lock(&(nicInfo->txts_lock));
+                        auto tx_ts_pair = nicInfo->txts_map.find(addr);
+                        if(tx_ts_pair ==nicInfo->txts_map.end){
+                            info("ZCP - @ RX buffer evict, no TX timestamp found");
+                        }
+                        else{
+                            uint64_t tx_ts = tx_ts_pair->second;
+                            if(tx_ts > respCycle){
+                                info("Warning: tx cycle > eviction cycle for RX Buffer in ZCP");
+                            }
+                            nicInfo->tx2ev[nicInfo->tx2ev_i] = respCycle - tx_ts;
+                            nicInfo->tx2ev_i = nicInfo->tx2ev_i+1;
+                        }
+                    futex_unlock(&(nicInfo->txts_lock));
+                }
+            }
             return respCycle;
         }
 

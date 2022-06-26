@@ -1035,6 +1035,12 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 					reqSatisfiedCycle = l1d->load(addr, core_cycle, level, srcId, MemReq::PKTOUT) + (level == 3 ? 1 : 0) * L1D_LAT;		//TODO check what cycles need to be passed to recrod
 					cRec->record(core_cycle, core_cycle, reqSatisfiedCycle);
 					lsize--;
+					if(nicInfo->zeroCopy){
+						futex_lock(&(nicInfo->txts_lock));
+						nicInfo->txts_map.insert({addr,reqSatisfiedCycle});
+						futex_unlock(&(nicInfo->txts_lock));
+					}
+
 					addr += 64;
 				}
 			}

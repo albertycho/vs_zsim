@@ -280,6 +280,12 @@ struct glob_nic_elements {
 	uint32_t num_controllers=6;
 	uint64_t gm_size=0;
 
+	uint32_t tx2ev_i=0;
+	uint32_t tx2ev[100000000];
+	lock_t txts_lock;	   // keeping code for DBG/Comparison purpose
+	g_unordered_map<uint64_t,uint64_t> txts_map; //lineaddr, timestamp pair
+
+
 	//for stat printing
 	uint32_t IR_per_phase[100000]; //for plotting IR vs SR
 	uint32_t SR_per_phase[100000]; //Service rate

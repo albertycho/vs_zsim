@@ -1094,6 +1094,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     nicInfo = gm_memalign<glob_nic_elements>(CACHE_LINE_BYTES);
     futex_init(&(nicInfo->dpq_lock));
     futex_init(&(nicInfo->ptag_dbug_lock));
+    futex_init(&(nicInfo->txts_lock));
     
     nicInfo->done_packet_q_head = NULL;
     nicInfo->done_packet_q_tail = NULL;
