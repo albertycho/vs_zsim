@@ -95,11 +95,6 @@ INT32 Usage() {
 
 GlobSimInfo* zinfo;
 
-glob_nic_elements* nicInfo;
-
-FilterCache** l1d_caches;
-
-
 /* Per-process variables */
 
 uint32_t procIdx;
@@ -116,7 +111,6 @@ static uint32_t cids[MAX_THREADS];
 
 // Per TID core pointers (TODO: phase out cid/tid state --- this is enough)
 Core* cores[MAX_THREADS];
-
 
 static inline void clearCid(uint32_t tid) {
     assert(tid < MAX_THREADS);
@@ -170,10 +164,6 @@ VOID FFThread(VOID* arg);
  */
 
 InstrFuncPtrs fPtrs[MAX_THREADS] ATTR_LINE_ALIGNED; //minimize false sharing
-
-VOID PIN_FAST_ANALYSIS_CALL IndirectNicMagicOp(THREADID tid, ADDRINT value, ADDRINT field) {
-    fPtrs[tid].nicMagicPtr(tid, value, field);
-}
 
 VOID PIN_FAST_ANALYSIS_CALL IndirectLoadSingle(THREADID tid, ADDRINT addr) {
     fPtrs[tid].loadPtr(tid, addr);
@@ -247,17 +237,11 @@ VOID JoinAndPredStoreSingle(THREADID tid, ADDRINT addr, BOOL pred) {
     fPtrs[tid].predStorePtr(tid, addr, pred);
 }
 
-VOID JoinAndNicMagicOp(THREADID tid, ADDRINT val, ADDRINT field) {
-    Join(tid);
-    fPtrs[tid].nicMagicPtr(tid, val, field);
-}
-
 // NOP variants: Do nothing
 VOID NOPLoadStoreSingle(THREADID tid, ADDRINT addr) {}
 VOID NOPBasicBlock(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {}
 VOID NOPRecordBranch(THREADID tid, ADDRINT addr, BOOL taken, ADDRINT takenNpc, ADDRINT notTakenNpc) {}
 VOID NOPPredLoadStoreSingle(THREADID tid, ADDRINT addr, BOOL pred) {}
-VOID NOPNicMagicOp(THREADID tid, ADDRINT val, ADDRINT field) {}
 
 // FF is basically NOP except for basic blocks
 VOID FFBasicBlock(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
@@ -379,13 +363,13 @@ VOID FFIEntryBasicBlock(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
 }
 
 // Non-analysis pointer vars
-static const InstrFuncPtrs joinPtrs = {JoinAndLoadSingle, JoinAndStoreSingle, JoinAndBasicBlock, JoinAndRecordBranch, JoinAndPredLoadSingle, JoinAndPredStoreSingle, JoinAndNicMagicOp, FPTR_JOIN};
-static const InstrFuncPtrs nopPtrs = {NOPLoadStoreSingle, NOPLoadStoreSingle, NOPBasicBlock, NOPRecordBranch, NOPPredLoadStoreSingle, NOPPredLoadStoreSingle, NOPNicMagicOp, FPTR_NOP};
-static const InstrFuncPtrs retryPtrs = {NOPLoadStoreSingle, NOPLoadStoreSingle, NOPBasicBlock, NOPRecordBranch, NOPPredLoadStoreSingle, NOPPredLoadStoreSingle, NOPNicMagicOp, FPTR_RETRY};
-static const InstrFuncPtrs ffPtrs = {NOPLoadStoreSingle, NOPLoadStoreSingle, FFBasicBlock, NOPRecordBranch, NOPPredLoadStoreSingle, NOPPredLoadStoreSingle, NOPNicMagicOp, FPTR_NOP};
+static const InstrFuncPtrs joinPtrs = {JoinAndLoadSingle, JoinAndStoreSingle, JoinAndBasicBlock, JoinAndRecordBranch, JoinAndPredLoadSingle, JoinAndPredStoreSingle, FPTR_JOIN};
+static const InstrFuncPtrs nopPtrs = {NOPLoadStoreSingle, NOPLoadStoreSingle, NOPBasicBlock, NOPRecordBranch, NOPPredLoadStoreSingle, NOPPredLoadStoreSingle, FPTR_NOP};
+static const InstrFuncPtrs retryPtrs = {NOPLoadStoreSingle, NOPLoadStoreSingle, NOPBasicBlock, NOPRecordBranch, NOPPredLoadStoreSingle, NOPPredLoadStoreSingle, FPTR_RETRY};
+static const InstrFuncPtrs ffPtrs = {NOPLoadStoreSingle, NOPLoadStoreSingle, FFBasicBlock, NOPRecordBranch, NOPPredLoadStoreSingle, NOPPredLoadStoreSingle, FPTR_NOP};
 
-static const InstrFuncPtrs ffiPtrs = {NOPLoadStoreSingle, NOPLoadStoreSingle, FFIBasicBlock, NOPRecordBranch, NOPPredLoadStoreSingle, NOPPredLoadStoreSingle, NOPNicMagicOp, FPTR_NOP};
-static const InstrFuncPtrs ffiEntryPtrs = {NOPLoadStoreSingle, NOPLoadStoreSingle, FFIEntryBasicBlock, NOPRecordBranch, NOPPredLoadStoreSingle, NOPPredLoadStoreSingle, NOPNicMagicOp, FPTR_NOP};
+static const InstrFuncPtrs ffiPtrs = {NOPLoadStoreSingle, NOPLoadStoreSingle, FFIBasicBlock, NOPRecordBranch, NOPPredLoadStoreSingle, NOPPredLoadStoreSingle, FPTR_NOP};
+static const InstrFuncPtrs ffiEntryPtrs = {NOPLoadStoreSingle, NOPLoadStoreSingle, FFIEntryBasicBlock, NOPRecordBranch, NOPPredLoadStoreSingle, NOPPredLoadStoreSingle, FPTR_NOP};
 
 static const InstrFuncPtrs& GetFFPtrs() {
     return ffiEnabled? (ffiNFF? ffiEntryPtrs : ffiPtrs) : ffPtrs;
@@ -485,7 +469,6 @@ VOID CheckForTermination() {
  * has not incremented, so it denotes the END of the current phase
  */
 VOID EndOfPhaseActions() {
-    //info("EndOfPhaseAction called");
     zinfo->profSimTime->transition(PROF_WEAVE);
     if (zinfo->globalPauseFlag) {
         info("Simulation entering global pause");
@@ -548,9 +531,6 @@ static void PrintIp(THREADID tid, ADDRINT ip) {
 VOID Instruction(INS ins) {
     //Uncomment to print an instruction trace
     //INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)PrintIp, IARG_THREAD_ID, IARG_REG_VALUE, REG_INST_PTR, IARG_END);
-    //INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) nic_send_packet_main, IARG_THREAD_ID,IARG_END);
-
-    AFUNPTR NicMagicFuncPtr = (AFUNPTR)IndirectNicMagicOp;
 
     if (!procTreeNode->isInFastForward() || !zinfo->ffReinstrument) {
         AFUNPTR LoadFuncPtr = (AFUNPTR) IndirectLoadSingle;
@@ -584,17 +564,11 @@ VOID Instruction(INS ins) {
         }
 
         // Instrument only conditional branches
-		//FIXME: commenting this out is a temporary WA
         if (INS_Category(ins) == XED_CATEGORY_COND_BR) {
             INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) IndirectRecordBranch, IARG_FAST_ANALYSIS_CALL, IARG_THREAD_ID,
                     IARG_INST_PTR, IARG_BRANCH_TAKEN, IARG_BRANCH_TARGET_ADDR, IARG_FALLTHROUGH_ADDR, IARG_END);
         }
     }
-
-	if (INS_IsXchg(ins) && INS_OperandReg(ins, 0) == REG_RBX && INS_OperandReg(ins, 1) == REG_RBX) {
-		std::cout<<"zsim p"<<procIdx<<": xchg rbx rbx caught!"<<std::endl;
-        INS_InsertCall(ins, IPOINT_BEFORE, NicMagicFuncPtr, IARG_THREAD_ID, IARG_REG_VALUE, REG_RBX, IARG_REG_VALUE, REG_RCX, IARG_END);
-	}
 
     //Intercept and process magic ops
     /* xchg %rcx, %rcx is our chosen magic op. It is effectively a NOP, but it
@@ -1160,8 +1134,6 @@ VOID SimEnd() {
 #define ZSIM_MAGIC_OP_REGISTER_THREAD   (1027)
 #define ZSIM_MAGIC_OP_HEARTBEAT         (1028)
 
-
-
 VOID HandleMagicOp(THREADID tid, ADDRINT op) {
     switch (op) {
         case ZSIM_MAGIC_OP_ROI_BEGIN:
@@ -1456,7 +1428,6 @@ static EXCEPT_HANDLING_RESULT InternalExceptionHandler(THREADID tid, EXCEPTION_I
 /* ===================================================================== */
 
 int main(int argc, char *argv[]) {
-	
     PIN_InitSymbols();
     if (PIN_Init(argc, argv)) return Usage();
 
@@ -1492,7 +1463,6 @@ int main(int argc, char *argv[]) {
     } else {
         while (!gm_isready()) usleep(1000);  // wait till proc idx 0 initializes everything
         zinfo = static_cast<GlobSimInfo*>(gm_get_glob_ptr());
-		nicInfo= static_cast<glob_nic_elements*>(gm_get_nic_ptr());
     }
 
     //If assertion below fails, use this to print maps

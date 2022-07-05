@@ -32,8 +32,6 @@
 #include "filter_cache.h"
 #include "zsim.h"
 
-#include "core_nic_api.h"
-
 /* Uncomment to induce backpressure to the IW when the load/store buffers fill up. In theory, more detailed,
  * but sometimes much slower (as it relies on range poisoning in the IW, potentially O(n^2)), and in practice
  * makes a negligible difference (ROB backpressures).
@@ -57,12 +55,7 @@
 #define ISSUES_PER_CYCLE 4
 #define RF_READS_PER_CYCLE 3
 
-//OOOCore::OOOCore(FilterCache* _l1i, FilterCache* _l1d, int _core_id, uint32_t _domain, g_string& _name) : Core(_name), l1i(_l1i), l1d(_l1d), cRec(_domain, _name) {
-OOOCore::OOOCore(FilterCache* _l1i, FilterCache* _l1d, uint32_t _domain, g_string& _name, uint32_t _coreIdx) 
-: Core(_name), l1i(_l1i), l1d(_l1d), core_id(_coreIdx), cRec(_domain, _name) {
- 
-    core_id = _coreIdx;
-    
+OOOCore::OOOCore(FilterCache* _l1i, FilterCache* _l1d, g_string& _name) : Core(_name), l1i(_l1i), l1d(_l1d), cRec(0, _name) {
     decodeCycle = DECODE_STAGE;  // allow subtracting from it
     curCycle = 0;
     phaseEndCycle = zinfo->phaseLength;
@@ -81,7 +74,6 @@ OOOCore::OOOCore(FilterCache* _l1i, FilterCache* _l1d, uint32_t _domain, g_strin
     instrs = uops = bbls = approxInstrs = mispredBranches = 0;
 
     for (uint32_t i = 0; i < FWD_ENTRIES; i++) fwdArray[i].set((Address)(-1L), 0);
-
 }
 
 void OOOCore::initStats(AggregateStat* parentStat) {
@@ -139,8 +131,7 @@ void OOOCore::contextSwitch(int32_t gid) {
 }
 
 
-//InstrFuncPtrs OOOCore::GetFuncPtrs() {return {LoadFunc, StoreFunc, BblFunc, BranchFunc, PredLoadFunc, PredStoreFunc, FPTR_ANALYSIS, {0}};}
-InstrFuncPtrs OOOCore::GetFuncPtrs() { return { LoadFunc, StoreFunc, BblFunc, BranchFunc, PredLoadFunc, PredStoreFunc, NicMagicFunc, FPTR_ANALYSIS}; }
+InstrFuncPtrs OOOCore::GetFuncPtrs() {return {LoadFunc, StoreFunc, BblFunc, BranchFunc, PredLoadFunc, PredStoreFunc, FPTR_ANALYSIS, {0}};}
 
 inline void OOOCore::load(Address addr) {
     loadAddrs[loads++] = addr;
@@ -200,7 +191,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
 #endif
             curCycleIssuedUops = 0;
             curCycleRFReads = 0;
-            for (uint32_t i = 0; i < cdDiff; i++) insWindow.advancePos(curCycle, core_id);
+            for (uint32_t i = 0; i < cdDiff; i++) insWindow.advancePos(curCycle);
         }
         prevDecCycle = uop->decCycle;
         uopQueue.markLeave(curCycle);
@@ -213,7 +204,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
             // info("Advancing due to uop issue width");
             curCycleIssuedUops = 0;
             curCycleRFReads = 0;
-            insWindow.advancePos(curCycle, core_id);
+            insWindow.advancePos(curCycle);
         }
         curCycleIssuedUops++;
 
@@ -230,7 +221,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
         if (curCycleRFReads > RF_READS_PER_CYCLE) {
             curCycleRFReads -= RF_READS_PER_CYCLE;
             curCycleIssuedUops = 0;  // or 1? that's probably a 2nd-order detail
-            insWindow.advancePos(curCycle, core_id);
+            insWindow.advancePos(curCycle);
         }
 
         uint64_t c2 = rob.minAllocCycle();
@@ -243,7 +234,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
 
         // info("IW 0x%lx %d %ld %ld %x", bblAddr, i, c2, dispatchCycle, uop->portMask);
         // NOTE: Schedule can adjust both cur and dispatch cycles
-        insWindow.schedule(curCycle, dispatchCycle, uop->portMask, uop->extraSlots, core_id);
+        insWindow.schedule(curCycle, dispatchCycle, uop->portMask, uop->extraSlots);
 
         // If we have advanced, we need to reset the curCycle counters
         if (curCycle > c3) {
@@ -266,7 +257,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
                     uint64_t lqCycle = loadQueue.minAllocCycle();
                     if (lqCycle > dispatchCycle) {
 #ifdef LSU_IW_BACKPRESSURE
-                        insWindow.poisonRange(curCycle, lqCycle, 0x4 /*PORT_2, loads*/, core_id);
+                        insWindow.poisonRange(curCycle, lqCycle, 0x4 /*PORT_2, loads*/);
 #endif
                         dispatchCycle = lqCycle;
                     }
@@ -279,10 +270,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
                     if (addr != ((Address)-1L)) {
                         reqSatisfiedCycle = l1d->load(addr, dispatchCycle) + L1D_LAT;
                         cRec.record(curCycle, dispatchCycle, reqSatisfiedCycle);
-                        
-
                     }
-                    
 
                     // Enforce st-ld forwarding
                     uint32_t fwdIdx = (addr>>2) & (FWD_ENTRIES-1);
@@ -308,7 +296,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
                     uint64_t sqCycle = storeQueue.minAllocCycle();
                     if (sqCycle > dispatchCycle) {
 #ifdef LSU_IW_BACKPRESSURE
-                        insWindow.poisonRange(curCycle, sqCycle, 0x10 /*PORT_4, stores*/, core_id);
+                        insWindow.poisonRange(curCycle, sqCycle, 0x10 /*PORT_4, stores*/);
 #endif
                         dispatchCycle = sqCycle;
                     }
@@ -437,11 +425,10 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
         // Do not model fetch throughput limit here, decoder-generated stalls already include it
         // We always call fetches with curCycle to avoid upsetting the weave
         // models (but we could move to a fetch-centric recorder to avoid this)
-       
         uint64_t fetchLat = l1i->load(fetchAddr, curCycle) - curCycle;
         cRec.record(curCycle, curCycle, curCycle + fetchLat);
         fetchCycle += fetchLat;
-    } 
+    }
 
     // If fetch rules, take into account delay between fetch and decode;
     // If decode rules, different BBLs make the decoders skip a cycle
@@ -471,15 +458,12 @@ void OOOCore::leave() {
 }
 
 void OOOCore::cSimStart() {
-    //dbgprint
-    //info("CSimStart called");
     uint64_t targetCycle = cRec.cSimStart(curCycle);
     assert(targetCycle >= curCycle);
     if (targetCycle > curCycle) advance(targetCycle);
 }
 
 void OOOCore::cSimEnd() {
-    //info("CSimEnd called");
     uint64_t targetCycle = cRec.cSimEnd(curCycle);
     assert(targetCycle >= curCycle);
     if (targetCycle > curCycle) advance(targetCycle);
@@ -488,7 +472,7 @@ void OOOCore::cSimEnd() {
 void OOOCore::advance(uint64_t targetCycle) {
     assert(targetCycle > curCycle);
     decodeCycle += targetCycle - curCycle;
-    insWindow.longAdvance(curCycle, targetCycle, core_id);
+    insWindow.longAdvance(curCycle, targetCycle);
     curCycleRFReads = 0;
     curCycleIssuedUops = 0;
     assert(targetCycle == curCycle);
@@ -515,82 +499,13 @@ void OOOCore::PredStoreFunc(THREADID tid, ADDRINT addr, BOOL pred) {
     else core->predFalseMemOp();
 }
 
-int flag = 1;
-
 void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     OOOCore* core = static_cast<OOOCore*>(cores[tid]);
-    //uint64_t core_id = getCid(tid); // using processID to identify nicCore for now
     core->bbl(bblAddr, bblInfo);
-    
-    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-
-    //dbgprint
-    //info("dumb print to show that bblfun gets called");
-
-    //TODO check which nic (ingress or egress) should handle this
-    //as of now we stick with one NIC core doing both ingress and egress work
-    if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) {
-        ///////////////CALL DEQ_DPQ//////////////////////
-        uint32_t srcId = getCid(tid);
-        deq_dpq(srcId, core, &(core->cRec), core->l1d/*MemObject* dest*/, core->curCycle);
-    }
-    if ((nicInfo->nic_egress_pid == procIdx) && (nicInfo->nic_init_done)) {
-        //nic_egress_routine(tid);
-    }
-    
-    // Simple synchronization mechanism for enforcing producer consumer order for NIC_Ingress and other cores
-    if ((nicInfo->nic_ingress_pid != procIdx) && (nicInfo->nic_init_done)) {
-        if (nicInfo->nic_egress_pid == procIdx) {
-            //don't need to adjust egress core clock here
-        }
-        else {
-            // Sometime this check gets stuck at the end of the phase, adding safety break
-            int safety_counter = 0;
-            while (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch())) {
-            //while (core->curCycle > ((((OOOCore*)(nicInfo->nicCore_ingress))->getCycles()) + 50) ) { 
-                // +50this could be a performance optmiziation, not sure how significant correctness hazard is
-                //info("thisCore curCycle = %lu, nicCore curcycle = %lu", core->curCycle, ((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch());
-                usleep(10); // short delay seems to work sufficient
-                safety_counter++;
-                if (safety_counter > 2) { // >2 seems to work in current env. May need to be adjusted when running on different machine
-                    break;
-                }
-            }
-        }
-    }
-
 
     while (core->curCycle > core->phaseEndCycle) {
-        //info("while loop for phase sync in bbl");
         core->phaseEndCycle += zinfo->phaseLength;
 
-        //RESIDUE of batch injection per phase. 
-        //  Keeping code until we get confidence with per-cycle injection
-        // if (core->curCycle <= core->phaseEndCycle) {
-        //     /* Do the nic remote packet injection routine once a phase */
-        //     /* execute this code only for the NIC process && nic init is done */
-        //     if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) {
-
-        //         /* check if cores finished their processes and exit if so */
-        //         if (nicInfo->registered_core_count == 0) {
-        //             if (nicInfo->nic_ingress_proc_on) {
-        //                 info("ooo_core.cpp - turn off nic proc");
-        //                 nicInfo->nic_ingress_proc_on = false;
-        //                 nicInfo->nic_egress_proc_on = false;
-        //             }
-        //         }
-        //         else{
-        //             //Inject packets for this phase
-        //             nic_ingress_routine(tid);
-                    
-        //         }
-        //     }
-        //     //else if ((nicInfo->nic_egress_pid == procIdx) && (nicInfo->nic_init_done)) {
-        //     //    //call egress routine
-        //     //    nic_egress_routine(tid);
-        //     //}
-        // }
-        
         uint32_t cid = getCid(tid);
         // NOTE: TakeBarrier may take ownership of the core, and so it will be used by some other thread. If TakeBarrier context-switches us,
         // the *only* safe option is to return inmmediately after we detect this, or we can race and corrupt core state. However, the information
@@ -600,11 +515,7 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         // It may happen that we had an intervening context-switch and we are now back to the same core.
         // This is fine, since the loop looks at core values directly and there are no locals involved,
         // so we should just advance as needed and move on.
-        //if (newCid != cid) break;  /*context-switch, we do not own this context anymore*/
-        if (newCid != cid){
-            info("newCid!=cid");
-            break;
-        } 
+        if (newCid != cid) break;  /*context-switch, we do not own this context anymore*/
     }
 }
 
@@ -612,324 +523,3 @@ void OOOCore::BranchFunc(THREADID tid, ADDRINT pc, BOOL taken, ADDRINT takenNpc,
     static_cast<OOOCore*>(cores[tid])->branch(pc, taken, takenNpc, notTakenNpc);
 }
 
-void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
-
-    uint64_t core_id = getCid(tid);
-    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-    void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
-    load_generator* lg_p = (load_generator*)lg_p_vp;
-
-	uint64_t num_cline=0;
-    switch (field) {
-    case 0://WQ
-
-        if (NICELEM.wq_valid == true) {
-            info("duplicate WQ register for core %lu", core_id);
-        }
-
-        *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(nicInfo->nic_elem[core_id].wq);
-        NICELEM.wq->head = 0;
-        NICELEM.wq->SR = 1;
-        NICELEM.nwq_SR = 1;
-        for (int i = 0; i < MAX_NUM_WQ; i++) {
-            NICELEM.wq->q[i].SR = 0;
-        }
-        NICELEM.wq_tail = 0;
-        NICELEM.wq_valid = true;
-        info("core %d registered WQ at addrs %lld", core_id, nicInfo->nic_elem[core_id].wq);
-        break;
-    case 1://CQ
-
-        NICELEM.cq->tail = 0;
-        NICELEM.cq->SR = 1;
-        NICELEM.ncq_SR = 1;
-        for (int i = 0; i < MAX_NUM_WQ; i++) {
-            NICELEM.cq->q[i].SR = 0;
-        }
-
-        NICELEM.cq_valid = true;
-        *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(nicInfo->nic_elem[core_id].cq);
-        nicInfo->registered_core_count = nicInfo->registered_core_count + 1;
-        if (nicInfo->registered_core_count == nicInfo->expected_core_count) {
-            if (nicInfo->nic_ingress_proc_on) {
-                nicInfo->nic_init_done = true;
-            }
-        }
-        info("core %d registered CQ at addrs %lld", core_id, nicInfo->nic_elem[core_id].cq);
-        break;
-    case 2: // lbuf
-        *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_elem[core_id].lbuf[0]));
-        info("core %d registered LBUF at addrs %lld", core_id, nicInfo->nic_elem[core_id].lbuf);
-        break;
-    
-    case 3: //get buf_size for lbuf. Is called before case 2 (but this was coded later)
-        num_cline = (((UINT64)(val)) / (sizeof(z_cacheline))) + 1; //+1 in case remainder..
-        num_cline = num_cline * 4;
-        NICELEM.lbuf = gm_calloc<z_cacheline>(num_cline);
-        break;
-
-    case NOTIFY_WQ_WRITE://NOTIFY WQ WRITE from application
-        info("notify_wq_write")
-        nic_rgp_action(core_id, nicInfo);
-        break;
-    case 0xB: //indicate app is nic_proxy_process (INGRESS)
-        *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_ingress_proc_on));
-        nicInfo->nic_ingress_pid = procIdx;
-        nicInfo->nic_ingress_proc_on = true;
-        info("nic ingress pid:%d, cid:%lu", procIdx, core_id);
-        info("packet injection rate:%lu", nicInfo->packet_injection_rate)
-        if (nicInfo->registered_core_count == nicInfo->expected_core_count) {
-            nicInfo->nic_init_done = true;
-        }
-        nicInfo->nicCore_ingress = (void*) cores[tid];
-
-        
-        break;
-
-    case 0xC: //indicate app is nic_proxy_process (EGRESS)
-        *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(nicInfo->nic_egress_proc_on));
-        nicInfo->nic_egress_pid = procIdx;
-        nicInfo->nic_egress_proc_on = true;
-        info("nic egress  pid:%d, cid:%lu", procIdx, core_id);
-        if (nicInfo->registered_core_count == nicInfo->expected_core_count) {
-            nicInfo->nic_init_done = true;
-        }
-        nicInfo->nicCore_egress = (void*)cores[tid];
-        break;
-
-    case 0xD: //send all client_done boolean to the server app to monitor for termination condition
-        *static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(lg_p->all_packets_sent));
-        break;
-
-    case 0xdead: //invalidate entries after test app terminates
-        nicInfo->registered_core_count = nicInfo->registered_core_count - 1;
-
-        //nicInfo->nic_elem[core_id].cq_valid = false;
-
-        //setting cq_valid = false causes occasional crashes
-        //may want to look into debugging it
-        nicInfo->nic_elem[core_id].wq_tail = 0;
-        nicInfo->nic_elem[core_id].cq_head = 0;
-        nicInfo->nic_elem[core_id].wq_valid = false;
-        nicInfo->nic_elem[core_id].cq_valid = false;
-        NICELEM.wq->head = 0;
-        NICELEM.cq->tail = 0;
-        //TODO - iterate for rb_dir len
-        //for (int i = 0; i < 100; i++) {
-        for (int i = 0; i < RECV_BUF_POOL_SIZE; i++) {
-            NICELEM.rb_dir[i].in_use = false;
-            NICELEM.rb_dir[i].is_head = false;
-            NICELEM.rb_dir[i].len = 0;
-        }
-
-        info("proc %d deregistered with NIC", procIdx);
-        std::cout << "cycle: " << zinfo->globPhaseCycles << std::endl;
-        break;
-    default:
-        break;
-    }
-    return;
-}
-
-int aggr = 0;
-
-
-uint32_t assign_core(uint32_t in_core_iterator=0) {
-    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-    uint64_t min_ceq_size = ~0;//RECV_BUF_POOL_SIZE; // assign some very large number
-    uint32_t ret_core_id = in_core_iterator;
-    uint32_t core_iterator = in_core_iterator;
-
-    uint32_t numCores = zinfo->numCores; //(nicInfo->expected_core_count + 2);
-    
-    //increment it once at beginning for round-robin fairness
-    core_iterator++;
-    if (core_iterator >= numCores) {
-        core_iterator = 0;
-    }
-
-    for (uint32_t i = 0; i < numCores; i++) {
-        if (nicInfo->nic_elem[core_iterator].cq_valid == true) {
-            if (nicInfo->nic_elem[core_iterator].ceq_size < min_ceq_size) {
-                ret_core_id = core_iterator;
-                min_ceq_size = nicInfo->nic_elem[core_iterator].ceq_size;
-                if (min_ceq_size == 0) {
-                    //info("ret_core_id: %d", ret_core_id);
-                    return ret_core_id;
-                }
-            }
-
-        }
-
-        core_iterator++;
-        if (core_iterator >= numCores) {
-            core_iterator = 0;
-        }
-
-    }
-    //info("ret_core_id: %d, min_ceq_size: %lu", ret_core_id, min_ceq_size);
-    return ret_core_id;
-
-}
-
-
-int OOOCore::nic_ingress_routine(THREADID tid) {
-
-    OOOCore* core = static_cast<OOOCore*>(cores[tid]);
-
-    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-    void* lg_p = static_cast<void*>(gm_get_lg_ptr());
-    uint64_t packet_rate = nicInfo->packet_injection_rate;
-
-    if (((load_generator*)lg_p)->next_cycle == 0) {
-        ((load_generator*)lg_p)->next_cycle = core->curCycle;
-        nicInfo->sim_start_time = std::chrono::system_clock::now();
-        info("starting sim time count");
-
-    }
-    uint32_t core_iterator = 0;
-
-    uint32_t inject_fail_counter = 0;
-
-    for (uint64_t i = 0; i < packet_rate; i++) {
-
-        /* assign core_id in round robin */
-        core_iterator++;
-        if (core_iterator >= zinfo->numCores) {
-            core_iterator = 0;
-        }
-
-        core_iterator = assign_core(((load_generator*)lg_p)->last_core);
-        ((load_generator*)lg_p)->last_core = core_iterator;
-        /* Inject packet (call core function) */
-        uint32_t srcId = getCid(tid);
-        uint64_t injection_cycle = core->curCycle;
-        int inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), l1d_caches[core_iterator]);
-
-        if (inj_attempt == -1) {
-            //core out of recv buffer. stop injecting for this phase
-            inject_fail_counter++;
-            if (inject_fail_counter >= (nicInfo->registered_core_count - 1)) {
-                break;
-            }
-        }
-
-    }
-
-    return 0;
-}
-
-//int OOOCore::nic_ingress_routine_per_cycle(THREADID tid) {
- int OOOCore::nic_ingress_routine_per_cycle(uint32_t srcId) {
-     //OOOCore* core = static_cast<OOOCore*>(cores[tid]);
-     glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-     void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
-     load_generator* lg_p = (load_generator*) lg_p_vp;
-     OOOCore* core = static_cast<OOOCore*>(nicInfo->nicCore_ingress);
-
-     if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) { //only run for nic_core
-         if (nicInfo->registered_core_count == 0) { // we're done, don't do anything
-             if (nicInfo->nic_ingress_proc_on) {
-                 info("ooo_core.cpp - turn off nic proc");
-                 nicInfo->nic_ingress_proc_on = false;
-                 nicInfo->nic_egress_proc_on = false;
-             }
-         }
-         else{
-             //Inject packets if next packet is due according to loadgen->next_cycle
-             if (lg_p->next_cycle == 0) {
-                 lg_p->next_cycle = core->curCycle;
-                 nicInfo->sim_start_time = std::chrono::system_clock::now();
-                 info("starting sim time count");
-             }
-
-             uint64_t injection_cycle = core->curCycle;
-             if(lg_p->next_cycle <= injection_cycle){
-                 //uint32_t core_iterator = assign_core(core_iterator);
-                 uint32_t core_iterator = assign_core(((load_generator*)lg_p)->last_core);
-                 //info("core_iterator returned %d", core_iterator);
-                 ((load_generator*)lg_p)->last_core = core_iterator;
-                 //uint32_t srcId = getCid(tid);
-                 int inj_attempt = inject_incoming_packet(injection_cycle, nicInfo, lg_p, core_iterator, srcId, core, &(core->cRec), l1d_caches[core_iterator]);
-                 return inj_attempt;
-             }
-         }    
-     }
-
-     return 0;
- }
-
-
-void cycle_increment_routine(uint64_t& curCycle, int core_id) {
-/*
-* cycle_increment_routine
-*       checks CEQ and RCP-EQ every cycle
-*       Process entries that are due (by creating CQ_entries)
-*/
-    
-    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-
-    /* if statement is for preventing crash at the end of simulation */
-    if (core_id > ((zinfo->numCores) - 1)) {
-        return;  
-    }
-
-    
-    if(procIdx==nicInfo->nic_ingress_pid){
-        //std::cout<<"procIdx available in cycle_increment routine"<<std::endl;
-        ((OOOCore *)(nicInfo->nicCore_ingress))->nic_ingress_routine_per_cycle(core_id);
-    }
-
-    if (!(nicInfo->nic_elem[core_id].cq_valid)) {
-        return;
-    }
-    
-
-    //nic_ingress_routine_per_cycle(core_id);
-
-    core_ceq_routine(curCycle, nicInfo, core_id);
-
-    RCP_routine(curCycle, nicInfo, core_id);
-    
-    return;
-
-
-}
-
-
-//we didn't go with a separate egress nic core, so unused for
-int OOOCore::nic_egress_routine(THREADID tid) {
-    OOOCore* core = static_cast<OOOCore*>(cores[tid]);
-    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-    uint32_t empty_wq_count = 0;
-    uint32_t core_iterator = 0;
-
-    while (empty_wq_count < (nicInfo->registered_core_count)) {
-        if (core->curCycle < ((OOOCore*)(zinfo->cores[core_iterator]))->getCycles_forSynch()) {
-            empty_wq_count++;
-        }
-        else if (nicInfo->nic_elem[core_iterator].wq_valid) {
-            while (check_wq(core_iterator, nicInfo)) {
-                wq_entry_t cur_wq_entry = deq_wq_entry(core_iterator, nicInfo);
-                process_wq_entry(cur_wq_entry, core_iterator, nicInfo);
-                //ISSUE - dequeuing from WQ can have race condition with core. can't use mutex since APP is enqueueing wq?
-                        //maybe not, since server and NIC don't WRITE to same structure
-            }
-            //else {
-             //   empty_wq_count++;
-            //}
-            empty_wq_count++;
-        }
-        else {
-            empty_wq_count++;
-        }
-
-        core_iterator++;
-        if (core_iterator >= zinfo->numCores) {
-            core_iterator = 0;
-        }
-    }
-
-    return 0;
- 
-}

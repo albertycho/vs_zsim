@@ -26,7 +26,6 @@
 #include "simple_core.h"
 #include "filter_cache.h"
 #include "zsim.h"
-#include <iostream>
 
 SimpleCore::SimpleCore(FilterCache* _l1i, FilterCache* _l1d, g_string& _name) : Core(_name), l1i(_l1i), l1d(_l1d), instrs(0), curCycle(0), haltedCycles(0) {
 }
@@ -90,8 +89,7 @@ void SimpleCore::join() {
 //Static class functions: Function pointers and trampolines
 
 InstrFuncPtrs SimpleCore::GetFuncPtrs() {
-    //return {LoadFunc, StoreFunc, BblFunc, BranchFunc, PredLoadFunc, PredStoreFunc, FPTR_ANALYSIS, {0}};
-    return { LoadFunc, StoreFunc, BblFunc, BranchFunc, PredLoadFunc, PredStoreFunc, NicMagicFunc_dummy, FPTR_ANALYSIS};
+    return {LoadFunc, StoreFunc, BblFunc, BranchFunc, PredLoadFunc, PredStoreFunc, FPTR_ANALYSIS, {0}};
 }
 
 void SimpleCore::LoadFunc(THREADID tid, ADDRINT addr) {
@@ -102,11 +100,8 @@ void SimpleCore::StoreFunc(THREADID tid, ADDRINT addr) {
     static_cast<SimpleCore*>(cores[tid])->store(addr);
 }
 
-
 void SimpleCore::PredLoadFunc(THREADID tid, ADDRINT addr, BOOL pred) {
-    if (pred){
-		static_cast<SimpleCore*>(cores[tid])->load(addr);
-	}
+    if (pred) static_cast<SimpleCore*>(cores[tid])->load(addr);
 }
 
 void SimpleCore::PredStoreFunc(THREADID tid, ADDRINT addr, BOOL pred) {
@@ -129,5 +124,4 @@ void SimpleCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
         if (newCid != cid) break; /*context-switch*/
     }
 }
-
 

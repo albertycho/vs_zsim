@@ -93,7 +93,6 @@ void getLibzsimAddrs(LibInfo* libzsimAddrs) {
 
 
 void notifyHarnessForDebugger(int harnessPid) {
-    info("child sending SIGSUR1");
     kill(harnessPid, SIGUSR1);
-    sleep(50); //this is a bit of a hack, but ensures the debugger catches us
+    sleep(1); //this is a bit of a hack, but ensures the debugger catches us
 }

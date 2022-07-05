@@ -26,7 +26,6 @@
 #include "core_recorder.h"
 #include "timing_event.h"
 #include "zsim.h"
-#include <iostream>
 
 #define DEBUG_MSG(args...)
 //#define DEBUG_MSG(args...) info(args)

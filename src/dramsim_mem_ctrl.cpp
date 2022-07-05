@@ -93,9 +93,6 @@ void DRAMSimMemory::initStats(AggregateStat* parentStat) {
 }
 
 uint64_t DRAMSimMemory::access(MemReq& req) {
-
-    bool no_record = ((req.flags) & (MemReq::NORECORD)) != 0;
-
     switch (req.type) {
         case PUTS:
         case PUTX:
@@ -113,10 +110,6 @@ uint64_t DRAMSimMemory::access(MemReq& req) {
 
     uint64_t respCycle = req.cycle + minLatency;
     assert(respCycle > req.cycle);
-
-    if (no_record) {
-        return respCycle;
-    }
 
     if ((req.type != PUTS /*discard clean writebacks*/) && zinfo->eventRecorders[req.srcId]) {
         Address addr = req.lineAddr << lineBits;

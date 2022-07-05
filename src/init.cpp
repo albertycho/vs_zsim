@@ -82,7 +82,7 @@ extern void EndOfPhaseActions(); //in zsim.cpp
  * follow the layout of zinfo, top-down.
  */
 
-BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, uint32_t bankSize, bool isTerminal, uint32_t domain, int level) {
+BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, uint32_t bankSize, bool isTerminal, uint32_t domain) {
     string type = config.get<const char*>(prefix + "type", "Simple");
     // Shortcut for TraceDriven type
     if (type == "TraceDriven") {
@@ -270,12 +270,12 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
     rp->setCC(cc);
     if (!isTerminal) {
         if (type == "Simple") {
-            cache = new Cache(numLines, cc, array, rp, accLat, invLat, name, level);
+            cache = new Cache(numLines, cc, array, rp, accLat, invLat, name);
         } else if (type == "Timing") {
             uint32_t mshrs = config.get<uint32_t>(prefix + "mshrs", 16);
             uint32_t tagLat = config.get<uint32_t>(prefix + "tagLat", 5);
             uint32_t timingCandidates = config.get<uint32_t>(prefix + "timingCandidates", candidates);
-            cache = new TimingCache(numLines, cc, array, rp, accLat, invLat, mshrs, tagLat, ways, timingCandidates, domain, name, level);
+            cache = new TimingCache(numLines, cc, array, rp, accLat, invLat, mshrs, tagLat, ways, timingCandidates, domain, name);
         } else if (type == "Tracing") {
             g_string traceFile = config.get<const char*>(prefix + "traceFile","");
             if (traceFile.empty()) traceFile = g_string(zinfo->outputDir) + "/" + name + ".trace";
@@ -287,7 +287,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
         //Filter cache optimization
         if (type != "Simple") panic("Terminal cache %s can only have type == Simple", name.c_str());
         if (arrayType != "SetAssoc" || hashType != "None" || replType != "LRU") panic("Invalid FilterCache config %s", name.c_str());
-        cache = new FilterCache(numSets, numLines, cc, array, rp, accLat, invLat, name, level);
+        cache = new FilterCache(numSets, numLines, cc, array, rp, accLat, invLat, name);
     }
 
 #if 0
@@ -371,7 +371,7 @@ MemObject* BuildMemoryController(Config& config, uint32_t lineSize, uint32_t fre
 
 typedef vector<vector<BaseCache*>> CacheGroup;
 
-CacheGroup* BuildCacheGroup(Config& config, const string& name, bool isTerminal, int level) {
+CacheGroup* BuildCacheGroup(Config& config, const string& name, bool isTerminal) {
     CacheGroup* cgp = new CacheGroup;
     CacheGroup& cg = *cgp;
 
@@ -412,7 +412,7 @@ CacheGroup* BuildCacheGroup(Config& config, const string& name, bool isTerminal,
             }
             g_string bankName(ss.str().c_str());
             uint32_t domain = (i*banks + j)*zinfo->numDomains/(caches*banks); //(banks > 1)? nextDomain() : (i*banks + j)*zinfo->numDomains/(caches*banks);
-            cg[i][j] = BuildCacheBank(config, prefix, bankName, bankSize, isTerminal, domain, level);
+            cg[i][j] = BuildCacheBank(config, prefix, bankName, bankSize, isTerminal, domain);
         }
     }
 
@@ -478,29 +478,12 @@ static void InitSystem(Config& config) {
     unordered_map<string, CacheGroup*> cMap;
     list<string> fringe;  // FIFO
     fringe.push_back(llc);
-    list<int> lvls;
-    lvls.push_back(1);
-    int level;
-    
-    /*
-    auto fringe_front = fringe.begin();
-    std::cout << "fringe size:"<< fringe.size() << std::endl;
-    for (uint32_t i = 0; i < fringe.size(); i++) {
-        std::cout << *fringe_front << std::endl;
-        std::advance(fringe_front, 1);
-    }
-    */
     while (!fringe.empty()) {
         string group = fringe.front();
         fringe.pop_front();
-        level = lvls.front();
-        lvls.pop_front();
         if (cMap.count(group)) panic("The cache 'tree' has a loop at %s", group.c_str());
-        cMap[group] = BuildCacheGroup(config, group, isTerminal(group), level);
-        for (auto& childVec : childMap[group]) {
-            fringe.insert(fringe.end(), childVec.begin(), childVec.end());
-            lvls.insert(lvls.end(), childVec.size(), level+1);
-        }
+        cMap[group] = BuildCacheGroup(config, group, isTerminal(group));
+        for (auto& childVec : childMap[group]) fringe.insert(fringe.end(), childVec.begin(), childVec.end());
     }
 
     //Check single LLC
@@ -627,8 +610,6 @@ static void InitSystem(Config& config) {
     unordered_map<string, uint32_t> assignedCaches;
     for (const char* grp : cacheGroupNames) if (isTerminal(grp)) assignedCaches[grp] = 0;
 
-    int app_cores;
-
     if (!zinfo->traceDriven) {
         //Instantiate the cores
         vector<const char*> coreGroupNames;
@@ -682,10 +663,6 @@ static void InitSystem(Config& config) {
                     CacheGroup& igroup = *cMap[icache];
                     CacheGroup& dgroup = *cMap[dcache];
 
-                    if (config.get<uint32_t>(prefix + "app_core", 0) == 1) {
-                            l1d_caches[j+2] = dynamic_cast<FilterCache*>(dgroup[j][0]);
-                    }
-
                     if (assignedCaches[icache] >= igroup.size()) {
                         panic("%s: icache group %s (%ld caches) is fully used, can't connect more cores to it", name.c_str(), icache.c_str(), igroup.size());
                     }
@@ -714,8 +691,7 @@ static void InitSystem(Config& config) {
                         core = tcore;
                     } else {
                         assert(type == "OOO");
-                        uint32_t domain = j * zinfo->numDomains / cores;
-                        OOOCore* ocore = new (&oooCores[j]) OOOCore(ic, dc, domain, name, coreIdx);
+                        OOOCore* ocore = new (&oooCores[j]) OOOCore(ic, dc, name);
                         zinfo->eventRecorders[coreIdx] = ocore->getEventRecorder();
                         zinfo->eventRecorders[coreIdx]->setSourceId(coreIdx);
                         core = ocore;
@@ -798,41 +774,6 @@ static void InitSystem(Config& config) {
     //Odds and ends: BuildCacheGroup new'd the cache groups, we need to delete them
     for (pair<string, CacheGroup*> kv : cMap) delete kv.second;
     cMap.clear();
-
-    uint32_t packet_injection_rate = config.get<uint32_t>("sim.packet_injection_rate", RECV_BUF_POOL_SIZE);
-    nicInfo->packet_injection_rate = (uint64_t) packet_injection_rate;
-    bool record_nic_access = config.get<bool>("sim.record_nic_access", true);
-    nicInfo->record_nic_access = record_nic_access;
-
-    //uint32_t num_cores_serving_nw = config.get<uint32_t>("sim.num_cores_serving_nw", (zinfo->numCores - 1));
-    uint32_t num_cores_serving_nw = config.get<uint32_t>("sim.num_cores_serving_nw", (zinfo->numCores - 2));
-    nicInfo->expected_core_count = num_cores_serving_nw;
-    nicInfo->registered_core_count = 0;
-    nicInfo->nic_init_done = false;
-
-    uint32_t hist_interval = config.get<uint32_t>("sim.hist_interval", 5000);
-    nicInfo->hist_interval = hist_interval;
-
-    uint32_t ceq_delay = config.get<uint32_t>("sim.ceq_delay", 0);
-    nicInfo->ceq_delay= ceq_delay;
-
-    uint32_t nw_roundtrip_delay = config.get<uint32_t>("sim.nw_roundtrip_delay", 100);
-    nicInfo->nw_roundtrip_delay = nw_roundtrip_delay;
-
-
-    load_generator* lgp;
-    lgp=(load_generator*)gm_get_lg_ptr();
-
-    uint32_t num_keys = config.get<uint32_t>("sim.num_keys", 100);
-    lgp->RPCGen->set_num_keys(num_keys);
-    
-    uint32_t update_fraction = config.get<uint32_t>("sim.update_fraction", 10);
-    lgp->RPCGen->set_update_fraction(update_fraction);
-    lgp->interval = (zinfo->phaseLength) / (nicInfo->packet_injection_rate);
-    uint32_t target_pacekt_count = config.get<uint32_t>("sim.packet_count", 10000);
-    lgp->target_packet_count = (uint64_t) target_pacekt_count;
-    lgp->last_core = 0;
-    
 
     info("Initialized system");
 }
@@ -921,40 +862,6 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     zinfo = gm_calloc<GlobSimInfo>();
     zinfo->outputDir = gm_strdup(outputDir);
     zinfo->statsBackends = new g_vector<StatsBackend*>();
-
-    void* lgp;
-    lgp = gm_calloc<load_generator>();
-    //((load_generator*)lgp)->next_cycle = 100000;
-    ((load_generator*)lgp)->next_cycle = 0;
-    ((load_generator*)lgp)->ptag= 0;
-    ((load_generator*)lgp)->RPCGen = new RPCGenerator(100, 10);
-    ((load_generator*)lgp)->ptc_head = NULL;
-    //((load_generator*)lgp)->tc_map = new std::map<uint64_t, uint64_t>();
-    auto tmp_tcmap = std::shared_ptr<map<uint64_t, uint64_t>>(new ::map<uint64_t, uint64_t>());
-    ((load_generator*)lgp)->tc_map = tmp_tcmap;
-    futex_init(&(((load_generator*)lgp)->ptc_lock));
-    gm_set_lg_ptr(lgp);
-
-    //init nic_elements ptr
-    //glob_nic_elements* nicInfo= gm_calloc<glob_nic_elements>();
-    nicInfo = gm_calloc<glob_nic_elements>();
-    futex_init(&(nicInfo->dpq_lock));
-    nicInfo->done_packet_q_head = NULL;
-    nicInfo->done_packet_q_tail = NULL;
-    //nicInfo->RPCGen = new RPCGenerator(100, 10);
-    for (uint64_t i = 0; i < MAX_THREADS; i++) {
-        nicInfo->nic_elem[i].wq = gm_calloc<rmc_wq_t>();
-        nicInfo->nic_elem[i].cq = gm_calloc<rmc_cq_t>();
-        futex_init(&nicInfo->nic_elem[i].rb_lock);
-        futex_init(&nicInfo->nic_elem[i].ceq_lock);
-        futex_init(&nicInfo->nic_elem[i].rcp_lock);
-    }
-    nicInfo->latencies = gm_calloc<uint64_t>(LAT_ARR_SIZE);
-    //nicInfo->latencies_list = gm_calloc<uint64_t>(LAT_ARR_SIZE);
-    nicInfo->latencies_capa = LAT_ARR_SIZE;
-    //nicInfo->latencies_list_capa = LAT_ARR_SIZE;
-
-    l1d_caches = gm_calloc<FilterCache*>(256);
 
     Config config(configFile);
 
@@ -1112,14 +1019,9 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 
     zinfo->contentionSim->postInit();
 
+    info("Initialization complete");
 
-
-    gm_set_nic_ptr(nicInfo);
-  
-
-	info("Initialization complete");
-    
-	//Causes every other process to wake up
+    //Causes every other process to wake up
     gm_set_glob_ptr(zinfo);
 }
 

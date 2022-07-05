@@ -53,12 +53,7 @@ void MESIBottomCC::init(const g_vector<MemObject*>& _parents, Network* network, 
 }
 
 
-uint64_t MESIBottomCC::processEviction(Address wbLineAddr, uint32_t lineId, bool lowerLevelWriteback, uint64_t cycle, uint32_t srcId, bool no_record) {
-
-    uint32_t norecord_flag = 0;
-    if (no_record) {
-        norecord_flag = MemReq::NORECORD;
-    }
+uint64_t MESIBottomCC::processEviction(Address wbLineAddr, uint32_t lineId, bool lowerLevelWriteback, uint64_t cycle, uint32_t srcId) {
     MESIState* state = &array[lineId];
     if (lowerLevelWriteback) {
         //If this happens, when tcc issued the invalidations, it got a writeback. This means we have to do a PUTX, i.e. we have to transition to M if we are in E
@@ -72,13 +67,13 @@ uint64_t MESIBottomCC::processEviction(Address wbLineAddr, uint32_t lineId, bool
         case S:
         case E:
             {
-                MemReq req = {wbLineAddr, PUTS, selfId, state, cycle, &ccLock, *state, srcId,  norecord_flag /*0 no flags*/};
+                MemReq req = {wbLineAddr, PUTS, selfId, state, cycle, &ccLock, *state, srcId, 0 /*no flags*/};
                 respCycle = parents[getParentId(wbLineAddr)]->access(req);
             }
             break;
         case M:
             {
-                MemReq req = {wbLineAddr, PUTX, selfId, state, cycle, &ccLock, *state, srcId, norecord_flag /*0 no flags*/};
+                MemReq req = {wbLineAddr, PUTX, selfId, state, cycle, &ccLock, *state, srcId, 0 /*no flags*/};
                 respCycle = parents[getParentId(wbLineAddr)]->access(req);
             }
             break;
@@ -89,21 +84,9 @@ uint64_t MESIBottomCC::processEviction(Address wbLineAddr, uint32_t lineId, bool
     return respCycle;
 }
 
-uint64_t MESIBottomCC::passToNext( Address lineAddr, AccessType type, uint32_t childId, uint32_t srcId, uint32_t flags, uint64_t cycle) {
-    MESIState dummyState = MESIState::I;
-    uint32_t parentId = getParentId(lineAddr);
-    MemReq req = {lineAddr, type, childId, &dummyState, cycle, &ccLock, dummyState, srcId, flags};
-    return parents[parentId]->access(req);
-}
-
-uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessType type, uint64_t cycle, uint32_t srcId, uint32_t flags) {
+uint64_t MESIBottomCC::processAccess(Address lineAddr, uint32_t lineId, AccessType type, uint64_t cycle, uint32_t srcId, uint32_t flags) {
     uint64_t respCycle = cycle;
-    MESIState* state;
-    if (lineId != -1)
-        state = &array[lineId];
-    else
-        state = nullptr;
-
+    MESIState* state = &array[lineId];
     switch (type) {
         // A PUTS/PUTX does nothing w.r.t. higher coherence levels --- it dies here
         case PUTS: //Clean writeback, nothing to do (except profiling)
@@ -128,7 +111,7 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
                 profGETNetLat.inc(netLat);
                 respCycle += nextLevelLat + netLat;
                 profGETSMiss.inc();
-                assert(*state == S || *state == E || (!(*state) && (req.flags & MemReq::PKTOUT)));
+                assert(*state == S || *state == E);
             } else {
                 profGETSHit.inc();
             }
@@ -231,12 +214,11 @@ uint64_t MESITopCC::sendInvalidates(Address lineAddr, uint32_t lineId, InvType t
     //Send down downgrades/invalidates
     Entry* e = &array[lineId];
 
-    //TODO acho: determine if this is okay with direct access
     //Don't propagate downgrades if sharers are not exclusive.
     if (type == INVX && !e->isExclusive()) {
         return cycle;
     }
-    
+
     uint64_t maxCycle = cycle; //keep maximum cycle only, we assume all invals are sent in parallel
     if (!e->isEmpty()) {
         uint32_t numChildren = children.size();
@@ -276,14 +258,9 @@ uint64_t MESITopCC::processEviction(Address wbLineAddr, uint32_t lineId, bool* r
     }
 }
 
-uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType type, uint32_t childId, bool haveExclusive,
+uint64_t MESITopCC::processAccess(Address lineAddr, uint32_t lineId, AccessType type, uint32_t childId, bool haveExclusive,
                                   MESIState* childState, bool* inducedWriteback, uint64_t cycle, uint32_t srcId, uint32_t flags) {
-    Entry* e; 
-    if (lineId != -1)
-        e = &array[lineId];
-    else
-        e = nullptr;
-
+    Entry* e = &array[lineId];
     uint64_t respCycle = cycle;
     switch (type) {
         case PUTX:
@@ -302,87 +279,50 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
             *childState = I;
             break;
         case GETS:
-            // should a GETS from the NIC modify any cache state? I think not (unless it finds an invalid line, which we deal with in bcc)
-            if(!(flags & MemReq::PKTOUT)) {
-                if (e->isEmpty() && haveExclusive && !(flags & MemReq::NOEXCL)) {
-                    //Give in E state
-                    e->exclusive = true;
-                    e->sharers[childId] = true;
-                    e->numSharers = 1;
-                    *childState = E;
-                } else {
-                    //Give in S state
-                    assert(e->sharers[childId] == false);
+            if (e->isEmpty() && haveExclusive && !(flags & MemReq::NOEXCL)) {
+                //Give in E state
+                e->exclusive = true;
+                e->sharers[childId] = true;
+                e->numSharers = 1;
+                *childState = E;
+            } else {
+                //Give in S state
+                assert(e->sharers[childId] == false);
 
-                    if (e->isExclusive()) {
-                        //Downgrade the exclusive sharer
-                        respCycle = sendInvalidates(lineAddr, lineId, INVX, inducedWriteback, cycle, srcId);
-                    }
-
-                    assert_msg(!e->isExclusive(), "Can't have exclusivity here. isExcl=%d excl=%d numSharers=%d", e->isExclusive(), e->exclusive, e->numSharers);
-
-                    e->sharers[childId] = true;
-                    e->numSharers++;
-                    e->exclusive = false; //dsm: Must set, we're explicitly non-exclusive
-                    *childState = S;
+                if (e->isExclusive()) {
+                    //Downgrade the exclusive sharer
+                    respCycle = sendInvalidates(lineAddr, lineId, INVX, inducedWriteback, cycle, srcId);
                 }
+
+                assert_msg(!e->isExclusive(), "Can't have exclusivity here. isExcl=%d excl=%d numSharers=%d", e->isExclusive(), e->exclusive, e->numSharers);
+
+                e->sharers[childId] = true;
+                e->numSharers++;
+                e->exclusive = false; //dsm: Must set, we're explicitly non-exclusive
+                *childState = S;
             }
             break;
         case GETX:
             assert(haveExclusive); //the current cache better have exclusive access to this line
 
-            // if we write directly to the l2/llc, we want all children to be invalidated
-            if (!((flags & MemReq::PKTIN) && childId > MAX_CACHE_CHILDREN)) {
-                // If child is in sharers list (this is an upgrade miss), take it out
-                if (e->sharers[childId]) {
-                    assert_msg(!e->isExclusive(), "Spurious GETX, childId=%d numSharers=%d isExcl=%d excl=%d", childId, e->numSharers, e->isExclusive(), e->exclusive);
-                    e->sharers[childId] = false;
-                    e->numSharers--;
-                    assert(e->numSharers>=0);
-                }
+            // If child is in sharers list (this is an upgrade miss), take it out
+            if (e->sharers[childId]) {
+                assert_msg(!e->isExclusive(), "Spurious GETX, childId=%d numSharers=%d isExcl=%d excl=%d", childId, e->numSharers, e->isExclusive(), e->exclusive);
+                e->sharers[childId] = false;
+                e->numSharers--;
             }
-/*
-            if (childId == 0xDA0000) {//direct access
-                //info("directAccess");
-                // Invalidate all other copies
-                respCycle = sendInvalidates(lineAddr, lineId, INV, inducedWriteback, cycle, srcId);
-                assert(e->numSharers == 0);
-                e->exclusive = true;
-            }
-            else {
-                // If child is in sharers list (this is an upgrade miss), take it out
-                if (e->sharers[childId]) {
-                    assert_msg(!e->isExclusive(), "Spurious GETX, childId=%d numSharers=%d isExcl=%d excl=%d", childId, e->numSharers, e->isExclusive(), e->exclusive);
-                    e->sharers[childId] = false;
-                    e->numSharers--;
-                }
-*/
 
-                // Invalidate all other copies
+            // Invalidate all other copies
             respCycle = sendInvalidates(lineAddr, lineId, INV, inducedWriteback, cycle, srcId);
-            
+
+            // Set current sharer, mark exclusive
+            e->sharers[childId] = true;
+            e->numSharers++;
             e->exclusive = true;
 
-            if (!((flags & MemReq::PKTIN) && childId > MAX_CACHE_CHILDREN)) {
-                // Set current sharer, mark exclusive
-                e->sharers[childId] = true;
-                e->numSharers++;
+            assert(e->numSharers == 1);
 
-                assert(e->numSharers == 1);
-
-                *childState = M; //give in M directly
-            
-/*
-                // Set current sharer, mark exclusive
-                e->sharers[childId] = true;
-                e->numSharers++;
-                e->exclusive = true;
-
-                assert(e->numSharers == 1);
-
-                *childState = M; //give in M directly
-*/
-            }
+            *childState = M; //give in M directly
             break;
 
         default: panic("!?");

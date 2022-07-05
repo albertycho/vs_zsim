@@ -97,18 +97,11 @@ struct MemReq {
         NONINCLWB     = (1<<3), //This is a non-inclusive writeback. Do not assume that the line was in the lower level. Used on NUCA (BankDir).
         PUTX_KEEPEXCL = (1<<4), //Non-relinquishing PUTX. On a PUTX, maintain the requestor's E state instead of removing the sharer (i.e., this is a pure writeback)
         PREFETCH      = (1<<5), //Prefetch GETS access. Only set at level where prefetch is issued; handled early in MESICC
-        NORECORD      = (1<<6),
-        DDIO          = (1<<7), //Request originating from the NIC
-        LLC           = (1<<8), //Request at the LLC level (set in the access method of the Timing Cache)
-        PKTIN         = (1<<9),
-        PKTOUT        = (1<<10),
-        
     };
     uint32_t flags;
 
     inline void set(Flag f) {flags |= f;}
     inline bool is (Flag f) const {return flags & f;}
-    inline void clear(Flag f) {flags ^= f;}
 };
 
 /* Invalidation/downgrade request */

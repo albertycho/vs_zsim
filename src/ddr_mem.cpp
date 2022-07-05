@@ -241,9 +241,6 @@ void DDRMemory::initStats(AggregateStat* parentStat) {
 /* Bound phase interface */
 
 uint64_t DDRMemory::access(MemReq& req) {
-    
-    bool no_record = ((req.flags) & (MemReq::NORECORD)) != 0;
-
     switch (req.type) {
         case PUTS:
         case PUTX:
@@ -264,9 +261,6 @@ uint64_t DDRMemory::access(MemReq& req) {
     } else {
         bool isWrite = (req.type == PUTX);
         uint64_t respCycle = req.cycle + (isWrite? minWrLatency : minRdLatency);
-        if (no_record) {
-            return respCycle;
-        }
         if (zinfo->eventRecorders[req.srcId]) {
             DDRMemoryAccEvent* memEv = new (zinfo->eventRecorders[req.srcId]) DDRMemoryAccEvent(this,
                     isWrite, req.lineAddr, domain, preDelay, isWrite? postDelayWr : postDelayRd);
@@ -671,7 +665,23 @@ void DDRMemory::initTech(const char* techName) {
     // tBL's below are for 64-byte lines; we adjust as needed
 
     // Please keep this orderly; go from faster to slower technologies
-    if (tech == "DDR3-1333-CL10") {
+	if(tech == "DDR4-3200"){
+        tCK = 0.625; // ns; all other in mem cycles
+        tBL = 4;//8;
+        tCL = 22; 
+        tRCD = 22;
+        tRTP = 12;//4;
+        tRP = 22;//17;
+        tRRD = 4;
+        tRAS = 52;
+        tFAW = 16;
+        tWTR = 4;
+        tWR = 24;
+        tRFC = 256;
+        tREFI = 12480; //3.9us according to spec. divided by ns
+    }
+
+	else if (tech == "DDR3-1333-CL10") {
         // from DRAMSim2/ini/DDR3_micron_16M_8B_x4_sg15.ini (Micron)
         tCK = 1.5;  // ns; all other in mem cycles
         tBL = 4;

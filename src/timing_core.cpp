@@ -27,10 +27,6 @@
 #include "filter_cache.h"
 #include "zsim.h"
 
-//#include "core_nic_api.h"
-
-#include <thread>
-
 #define DEBUG_MSG(args...)
 //#define DEBUG_MSG(args...) info(args)
 
@@ -96,32 +92,7 @@ void TimingCore::storeAndRecord(Address addr) {
 void TimingCore::bblAndRecord(Address bblAddr, BblInfo* bblInfo) {
     instrs += bblInfo->instrs;
     curCycle += bblInfo->instrs;
-    //acho - Dead code - I don't think we'll ever use timingCore instead of OOO core for INDIE
-    /*
-    glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-    void* lg_p = static_cast<void*>(gm_get_lg_ptr());
-    
-    
-    info("curCycle:%ld", curCycle);
-    info("instrs:%ld", bblInfo->instrs);
-    if (nicInfo->nic_elem[0].cq->q[0].success == 3) {
-        info("APP's while loop started");
-        nicInfo->nic_elem[0].cq->q[0].recv_buf_addr = curCycle + 5000;
-        nicInfo->nic_elem[0].cq->q[0].success = 2;
-    }
-    if ((nicInfo->nic_elem[0].cq->q[0].success == 2) && (curCycle >= nicInfo->nic_elem[0].cq->q[0].recv_buf_addr) && (nicInfo->nic_elem[0].cq->q[0].valid == false)) {
-        info("flipping cq valid");
-        nicInfo->nic_elem[0].cq->q[0].valid = true;
-    }
-    if (nicInfo->nic_elem[0].cq->q[0].tid == 3) {
-        info("APP exited while loop");
-        nicInfo->nic_elem[0].cq->q[0].tid = 4;
-    }
 
-    core_ceq_routine(curCycle, nicInfo, 0);
-    RRPP_routine(curCycle, nicInfo, lg_p, 0);
-    RCP_routine(curCycle, nicInfo, 0);
-    */
     Address endBblAddr = bblAddr + bblInfo->bytes;
     for (Address fetchAddr = bblAddr; fetchAddr < endBblAddr; fetchAddr+=(1 << lineBits)) {
         uint64_t startCycle = curCycle;
@@ -132,8 +103,7 @@ void TimingCore::bblAndRecord(Address bblAddr, BblInfo* bblInfo) {
 
 
 InstrFuncPtrs TimingCore::GetFuncPtrs() {
-    //return {LoadAndRecordFunc, StoreAndRecordFunc, BblAndRecordFunc, BranchFunc, PredLoadAndRecordFunc, PredStoreAndRecordFunc, FPTR_ANALYSIS, {0}};
-    return { LoadAndRecordFunc, StoreAndRecordFunc, BblAndRecordFunc, BranchFunc, PredLoadAndRecordFunc, PredStoreAndRecordFunc, NicMagicFunc_dummy, FPTR_ANALYSIS};
+    return {LoadAndRecordFunc, StoreAndRecordFunc, BblAndRecordFunc, BranchFunc, PredLoadAndRecordFunc, PredStoreAndRecordFunc, FPTR_ANALYSIS, {0}};
 }
 
 void TimingCore::LoadAndRecordFunc(THREADID tid, ADDRINT addr) {

@@ -37,8 +37,6 @@
 #include "timing_event.h"
 #include "zsim.h"
 
-#include <iostream>
-
 //Set to 1 to produce a post-mortem analysis log
 #define POST_MORTEM 0
 //#define POST_MORTEM 1
@@ -147,6 +145,7 @@ void ContentionSim::initStats(AggregateStat* parentStat) {
 
 void ContentionSim::simulatePhase(uint64_t limit) {
     if (skipContention) return; //fastpath when there are no cores to simulate
+
     this->limit = limit;
     assert(limit >= lastLimit);
 
@@ -195,6 +194,7 @@ void ContentionSim::enqueue(TimingEvent* ev, uint64_t cycle) {
     assert(ev->numParents == 0);
     assert(ev->domain != -1);
     assert(ev->domain < (int32_t)numDomains);
+
     domains[ev->domain].pq.enqueue(ev, cycle);
 }
 

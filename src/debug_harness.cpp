@@ -43,7 +43,6 @@
 int launchXtermDebugger(int targetPid, LibInfo* libzsimAddrs) {
     int childPid = fork();
     if (childPid == 0) {
-        info("launching xterm debugger");
         std::string targetPidStr = Str(targetPid);
         char symbolCmdStr[2048];
         snprintf(symbolCmdStr, sizeof(symbolCmdStr), "add-symbol-file %s %p -s .data %p -s .bss %p", QUOTED(ZSIM_PATH), libzsimAddrs->textAddr, libzsimAddrs->dataAddr, libzsimAddrs->bssAddr);
@@ -53,7 +52,7 @@ int launchXtermDebugger(int targetPid, LibInfo* libzsimAddrs) {
             "-ex", symbolCmdStr,
             "-ex", "handle SIGTRAP nostop noprint", // For some reason we receive a lot of spurious sigtraps
             "-ex", "set confirm on", //reenable confirmations
-            //"-ex", "c", //start running
+            "-ex", "c", //start running
             nullptr};
         execvp(args[0], (char* const*)args);
         panic("shouldn't reach this...");

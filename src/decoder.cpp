@@ -238,34 +238,13 @@ void Decoder::emitXchg(Instr& instr, DynUopVec& uops) {
         emitStore(instr, 0, uops, REG_EXEC_TEMP); //temp -> out
         if (!INS_LockPrefix(instr.ins)) emitFence(uops, 14); //xchg has an implicit lock prefix (TODO: Check we don't introduce two fences...)
     } else { // reg <-> reg
-        // WIP but just commenting out for commit before traveling
+        assert(instr.numInRegs == 2 && instr.numOutRegs == 2);
+        assert(instr.inRegs[0] == instr.outRegs[0]);
+        assert(instr.inRegs[1] == instr.outRegs[1]);
 
-        
-        //info("emitXchg - reg - reg");
-        
-
-        if (INS_IsXchg(instr.ins) && INS_OperandReg(instr.ins, 0) == REG_RBX && INS_OperandReg(instr.ins, 1) == REG_RBX) {
-            // don't emit UOP's for nic related instructions
-            /* DBGP
-            info("xchg rbx rbx seen at decoder");
-            for (int i = 0; i < MAX_INSTR_REG_READS; i++) {
-                info("inRegs[%d] = %d", i, instr.inRegs[i]);
-            }
-            for (int i = 0; i < MAX_INSTR_REG_READS; i++) {
-                info("outRegs[%d] = %d", i, instr.outRegs[i]);
-            }
-            */
-        }
-
-        else {
-            assert(instr.numInRegs == 2 && instr.numOutRegs == 2);
-            assert(instr.inRegs[0] == instr.outRegs[0]);
-            assert(instr.inRegs[1] == instr.outRegs[1]);
-
-            emitExecUop(instr.inRegs[0], 0, REG_EXEC_TEMP, 0, uops, 1, PORTS_015);
-            emitExecUop(instr.inRegs[1], 0, instr.outRegs[0], 0, uops, 1, PORTS_015);
-            emitExecUop(REG_EXEC_TEMP, 0, instr.outRegs[1], 0, uops, 1, PORTS_015);
-        }
+        emitExecUop(instr.inRegs[0], 0, REG_EXEC_TEMP, 0, uops, 1, PORTS_015);
+        emitExecUop(instr.inRegs[1], 0, instr.outRegs[0], 0, uops, 1, PORTS_015);
+        emitExecUop(REG_EXEC_TEMP, 0, instr.outRegs[1], 0, uops, 1, PORTS_015);
     }
 }
 

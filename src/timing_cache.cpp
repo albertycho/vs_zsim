@@ -79,8 +79,8 @@ class ReplAccessEvent : public TimingEvent {
 };
 
 TimingCache::TimingCache(uint32_t _numLines, CC* _cc, CacheArray* _array, ReplPolicy* _rp,
-        uint32_t _accLat, uint32_t _invLat, uint32_t mshrs, uint32_t _tagLat, uint32_t _ways, uint32_t _cands, uint32_t _domain, const g_string& _name, int _level)
-    : Cache(_numLines, _cc, _array, _rp, _accLat, _invLat, _name, _level), numMSHRs(mshrs), tagLat(_tagLat), ways(_ways), cands(_cands)
+        uint32_t _accLat, uint32_t _invLat, uint32_t mshrs, uint32_t _tagLat, uint32_t _ways, uint32_t _cands, uint32_t _domain, const g_string& _name)
+    : Cache(_numLines, _cc, _array, _rp, _accLat, _invLat, _name), numMSHRs(mshrs), tagLat(_tagLat), ways(_ways), cands(_cands)
 {
     lastFreeCycle = 0;
     lastAccCycle = 0;
@@ -112,16 +112,6 @@ void TimingCache::initStats(AggregateStat* parentStat) {
 
 // TODO(dsm): This is copied verbatim from Cache. We should split Cache into different methods, then call those.
 uint64_t TimingCache::access(MemReq& req) {
-
-    int req_level = req.flags >> 16;
-    if (req.type == PUTS || req.type == PUTX) {
-        req_level = level;
-    }
-    bool correct_level = (req_level == level);
-    int32_t lineId = -1;
-    //info("In cache access, req type is %s, my level is %d, input level is %d, childId is %d",AccessTypeName(req.type),level,req_level, req.childId);
-    bool no_record = ((req.flags) & (MemReq::NORECORD)) != 0;
-
     EventRecorder* evRec = zinfo->eventRecorders[req.srcId];
     assert_msg(evRec, "TimingCache is not connected to TimingCore");
 
@@ -133,163 +123,142 @@ uint64_t TimingCache::access(MemReq& req) {
     uint64_t respCycle = req.cycle;
     bool skipAccess = cc->startAccess(req); //may need to skip access due to races (NOTE: may change req.type!)
     if (likely(!skipAccess)) {
-        if (correct_level) {
-            int temp = req_level - 1;
-            req.flags  = (req.flags & 0xffff) | (temp << 16);
-            
-            bool updateReplacement = (req.type == GETS) || (req.type == GETX);
-            lineId = array->lookup(req.lineAddr, &req, updateReplacement);
-            respCycle += accLat;
+        bool updateReplacement = (req.type == GETS) || (req.type == GETX);
+        int32_t lineId = array->lookup(req.lineAddr, &req, updateReplacement);
+        respCycle += accLat;
 
-            if (lineId == -1 /*&& cc->shouldAllocate(req)*/ && !(req.flags & MemReq::PKTOUT)) {     // a NIC read that misses in the LLC should not allocate a line
-                assert(cc->shouldAllocate(req)); //dsm: for now, we don't deal with non-inclusion in TimingCache
+        if (lineId == -1 /*&& cc->shouldAllocate(req)*/) {
+            assert(cc->shouldAllocate(req)); //dsm: for now, we don't deal with non-inclusion in TimingCache
 
-                //Make space for new line
-                Address wbLineAddr;
-                lineId = array->preinsert(req.lineAddr, &req, &wbLineAddr); //find the lineId to replace
-                trace(Cache, "[%s] Evicting 0x%lx", name.c_str(), wbLineAddr);
+            //Make space for new line
+            Address wbLineAddr;
+            lineId = array->preinsert(req.lineAddr, &req, &wbLineAddr); //find the lineId to replace
+            trace(Cache, "[%s] Evicting 0x%lx", name.c_str(), wbLineAddr);
 
-                //Evictions are not in the critical path in any sane implementation -- we do not include their delays
-                //NOTE: We might be "evicting" an invalid line for all we know. Coherence controllers will know what to do
-                evDoneCycle = cc->processEviction(req, wbLineAddr, lineId, respCycle); //if needed, send invalidates/downgrades to lower level, and wb to upper level
+            //Evictions are not in the critical path in any sane implementation -- we do not include their delays
+            //NOTE: We might be "evicting" an invalid line for all we know. Coherence controllers will know what to do
+            evDoneCycle = cc->processEviction(req, wbLineAddr, lineId, respCycle); //if needed, send invalidates/downgrades to lower level, and wb to upper level
 
-                array->postinsert(req.lineAddr, &req, lineId); //do the actual insertion. NOTE: Now we must split insert into a 2-phase thing because cc unlocks us.
+            array->postinsert(req.lineAddr, &req, lineId); //do the actual insertion. NOTE: Now we must split insert into a 2-phase thing because cc unlocks us.
 
-                if (evRec->hasRecord()) writebackRecord = evRec->popRecord();
-            }
+            if (evRec->hasRecord()) writebackRecord = evRec->popRecord();
+        }
 
-            uint64_t getDoneCycle = respCycle;
-            respCycle = cc->processAccess(req, lineId, respCycle, correct_level, &getDoneCycle);
+        uint64_t getDoneCycle = respCycle;
+        respCycle = cc->processAccess(req, lineId, respCycle, &getDoneCycle);
 
-            if (no_record) {
-                assert(!(evRec->hasRecord()));
-            }
-            else {
-                if (evRec->hasRecord()) accessRecord = evRec->popRecord();
+        if (evRec->hasRecord()) accessRecord = evRec->popRecord();
 
-                // At this point we have all the info we need to hammer out the timing record
-                TimingRecord tr = { req.lineAddr << lineBits, req.cycle, respCycle, req.type, nullptr, nullptr }; //note the end event is the response, not the wback
+        // At this point we have all the info we need to hammer out the timing record
+        TimingRecord tr = {req.lineAddr << lineBits, req.cycle, respCycle, req.type, nullptr, nullptr}; //note the end event is the response, not the wback
 
-                if (getDoneCycle - req.cycle == accLat) {
-                    // Hit
-                    assert(!writebackRecord.isValid());
-                    assert(!accessRecord.isValid());
-                    uint64_t hitLat = respCycle - req.cycle; // accLat + invLat
-                    HitEvent* ev = new (evRec) HitEvent(this, hitLat, domain);
-                    ev->setMinStartCycle(req.cycle);
-                    tr.startEvent = tr.endEvent = ev;
-                }
-                else {
-                    //getDoneCycle = respCycle;
-                    assert_msg(getDoneCycle == respCycle, "gdc %ld rc %ld", getDoneCycle, respCycle);
+        if (getDoneCycle - req.cycle == accLat) {
+            // Hit
+            assert(!writebackRecord.isValid());
+            assert(!accessRecord.isValid());
+            uint64_t hitLat = respCycle - req.cycle; // accLat + invLat
+            HitEvent* ev = new (evRec) HitEvent(this, hitLat, domain);
+            ev->setMinStartCycle(req.cycle);
+            tr.startEvent = tr.endEvent = ev;
+        } else {
+            assert_msg(getDoneCycle == respCycle, "gdc %ld rc %ld", getDoneCycle, respCycle);
 
-                    // Miss events:
-                    // MissStart (does high-prio lookup) -> getEvent || evictionEvent || replEvent (if needed) -> MissWriteback
+            // Miss events:
+            // MissStart (does high-prio lookup) -> getEvent || evictionEvent || replEvent (if needed) -> MissWriteback
 
-                    MissStartEvent* mse = new (evRec) MissStartEvent(this, accLat, domain);
-                    MissResponseEvent* mre = new (evRec) MissResponseEvent(this, mse, domain);
-                    MissWritebackEvent* mwe = new (evRec) MissWritebackEvent(this, mse, accLat, domain);
+            MissStartEvent* mse = new (evRec) MissStartEvent(this, accLat, domain);
+            MissResponseEvent* mre = new (evRec) MissResponseEvent(this, mse, domain);
+            MissWritebackEvent* mwe = new (evRec) MissWritebackEvent(this, mse, accLat, domain);
 
-                    mse->setMinStartCycle(req.cycle);
-                    mre->setMinStartCycle(getDoneCycle);
-                    if (!(req.flags & MemReq::PKTOUT))
-                        mwe->setMinStartCycle(MAX(evDoneCycle, getDoneCycle));
+            mse->setMinStartCycle(req.cycle);
+            mre->setMinStartCycle(getDoneCycle);
+            mwe->setMinStartCycle(MAX(evDoneCycle, getDoneCycle));
 
-                    // Tie two events to an optional timing record
-                    // TODO: Promote to evRec if this is more generally useful
-                    auto connect = [evRec](const TimingRecord* r, TimingEvent* startEv, TimingEvent* endEv, uint64_t startCycle, uint64_t endCycle) {
-                        assert_msg(startCycle <= endCycle, "start > end? %ld %ld", startCycle, endCycle);
-                        if (r) {
-                            assert_msg(startCycle <= r->reqCycle, "%ld / %ld", startCycle, r->reqCycle);
-                            assert_msg(r->respCycle <= endCycle, "%ld %ld %ld %ld", startCycle, r->reqCycle, r->respCycle, endCycle);
-                            uint64_t upLat = r->reqCycle - startCycle;
-                            uint64_t downLat = endCycle - r->respCycle;
+            // Tie two events to an optional timing record
+            // TODO: Promote to evRec if this is more generally useful
+            auto connect = [evRec](const TimingRecord* r, TimingEvent* startEv, TimingEvent* endEv, uint64_t startCycle, uint64_t endCycle) {
+                assert_msg(startCycle <= endCycle, "start > end? %ld %ld", startCycle, endCycle);
+                if (r) {
+                    assert_msg(startCycle <= r->reqCycle, "%ld / %ld", startCycle, r->reqCycle);
+                    assert_msg(r->respCycle <= endCycle, "%ld %ld %ld %ld", startCycle, r->reqCycle, r->respCycle, endCycle);
+                    uint64_t upLat = r->reqCycle - startCycle;
+                    uint64_t downLat = endCycle - r->respCycle;
 
-                            if (upLat) {
-                                DelayEvent* dUp = new (evRec) DelayEvent(upLat);
-                                dUp->setMinStartCycle(startCycle);
-                                startEv->addChild(dUp, evRec)->addChild(r->startEvent, evRec);
-                            }
-                            else {
-                                startEv->addChild(r->startEvent, evRec);
-                            }
-
-                            if (downLat) {
-                                DelayEvent* dDown = new (evRec) DelayEvent(downLat);
-                                dDown->setMinStartCycle(r->respCycle);
-                                r->endEvent->addChild(dDown, evRec)->addChild(endEv, evRec);
-                            }
-                            else {
-                                r->endEvent->addChild(endEv, evRec);
-                            }
-                        }
-                        else {
-                            if (startCycle == endCycle) {
-                                startEv->addChild(endEv, evRec);
-                            }
-                            else {
-                                DelayEvent* dEv = new (evRec) DelayEvent(endCycle - startCycle);
-                                dEv->setMinStartCycle(startCycle);
-                                startEv->addChild(dEv, evRec)->addChild(endEv, evRec);
-                            }
-                        }
-                    };
-
-                    // Get path
-                    connect(accessRecord.isValid() ? &accessRecord : nullptr, mse, mre, req.cycle + accLat, getDoneCycle);
-                    if (!(req.flags & MemReq::PKTOUT))
-                        mre->addChild(mwe, evRec);
-
-                    // Eviction path
-                    if (!(req.flags & MemReq::PKTOUT) && evDoneCycle) {
-                        connect(writebackRecord.isValid() ? &writebackRecord : nullptr, mse, mwe, req.cycle + accLat, evDoneCycle);
+                    if (upLat) {
+                        DelayEvent* dUp = new (evRec) DelayEvent(upLat);
+                        dUp->setMinStartCycle(startCycle);
+                        startEv->addChild(dUp, evRec)->addChild(r->startEvent, evRec);
+                    } else {
+                        startEv->addChild(r->startEvent, evRec);
                     }
 
-                    // Replacement path
-                    if (!(req.flags & MemReq::PKTOUT) && evDoneCycle && cands > ways) {
-                        uint32_t replLookups = (cands + (ways - 1)) / ways - 1; // e.g., with 4 ways, 5-8 -> 1, 9-12 -> 2, etc.
-                        assert(replLookups);
-
-                        uint32_t fringeAccs = ways - 1;
-                        uint32_t accsSoFar = 0;
-
-                        TimingEvent* p = mse;
-
-                        // Candidate lookup events
-                        while (accsSoFar < replLookups) {
-                            uint32_t preDelay = accsSoFar ? 0 : tagLat;
-                            uint32_t postDelay = tagLat - MIN(tagLat - 1, fringeAccs);
-                            uint32_t accs = MIN(fringeAccs, replLookups - accsSoFar);
-                            //info("ReplAccessEvent rl %d fa %d preD %d postD %d accs %d", replLookups, fringeAccs, preDelay, postDelay, accs);
-                            ReplAccessEvent* raEv = new (evRec) ReplAccessEvent(this, accs, preDelay, postDelay, domain);
-                            raEv->setMinStartCycle(req.cycle /*lax...*/);
-                            accsSoFar += accs;
-                            p->addChild(raEv, evRec);
-                            p = raEv;
-                            fringeAccs *= ways - 1;
-                        }
-
-                        // Swap events -- typically, one read and one write work for 1-2 swaps. Exact number depends on layout.
-                        ReplAccessEvent* rdEv = new (evRec) ReplAccessEvent(this, 1, tagLat, tagLat, domain);
-                        rdEv->setMinStartCycle(req.cycle /*lax...*/);
-                        ReplAccessEvent* wrEv = new (evRec) ReplAccessEvent(this, 1, 0, 0, domain);
-                        wrEv->setMinStartCycle(req.cycle /*lax...*/);
-
-                        p->addChild(rdEv, evRec)->addChild(wrEv, evRec)->addChild(mwe, evRec);
+                    if (downLat) {
+                        DelayEvent* dDown = new (evRec) DelayEvent(downLat);
+                        dDown->setMinStartCycle(r->respCycle);
+                        r->endEvent->addChild(dDown, evRec)->addChild(endEv, evRec);
+                    } else {
+                        r->endEvent->addChild(endEv, evRec);
                     }
-
-
-                    tr.startEvent = mse;
-                    tr.endEvent = mre; // note the end event is the response, not the wback
+                } else {
+                    if (startCycle == endCycle) {
+                        startEv->addChild(endEv, evRec);
+                    } else {
+                        DelayEvent* dEv = new (evRec) DelayEvent(endCycle - startCycle);
+                        dEv->setMinStartCycle(startCycle);
+                        startEv->addChild(dEv, evRec)->addChild(endEv, evRec);
+                    }
                 }
-                evRec->pushRecord(tr);
+            };
+
+            // Get path
+            connect(accessRecord.isValid()? &accessRecord : nullptr, mse, mre, req.cycle + accLat, getDoneCycle);
+            mre->addChild(mwe, evRec);
+
+            // Eviction path
+            if (evDoneCycle) {
+                connect(writebackRecord.isValid()? &writebackRecord : nullptr, mse, mwe, req.cycle + accLat, evDoneCycle);
             }
+
+            // Replacement path
+            if (evDoneCycle && cands > ways) {
+                uint32_t replLookups = (cands + (ways-1))/ways - 1; // e.g., with 4 ways, 5-8 -> 1, 9-12 -> 2, etc.
+                assert(replLookups);
+
+                uint32_t fringeAccs = ways - 1;
+                uint32_t accsSoFar = 0;
+
+                TimingEvent* p = mse;
+
+                // Candidate lookup events
+                while (accsSoFar < replLookups) {
+                    uint32_t preDelay = accsSoFar? 0 : tagLat;
+                    uint32_t postDelay = tagLat - MIN(tagLat - 1, fringeAccs);
+                    uint32_t accs = MIN(fringeAccs, replLookups - accsSoFar);
+                    //info("ReplAccessEvent rl %d fa %d preD %d postD %d accs %d", replLookups, fringeAccs, preDelay, postDelay, accs);
+                    ReplAccessEvent* raEv = new (evRec) ReplAccessEvent(this, accs, preDelay, postDelay, domain);
+                    raEv->setMinStartCycle(req.cycle /*lax...*/);
+                    accsSoFar += accs;
+                    p->addChild(raEv, evRec);
+                    p = raEv;
+                    fringeAccs *= ways - 1;
+                }
+
+                // Swap events -- typically, one read and one write work for 1-2 swaps. Exact number depends on layout.
+                ReplAccessEvent* rdEv = new (evRec) ReplAccessEvent(this, 1, tagLat, tagLat, domain);
+                rdEv->setMinStartCycle(req.cycle /*lax...*/);
+                ReplAccessEvent* wrEv = new (evRec) ReplAccessEvent(this, 1, 0, 0, domain);
+                wrEv->setMinStartCycle(req.cycle /*lax...*/);
+
+                p->addChild(rdEv, evRec)->addChild(wrEv, evRec)->addChild(mwe, evRec);
+            }
+
+
+            tr.startEvent = mse;
+            tr.endEvent = mre; // note the end event is the response, not the wback
         }
-    
-        else {
-            respCycle = cc->processAccess(req, lineId, respCycle, correct_level);
-        }
+        evRec->pushRecord(tr);
     }
+
     cc->endAccess(req);
 
     assert_msg(respCycle >= req.cycle, "[%s] resp < req? 0x%lx type %s childState %s, respCycle %ld reqCycle %ld",
