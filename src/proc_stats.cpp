@@ -40,11 +40,6 @@ class ProcStats::ProcessCounter : public Counter {
             ps->update();
             return Counter::get();
         }
-/*
-        void clear () {
-            Counter::clear();
-        }
-*/
 };
 
 class ProcStats::ProcessVectorCounter : public VectorCounter {

@@ -62,20 +62,6 @@ class TextBackendImpl : public GlobAlloc {
             }
         }
 
-        void clearStat(Stat* s, uint32_t level) {
-            if (AggregateStat* as = dynamic_cast<AggregateStat*>(s)) {
-                for (uint32_t i = 0; i < as->size(); i++) {
-                    clearStat(as->get(i), level+1);
-                }
-            } else if (ScalarStat* ss = dynamic_cast<ScalarStat*>(s)) {
-                //ss->clear();
-            } else if (VectorStat* vs = dynamic_cast<VectorStat*>(s)) {
-                    //vs->clear();
-            } else {
-                panic("Unrecognized stat type");
-            }
-        }
-
     public:
         TextBackendImpl(const char* _filename, AggregateStat* _rootStat) :
             filename(_filename), rootStat(_rootStat)
@@ -90,10 +76,6 @@ class TextBackendImpl : public GlobAlloc {
             dumpStat(rootStat, 0, &out);
             out << "===" << endl;
         }
-
-        void clear() {
-            clearStat(rootStat, 0);
-        }
 };
 
 TextBackend::TextBackend(const char* filename, AggregateStat* rootStat) {
@@ -103,8 +85,4 @@ TextBackend::TextBackend(const char* filename, AggregateStat* rootStat) {
 void TextBackend::dump(bool buffered) {
     backend->dump(buffered);
 }
-/*
-void TextBackend::clear() {
-    backend->clear();
-}
-*/
+

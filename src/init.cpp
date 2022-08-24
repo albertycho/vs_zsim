@@ -74,6 +74,7 @@
 #include "virt/port_virtualizer.h"
 #include "weave_md1_mem.h" //validation, could be taken out...
 #include "zsim.h"
+
 extern void EndOfPhaseActions(); //in zsim.cpp
 
 /* zsim should be initialized in a deterministic and logical order, to avoid re-reading config vars
@@ -81,7 +82,7 @@ extern void EndOfPhaseActions(); //in zsim.cpp
  * follow the layout of zinfo, top-down.
  */
 
-BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, uint32_t bankSize, bool isTerminal, uint32_t domain, int level) {
+BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, uint32_t bankSize, bool isTerminal, uint32_t domain) {
     string type = config.get<const char*>(prefix + "type", "Simple");
     // Shortcut for TraceDriven type
     if (type == "TraceDriven") {
@@ -118,7 +119,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
     // Power of two sets check; also compute setBits, will be useful later
     uint32_t numSets = numLines/ways;
     uint32_t setBits = 31 - __builtin_clz(numSets);
-    //if ((1u << setBits) != numSets) panic("%s: Number of sets must be a power of two (you specified %d sets)", name.c_str(), numSets);
+    if ((1u << setBits) != numSets) panic("%s: Number of sets must be a power of two (you specified %d sets)", name.c_str(), numSets);
 
     //Hash function
     HashFamily* hf = nullptr;
@@ -163,7 +164,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
         rp = new NRUReplPolicy(numLines, candidates);
     } else if (replType == "Rand") {
         rp = new RandReplPolicy(candidates);
-    } else if (replType == "WayPart" || replType == "Vantage" || replType == "IdealLRUPart" || replType == "DDIOPart") {
+    } else if (replType == "WayPart" || replType == "Vantage" || replType == "IdealLRUPart") {
         if (replType == "WayPart" && arrayType != "SetAssoc") panic("WayPart replacement requires SetAssoc array");
 
         //Partition mapper
@@ -182,21 +183,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
             pm = new InstrDataProcessPartMapper(zinfo->numProcs);
         } else if (partMapper == "ProcessGroup") {
             pm = new ProcessGroupPartMapper();
-        } else if (partMapper == "DDIO") {
-            unordered_map<int, vector<string>> partMap;
-            uint32_t num_partitions = config.get<uint32_t>(prefix + "repl.num_partitions", 0);
-            for (int i=0; i<zinfo->numProcs; i++) {
-                string ways = config.get<const char*>(prefix + "repl.mapping.process" + to_string(i), "");
-                if(ways == "") {
-                    partMap[i] = {"all"};
-                }
-                else {
-                    partMap[i] = ParseList<string>(ways,",");
-                }
-            }
-            pm = new DDIOPartMapper(zinfo->numProcs,num_partitions,partMap);
-        } 
-        else {
+        } else {
             panic("Invalid repl.partMapper %s on %s", partMapper.c_str(), name.c_str());
         }
 
@@ -221,11 +208,6 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
             prp = new WayPartReplPolicy(mon, pm, numLines, ways, testMode);
         } else if (replType == "IdealLRUPart") {
             prp = new IdealLRUPartReplPolicy(mon, pm, numLines, buckets);
-        } else if (replType == "DDIOPart") {
-            bool testMode = config.get<bool>(prefix + "repl.testMode", false);
-            uint32_t ddio_ways = config.get<uint32_t>(prefix + "repl.ddio_ways", 0);
-            uint32_t policy = config.get<uint32_t>(prefix + "repl.policy", 0);
-            prp = new DDIOPartReplPolicy(mon, pm, numLines, ways, testMode, ddio_ways, policy);
         } else { //Vantage
             uint32_t assoc = (arrayType == "Z")? candidates : ways;
             allocPortion = .85;
@@ -234,16 +216,13 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
         }
         rp = prp;
 
-        if (replType != "DDIOPart") {
+        // Partitioner
+        // TODO: Depending on partitioner type, we want one per bank or one per cache.
+        Partitioner* p = new LookaheadPartitioner(prp, pm->getNumPartitions(), buckets, 1, allocPortion);
 
-            // Partitioner
-            // TODO: Depending on partitioner type, we want one per bank or one per cache.
-            Partitioner* p = new LookaheadPartitioner(prp, pm->getNumPartitions(), buckets, 1, allocPortion);
-
-            //Schedule its tick
-            uint32_t interval = config.get<uint32_t>(prefix + "repl.interval", 5000); //phases
-            zinfo->eventQueue->insert(new Partitioner::PartitionEvent(p, interval));
-        }
+        //Schedule its tick
+        uint32_t interval = config.get<uint32_t>(prefix + "repl.interval", 5000); //phases
+        zinfo->eventQueue->insert(new Partitioner::PartitionEvent(p, interval));
     } else {
         panic("%s: Invalid replacement type %s", name.c_str(), replType.c_str());
     }
@@ -278,7 +257,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
 
     // Inclusion?
     bool nonInclusiveHack = config.get<bool>(prefix + "nonInclusiveHack", false);
-    //if (nonInclusiveHack) assert(type == "Simple" && !isTerminal);
+    if (nonInclusiveHack) assert(type == "Simple" && !isTerminal);
 
     // Finally, build the cache
     Cache* cache;
@@ -291,12 +270,12 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
     rp->setCC(cc);
     if (!isTerminal) {
         if (type == "Simple") {
-            cache = new Cache(numLines, cc, array, rp, accLat, invLat, name, level);
+            cache = new Cache(numLines, cc, array, rp, accLat, invLat, name);
         } else if (type == "Timing") {
             uint32_t mshrs = config.get<uint32_t>(prefix + "mshrs", 16);
             uint32_t tagLat = config.get<uint32_t>(prefix + "tagLat", 5);
             uint32_t timingCandidates = config.get<uint32_t>(prefix + "timingCandidates", candidates);
-            cache = new TimingCache(numLines, cc, array, rp, accLat, invLat, mshrs, tagLat, ways, timingCandidates, domain, name, level);
+            cache = new TimingCache(numLines, cc, array, rp, accLat, invLat, mshrs, tagLat, ways, timingCandidates, domain, name);
         } else if (type == "Tracing") {
             g_string traceFile = config.get<const char*>(prefix + "traceFile","");
             if (traceFile.empty()) traceFile = g_string(zinfo->outputDir) + "/" + name + ".trace";
@@ -308,8 +287,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
         //Filter cache optimization
         if (type != "Simple") panic("Terminal cache %s can only have type == Simple", name.c_str());
         if (arrayType != "SetAssoc" || hashType != "None" || replType != "LRU") panic("Invalid FilterCache config %s", name.c_str());
-        uint32_t extra_latency = config.get<uint32_t>(prefix + "extra_latency", 0);
-        cache = new FilterCache(numSets, numLines, cc, array, rp, accLat, invLat, name, level, extra_latency);
+        cache = new FilterCache(numSets, numLines, cc, array, rp, accLat, invLat, name);
     }
 
 #if 0
@@ -340,11 +318,8 @@ DDRMemory* BuildDDRMemory(Config& config, uint32_t lineSize, uint32_t frequency,
     uint32_t queueDepth = config.get<uint32_t>(prefix + "queueDepth", 16);
     uint32_t controllerLatency = config.get<uint32_t>(prefix + "controllerLatency", 10);  // in system cycles
 
-    bool no_latency = config.get<bool>(prefix + "no_latency", false);
-    bool no_bw = config.get<bool>(prefix + "no_bw", false);
-
     auto mem = new DDRMemory(zinfo->lineSize, pageSize, ranksPerChannel, banksPerRank, frequency, tech,
-            addrMapping, controllerLatency, queueDepth, maxRowHits, deferWrites, closedPage, no_latency, no_bw, domain, name);
+            addrMapping, controllerLatency, queueDepth, maxRowHits, deferWrites, closedPage, domain, name);
     return mem;
 }
 
@@ -396,7 +371,7 @@ MemObject* BuildMemoryController(Config& config, uint32_t lineSize, uint32_t fre
 
 typedef vector<vector<BaseCache*>> CacheGroup;
 
-CacheGroup* BuildCacheGroup(Config& config, const string& name, bool isTerminal, int level) {
+CacheGroup* BuildCacheGroup(Config& config, const string& name, bool isTerminal) {
     CacheGroup* cgp = new CacheGroup;
     CacheGroup& cg = *cgp;
 
@@ -437,7 +412,7 @@ CacheGroup* BuildCacheGroup(Config& config, const string& name, bool isTerminal,
             }
             g_string bankName(ss.str().c_str());
             uint32_t domain = (i*banks + j)*zinfo->numDomains/(caches*banks); //(banks > 1)? nextDomain() : (i*banks + j)*zinfo->numDomains/(caches*banks);
-            cg[i][j] = BuildCacheBank(config, prefix, bankName, bankSize, isTerminal, domain, level);
+            cg[i][j] = BuildCacheBank(config, prefix, bankName, bankSize, isTerminal, domain);
         }
     }
 
@@ -503,29 +478,12 @@ static void InitSystem(Config& config) {
     unordered_map<string, CacheGroup*> cMap;
     list<string> fringe;  // FIFO
     fringe.push_back(llc);
-    list<int> lvls;
-    lvls.push_back(1);
-    int level;
-    
-    /*
-    auto fringe_front = fringe.begin();
-    std::cout << "fringe size:"<< fringe.size() << std::endl;
-    for (uint32_t i = 0; i < fringe.size(); i++) {
-        std::cout << *fringe_front << std::endl;
-        std::advance(fringe_front, 1);
-    }
-    */
     while (!fringe.empty()) {
         string group = fringe.front();
         fringe.pop_front();
-        level = lvls.front();
-        lvls.pop_front();
         if (cMap.count(group)) panic("The cache 'tree' has a loop at %s", group.c_str());
-        cMap[group] = BuildCacheGroup(config, group, isTerminal(group), level);
-        for (auto& childVec : childMap[group]) {
-            fringe.insert(fringe.end(), childVec.begin(), childVec.end());
-            lvls.insert(lvls.end(), childVec.size(), level+1);
-        }
+        cMap[group] = BuildCacheGroup(config, group, isTerminal(group));
+        for (auto& childVec : childMap[group]) fringe.insert(fringe.end(), childVec.begin(), childVec.end());
     }
 
     //Check single LLC
@@ -542,11 +500,6 @@ static void InitSystem(Config& config) {
     g_vector<MemObject*> mems;
     mems.resize(memControllers);
 
-    zinfo->mem_bwdth = gm_calloc<float*>(memControllers);
-    //zinfo->mem_bwdth = new g_vector<float*>(memControllers);
-    //zinfo->mem_bwdth.resize(memControllers);
-
-
     for (uint32_t i = 0; i < memControllers; i++) {
         stringstream ss;
         ss << "mem-" << i;
@@ -554,20 +507,8 @@ static void InitSystem(Config& config) {
         //uint32_t domain = nextDomain(); //i*zinfo->numDomains/memControllers;
         uint32_t domain = i*zinfo->numDomains/memControllers;
         mems[i] = BuildMemoryController(config, zinfo->lineSize, zinfo->freqMHz, domain, name);
-        zinfo->mem_bwdth[i] = ((DDRMemory*)mems[i])->mem_bwdth;
-        //zinfo->mem_bwdth->push_back(((DDRMemory*)mems[i])->mem_bwdth);
     }
 
-/*
-    //FIXME MARINA TO WORK WITH ALL KINDS OF MEM
-    g_vector<BaseCache*> childrenVecMem;
-    for (BaseCache* llcBank : (*cMap[llc])[0]) {
-        childrenVecMem.push_back(llcBank);
-    }
-    for (MemObject* mem_obj : mems) {
-        ((DDRMemory*)mem_obj)->setChildrenMem(childrenVecMem, network);
-    }
-*/
     if (memControllers > 1) {
         bool splitAddrs = config.get<bool>("sys.mem.splitAddrs", true);
         if (splitAddrs) {
@@ -669,8 +610,6 @@ static void InitSystem(Config& config) {
     unordered_map<string, uint32_t> assignedCaches;
     for (const char* grp : cacheGroupNames) if (isTerminal(grp)) assignedCaches[grp] = 0;
 
-    int app_cores;
-
     if (!zinfo->traceDriven) {
         //Instantiate the cores
         vector<const char*> coreGroupNames;
@@ -724,10 +663,6 @@ static void InitSystem(Config& config) {
                     CacheGroup& igroup = *cMap[icache];
                     CacheGroup& dgroup = *cMap[dcache];
 
-                    if (config.get<uint32_t>(prefix + "app_core", 0) == 1) {
-                            l1d_caches[j+3] = dynamic_cast<FilterCache*>(dgroup[j][0]);
-                    }
-
                     if (assignedCaches[icache] >= igroup.size()) {
                         panic("%s: icache group %s (%ld caches) is fully used, can't connect more cores to it", name.c_str(), icache.c_str(), igroup.size());
                     }
@@ -756,11 +691,7 @@ static void InitSystem(Config& config) {
                         core = tcore;
                     } else {
                         assert(type == "OOO");
-                        uint32_t domain = j * zinfo->numDomains / cores;
-                        string ingr,egr;
-                        ingr = config.get<const char*>(prefix + "ingress", "mem");        // choices are: l1, l2, llc, mem, ideal
-                        egr = config.get<const char*>(prefix + "egress", "mem");        // choices are: llc, mem, ideal
-                        OOOCore* ocore = new (&oooCores[j]) OOOCore(ic, dc, domain, name, coreIdx, ingr, egr);
+                        OOOCore* ocore = new (&oooCores[j]) OOOCore(ic, dc, name);
                         zinfo->eventRecorders[coreIdx] = ocore->getEventRecorder();
                         zinfo->eventRecorders[coreIdx]->setSourceId(coreIdx);
                         core = ocore;
@@ -844,117 +775,6 @@ static void InitSystem(Config& config) {
     for (pair<string, CacheGroup*> kv : cMap) delete kv.second;
     cMap.clear();
 
-	string mem_type = config.get<const char*>("sys.mem.type", "Simple");
-	if(mem_type=="Simple"){
-		nicInfo->memtype=0;
-	}
-	else{
-		nicInfo->memtype=1;
-	}
-
-    bool record_nic_access = config.get<bool>("sim.record_nic_access", true);
-    nicInfo->record_nic_access = record_nic_access;
-
-    //uint32_t num_cores_serving_nw = config.get<uint32_t>("sim.num_cores_serving_nw", (zinfo->numCores - 1));
-    //uint32_t num_cores_serving_nw = config.get<uint32_t>("sim.num_cores_serving_nw", (zinfo->numCores - 3));
-    uint32_t num_cores_serving_nw = config.get<uint32_t>("sim.num_cores_serving_nw", 0);
-	info("num server cores: %d\n", num_cores_serving_nw);
-    nicInfo->expected_core_count = num_cores_serving_nw;
-    nicInfo->registered_core_count = 0;
-    nicInfo->nic_init_done = false;
-
-    nicInfo->expected_non_net_core_count = config.get<uint32_t>("sim.num_non_net_cores", (zinfo->numCores - 3 - num_cores_serving_nw));
-    nicInfo->registered_non_net_core_count = 0;
-
-    uint32_t hist_interval = config.get<uint32_t>("sim.hist_interval", 5000);
-    nicInfo->hist_interval = hist_interval;
-
-    uint32_t ceq_delay = config.get<uint32_t>("sim.ceq_delay", 0);
-    nicInfo->ceq_delay= ceq_delay;
-
-    uint32_t nw_roundtrip_delay = config.get<uint32_t>("sim.nw_roundtrip_delay", 100);
-    nicInfo->nw_roundtrip_delay = nw_roundtrip_delay;
-
-    bool send_in_loop = config.get<bool>("sim.send_in_loop", false);
-	nicInfo->send_in_loop = send_in_loop;
-    
-    bool allow_packet_drop = config.get<bool>("sim.allow_packet_drop", false);
-	nicInfo->allow_packet_drop = allow_packet_drop;
-
-
-    bool zeroCopy = config.get<bool>("sim.zeroCopy", false);
-    nicInfo->zeroCopy = zeroCopy;
-
-    uint32_t load_balance = config.get<uint32_t>("sim.load_balance",0);
-    nicInfo->load_balance = load_balance;
-	uint32_t forced_packet_size = config.get<uint32_t>("sim.forced_packet_size",512);
-	nicInfo->forced_packet_size = forced_packet_size;
-
-    //zinfo->freqMHz = config.get<uint32_t>("sys.frequency", 2000);
-    info("freqMhz: %d",zinfo->freqMHz);
-    uint32_t NBW = config.get<uint32_t>("sim.NBW", 0); //NBW in Gbps
-	info("NBW=%d", NBW);
-    if(NBW!=0){
-		//info("forced packet size: %d", forced_packet_size);
-		//float egr_interval_f = (zinfo->freqMHz) /((NBW/8) * (1024/forced_packet_size)); 
-		float egr_interval_f = ((zinfo->freqMHz)*8*forced_packet_size) /(NBW*1024); 
-        nicInfo->egr_interval = egr_interval_f; 
-		//info("egr_interval_f: %f", egr_interval_f);
-        //info("egr_interval: %d", nicInfo->egr_interval);
-
-    }
-	//info("hello");
-
-    nicInfo->num_ddio_ways = config.get<uint32_t>("sys.caches.l3.repl.ddio_ways", 2);
-    info("nicInfo->num_ddio_ways: %d", nicInfo->num_ddio_ways);
-	
-    uint32_t inval_read_rb = config.get<uint32_t>("sim.inval_read_rb",0);
-    nicInfo->inval_read_rb = inval_read_rb;
-
-    for (uint64_t i = 0; i < zinfo->numCores; i++) {
-		nicInfo->nic_elem[i].rb_left = nicInfo->recv_buf_pool_size/forced_packet_size;
-	}
-    //uint32_t memControllers = config.get<uint32_t>("sys.mem.controllers", 1);
-	nicInfo->num_controllers=memControllers;
-
-    uint32_t gmSize = config.get<uint32_t>("sim.gmMBytes", (1<<14) /*default 1024MB*/);
-    //int shmid = gm_init(((size_t)gmSize) << 20 /*MB to Bytes*/);
-	nicInfo->gm_size = (uint64_t)gmSize << 20;
-	info("init: gmSize: %d gm_size: %d",gmSize, nicInfo->gm_size);
-
-	nicInfo->sim_start_time = std::chrono::system_clock::now();
-
-    //load_generator* lgp;
-    //lgp=(load_generator*)gm_get_lg_ptr();
-
- //   uint32_t dist_type = config.get<uint32_t>("sim.load_dist", 0);
- //   lgp->RPCGen->set_load_dist(dist_type);
-
- //   //uint32_t num_keys = config.get<uint32_t>("sim.num_keys", 100);
- //   //lgp->RPCGen->set_num_keys(num_keys);
- //   
- //   //uint32_t update_fraction = config.get<uint32_t>("sim.update_fraction", 10);
- //   //lgp->RPCGen->set_update_fraction(update_fraction);
- //   //lgp->interval = (zinfo->phaseLength) / (nicInfo->packet_injection_rate);
- //   uint32_t target_pacekt_count = config.get<uint32_t>("sim.packet_count", 10000);
- //   lgp->target_packet_count = (uint64_t) target_pacekt_count;
- //   uint32_t arrival_dist = config.get<uint32_t>("sim.arrival_dist", 0);
- //   lgp->arrival_dist = arrival_dist;
-
- //   lgp->last_core = 0;
-	//lgp->sum_interval=0;
-
-
- //   // Build the load generators
- //   vector<const char*> loadGenNames;
- //   config.subgroups("sim.load_gen", loadGenNames);
- //   string lg_prefix = "sim.load_gen.";
- //   for (const char* lgi : loadGenNames) {
- //       info("loadGenName: %s", lgi);
- //       uint32_t lg_type = config.get<uint32_t>(lg_prefix+lgi+".type", 0);
- //       uint32_t lg_num_keys = config.get<uint32_t>(lg_prefix+lgi+".num_keys", 1024);
-
- //   }
     info("Initialized system");
 }
 
@@ -1043,15 +863,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     zinfo->outputDir = gm_strdup(outputDir);
     zinfo->statsBackends = new g_vector<StatsBackend*>();
 
-
-
-
-    l1d_caches = gm_calloc<FilterCache*>(256);
-
     Config config(configFile);
-
-
-
 
     //Debugging
     //NOTE: This should be as early as possible, so that we can attach to the debugger before initialization.
@@ -1085,86 +897,8 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
         zinfo->numCores = numCores;
         assert(numCores <= MAX_THREADS); //TODO: Is there any reason for this limit?
     }
-
-
-
-    //init nic_elements ptr
-    //glob_nic_elements* nicInfo= gm_calloc<glob_nic_elements>();
-    //nicInfo = gm_calloc<glob_nic_elements>();
-    nicInfo = gm_memalign<glob_nic_elements>(CACHE_LINE_BYTES);
-    futex_init(&(nicInfo->dpq_lock));
-    futex_init(&(nicInfo->ptag_dbug_lock));
-    futex_init(&(nicInfo->txts_lock));
-    
-    nicInfo->done_packet_q_head = NULL;
-    nicInfo->done_packet_q_tail = NULL;
-    futex_init(&(nicInfo->nic_lock));
-    
-    for (uint64_t i = 0; i < zinfo->numCores; i++) {
-        //nicInfo->nic_elem[i].wq = gm_calloc<rmc_wq_t>();
-        //nicInfo->nic_elem[i].cq = gm_calloc<rmc_cq_t>();
-        nicInfo->nic_elem[i].cq = gm_memalign<rmc_cq_t>(CACHE_LINE_BYTES);
-        nicInfo->nic_elem[i].wq = gm_memalign<rmc_wq_t>(CACHE_LINE_BYTES);
-        futex_init(&nicInfo->nic_elem[i].rb_lock);
-        futex_init(&nicInfo->nic_elem[i].ceq_lock);
-        futex_init(&nicInfo->nic_elem[i].rcp_lock);
-		nicInfo->nic_elem[i].rb_iterator=0;
-		nicInfo->nic_elem[i].cq_check_spin_count=0;
-		nicInfo->nic_elem[i].cq_check_inner_loop_count =0;
-        nicInfo->nic_elem[i].cq_check_outer_loop_count = 0;
-        nicInfo->nic_elem[i].packet_pending = false;
-        futex_init(&nicInfo->nic_elem[i].packet_pending_lock);
-    }
-    //nicInfo->latencies = gm_calloc<uint64_t>(LAT_ARR_SIZE);
-    nicInfo->latencies = gm_memalign<uint64_t>(CACHE_LINE_BYTES, LAT_ARR_SIZE);
-    //nicInfo->latencies_list = gm_calloc<uint64_t>(LAT_ARR_SIZE);
-    nicInfo->latencies_capa = LAT_ARR_SIZE;
-    //nicInfo->latencies_list_capa = LAT_ARR_SIZE;
-
-    uint32_t recv_buf_pool_size = config.get<uint32_t>("sim.recv_buf_pool_size", 524288);
-    nicInfo->recv_buf_pool_size = recv_buf_pool_size;
-    //nicInfo->latencies = gm_calloc<uint64_t>(LAT_ARR_SIZE);
-    for (uint64_t i = 0; i < zinfo->numCores; i++) {
-        //nicInfo->nic_elem[i].recv_buf = gm_calloc<z_cacheline>(recv_buf_pool_size);
-        //nicInfo->nic_elem[i].rb_dir = gm_calloc<recv_buf_dir_t>(recv_buf_pool_size);
-        nicInfo->nic_elem[i].recv_buf = gm_memalign<z_cacheline>(CACHE_LINE_BYTES, recv_buf_pool_size);
-		//assuming linear memory allocation, add skew to avoid set conflicts among buffers from different cores
-		//nicInfo->nic_elem[i].rb_pad = gm_memalign<uint64_t>(CACHE_LINE_BYTES, 680*8);
-    }
-	nicInfo->txts_map=gm_memalign<uint64_t*>(CACHE_LINE_BYTES, (sizeof(uint64_t*)*zinfo->numCores));
-    for (uint64_t i = 0; i < zinfo->numCores; i++) {
-        nicInfo->nic_elem[i].rb_dir =   gm_memalign<recv_buf_dir_t>(CACHE_LINE_BYTES, recv_buf_pool_size);
-        //for each core, entries match number of cachelines in RB pool
-		uint64_t numCLinRBPool = recv_buf_pool_size / CACHE_LINE_BYTES;
-		info("sancheck print before gm memaligning txts map, numCLinRBPool = %d",numCLinRBPool);
-        nicInfo->txts_map[i] = gm_memalign<uint64_t>(CACHE_LINE_BYTES, (recv_buf_pool_size/CACHE_LINE_BYTES));
-		info("sancheck print AFTER gm memaligning txts map");
-	}
-
-
-
-    nicInfo->clean_recv = config.get<uint32_t>("sim.clean_recv", 0);
-
-    nicInfo->mat_N = config.get<uint32_t>("sim.mat_N", 0);
-    // mat_N 0 if no mat mult, else allocate matrixes
-    if (nicInfo->mat_N > 0) {
-        uint32_t mat_N = nicInfo->mat_N;
-        //nicInfo->matA = gm_malloc<uint64_t>(mat_N * mat_N);
-        //nicInfo->matB = gm_malloc<uint64_t>(mat_N * mat_N);
-        //nicInfo->matC = gm_malloc<uint64_t>(mat_N * mat_N);
-        nicInfo->matA = gm_memalign<uint64_t>(CACHE_LINE_BYTES, mat_N * mat_N);
-        nicInfo->matB = gm_memalign<uint64_t>(CACHE_LINE_BYTES, mat_N * mat_N);
-        nicInfo->matC = gm_memalign<uint64_t>(CACHE_LINE_BYTES, mat_N * mat_N);
-
-        for (int i = 0; i < mat_N * mat_N; i++) {
-            nicInfo->matA[i] = i;
-            nicInfo->matB[i] = i;
-        }
-        nicInfo->num_mm_cores = config.get<uint32_t>("sim.mm_cores", 0);
-        futex_init(&(nicInfo->mm_core_lock));
-        info("matrix A,B,C allocated");
-    }
-
+	
+	zinfo->getParentId_policy=config.get<uint32_t>("sim.getParentId_policy", 0);
 
     zinfo->numDomains = config.get<uint32_t>("sim.domains", 1);
     uint32_t numSimThreads = config.get<uint32_t>("sim.contentionThreads", MAX((uint32_t)1, zinfo->numDomains/2)); //gives a bit of parallelism, TODO tune
@@ -1180,7 +914,6 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     zinfo->phaseLength = config.get<uint32_t>("sim.phaseLength", 10000);
     zinfo->statsPhaseInterval = config.get<uint32_t>("sim.statsPhaseInterval", 100);
     zinfo->freqMHz = config.get<uint32_t>("sys.frequency", 2000);
-
 
     //Maxima/termination conditions
     zinfo->maxPhases = config.get<uint64_t>("sim.maxPhases", 0);
@@ -1245,91 +978,6 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 
     zinfo->pinCmd = new PinCmd(&config, nullptr /*don't pass config file to children --- can go either way, it's optional*/, outputDir, shmid);
 
-    /// init Load Generator //
-    void* lgp_void;
-    //lgp_void = gm_calloc<load_generator>();
-    lgp_void = gm_memalign<load_generator>(CACHE_LINE_BYTES);
-    load_generator* lgp = (load_generator*)lgp_void;
-
-    //((load_generator*)lgp)->next_cycle = 0;
-    ((load_generator*)lgp)->ptag = 0;
-    //((load_generator*)lgp)->RPCGen = new RPCGenerator(100, 10); //moved to individual LG
-
-
-    //lgp->tc_map = gm_calloc<timestamp>(65536);
-    lgp->tc_map = gm_memalign<timestamp>(CACHE_LINE_BYTES,65536);
-
-    futex_init(&(((load_generator*)lgp)->ptc_lock));
-    gm_set_lg_ptr(lgp_void);
-
-
-    uint32_t dist_type = config.get<uint32_t>("sim.load_dist", 0);
-    //lgp->RPCGen->set_load_dist(dist_type);
-
-    //uint32_t num_keys = config.get<uint32_t>("sim.num_keys", 100);
-    //lgp->RPCGen->set_num_keys(num_keys);
-
-    //uint32_t update_fraction = config.get<uint32_t>("sim.update_fraction", 10);
-    //lgp->RPCGen->set_update_fraction(update_fraction);
-    //lgp->interval = (zinfo->phaseLength) / (nicInfo->packet_injection_rate);
-    uint32_t target_pacekt_count = config.get<uint32_t>("sim.packet_count", 10000);
-    lgp->target_packet_count = (uint64_t)target_pacekt_count;
-    uint32_t arrival_dist = config.get<uint32_t>("sim.arrival_dist", 0);
-    lgp->arrival_dist = arrival_dist;
-    lgp->sum_interval = 0;
-    lgp->prev_cycle = 0;
-
-    uint32_t burst_len = config.get<uint32_t>("sim.burst_len", 0);
-
-
-    // Build the load generators
-    vector<const char*> loadGenNames;
-    config.subgroups("sim.load_gen", loadGenNames);
-    string lg_prefix = "sim.load_gen.";
-    uint32_t num_loadgen = loadGenNames.size();
-    lgp->num_loadgen = num_loadgen;
-    //lgp->lgs = (load_gen_mod*)(gm_calloc<load_gen_mod>(num_loadgen));
-    lgp->lgs = (load_gen_mod*)(gm_memalign<load_gen_mod>(CACHE_LINE_BYTES,num_loadgen));
-    uint32_t tmp = 0;
-    uint32_t start_core = 3; //2 nic cores + core for thread spawning master threads
-    for (const char* lgi : loadGenNames) {
-        info("loadGenName: %s", lgi);
-        uint32_t lg_type = config.get<uint32_t>(lg_prefix + lgi + ".type", 0);
-        uint32_t lg_num_keys = config.get<uint32_t>(lg_prefix + lgi + ".num_keys", 1024);
-        uint32_t IR = config.get<uint32_t>(lg_prefix + lgi + ".packet_injection_rate", 10);
-        uint32_t update_fraction = config.get<uint32_t>(lg_prefix + lgi + ".update_fraction", 25);
-        uint32_t assoc_cores = config.get<uint32_t>(lg_prefix + lgi + ".assoc_cores", 16);
-        uint32_t q_depth = config.get<uint32_t>(lg_prefix + lgi + ".q_depth", 1); 
-        uint32_t arrival_dist_mod = config.get<uint32_t>(lg_prefix + lgi + ".arrival_dist", 100); //100 for not given
-        if(arrival_dist_mod==100){
-            lgp->lgs[tmp].arrival_dist=lgp->arrival_dist;
-        }
-        else{
-            lgp->lgs[tmp].arrival_dist = arrival_dist_mod;
-        }
-        lgp->lgs[tmp].q_depth = q_depth;
-        lgp->lgs[tmp].lg_type = lg_type;
-        lgp->lgs[tmp].next_cycle = 0;
-        lgp->lgs[tmp].interval = (zinfo->phaseLength) / (IR);
-		lgp->lgs[tmp].burst_count=0;
-		lgp->lgs[tmp].burst_len=burst_len;
-        lgp->lgs[tmp].last_core = 0;//start_core; - bugfix: last_core points to index of core_ids, not the actual core's id
-        lgp->lgs[tmp].num_cores = assoc_cores;
-        for (uint32_t i = 0; i < assoc_cores; i++) {
-            lgp->lgs[tmp].core_ids[i] = start_core++;
-        }
-        lgp->lgs[tmp].RPCGen = new RPCGenerator(100, 10); // this call may change depending on loadgen TYPE
-
-        lgp->lgs[tmp].RPCGen->set_lg_type(lg_type);
-        lgp->lgs[tmp].RPCGen->set_load_dist(dist_type);
-        lgp->lgs[tmp].RPCGen->set_num_keys(lg_num_keys);
-        lgp->lgs[tmp].RPCGen->set_update_fraction(update_fraction);
-        //start_core += assoc_cores;
-        tmp++;
-    }
-
-
-
     //Caches, cores, memory controllers
     InitSystem(config);
 
@@ -1373,16 +1021,9 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 
     zinfo->contentionSim->postInit();
 
+    info("Initialization complete");
 
-
-    gm_set_nic_ptr(nicInfo);
-  
-   
-
-
-	info("Initialization complete");
-    
-	//Causes every other process to wake up
+    //Causes every other process to wake up
     gm_set_glob_ptr(zinfo);
 }
 

@@ -45,9 +45,7 @@ typedef enum {
     GETS, // get line, exclusive permission not needed (triggered by a processor load)
     GETX, // get line, exclusive permission needed (triggered by a processor store o atomic access)
     PUTS, // clean writeback (lower cache is evicting this line, line was not modified)
-    PUTX,  // dirty writeback (lower cache is evicting this line, line was modified)
-    CLEAN,   // turn lines to I without writebacks
-    CLEAN_S     // turn lines to S without writebacks
+    PUTX  // dirty writeback (lower cache is evicting this line, line was modified)
 } AccessType;
 
 /* Types of Invalidation. An Invalidation is a request issued from upper to lower
@@ -66,21 +64,6 @@ typedef enum {
     E, // exclusive and clean
     M  // exclusive and dirty
 } MESIState;
-
-/* Cache line type with regards to ingress/egress */
-typedef enum {
-    DATA,
-    NETWORK
-    //PKTIN,  // data in this line related to an incomming packet
-    //PKTOUT  // data in this line related to an outgoing packet
-} NICType;
-
-/* Cache line type with regards to last user */
-typedef enum {
-    NONE,
-    APP,   // app is the last one to touch this line
-    NIC    // nic is the last one to touch this line
-} LastUser;
 
 //Convenience methods for clearer debug traces
 const char* AccessTypeName(AccessType t);
@@ -114,19 +97,11 @@ struct MemReq {
         NONINCLWB     = (1<<3), //This is a non-inclusive writeback. Do not assume that the line was in the lower level. Used on NUCA (BankDir).
         PUTX_KEEPEXCL = (1<<4), //Non-relinquishing PUTX. On a PUTX, maintain the requestor's E state instead of removing the sharer (i.e., this is a pure writeback)
         PREFETCH      = (1<<5), //Prefetch GETS access. Only set at level where prefetch is issued; handled early in MESICC
-        NORECORD      = (1<<6),
-        PKTIN         = (1<<7),
-        PKTOUT        = (1<<8),
-        NETRELATED_ING    = (1<<9),
-        NETRELATED_EGR = (1<<10),
-        INGR_EVCT     = (1<<11),
-        EGR_EVCT      = (1<<12)
     };
     uint32_t flags;
 
     inline void set(Flag f) {flags |= f;}
     inline bool is (Flag f) const {return flags & f;}
-    inline void clear(Flag f) {flags &= (~f);}
 };
 
 /* Invalidation/downgrade request */
@@ -143,7 +118,6 @@ struct InvReq {
 
 class AggregateStat;
 class Network;
-class BaseCache;
 
 /* Base class for all memory objects (caches and memories) */
 class MemObject : public GlobAlloc {

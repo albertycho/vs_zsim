@@ -35,18 +35,8 @@
 #include "ooo_core_recorder.h"
 #include "pad.h"
 
-#include "mem_ctrls.h"
-#include "timing_cache.h"
-
-#include "zsim.h"
-//#include "core_nic_api.h"
-
 // Uncomment to enable stall stats
 // #define OOO_STALL_STATS
-
-void cycle_increment_routine(uint64_t& curCycle, int core_id);
-
-#define L1D_LAT 4  // fixed, and FilterCache does not include L1 delay
 
 class FilterCache;
 
@@ -140,17 +130,17 @@ class WindowStructure {
         }
 
 
-        void schedule(uint64_t& curCycle, uint64_t& schedCycle, uint8_t portMask, uint32_t extraSlots = 0, int core_id = 0  ) {
+        void schedule(uint64_t& curCycle, uint64_t& schedCycle, uint8_t portMask, uint32_t extraSlots = 0) {
             if (!extraSlots) {
-                scheduleInternal<true, false>(curCycle, schedCycle, portMask, core_id);
+                scheduleInternal<true, false>(curCycle, schedCycle, portMask);
             } else {
-                scheduleInternal<true, true>(curCycle, schedCycle, portMask, core_id);
+                scheduleInternal<true, true>(curCycle, schedCycle, portMask);
                 uint64_t extraSlotCycle = schedCycle+1;
                 uint8_t extraSlotPortMask = 1 << lastPort;
                 // This is not entirely accurate, as an instruction may have been scheduled already
                 // on this port and we'll have a non-contiguous allocation. In practice, this is rare.
                 for (uint32_t i = 0; i < extraSlots; i++) {
-                    scheduleInternal<false, false>(curCycle, extraSlotCycle, extraSlotPortMask, core_id);
+                    scheduleInternal<false, false>(curCycle, extraSlotCycle, extraSlotPortMask);
                     // info("extra slot %d allocated on cycle %ld", i, extraSlotCycle);
                     extraSlotCycle++;
                 }
@@ -158,14 +148,11 @@ class WindowStructure {
             assert(occupancy <= WSZ);
         }
 
-        inline void advancePos(uint64_t& curCycle, int core_id, bool inj = true) {
+        inline void advancePos(uint64_t& curCycle) {
             occupancy -= curWin[curPos].count;
             curWin[curPos].set(0, 0);
             curPos++;
             curCycle++;
-            /*NIC logic triggers*/
-            if(inj)
-                cycle_increment_routine(curCycle, core_id);
 
             if (curPos == H) {  // rebase
                 // info("[%ld] Rebasing, curCycle=%ld", curCycle/H, curCycle);
@@ -187,12 +174,12 @@ class WindowStructure {
             }
         }
 
-        void longAdvance(uint64_t& curCycle, uint64_t targetCycle, int core_id) {
+        void longAdvance(uint64_t& curCycle, uint64_t targetCycle) {
             assert(curCycle <= targetCycle);
 
             // Drain IW
             while (occupancy && curCycle < targetCycle) {
-                advancePos(curCycle, core_id, false);
+                advancePos(curCycle);
             }
 
             if (occupancy) {
@@ -206,11 +193,11 @@ class WindowStructure {
         }
 
         // Poisons a range of cycles; used by the LSU to apply backpressure to the IW
-        void poisonRange(uint64_t curCycle, uint64_t targetCycle, uint8_t portMask, int core_id) {
+        void poisonRange(uint64_t curCycle, uint64_t targetCycle, uint8_t portMask) {
             uint64_t startCycle = curCycle;  // curCycle should not be modified...
             uint64_t poisonCycle = curCycle;
             while (poisonCycle < targetCycle) {
-                scheduleInternal<false, false>(curCycle, poisonCycle, portMask, core_id);
+                scheduleInternal<false, false>(curCycle, poisonCycle, portMask);
             }
             // info("Poisoned port mask %x from %ld to %ld (tgt %ld)", portMask, curCycle, poisonCycle, targetCycle);
             assert(startCycle == curCycle);
@@ -218,10 +205,10 @@ class WindowStructure {
 
     private:
         template <bool touchOccupancy, bool recordPort>
-        void scheduleInternal(uint64_t& curCycle, uint64_t& schedCycle, uint8_t portMask, int core_id) {
+        void scheduleInternal(uint64_t& curCycle, uint64_t& schedCycle, uint8_t portMask) {
             // If the window is full, advance curPos until it's not
             while (touchOccupancy && occupancy == WSZ) {
-                advancePos(curCycle, core_id);
+                advancePos(curCycle);
             }
 
             uint32_t delay = (schedCycle > curCycle)? (schedCycle - curCycle) : 0;
@@ -371,13 +358,10 @@ class CycleQueue {
 
 struct BblInfo;
 
-typedef vector<vector<BaseCache*>> CacheGroup;
-
 class OOOCore : public Core {
     private:
         FilterCache* l1i;
-
-        int core_id;
+        FilterCache* l1d;
 
         uint64_t phaseEndCycle; //next stopping point
 
@@ -385,14 +369,6 @@ class OOOCore : public Core {
         uint64_t regScoreboard[MAX_REGISTERS]; //contains timestamp of next issue cycles where each reg can be sourced
 
         BblInfo* prevBbl;
-
-		//record parameters for magic op
-		uint64_t magic_core_ids[256];
-		ADDRINT  magic_fields[256];
-		ADDRINT  magic_vals[256];
-		OOOCore * magic_cores[256];
-		uint32_t magic_ops;
-
 
         //Record load and store addresses
         Address loadAddrs[256];
@@ -408,12 +384,8 @@ class OOOCore : public Core {
         //buffers, but we split the associative component from the limited-size modeling.
         //NOTE: We do not model the 10-entry fill buffer here; the weave model should take care
         //to not overlap more than 10 misses.
-        // Cascade Lake
-        //ReorderBuffer<72, 4> loadQueue;
-        //ReorderBuffer<56, 4> storeQueue;
-        // Ice Lake
-        ReorderBuffer<128, 4> loadQueue;
-        ReorderBuffer<72, 4> storeQueue;
+        ReorderBuffer<72, 4> loadQueue;
+        ReorderBuffer<64, 4> storeQueue;
 
         uint32_t curCycleRFReads; //for RF read stalls
         uint32_t curCycleIssuedUops; //for uop issue limits
@@ -421,12 +393,10 @@ class OOOCore : public Core {
         //This would be something like the Atom... (but careful, the iw probably does not allow 2-wide when configured with 1 slot)
         //WindowStructure<1024, 1 /*size*/, 2 /*width*/> insWindow; //this would be something like an Atom, except all the instruction pairing business...
 
-        // Cascade Lake
-        //WindowStructure<1024, 97 /*size*/> insWindow; //NOTE: IW width is implicitly determined by the decoder, which sets the port masks according to uop type
-        //ReorderBuffer<224, 4> rob;
-        // Ice Lake
-        WindowStructure<1024, 160 /*size*/> insWindow; //NOTE: IW width is implicitly determined by the decoder, which sets the port masks according to uop type
-        ReorderBuffer<352, 5> rob;
+        //Nehalem
+        WindowStructure<1024, 36 /*size*/> insWindow; //NOTE: IW width is implicitly determined by the decoder, which sets the port masks according to uop type
+        //WindowStructure<1024, 96 /*size*/> insWindow; //NOTE: IW width is implicitly determined by the decoder, which sets the port masks according to uop type
+        ReorderBuffer<256, 4> rob;
 
         // Agner's guide says it's a 2-level pred and BHSR is 18 bits, so this is the config that makes sense;
         // in practice, this is probably closer to the Pentium M's branch predictor, (see Uzelac and Milenkovic,
@@ -442,9 +412,7 @@ class OOOCore : public Core {
         Address branchNotTakenNpc;
 
         uint64_t decodeCycle;
-        //CycleQueue<128> uopQueue;  // models issue queue
-        // Ice Lake
-        CycleQueue<140> uopQueue;  // models issue queue
+        CycleQueue<72> uopQueue;  // models issue queue
 
         uint64_t instrs, uops, bbls, approxInstrs, mispredBranches;
 
@@ -467,23 +435,13 @@ class OOOCore : public Core {
         OOOCoreRecorder cRec;
 
     public:
-        OOOCore(FilterCache* _l1i, FilterCache* _l1d, uint32_t _domain, g_string& _name, uint32_t _coreIdx, string ingr, string egr);
+        OOOCore(FilterCache* _l1i, FilterCache* _l1d, g_string& _name);
 
-        FilterCache* l1d;
-
-        //int ts_idx = 0;
-        
         void initStats(AggregateStat* parentStat);
 
         uint64_t getInstrs() const;
         uint64_t getPhaseCycles() const;
         uint64_t getCycles() const {return cRec.getUnhaltedCycles(curCycle);}
-
-        OOOCoreRecorder * get_cRec_ptr(){return &cRec;}
-        
-
-        //new getCycle for synching during bound
-        uint64_t getCycles_forSynch() { return curCycle; }
 
         void contextSwitch(int32_t gid);
 
@@ -496,41 +454,11 @@ class OOOCore : public Core {
         inline EventRecorder* getEventRecorder() {return cRec.getEventRecorder();}
         void cSimStart();
         void cSimEnd();
-        static int  nic_ingress_routine_per_cycle(uint32_t srcId);
-
-    	uint32_t cycle_adj_queue[100000];	// curCycle at start of cSimStart() and at end of cSimEnd()
-        uint32_t cycle_adj_idx=0;
-        uint32_t start_cnt_phases = 0;
-
-        uint16_t ingr_type, egr_type, egr_inval=0;
-
-        uint64_t get_sq_minAllocCycle(){
-            storeQueue.minAllocCycle();
-        }
-        void sq_markRetire(uint64_t minRetireCycle){
-            storeQueue.markRetire(minRetireCycle);
-        }
-
-        void iw_poisonRange(int64_t curCycle_t, uint64_t targetCycle_t, uint8_t portMask_t, int core_id_t){
-            insWindow.poisonRange(curCycle_t,targetCycle_t, portMask_t, core_id_t);
-        }
-        
-        uint64_t get_lastStoreCommitCycle(){
-            return lastStoreCommitCycle;
-        }
-        void set_lastStoreCommitCycle(uint64_t cycle_val){
-            lastStoreCommitCycle = cycle_val;
-        }
-        uint64_t get_lastStoreAddrCommitCycle(){
-            return lastStoreAddrCommitCycle;
-        }
-
 
     private:
         inline void load(Address addr);
         inline void store(Address addr);
 
-        inline void NicMagicFunc_on_trigger(THREADID tid, ADDRINT val, ADDRINT field);
         /* NOTE: Analysis routines cannot touch curCycle directly, must use
          * advance() for long jumps or insWindow.advancePos() for 1-cycle
          * jumps.
@@ -555,12 +483,6 @@ class OOOCore : public Core {
         static void PredStoreFunc(THREADID tid, ADDRINT addr, BOOL pred);
         static void BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo);
         static void BranchFunc(THREADID tid, ADDRINT pc, BOOL taken, ADDRINT takenNpc, ADDRINT notTakenNpc);
-        
-        static void NicMagicFuncWrapper(THREADID tid, ADDRINT val, ADDRINT field);
-        void NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT field);
-        
-        static int  nic_ingress_routine(THREADID tid);
-        static int  nic_egress_routine(THREADID tid);
 } ATTR_LINE_ALIGNED;  // Take up an int number of cache lines
 
 #endif  // OOO_CORE_H_

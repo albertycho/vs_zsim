@@ -27,203 +27,40 @@
 #include "hash.h"
 #include "repl_policies.h"
 
-#include <math.h>   
-#include "zsim.h"
-
 /* Set-associative array implementation */
 
 SetAssocArray::SetAssocArray(uint32_t _numLines, uint32_t _assoc, ReplPolicy* _rp, HashFamily* _hf) : rp(_rp), hf(_hf), numLines(_numLines), assoc(_assoc)  {
-    //array = gm_calloc<Address>(numLines);
-    array = gm_calloc<CacheLine>(numLines);
-    for(int i=0; i<numLines; i++) {
-        array[i].addr = 0;
-        array[i].nicType = DATA;
-        array[i].lastUSer = NONE;
-    }
+    array = gm_calloc<Address>(numLines);
     numSets = numLines/assoc;
-
-    if(isPow2(numSets))
-        setMask = numSets-1;
-    else {
-        setMask = ceil(log2(numSets));
-    }
-
-    //assert_msg(isPow2(numSets), "must have a power of 2 # sets, but you specified %d", numSets);
-}
-
-void SetAssocArray::initStats(AggregateStat* parentStat) {
-    AggregateStat* objStats = new AggregateStat();
-    objStats->init("array", "CacheArray stats");
-	//netMisses_nic_rb.init("netMiss_nic_rb", "Requests associated with network functionality from nic for recv buffer, misses");
-    //netMisses_nic_lb.init("netMiss_nic_lb", "Requests associated with network functionality from nic for local buffer, misses");
-    //netMisses_core.init("netMiss_core", "Requests associated with network functionality from core, misses");
-    //netHits_nic_rb.init("netHit_nic_rb", "Requests associated with network functionality from nic for recv buffer, hits");
-    //netHits_nic_lb.init("netHit_nic_lb", "Requests associated with network functionality from nic for local buffer, hits");
-    //netHits_core.init("netHit_core", "Requests associated with network functionality from core, hits");
-    appMisses.init("oldappMiss", "Requests associated with app functionality, misses");
-    appHits.init("oldappHit", "Requests associated with app functionality, hits");
-    way_misses.init("way_inserts", "Insertions per cache way",assoc);
-    way_hits.init("way_hits", "Hits per cache way",assoc);
-    nic_rb_way_hits.init("nic_rb_way_hits", "Hits per cache way",assoc);
-    nic_rb_way_misses.init("nic_rb_way_inserts", "Insertions per cache way",assoc);
-    rb_insert_server.init("rb_insert_server", "Insertions per cache way");
-    NNF_way_hits.init("NNF_way_hits", "Hits per cache way by NNF",assoc);
-    NNF_way_misses.init("NNF_way_misses", "misses per cache way by NNF",assoc);
-
-    //objStats->append(&netMisses_nic_rb);
-    //objStats->append(&netMisses_nic_lb);
-    //objStats->append(&netMisses_core);
-    ////objStats->append(&netHits_nic);
-    //objStats->append(&netHits_nic_rb);
-    //objStats->append(&netHits_nic_lb);
-    //objStats->append(&netHits_core);
-    objStats->append(&appMisses);
-    objStats->append(&appHits);
-    objStats->append(&way_misses);
-    objStats->append(&way_hits);
-    objStats->append(&nic_rb_way_hits);
-    objStats->append(&nic_rb_way_misses);
-    objStats->append(&rb_insert_server);
-    objStats->append(&NNF_way_hits);
-    objStats->append(&NNF_way_misses);
-    parentStat->append(objStats);
-}
-
-bool SetAssocArray::isCons(const Address lineAddr) {
-    uint32_t set = (hf->hash(0, lineAddr) & setMask) % numSets;
-    uint32_t first = set*assoc;
-    for (uint32_t id = first; id < first + assoc; id++) {
-        if (array[id].addr ==  lineAddr) {
-            if(array[id].lastUSer == APP)
-                return true;
-            else
-                return false;
-        }
-    }
+    setMask = numSets - 1;
+    assert_msg(isPow2(numSets), "must have a power of 2 # sets, but you specified %d", numSets);
 }
 
 int32_t SetAssocArray::lookup(const Address lineAddr, const MemReq* req, bool updateReplacement) {
-    uint32_t set = (hf->hash(0, lineAddr) & setMask) % numSets;
+    uint32_t set = hf->hash(0, lineAddr) & setMask;
     uint32_t first = set*assoc;
     for (uint32_t id = first; id < first + assoc; id++) {
-        if (array[id].addr ==  lineAddr) {
-            if (req != nullptr) {
-                if (req->srcId > 1) //  comming from app core
-                    array[id].lastUSer = APP;
-                else                // coming from NIC
-                    array[id].lastUSer = NIC;
-                if (req->is(MemReq::NETRELATED_ING) || req->is(MemReq::NETRELATED_EGR)){
-                    array[id].nicType = NETWORK;
-                    if (req->srcId > 1) {
-                        //netHits_core.atomicInc();
-                    }
-                    else {
-                        //netHits_nic.atomicInc();
-                        if(req->flags & MemReq::PKTIN){
-                            //netHits_nic_rb.atomicInc();
-                            nic_rb_way_hits.inc(id-first);
-                            if((id-first) < (12 - (nicInfo->num_ddio_ways))){
-                                nicInfo->spillover_count++;
-                            }
-                        }
-                    }
-                }
-                else {
-                    array[id].nicType = DATA;
-					if (req->srcId > 2) {
-						if(req->type == GETS || req->type == GETX){
-						    appHits.atomicInc();
-						}
-					}
-					if(req->srcId > 14){
-						if(req->type == GETS || req->type == GETX){
-							NNF_way_hits.inc(id-first);
-						}
-
-					}
-                }
-            }
-            way_hits.inc(id-first);
-            if (updateReplacement) 
-                rp->update(id, req);
+        if (array[id] ==  lineAddr) {
+            if (updateReplacement) rp->update(id, req);
             return id;
-        }
-    }
-    if (req != nullptr) {
-        if (req->flags & MemReq::NETRELATED_ING || req->flags & MemReq::NETRELATED_EGR) {
-            if (req->srcId > 2) {
-                //netMisses_core.atomicInc();
-            }
-            else {
-                if(req->flags & MemReq::PKTIN){
-                    //netMisses_nic_rb.atomicInc();
-                }
-                else if(req->flags & MemReq::PKTOUT){
-                    //netMisses_nic_lb.atomicInc();
-                }
-                else{
-                    printf("NETWORK related access from nic but not PKTIN or PKTOUT? shouldn't happen\n");
-                }
-            }
-        }
-        else {
-         	if (req->srcId > 2) {
-				if(req->type == GETS || req->type == GETX){
-				    appMisses.atomicInc();
-				}
-			}
         }
     }
     return -1;
 }
 
-
-bool is_rb_addr_ca(Address lineaddr){
-    uint64_t num_cores = zinfo->numCores;
-    for(int i=0; i<num_cores;i++){
-        uint64_t rb_base=(uint64_t) nicInfo->nic_elem[i].recv_buf;
-        uint64_t rb_top =rb_base+nicInfo->recv_buf_pool_size;
-        uint64_t rb_base_line=rb_base>>lineBits;
-        uint64_t rb_top_line = rb_top>>lineBits;
-        if (lineaddr >= rb_base_line && lineaddr <= rb_top_line) {
-            return true;
-        }
-    }
-    
-    return false;
-}
-
 uint32_t SetAssocArray::preinsert(const Address lineAddr, const MemReq* req, Address* wbLineAddr) { //TODO: Give out valid bit of wb cand?
-    uint32_t set = (hf->hash(0, lineAddr) & setMask) % numSets;
+    uint32_t set = hf->hash(0, lineAddr) & setMask;
     uint32_t first = set*assoc;
 
     uint32_t candidate = rp->rankCands(req, SetAssocCands(first, first+assoc));
-    way_misses.inc(candidate-first);
-    //info("eviction candidate is %lld, with index %ld", array[candidate], candidate);
-    if(req->flags & MemReq::PKTIN){
-        nic_rb_way_misses.inc(candidate-first);
-    }
-    else if(is_rb_addr_ca(lineAddr)){ //brought in by core after tight leaky DMA
-        nic_rb_way_misses.inc(candidate-first);
-        rb_insert_server.atomicInc();
-    }
-    *wbLineAddr = array[candidate].addr;
+
+    *wbLineAddr = array[candidate];
     return candidate;
 }
 
 void SetAssocArray::postinsert(const Address lineAddr, const MemReq* req, uint32_t candidate) {
     rp->replaced(candidate);
-    array[candidate].addr = lineAddr;
-    if (req != nullptr) {
-        if (req->srcId > 1) //  comming from app core
-            array[candidate].lastUSer = APP;
-        else                // coming from NIC
-            array[candidate].lastUSer = NIC;
-        if (req->is(MemReq::NETRELATED_ING) || req->is(MemReq::NETRELATED_EGR))
-            array[candidate].nicType = NETWORK;
-        else
-            array[candidate].nicType = DATA;
-    }
+    array[candidate] = lineAddr;
     rp->update(candidate, req);
 }
 

@@ -35,7 +35,6 @@ class MissResponseEvent;
 class MissWritebackEvent;
 class ReplAccessEvent;
 class TimingEvent;
-class WritebackOnInvalsEvent;
 
 class TimingCache : public Cache {
     private:
@@ -58,7 +57,7 @@ class TimingCache : public Cache {
 
     public:
         TimingCache(uint32_t _numLines, CC* _cc, CacheArray* _array, ReplPolicy* _rp, uint32_t _accLat, uint32_t _invLat, uint32_t mshrs,
-                uint32_t tagLat, uint32_t ways, uint32_t cands, uint32_t _domain, const g_string& _name, int _level);
+                uint32_t tagLat, uint32_t ways, uint32_t cands, uint32_t _domain, const g_string& _name);
         void initStats(AggregateStat* parentStat);
 
         uint64_t access(MemReq& req);
@@ -68,7 +67,6 @@ class TimingCache : public Cache {
         void simulateMissResponse(MissResponseEvent* ev, uint64_t cycle, MissStartEvent* mse);
         void simulateMissWriteback(MissWritebackEvent* ev, uint64_t cycle, MissStartEvent* mse);
         void simulateReplAccess(ReplAccessEvent* ev, uint64_t cycle);
-        void simulateWritebackOnInvals(WritebackOnInvalsEvent* ev, uint64_t cycle);
 
     private:
         uint64_t highPrioAccess(uint64_t cycle);

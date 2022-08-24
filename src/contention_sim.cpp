@@ -37,8 +37,6 @@
 #include "timing_event.h"
 #include "zsim.h"
 
-#include <iostream>
-
 //Set to 1 to produce a post-mortem analysis log
 #define POST_MORTEM 0
 //#define POST_MORTEM 1
@@ -84,7 +82,6 @@ ContentionSim::ContentionSim(uint32_t _numDomains, uint32_t _numSimThreads) {
         futex_lock(&simThreads[i].wakeLock); //starts locked, so first actual call to lock blocks
         simThreads[i].firstDomain = i*numDomains/numSimThreads;
         simThreads[i].supDomain = (i+1)*numDomains/numSimThreads;
-        info("contention sim init, tid = %ld, firstD = %ld, supD = %ld",i,simThreads[i].firstDomain,simThreads[i].supDomain);
     }
 
     futex_init(&waitLock);
@@ -148,6 +145,7 @@ void ContentionSim::initStats(AggregateStat* parentStat) {
 
 void ContentionSim::simulatePhase(uint64_t limit) {
     if (skipContention) return; //fastpath when there are no cores to simulate
+
     this->limit = limit;
     assert(limit >= lastLimit);
 
@@ -196,6 +194,7 @@ void ContentionSim::enqueue(TimingEvent* ev, uint64_t cycle) {
     assert(ev->numParents == 0);
     assert(ev->domain != -1);
     assert(ev->domain < (int32_t)numDomains);
+
     domains[ev->domain].pq.enqueue(ev, cycle);
 }
 
@@ -348,6 +347,7 @@ void ContentionSim::simulatePhaseThread(uint32_t thid) {
 
     } else {
         //info("XXX %d / %d %d %d", thid, thDomains, simThreads[thid].supDomain, simThreads[thid].firstDomain);
+
         std::priority_queue<DomainData*, std::vector<DomainData*>, CompareDomains> domPq;
         for (uint32_t i = simThreads[thid].firstDomain; i < simThreads[thid].supDomain; i++) {
             domPq.push(&domains[i]);
@@ -360,7 +360,6 @@ void ContentionSim::simulatePhaseThread(uint32_t thid) {
         std::vector<DomainData*>& nextStalledQueue = sq2;
 
         while (numFinished < thDomains) {
-            info("in while(numfinished < thdomains), tid %ld",thid);
             while (domPq.size()) {
                 DomainData* domain = domPq.top();
                 domPq.pop();

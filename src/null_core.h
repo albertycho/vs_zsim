@@ -60,7 +60,6 @@ class NullCore : public Core {
         static void PredStoreFunc(THREADID tid, ADDRINT addr, BOOL pred);
 
         static void BranchFunc(THREADID, ADDRINT, BOOL, ADDRINT, ADDRINT) {}
-        static void NicMagicFunc_dummy(THREADID, ADDRINT, ADDRINT) {}
 } ATTR_LINE_ALIGNED; //This needs to take up a whole cache line, or false sharing will be extremely frequent
 
 #endif  // NULL_CORE_H_

@@ -35,7 +35,6 @@
  */
 class CacheArray : public GlobAlloc {
     public:
-
         /* Returns tag's ID if present, -1 otherwise. If updateReplacement is set, call the replacement policy's update() on the line accessed*/
         virtual int32_t lookup(const Address lineAddr, const MemReq* req, bool updateReplacement) = 0;
 
@@ -52,20 +51,13 @@ class CacheArray : public GlobAlloc {
         virtual void initStats(AggregateStat* parent) {}
 };
 
-typedef struct CacheLine_strct {
-    Address addr;
-    NICType nicType;
-    LastUser lastUSer;
-} CacheLine;
-
 class ReplPolicy;
 class HashFamily;
 
 /* Set-associative cache array */
 class SetAssocArray : public CacheArray {
     protected:
-        //Address* array;
-        CacheLine* array;
+        Address* array;
         ReplPolicy* rp;
         HashFamily* hf;
         uint32_t numLines;
@@ -73,19 +65,12 @@ class SetAssocArray : public CacheArray {
         uint32_t assoc;
         uint32_t setMask;
 
-        Counter appMisses,appHits, rb_insert_server;
-        VectorCounter way_misses, way_hits, nic_rb_way_misses, nic_rb_way_hits, NNF_way_hits, NNF_way_misses;
-
-
     public:
         SetAssocArray(uint32_t _numLines, uint32_t _assoc, ReplPolicy* _rp, HashFamily* _hf);
 
         int32_t lookup(const Address lineAddr, const MemReq* req, bool updateReplacement);
         uint32_t preinsert(const Address lineAddr, const MemReq* req, Address* wbLineAddr);
         void postinsert(const Address lineAddr, const MemReq* req, uint32_t candidate);
-
-        void initStats(AggregateStat* parentStat);
-        bool isCons(const Address lineAddr);
 };
 
 /* The cache array that started this simulator :) */

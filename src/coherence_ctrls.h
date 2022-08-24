@@ -30,14 +30,10 @@
 #include "constants.h"
 #include "g_std/g_string.h"
 #include "g_std/g_vector.h"
-#include "g_std/g_unordered_map.h"
 #include "locks.h"
 #include "memory_hierarchy.h"
 #include "pad.h"
 #include "stats.h"
-
-#include <unordered_map>
-#include <iostream>
 
 //TODO: Now that we have a pure CC interface, the MESI controllers should go on different files.
 
@@ -46,7 +42,6 @@ class CC : public GlobAlloc {
     public:
         //Initialization
         virtual void setParents(uint32_t childId, const g_vector<MemObject*>& parents, Network* network) = 0;
-        virtual MemObject* getParent(Address lineaddr) = 0;
         virtual void setChildren(const g_vector<BaseCache*>& children, Network* network) = 0;
         virtual void initStats(AggregateStat* cacheStat) = 0;
 
@@ -54,17 +49,16 @@ class CC : public GlobAlloc {
         virtual bool startAccess(MemReq& req) = 0; //initial locking, address races; returns true if access should be skipped; may change req!
         virtual bool shouldAllocate(const MemReq& req) = 0; //called when we don't find req's lineAddr in the array
         virtual uint64_t processEviction(const MemReq& triggerReq, Address wbLineAddr, int32_t lineId, uint64_t startCycle) = 0; //called iff shouldAllocate returns true
-        virtual uint64_t processAccess(const MemReq& req, int32_t lineId, uint64_t startCycle, bool correct_level, uint64_t* getDoneCycle = nullptr, uint64_t* invalOnAccCycle = nullptr) = 0;
+        virtual uint64_t processAccess(const MemReq& req, int32_t lineId, uint64_t startCycle, uint64_t* getDoneCycle = nullptr) = 0;
         virtual void endAccess(const MemReq& req) = 0;
 
         //Inv methods
         virtual void startInv() = 0;
         virtual uint64_t processInv(const InvReq& req, int32_t lineId, uint64_t startCycle) = 0;
-        virtual void finishInv() = 0;
 
         //Repl policy interface
-        virtual uint32_t numSharers(int32_t lineId) = 0;
-        virtual bool isValid(int32_t lineId) = 0;
+        virtual uint32_t numSharers(uint32_t lineId) = 0;
+        virtual bool isValid(uint32_t lineId) = 0;
 };
 
 
@@ -98,26 +92,7 @@ class MESIBottomCC : public GlobAlloc {
         Counter profINV, profINVX, profFWD /*received from upstream*/;
         //Counter profWBIncl, profWBCoh /* writebacks due to inclusion or coherence, received from downstream, does not include PUTS */;
         // TODO: Measuring writebacks is messy, do if needed
-        //NF grp 0: main NF to profile (loadgen 0)
         Counter profGETNextLevelLat, profGETNetLat;
-        Counter netMiss_core_rb, netMiss_core_lb, netMiss_nic_rb, netMiss_nic_lb;
-        Counter netHit_core_rb, netHit_core_lb, netHit_nic_rb, netHit_nic_lb;
-        Counter appMiss, appHit, nicMiss, nicHit;
-        Counter appPutMiss, appPutHit;
-
-        Counter profCleanHit, profCleanMiss;
-
-        //NF grp 1: second group to create LLC contention
-        Counter netMiss_core_rb_grp1, netMiss_core_lb_grp1, netMiss_nic_rb_grp1, netMiss_nic_lb_grp1;
-        Counter netHit_core_rb_grp1, netHit_core_lb_grp1, netHit_nic_rb_grp1, netHit_nic_lb_grp1;
-        Counter appMiss_grp1, appHit_grp1, nicMiss_grp1, nicHit_grp1;
-        Counter appPutMiss_grp1, appPutHit_grp1;
-
-        //NNF: servers doing non network function to create LLC contention
-        Counter netMiss_core_rb_NNF, netMiss_core_lb_NNF, netMiss_nic_rb_NNF, netMiss_nic_lb_NNF;
-        Counter netHit_core_rb_NNF, netHit_core_lb_NNF, netHit_nic_rb_NNF, netHit_nic_lb_NNF;
-        Counter appMiss_NNF, appHit_NNF, nicMiss_NNF, nicHit_NNF;
-        Counter appPutMiss_NNF, appPutHit_NNF;
 
         bool nonInclusiveHack;
 
@@ -134,13 +109,9 @@ class MESIBottomCC : public GlobAlloc {
             futex_init(&ccLock);
         }
 
-
         void init(const g_vector<MemObject*>& _parents, Network* network, const char* name);
 
-        inline bool isExclusive(int32_t lineId) { // this function is used at tcc to decide whether a GETS will be answered with the line in S or E
-            if(lineId == -1) {
-                return true;  // we don't have the line in the llc. if someone above us has it, numSharers will take care of it
-            }
+        inline bool isExclusive(uint32_t lineId) {
             MESIState state = array[lineId];
             return (state == E) || (state == M);
         }
@@ -158,53 +129,6 @@ class MESIBottomCC : public GlobAlloc {
             profFWD.init("FWD", "Forwards (from upper level)");
             profGETNextLevelLat.init("latGETnl", "GET request latency on next level");
             profGETNetLat.init("latGETnet", "GET request latency on network to next level");
-            netMiss_core_rb.init("netMiss_core_rb", "Ingress GET misses, app cores");
-            netHit_core_rb.init("netHit_core_rb", "Ingress GET hits, app cores");
-            netMiss_core_lb.init("netMiss_core_lb", "Egress GET misses, app cores");
-            netHit_core_lb.init("netHit_core_lb", "Egress GET hits, app cores");
-            netMiss_nic_rb.init("netMiss_nic_rb", "Ingress GET misses, NIC");
-            netHit_nic_rb.init("netHit_nic_rb", "Ingress GET hits, NIC");
-            netMiss_nic_lb.init("netMiss_nic_lb", "Egress GET misses, NIC");
-            netHit_nic_lb.init("netHit_nic_lb", "Egress GET hits, NIC");
-            appMiss.init("appMiss","App data-related GET misses");
-            appHit.init("appHit","App data-related GET hits");
-            //nicMiss.init("nicMiss","App data-related GET misses");
-            //nicHit.init("nicHit","App data-related GET hits");
-
-            profCleanHit.init("cleanHit", "Clean_S hits");
-            profCleanMiss.init("cleanMiss", "Clean_S misses");
-
-            appPutMiss.init("appPutMiss","App data-related PUT misses");
-            appPutHit.init("appPutHit","App data-related PUT hits");
-            
-            netMiss_core_rb_grp1.init("netMiss_core_rb_grp1", "Ingress GET misses, app cores, loadgen1");
-            netHit_core_rb_grp1.init("netHit_core_rb_grp1", "Ingress GET hits, app cores");
-            netMiss_core_lb_grp1.init("netMiss_core_lb_grp1", "Egress GET misses, app cores");
-            netHit_core_lb_grp1.init("netHit_core_lb_grp1", "Egress GET hits, app cores");
-            netMiss_nic_rb_grp1.init("netMiss_nic_rb_grp1", "Ingress GET misses, NIC");
-            netHit_nic_rb_grp1.init("netHit_nic_rb_grp1", "Ingress GET hits, NIC");
-            netMiss_nic_lb_grp1.init("netMiss_nic_lb_grp1", "Egress GET misses, NIC");
-            netHit_nic_lb_grp1.init("netHit_nic_lb_grp1", "Egress GET hits, NIC");
-            appMiss_grp1.init("appMiss_grp1","App data-related GET misses");
-            appHit_grp1.init("appHit_grp1","App data-related GET hits");
-            appPutMiss_grp1.init("appPutMiss_grp1","App data-related PUT misses");
-            appPutHit_grp1.init("appPutHit_grp1","App data-related PUT hits");
-
-
-            netMiss_core_rb_NNF.init("netMiss_core_rb_NNF", "Ingress GET misses, app cores, non-network-function");
-            netHit_core_rb_NNF.init("netHit_core_rb_NNF", "Ingress GET hits, app cores");
-            netMiss_core_lb_NNF.init("netMiss_core_lb_NNF", "Egress GET misses, app cores");
-            netHit_core_lb_NNF.init("netHit_core_lb_NNF", "Egress GET hits, app cores");
-            netMiss_nic_rb_NNF.init("netMiss_nic_rb_NNF", "Ingress GET misses, NIC");
-            netHit_nic_rb_NNF.init("netHit_nic_rb_NNF", "Ingress GET hits, NIC");
-            netMiss_nic_lb_NNF.init("netMiss_nic_lb_NNF", "Egress GET misses, NIC");
-            netHit_nic_lb_NNF.init("netHit_nic_lb_NNF", "Egress GET hits, NIC");
-            appMiss_NNF.init("appMiss_NNF","App data-related GET misses");
-            appHit_NNF.init("appHit_NNF","App data-related GET hits");
-            appPutMiss_NNF.init("appPutMiss_NNF","App data-related PUT misses");
-            appPutHit_NNF.init("appPutHit_NNF","App data-related PUT hits");
-
-
 
             parentStat->append(&profGETSHit);
             parentStat->append(&profGETXHit);
@@ -218,71 +142,17 @@ class MESIBottomCC : public GlobAlloc {
             parentStat->append(&profFWD);
             parentStat->append(&profGETNextLevelLat);
             parentStat->append(&profGETNetLat);
-            parentStat->append(&netMiss_core_lb);
-            parentStat->append(&netHit_core_lb);
-            parentStat->append(&netMiss_core_rb);
-            parentStat->append(&netHit_core_rb);
-            parentStat->append(&netMiss_nic_lb);
-            parentStat->append(&netHit_nic_lb);
-            parentStat->append(&netMiss_nic_rb);
-            parentStat->append(&netHit_nic_rb);
-            parentStat->append(&appMiss);
-            parentStat->append(&appHit);
-            parentStat->append(&appPutHit);
-            parentStat->append(&appPutMiss);
-            //parentStat->append(&nicMiss);
-            //parentStat->append(&nicHit);
-            
-            parentStat->append(&profCleanHit);
-            parentStat->append(&profCleanMiss);
-
-            parentStat->append(&netMiss_core_lb_grp1);
-            parentStat->append(&netHit_core_lb_grp1);
-            parentStat->append(&netMiss_core_rb_grp1);
-            parentStat->append(&netHit_core_rb_grp1);
-            parentStat->append(&netMiss_nic_lb_grp1);
-            parentStat->append(&netHit_nic_lb_grp1);
-            parentStat->append(&netMiss_nic_rb_grp1);
-            parentStat->append(&netHit_nic_rb_grp1);
-            parentStat->append(&appMiss_grp1);
-            parentStat->append(&appHit_grp1);
-            parentStat->append(&appPutHit_grp1);
-            parentStat->append(&appPutMiss_grp1);
-
-
-            parentStat->append(&netMiss_core_lb_NNF);
-            parentStat->append(&netHit_core_lb_NNF);
-            parentStat->append(&netMiss_core_rb_NNF);
-            parentStat->append(&netHit_core_rb_NNF);
-            parentStat->append(&netMiss_nic_lb_NNF);
-            parentStat->append(&netHit_nic_lb_NNF);
-            parentStat->append(&netMiss_nic_rb_NNF);
-            parentStat->append(&netHit_nic_rb_NNF);
-            parentStat->append(&appMiss_NNF);
-            parentStat->append(&appHit_NNF);
-            parentStat->append(&appPutHit_NNF);
-            parentStat->append(&appPutMiss_NNF);
-
-
         }
 
-        uint64_t processEviction(Address wbLineAddr, int32_t lineId, bool lowerLevelWriteback, uint64_t cycle, uint32_t srcId, uint32_t flags);
+        uint64_t processEviction(Address wbLineAddr, uint32_t lineId, bool lowerLevelWriteback, uint64_t cycle, uint32_t srcId);
 
-        uint64_t passToNext(Address lineAddr, AccessType type, uint32_t childId, uint32_t srcId, uint32_t flags, uint64_t cycle);
+        uint64_t processAccess(Address lineAddr, uint32_t lineId, AccessType type, uint64_t cycle, uint32_t srcId, uint32_t flags);
 
-        uint64_t processAccess(Address lineAddr, int32_t lineId, AccessType type, uint64_t cycle, uint32_t srcId, uint32_t flags, bool existsInPriv = true);
+        void processWritebackOnAccess(Address lineAddr, uint32_t lineId, AccessType type);
 
-        void processWritebackOnAccess(Address lineAddr, int32_t lineId, AccessType type);
-
-        void processInval(Address lineAddr, int32_t lineId, InvType type, bool* reqWriteback);
+        void processInval(Address lineAddr, uint32_t lineId, InvType type, bool* reqWriteback);
 
         uint64_t processNonInclusiveWriteback(Address lineAddr, AccessType type, uint64_t cycle, MESIState* state, uint32_t srcId, uint32_t flags);
-
-
-        MemObject* getParentC(Address lineaddr) {
-            uint32_t parentId = getParentId(lineaddr);
-            return parents[parentId];
-        }
 
         inline void lock() {
             futex_lock(&ccLock);
@@ -293,16 +163,11 @@ class MESIBottomCC : public GlobAlloc {
         }
 
         /* Replacement policy query interface */
-        inline bool isValid(int32_t lineId) {
-            assert(lineId > -1);
+        inline bool isValid(uint32_t lineId) {
             return array[lineId] != I;
         }
 
         //Could extend with isExclusive, isDirty, etc, but not needed for now.
-
-        MESIState getState(uint32_t lineid){
-            return array[lineid];
-        }
 
     private:
         uint32_t getParentId(Address lineAddr);
@@ -313,16 +178,14 @@ class MESIBottomCC : public GlobAlloc {
 class MESITopCC : public GlobAlloc {
     private:
         struct Entry {
-            int32_t numSharers;
+            uint32_t numSharers;
             std::bitset<MAX_CACHE_CHILDREN> sharers;
             bool exclusive;
-            bool exists;
 
             void clear() {
                 exclusive = false;
                 numSharers = 0;
                 sharers.reset();
-                exists = false;
             }
 
             bool isEmpty() {
@@ -339,8 +202,6 @@ class MESITopCC : public GlobAlloc {
         g_vector<uint32_t> childrenRTTs;
         uint32_t numLines;
 
-        g_unordered_map<uint64_t,Entry> directory;
-
         bool nonInclusiveHack;
 
         PAD();
@@ -354,18 +215,17 @@ class MESITopCC : public GlobAlloc {
                 array[i].clear();
             }
 
-            directory[0].clear();
             futex_init(&ccLock);
         }
 
         void init(const g_vector<BaseCache*>& _children, Network* network, const char* name);
 
-        uint64_t processEviction(Address wbLineAddr, int32_t lineId, bool* reqWriteback, uint64_t cycle, uint32_t srcId);
+        uint64_t processEviction(Address wbLineAddr, uint32_t lineId, bool* reqWriteback, uint64_t cycle, uint32_t srcId);
 
-        uint64_t processAccess(Address lineAddr, int32_t lineId, AccessType type, uint32_t childId, bool haveExclusive,
+        uint64_t processAccess(Address lineAddr, uint32_t lineId, AccessType type, uint32_t childId, bool haveExclusive,
                 MESIState* childState, bool* inducedWriteback, uint64_t cycle, uint32_t srcId, uint32_t flags);
 
-        uint64_t processInval(Address lineAddr, int32_t lineId, InvType type, bool* reqWriteback, uint64_t cycle, uint32_t srcId);
+        uint64_t processInval(Address lineAddr, uint32_t lineId, InvType type, bool* reqWriteback, uint64_t cycle, uint32_t srcId);
 
         inline void lock() {
             futex_lock(&ccLock);
@@ -376,22 +236,12 @@ class MESITopCC : public GlobAlloc {
         }
 
         /* Replacement policy query interface */
-        inline uint32_t numSharers(int32_t lineId) {
-            assert(lineId > -1);
+        inline uint32_t numSharers(uint32_t lineId) {
             return array[lineId].numSharers;
         }
 
-        bool existsInPrivate(uint64_t lineAddr) {
-            if (nonInclusiveHack)
-                return ((!directory.empty() && directory.count(lineAddr) > 0 && directory[lineAddr].numSharers>0)  );
-            else
-                return true;
-        }
-
-        void processNonInclusiveWriteback(Address lineAddr, uint64_t srcId);
-
     private:
-        uint64_t sendInvalidates(Address lineAddr, int32_t lineId, InvType type, bool* reqWriteback, uint64_t cycle, uint32_t srcId);
+        uint64_t sendInvalidates(Address lineAddr, uint32_t lineId, InvType type, bool* reqWriteback, uint64_t cycle, uint32_t srcId);
 };
 
 static inline bool CheckForMESIRace(AccessType& type, MESIState* state, MESIState initialState) {
@@ -413,14 +263,10 @@ static inline bool CheckForMESIRace(AccessType& type, MESIState* state, MESIStat
             }
         } else if (type == GETX) { //...or it is a GETX
             //In this case, the line MUST have been in S and have been INValidated
-            if(initialState != S) {
-               info("initial state %ld *state %ld",initialState,*state);
-            }
-            assert(initialState == S);// || initialState == E || initialState == M);
+            assert(initialState == S);
             assert(*state == I);
             //Do nothing. This is still a valid GETX, only it is not an upgrade miss anymore
         } else { //no GETSs can race with INVs, if we are doing a GETS it's because the line was invalid to begin with!
-        info("initial state %ld *state %ld",initialState,*state);
             panic("Invalid true race happened (?)");
         }
     }
@@ -446,10 +292,6 @@ class MESICC : public CC {
             bcc->init(parents, network, name.c_str());
         }
 
-        MemObject* getParent(Address lineaddr) {
-            return bcc->getParentC(lineaddr);
-        }
-
         void setChildren(const g_vector<BaseCache*>& children, Network* network) {
             tcc = new MESITopCC(numLines, nonInclusiveHack);
             tcc->init(children, network, name.c_str());
@@ -462,7 +304,7 @@ class MESICC : public CC {
 
         //Access methods
         bool startAccess(MemReq& req) {
-            assert((req.type == GETS) || (req.type == GETX) || (req.type == PUTS) || (req.type == PUTX) || (req.type == CLEAN)|| (req.type == CLEAN_S));
+            assert((req.type == GETS) || (req.type == GETX) || (req.type == PUTS) || (req.type == PUTX));
 
             /* Child should be locked when called. We do hand-over-hand locking when going
              * down (which is why we require the lock), but not when going up, opening the
@@ -478,124 +320,62 @@ class MESICC : public CC {
             /* The situation is now stable, true race-wise. No one can touch the child state, because we hold
              * both parent's locks. So, we first handle races, which may cause us to skip the access.
              */
-            bool skipAccess;
-            if (req.type != CLEAN && req.type != CLEAN_S) {
-                skipAccess = CheckForMESIRace(req.type /*may change*/, req.state, req.initialState); 
-            }
-            else {
-                skipAccess = false;
-            }
+            bool skipAccess = CheckForMESIRace(req.type /*may change*/, req.state, req.initialState);
             return skipAccess;
         }
 
         bool shouldAllocate(const MemReq& req) {
-            if (nonInclusiveHack) {
-                if (req.type == GETX) {
-                    if (req.is(MemReq::PKTOUT)) {
-                        return false;
-                    }
-                    else if (req.is(MemReq::PKTIN)){
-                        return true;
-                    }
-                    return tcc->existsInPrivate(req.lineAddr);//false;   // non-allocating reads
-                }
-                else if  (req.type == GETS) {
-                    if(req.is(MemReq::PKTOUT)) {
-                        return tcc->existsInPrivate(req.lineAddr);
-                    }
-                    else {
-                        return tcc->existsInPrivate(req.lineAddr);///false;
-                    }
-                }
-                else if (req.type == CLEAN || req.type == CLEAN_S) {
-                    return false;
-                }
-                else {
-                    return true;    // both clean and dirty writebacks allocate
-                }
-            }
-
-            if (req.type == GETX) {
-                return !(req.is(MemReq::PKTOUT));
-            }
-            else if  (req.type == GETS) {
-                if(req.is(MemReq::PKTOUT)) {
-                     return tcc->existsInPrivate(req.lineAddr);
-                }
-                else {
-                    return true;
-                }
-            }
-            else if (req.type == CLEAN || req.type == CLEAN_S) {
-                return false;
-            }
-            else {
+            if ((req.type == GETS) || (req.type == GETX)) {
+                return true;
+            } else {
                 assert((req.type == PUTS) || (req.type == PUTX));
                 if (!nonInclusiveHack) {
                     panic("[%s] We lost inclusion on this line! 0x%lx, type %s, childId %d, childState %s", name.c_str(),
                             req.lineAddr, AccessTypeName(req.type), req.childId, MESIStateName(*req.state));
                 }
-                return req.type == PUTX ? true : false;//false;
+                return false;
             }
         }
 
         uint64_t processEviction(const MemReq& triggerReq, Address wbLineAddr, int32_t lineId, uint64_t startCycle) {
             bool lowerLevelWriteback = false;
             uint64_t evCycle = tcc->processEviction(wbLineAddr, lineId, &lowerLevelWriteback, startCycle, triggerReq.srcId); //1. if needed, send invalidates/downgrades to lower level
-            evCycle = bcc->processEviction(wbLineAddr, lineId, lowerLevelWriteback, evCycle, triggerReq.srcId, triggerReq.flags); //2. if needed, write back line to upper level
+            evCycle = bcc->processEviction(wbLineAddr, lineId, lowerLevelWriteback, evCycle, triggerReq.srcId); //2. if needed, write back line to upper level
             return evCycle;
         }
 
-        uint64_t processAccess(const MemReq& req, int32_t lineId, uint64_t startCycle, bool correct_level, uint64_t* getDoneCycle = nullptr, uint64_t* invalOnAccCycle = nullptr) {
-
+        uint64_t processAccess(const MemReq& req, int32_t lineId, uint64_t startCycle, uint64_t* getDoneCycle = nullptr) {
             uint64_t respCycle = startCycle;
             //Handle non-inclusive writebacks by bypassing
             //NOTE: Most of the time, these are due to evictions, so the line is not there. But the second condition can trigger in NUCA-initiated
             //invalidations. The alternative with this would be to capture these blocks, since we have space anyway. This is so rare is doesn't matter,
             //but if we do proper NI/EX mid-level caches backed by directories, this may start becoming more common (and it is perfectly acceptable to
             //upgrade without any interaction with the parent... the child had the permissions!)
-            if (correct_level) {
-                if (0){//(lineId == -1 && !(req.flags & MemReq::PKTOUT || req.type == CLEAN || req.type == CLEAN_S)) || (((req.type == PUTS) /*|| (req.type == PUTX)*/) && !bcc->isValid(lineId))) { //can only be a non-inclusive wback
-                    assert(nonInclusiveHack);
-                    assert((req.type == PUTS));// || (req.type == PUTX));
-                    respCycle = bcc->processNonInclusiveWriteback(req.lineAddr, req.type, startCycle, req.state, req.srcId, req.flags);
-                    tcc->processNonInclusiveWriteback(req.lineAddr, req.childId);
-                    if (getDoneCycle) *getDoneCycle = 0;
-                } else {
-                    //Prefetches are side requests and get handled a bit differently
-                    bool isPrefetch = req.flags & MemReq::PREFETCH;
-                    assert(!isPrefetch || req.type == GETS);
-                    uint32_t flags = req.flags & ~MemReq::PREFETCH; //always clear PREFETCH, this flag cannot propagate up
-                    //if needed, fetch line or upgrade miss from upper level
-                    respCycle = bcc->processAccess(req.lineAddr, lineId, req.type, startCycle, req.srcId, flags, tcc->existsInPrivate(req.lineAddr));
-                    if (getDoneCycle) *getDoneCycle = respCycle;
-                    if (!isPrefetch) { //prefetches only touch bcc; the demand request from the core will pull the line to lower level
-                        //At this point, the line is in a good state w.r.t. upper levels
-                        bool lowerLevelWriteback = false;
-                        //change directory info, invalidate other children if needed, tell requester about its state
-                        respCycle = tcc->processAccess(req.lineAddr, lineId, req.type, req.childId, bcc->isExclusive(lineId), req.state,
-                                &lowerLevelWriteback, respCycle, req.srcId, flags);
-                        if (lowerLevelWriteback) {
-                            if (req.is(MemReq::PKTOUT) && req.type == GETX) {   // non-DDIO egress access that invalidates all caches
-                                                                                // i need to writeback the line to memory
-                                *invalOnAccCycle = bcc->processNonInclusiveWriteback(req.lineAddr, PUTX, respCycle, req.state, req.srcId, 0); // basically does a 
-                            }
-                            else if (req.type != CLEAN && req.type != CLEAN_S) {
-                                //Essentially, if tcc induced a writeback, bcc may need to do an E->M transition to reflect that the cache now has dirty data
-                                bcc->processWritebackOnAccess(req.lineAddr, lineId, req.type);
-                            }
-                        }
+            if (lineId == -1 || (((req.type == PUTS) || (req.type == PUTX)) && !bcc->isValid(lineId))) { //can only be a non-inclusive wback
+                assert(nonInclusiveHack);
+                assert((req.type == PUTS) || (req.type == PUTX));
+                respCycle = bcc->processNonInclusiveWriteback(req.lineAddr, req.type, startCycle, req.state, req.srcId, req.flags);
+            } else {
+                //Prefetches are side requests and get handled a bit differently
+                bool isPrefetch = req.flags & MemReq::PREFETCH;
+                assert(!isPrefetch || req.type == GETS);
+                uint32_t flags = req.flags & ~MemReq::PREFETCH; //always clear PREFETCH, this flag cannot propagate up
+
+                //if needed, fetch line or upgrade miss from upper level
+                respCycle = bcc->processAccess(req.lineAddr, lineId, req.type, startCycle, req.srcId, flags);
+                if (getDoneCycle) *getDoneCycle = respCycle;
+                if (!isPrefetch) { //prefetches only touch bcc; the demand request from the core will pull the line to lower level
+                    //At this point, the line is in a good state w.r.t. upper levels
+                    bool lowerLevelWriteback = false;
+                    //change directory info, invalidate other children if needed, tell requester about its state
+                    respCycle = tcc->processAccess(req.lineAddr, lineId, req.type, req.childId, bcc->isExclusive(lineId), req.state,
+                            &lowerLevelWriteback, respCycle, req.srcId, flags);
+                    if (lowerLevelWriteback) {
+                        //Essentially, if tcc induced a writeback, bcc may need to do an E->M transition to reflect that the cache now has dirty data
+                        bcc->processWritebackOnAccess(req.lineAddr, lineId, req.type);
                     }
                 }
-                //TODO: Albert - add READNINV here?
-                //handling it in bcc->processAccess
-                //if((req.flags & MemReq::READNINV) && (is_llc)){}
-            }           
-            else {
-            //info("Passing to next cache");
-               respCycle = bcc->passToNext(req.lineAddr, req.type, req.childId, req.srcId, req.flags, startCycle);
             }
-
             return respCycle;
         }
 
@@ -618,19 +398,13 @@ class MESICC : public CC {
             uint64_t respCycle = tcc->processInval(req.lineAddr, lineId, req.type, req.writeback, startCycle, req.srcId); //send invalidates or downgrades to children
             bcc->processInval(req.lineAddr, lineId, req.type, req.writeback); //adjust our own state
 
-            //bcc->unlock();
+            bcc->unlock();
             return respCycle;
         }
 
-        void finishInv() {
-            bcc->unlock();
-        }
-
         //Repl policy interface
-        uint32_t numSharers(int32_t lineId) {
-            return tcc->numSharers(lineId);}
-        bool isValid(int32_t lineId) {
-            return bcc->isValid(lineId);}
+        uint32_t numSharers(uint32_t lineId) {return tcc->numSharers(lineId);}
+        bool isValid(uint32_t lineId) {return bcc->isValid(lineId);}
 };
 
 // Terminal CC, i.e., without children --- accepts GETS/X, but not PUTS/X
@@ -640,22 +414,13 @@ class MESITerminalCC : public CC {
         uint32_t numLines;
         g_string name;
 
-        lock_t terminalccLock;
-
     public:
         //Initialization
-        MESITerminalCC(uint32_t _numLines, const g_string& _name) : bcc(nullptr), numLines(_numLines), name(_name) {
-            futex_init(&terminalccLock);
-
-        }
+        MESITerminalCC(uint32_t _numLines, const g_string& _name) : bcc(nullptr), numLines(_numLines), name(_name) {}
 
         void setParents(uint32_t childId, const g_vector<MemObject*>& parents, Network* network) {
             bcc = new MESIBottomCC(numLines, childId, false /*inclusive*/);
             bcc->init(parents, network, name.c_str());
-        }
-
-        MemObject* getParent(Address lineaddr) {
-            return bcc->getParentC(lineaddr);
         }
 
         void setChildren(const g_vector<BaseCache*>& children, Network* network) {
@@ -668,7 +433,7 @@ class MESITerminalCC : public CC {
 
         //Access methods
         bool startAccess(MemReq& req) {
-            assert((req.type == GETS) || (req.type == GETX) || (req.type == CLEAN) || (req.type == CLEAN_S)); //no puts!
+            assert((req.type == GETS) || (req.type == GETX)); //no puts!
 
             /* Child should be locked when called. We do hand-over-hand locking when going
              * down (which is why we require the lock), but not when going up, opening the
@@ -678,7 +443,6 @@ class MESITerminalCC : public CC {
                 futex_unlock(req.childLock);
             }
 
-            futex_lock(&terminalccLock);
             bcc->lock();
 
             /* The situation is now stable, true race-wise. No one can touch the child state, because we hold
@@ -694,23 +458,17 @@ class MESITerminalCC : public CC {
 
         uint64_t processEviction(const MemReq& triggerReq, Address wbLineAddr, int32_t lineId, uint64_t startCycle) {
             bool lowerLevelWriteback = false;
-            uint64_t endCycle = bcc->processEviction(wbLineAddr, lineId, lowerLevelWriteback, startCycle, triggerReq.srcId, triggerReq.flags); //2. if needed, write back line to upper level
+            uint64_t endCycle = bcc->processEviction(wbLineAddr, lineId, lowerLevelWriteback, startCycle, triggerReq.srcId); //2. if needed, write back line to upper level
             return endCycle;  // critical path unaffected, but TimingCache needs it
         }
 
-        uint64_t processAccess(const MemReq& req, int32_t lineId, uint64_t startCycle, bool correct_level, uint64_t* getDoneCycle = nullptr, uint64_t* invalOnAccCycle = nullptr) {
-            if (correct_level) {
-                assert(lineId != -1);
-                assert(!getDoneCycle);
-                //if needed, fetch line or upgrade miss from upper level
-                uint64_t respCycle = bcc->processAccess(req.lineAddr, lineId, req.type, startCycle, req.srcId, req.flags);
-                //at this point, the line is in a good state w.r.t. upper levels
-                return respCycle;
-            }
-            else {
-                //info("passing to next cache");
-                return bcc->passToNext(req.lineAddr, req.type, req.childId, req.srcId, req.flags , startCycle);
-            }
+        uint64_t processAccess(const MemReq& req, int32_t lineId, uint64_t startCycle,  uint64_t* getDoneCycle = nullptr) {
+            assert(lineId != -1);
+            assert(!getDoneCycle);
+            //if needed, fetch line or upgrade miss from upper level
+            uint64_t respCycle = bcc->processAccess(req.lineAddr, lineId, req.type, startCycle, req.srcId, req.flags);
+            //at this point, the line is in a good state w.r.t. upper levels
+            return respCycle;
         }
 
         void endAccess(const MemReq& req) {
@@ -719,7 +477,6 @@ class MESITerminalCC : public CC {
                 futex_lock(req.childLock);
             }
             bcc->unlock();
-            futex_unlock(&terminalccLock);
         }
 
         //Inv methods
@@ -729,19 +486,13 @@ class MESITerminalCC : public CC {
 
         uint64_t processInv(const InvReq& req, int32_t lineId, uint64_t startCycle) {
             bcc->processInval(req.lineAddr, lineId, req.type, req.writeback); //adjust our own state
-            //bcc->unlock();
+            bcc->unlock();
             return startCycle; //no extra delay in terminal caches
         }
 
-        void finishInv() {
-            bcc->unlock();
-        }
-
         //Repl policy interface
-        uint32_t numSharers(int32_t lineId) {
-            return 0;} //no sharers
-        bool isValid(int32_t lineId) {
-            return bcc->isValid(lineId);}
+        uint32_t numSharers(uint32_t lineId) {return 0;} //no sharers
+        bool isValid(uint32_t lineId) {return bcc->isValid(lineId);}
 };
 
 #endif  // COHERENCE_CTRLS_H_

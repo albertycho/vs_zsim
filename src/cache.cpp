@@ -30,8 +30,8 @@
 #include "timing_event.h"
 #include "zsim.h"
 
-Cache::Cache(uint32_t _numLines, CC* _cc, CacheArray* _array, ReplPolicy* _rp, uint32_t _accLat, uint32_t _invLat, const g_string& _name, int _level)
-    : cc(_cc), array(_array), rp(_rp), numLines(_numLines), accLat(_accLat), invLat(_invLat), name(_name), level(_level) {}
+Cache::Cache(uint32_t _numLines, CC* _cc, CacheArray* _array, ReplPolicy* _rp, uint32_t _accLat, uint32_t _invLat, const g_string& _name)
+    : cc(_cc), array(_array), rp(_rp), numLines(_numLines), accLat(_accLat), invLat(_invLat), name(_name) {}
 
 const char* Cache::getName() {
     return name.c_str();
@@ -59,117 +59,62 @@ void Cache::initCacheStats(AggregateStat* cacheStat) {
 }
 
 uint64_t Cache::access(MemReq& req) {
-
-    bool no_record = req.flags & (MemReq::NORECORD) != 0;
-
-    uint32_t req_level = req.flags >> 16;
-    if (req.type == PUTS || req.type == PUTX) {
-        req_level = level;
-    }
-    bool correct_level = (req_level == level);
-    int32_t lineId = -1;
-    //info("In cache access, req type is %s, my level is %d, input level is %d",AccessTypeName(req.type),level,req_level);
-
     uint64_t respCycle = req.cycle;
     bool skipAccess = cc->startAccess(req); //may need to skip access due to races (NOTE: may change req.type!)
     if (likely(!skipAccess)) {
-        if (correct_level) {
-            uint32_t temp = req_level - 1;
-            req.flags  = (req.flags & 0xffff) | (temp << 16);
-            bool updateReplacement = (req.type == GETS) || (req.type == GETX) || (req.type == CLEAN_S);
-            lineId = array->lookup(req.lineAddr, &req, updateReplacement);
-            respCycle += accLat;
+        bool updateReplacement = (req.type == GETS) || (req.type == GETX);
+        int32_t lineId = array->lookup(req.lineAddr, &req, updateReplacement);
+        respCycle += accLat;
 
-            if (lineId == -1 && cc->shouldAllocate(req)) {
-                //Make space for new line
-                Address wbLineAddr;
-                lineId = array->preinsert(req.lineAddr, &req, &wbLineAddr); //find the lineId to replace
-                trace(Cache, "[%s] Evicting 0x%lx", name.c_str(), wbLineAddr);
+        if (lineId == -1 && cc->shouldAllocate(req)) {
+            //Make space for new line
+            Address wbLineAddr;
+            lineId = array->preinsert(req.lineAddr, &req, &wbLineAddr); //find the lineId to replace
+            trace(Cache, "[%s] Evicting 0x%lx", name.c_str(), wbLineAddr);
 
-                req.clear(MemReq::INGR_EVCT);
-                req.clear(MemReq::EGR_EVCT);
-                int i=3;
-                glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-                while (i < nicInfo->expected_core_count + 3){
-                    Address base_ing = (Address)(nicInfo->nic_elem[i].recv_buf) >> lineBits;
-                    uint64_t size_ing = nicInfo->recv_buf_pool_size; 
-                    Address top_ing = ((Address)(nicInfo->nic_elem[i].recv_buf) + size_ing) >> lineBits;
-                    Address base_egr = (Address)(nicInfo->nic_elem[i].lbuf) >> lineBits;
-                    //uint64_t size_egr = 256*nicInfo->forced_packet_size;
-                    uint64_t size_egr = 64*nicInfo->forced_packet_size;
-                    Address top_egr = ((Address)(nicInfo->nic_elem[i].lbuf) + size_egr) >> lineBits;
-                    if (wbLineAddr >= base_ing && wbLineAddr <= top_ing) {
-                        req.set(MemReq::INGR_EVCT);
-                        break;
-                    }
-                    if (wbLineAddr >= base_egr && wbLineAddr <= top_egr) {
-                        req.set(MemReq::EGR_EVCT);
-                        break;
-                    }
-                    i++;
-                }
-                //Evictions are not in the critical path in any sane implementation -- we do not include their delays
-                //NOTE: We might be "evicting" an invalid line for all we know. Coherence controllers will know what to do
-                
-                cc->processEviction(req, wbLineAddr, lineId, respCycle); //if needed, send invalidates/downgrades to lower level, and wb to upper level
+            //Evictions are not in the critical path in any sane implementation -- we do not include their delays
+            //NOTE: We might be "evicting" an invalid line for all we know. Coherence controllers will know what to do
+            cc->processEviction(req, wbLineAddr, lineId, respCycle); //1. if needed, send invalidates/downgrades to lower level
 
-                req.clear(MemReq::INGR_EVCT);
-                req.clear(MemReq::EGR_EVCT);
-                
-                array->postinsert(req.lineAddr, &req, lineId); //do the actual insertion. NOTE: Now we must split insert into a 2-phase thing because cc unlocks us.
-            }
-            // Enforce single-record invariant: Writeback access may have a timing
-            // record. If so, read it.
-            EventRecorder* evRec = zinfo->eventRecorders[req.srcId];
-            TimingRecord wbAcc;
-            wbAcc.clear();
-
-            if (no_record) {
-                assert(!(evRec->hasRecord()));
-            }
-
-            if (unlikely(evRec && evRec->hasRecord())) {
-                wbAcc = evRec->popRecord();
-            }
-        
-            respCycle = cc->processAccess(req, lineId, respCycle, correct_level);
-
-            if (no_record) {
-                assert(!evRec->hasRecord());
-            }
-            else {
-                // Access may have generated another timing record. If *both* access
-                // and wb have records, stitch them together
-                if (unlikely(wbAcc.isValid())) {
-                    if (!evRec->hasRecord()) {
-                        // Downstream should not care about endEvent for PUTs
-                        wbAcc.endEvent = nullptr;
-                        evRec->pushRecord(wbAcc);
-                    }
-                    else {
-                        // Connect both events
-                        TimingRecord acc = evRec->popRecord();
-                        assert(wbAcc.reqCycle >= req.cycle);
-                        assert(acc.reqCycle >= req.cycle);
-                        DelayEvent* startEv = new (evRec) DelayEvent(0);
-                        DelayEvent* dWbEv = new (evRec) DelayEvent(wbAcc.reqCycle - req.cycle);
-                        DelayEvent* dAccEv = new (evRec) DelayEvent(acc.reqCycle - req.cycle);
-                        startEv->setMinStartCycle(req.cycle);
-                        dWbEv->setMinStartCycle(req.cycle);
-                        dAccEv->setMinStartCycle(req.cycle);
-                        startEv->addChild(dWbEv, evRec)->addChild(wbAcc.startEvent, evRec);
-                        startEv->addChild(dAccEv, evRec)->addChild(acc.startEvent, evRec);
-
-                        acc.reqCycle = req.cycle;
-                        acc.startEvent = startEv;
-                        // endEvent / endCycle stay the same; wbAcc's endEvent not connected
-                        evRec->pushRecord(acc);
-                    }
-                }
-            }
+            array->postinsert(req.lineAddr, &req, lineId); //do the actual insertion. NOTE: Now we must split insert into a 2-phase thing because cc unlocks us.
         }
-        else {
-            respCycle = cc->processAccess(req, lineId, respCycle, correct_level);
+        // Enforce single-record invariant: Writeback access may have a timing
+        // record. If so, read it.
+        EventRecorder* evRec = zinfo->eventRecorders[req.srcId];
+        TimingRecord wbAcc;
+        wbAcc.clear();
+        if (unlikely(evRec && evRec->hasRecord())) {
+            wbAcc = evRec->popRecord();
+        }
+
+        respCycle = cc->processAccess(req, lineId, respCycle);
+
+        // Access may have generated another timing record. If *both* access
+        // and wb have records, stitch them together
+        if (unlikely(wbAcc.isValid())) {
+            if (!evRec->hasRecord()) {
+                // Downstream should not care about endEvent for PUTs
+                wbAcc.endEvent = nullptr;
+                evRec->pushRecord(wbAcc);
+            } else {
+                // Connect both events
+                TimingRecord acc = evRec->popRecord();
+                assert(wbAcc.reqCycle >= req.cycle);
+                assert(acc.reqCycle >= req.cycle);
+                DelayEvent* startEv = new (evRec) DelayEvent(0);
+                DelayEvent* dWbEv = new (evRec) DelayEvent(wbAcc.reqCycle - req.cycle);
+                DelayEvent* dAccEv = new (evRec) DelayEvent(acc.reqCycle - req.cycle);
+                startEv->setMinStartCycle(req.cycle);
+                dWbEv->setMinStartCycle(req.cycle);
+                dAccEv->setMinStartCycle(req.cycle);
+                startEv->addChild(dWbEv, evRec)->addChild(wbAcc.startEvent, evRec);
+                startEv->addChild(dAccEv, evRec)->addChild(acc.startEvent, evRec);
+
+                acc.reqCycle = req.cycle;
+                acc.startEvent = startEv;
+                // endEvent / endCycle stay the same; wbAcc's endEvent not connected
+                evRec->pushRecord(acc);
+            }
         }
     }
 
@@ -186,28 +131,11 @@ void Cache::startInvalidate() {
 
 uint64_t Cache::finishInvalidate(const InvReq& req) {
     int32_t lineId = array->lookup(req.lineAddr, nullptr, false);
-    uint64_t respCycle = req.cycle;
-    size_t found = name.find("l3");
-    if (lineId == -1) {
-        // am I the llc?
-        if (found == std::string::npos) {   //not the llc, kill the received invalidation
-            cc->finishInv();
-        }
-        else {          // i am the llc but don't have the line; someone above me might have it though
-            respCycle = req.cycle + invLat;
-            respCycle = cc->processInv(req, lineId, respCycle);
-            if (respCycle == req.cycle + invLat)
-                respCycle -= invLat;
-        }
-    }
-    else {  // line is present
-        //assert_msg(lineId != -1, "[%s] Invalidate on non-existing address 0x%lx type %s lineId %d, reqWriteback %d", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback);
-        respCycle = req.cycle + invLat;
-        //trace(Cache, "[%s] Invalidate start 0x%lx type %s lineId %d, reqWriteback %d", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback);
-        respCycle = cc->processInv(req, lineId, respCycle); //send invalidates or downgrades to children, and adjust our own state
-        if (found == std::string::npos) // if i'm not the llc, release the bcc lock
-            cc->finishInv();
-        //trace(Cache, "[%s] Invalidate end 0x%lx type %s lineId %d, reqWriteback %d, latency %ld", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback, respCycle - req.cycle);
-    }
+    assert_msg(lineId != -1, "[%s] Invalidate on non-existing address 0x%lx type %s lineId %d, reqWriteback %d", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback);
+    uint64_t respCycle = req.cycle + invLat;
+    trace(Cache, "[%s] Invalidate start 0x%lx type %s lineId %d, reqWriteback %d", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback);
+    respCycle = cc->processInv(req, lineId, respCycle); //send invalidates or downgrades to children, and adjust our own state
+    trace(Cache, "[%s] Invalidate end 0x%lx type %s lineId %d, reqWriteback %d, latency %ld", name.c_str(), req.lineAddr, InvTypeName(req.type), lineId, *req.writeback, respCycle - req.cycle);
+
     return respCycle;
 }

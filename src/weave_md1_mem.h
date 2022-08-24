@@ -64,9 +64,6 @@ class WeaveMD1Memory : public MD1Memory {
         }
 
         uint64_t access(MemReq& req) {
-            
-            bool no_record = ((req.flags) & (MemReq::NORECORD)) != 0;
-
             uint64_t realRespCycle = MD1Memory::access(req);
             uint32_t realLatency = realRespCycle - req.cycle;
 
@@ -74,9 +71,6 @@ class WeaveMD1Memory : public MD1Memory {
             assert(realRespCycle >= respCycle);
             assert(req.type == PUTS || realLatency >= zeroLoadLatency);
 
-            if (no_record) {
-                return respCycle;
-            }
             if ((req.type != PUTS) && zinfo->eventRecorders[req.srcId]) {
                 WeaveMemAccEvent* memEv = new (zinfo->eventRecorders[req.srcId]) WeaveMemAccEvent(realLatency-zeroLoadLatency, domain, preDelay, postDelay);
                 memEv->setMinStartCycle(req.cycle);

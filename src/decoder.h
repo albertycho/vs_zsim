@@ -42,7 +42,7 @@
 /* NOTE this uses stronly typed enums, a C++11 feature. This saves a bunch of typecasts while keeping UopType enums 1-byte long.
  * If you use gcc < 4.6 or some other compiler, either go back to casting or lose compactness in the layout.
  */
-enum UopType : uint8_t {UOP_GENERAL, UOP_LOAD, UOP_STORE, UOP_STORE_ADDR, UOP_FENCE, UOP_NIC_MAGIC};
+enum UopType : uint8_t {UOP_GENERAL, UOP_LOAD, UOP_STORE, UOP_STORE_ADDR, UOP_FENCE};
 
 struct DynUop {
     uint16_t rs[MAX_UOP_SRC_REGS];
@@ -140,7 +140,6 @@ class Decoder {
         /* Every emit function can produce 0 or more uops; it returns the number of uops. These are basic templates to make our life easier */
 
         //By default, these emit to temporary registers that depend on the index; this can be overriden, e.g. for moves
-        static void emitNicMagic(Instr& instr, DynUopVec& uops);
         static void emitLoad(Instr& instr, uint32_t idx, DynUopVec& uops, uint32_t destReg = 0);
         static void emitStore(Instr& instr, uint32_t idx, DynUopVec& uops, uint32_t srcReg = 0);
 
