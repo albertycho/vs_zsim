@@ -737,60 +737,62 @@ int main(int argc, char *argv[]) {
     std::chrono::duration<double> elapsed_seconds = (nicInfo->sim_end_time) - (nicInfo->sim_start_time);
     std::cout << "sim elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
 
-    load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
-    uint64_t total_nic_rb_writes=(lg_p->target_packet_count)*(nicInfo->forced_packet_size)/64; //linesize64
+
+    //Comment out Sweeper stat tracking stuff
+    // load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
+    // uint64_t total_nic_rb_writes=(lg_p->target_packet_count)*(nicInfo->forced_packet_size)/64; //linesize64
 
     
-	if(nicInfo->out_of_rbuf){
-        std::cout<<"\
-         :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n\
-         :::::SIM TERMINATED WITH OUT OF RECV BUFFER sim terminated with out of recv_buffer:::::\n\
-         :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"<<std::endl;
+	// if(nicInfo->out_of_rbuf){
+    //     std::cout<<"\
+    //      :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n\
+    //      :::::SIM TERMINATED WITH OUT OF RECV BUFFER sim terminated with out of recv_buffer:::::\n\
+    //      :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"<<std::endl;
 
-        if (lg_p->num_loadgen > 0) {
-            generate_raw_timestamp_files(false);
-        }
+    //     if (lg_p->num_loadgen > 0) {
+    //         generate_raw_timestamp_files(false);
+    //     }
 
-    }
-	else if((nicInfo->spillover_count) >((total_nic_rb_writes)/20) ){ // spillover hit > 5% of injection
-        std::cout<<"\
-         :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n\
-         :::::THIS RUN HAD SPILLOVER (MORE THAN 5\% OF ALL NIC RB WRITES OUTSIDE DDIO WAYS):::::\n\
-         :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"<<std::endl;
-		std::cout<<"spillover "<< ((nicInfo->spillover_count) * 100) / (total_nic_rb_writes) << std::endl;
-        if (lg_p->num_loadgen > 0) {
-			//lets count it as run success...
-            generate_raw_timestamp_files(true);
-        }
+    // }
+	// else if((nicInfo->spillover_count) >((total_nic_rb_writes)/20) ){ // spillover hit > 5% of injection
+    //     std::cout<<"\
+    //      :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n\
+    //      :::::THIS RUN HAD SPILLOVER (MORE THAN 5\% OF ALL NIC RB WRITES OUTSIDE DDIO WAYS):::::\n\
+    //      :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"<<std::endl;
+	// 	std::cout<<"spillover "<< ((nicInfo->spillover_count) * 100) / (total_nic_rb_writes) << std::endl;
+    //     if (lg_p->num_loadgen > 0) {
+	// 		//lets count it as run success...
+    //         generate_raw_timestamp_files(true);
+    //     }
 
-    }
-    else{
-        //load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
-        if (lg_p->num_loadgen > 0) {
-			if(lg_p->all_packets_completed){
-            	generate_raw_timestamp_files(true);
-			}
-        }
-    }
-    dump_IR_SR_stat();
-    if(nicInfo->expected_core_count==0){
-		if(nicInfo->memtype!=0){ // this hangs when using simple mem
-			for(int i=0; i<(nicInfo->num_controllers); i++) {
-				std::ofstream f("memory_controller_"+std::to_string(i)+"_bandwidth.txt");
-				int j=0;
-				while (zinfo->mem_bwdth[i][j]!=1000000.0){
-					f << zinfo->mem_bwdth[i][j] << std::endl;
-					j++;	
-					if(j>((zinfo->numPhases)+1000)){
-						break;
-					}
+    // }
+    // else{
+    //     //load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
+    //     if (lg_p->num_loadgen > 0) {
+	// 		if(lg_p->all_packets_completed){
+    //         	generate_raw_timestamp_files(true);
+	// 		}
+    //     }
+    // }
+    //dump_IR_SR_stat();
+    // if(nicInfo->expected_core_count==0){
+	// 	if(nicInfo->memtype!=0){ // this hangs when using simple mem
+	// 		for(int i=0; i<(nicInfo->num_controllers); i++) {
+	// 			std::ofstream f("memory_controller_"+std::to_string(i)+"_bandwidth.txt");
+	// 			int j=0;
+	// 			while (zinfo->mem_bwdth[i][j]!=1000000.0){
+	// 				f << zinfo->mem_bwdth[i][j] << std::endl;
+	// 				j++;	
+	// 				if(j>((zinfo->numPhases)+1000)){
+	// 					break;
+	// 				}
 
-				}
-				info("%d",j);
-				f.close();
-			}
-		}
-	}
+	// 			}
+	// 			info("%d",j);
+	// 			f.close();
+	// 		}
+	// 	}
+	// }
 
     uint32_t exitCode = 0;
     if (termStatus == OK) {

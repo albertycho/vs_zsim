@@ -1310,6 +1310,9 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 			 */
 
 			glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+			if(nicInfo->nic_ingress_proc_on==false){ // don't do anything for non-nic simulation
+				return;
+			}
 
 			/* if statement is for preventing crash at the end of simulation */
 			if (core_id > ((zinfo->numCores) - 1)) {

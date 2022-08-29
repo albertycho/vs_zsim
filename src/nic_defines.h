@@ -240,7 +240,7 @@ struct glob_nic_elements {
 
 	uint32_t expected_core_count;
 	uint32_t registered_core_count;
-	bool nic_ingress_proc_on;
+	bool nic_ingress_proc_on=false;
 	bool nic_egress_proc_on;
 	bool nic_init_done;
 	bool record_nic_access;
@@ -286,7 +286,7 @@ struct glob_nic_elements {
 	uint64_t gm_size=0;
 
 	uint32_t tx2ev_i=0;
-	uint32_t tx2ev[100000000];
+	uint32_t tx2ev[10]; //originally 100000000, unused so making it small
 	
 	lock_t txts_lock;	   // keeping code for DBG/Comparison purpose
 	

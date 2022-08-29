@@ -116,43 +116,43 @@ class SplitAddrMemory : public MemObject {
             req.lineAddr = ctrlAddr;
             uint64_t respCycle = mems[mem]->access(req);
             req.lineAddr = addr;
-            glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-            if(nicInfo->zeroCopy){
-                if(req.is(MemReq::INGR_EVCT)){
-                    futex_lock(&(nicInfo->txts_lock));
-                    uint64_t c_id=0;
-                    uint64_t clid=0;
-                    //int get_rb_ind = get_rb_cid_clid_line(addr,c_id, clid);
-                    //function call giving me some errors. inline it instead..
-                    bool get_rb_ind=false;
-                    uint64_t rb_addr = addr << lineBits;
-	                for(int i=0; i<zinfo->numCores;i++){
-                        uint64_t rb_base = (uint64_t) nicInfo->nic_elem[i].recv_buf;
-                        uint64_t rb_top =rb_base+nicInfo->recv_buf_pool_size;
-                        if(rb_addr >= rb_base && rb_addr <= rb_top){
-                            c_id=i;
-                            uint64_t offset = rb_addr - rb_base;
-                            clid = offset >> lineBits;
-                            get_rb_ind=true;
-                            break;;
-                        }
-                    }
-    ///////////////////////////////////////////
-                    if(get_rb_ind){
-                        uint64_t tx_ts = nicInfo->txts_map[c_id][clid];
-                        if(tx_ts==0){
-                            info("Warning ZCP - RB evicted before TX");
-                        }
-                        nicInfo->tx2ev[nicInfo->tx2ev_i] = respCycle - tx_ts;
-                        nicInfo->tx2ev_i = nicInfo->tx2ev_i+1;
+            //glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+            // if(nicInfo->zeroCopy){
+            //     if(req.is(MemReq::INGR_EVCT)){
+            //         futex_lock(&(nicInfo->txts_lock));
+            //         uint64_t c_id=0;
+            //         uint64_t clid=0;
+            //         //int get_rb_ind = get_rb_cid_clid_line(addr,c_id, clid);
+            //         //function call giving me some errors. inline it instead..
+            //         bool get_rb_ind=false;
+            //         uint64_t rb_addr = addr << lineBits;
+	        //         for(int i=0; i<zinfo->numCores;i++){
+            //             uint64_t rb_base = (uint64_t) nicInfo->nic_elem[i].recv_buf;
+            //             uint64_t rb_top =rb_base+nicInfo->recv_buf_pool_size;
+            //             if(rb_addr >= rb_base && rb_addr <= rb_top){
+            //                 c_id=i;
+            //                 uint64_t offset = rb_addr - rb_base;
+            //                 clid = offset >> lineBits;
+            //                 get_rb_ind=true;
+            //                 break;;
+            //             }
+            //         }
 
-                    }
-                    else{
-                        info("Warning ZCP - @ RX buffer evict, no RB match");
-                    }
-                    futex_unlock(&(nicInfo->txts_lock));
-                }
-            }
+            //         if(get_rb_ind){
+            //             uint64_t tx_ts = nicInfo->txts_map[c_id][clid];
+            //             if(tx_ts==0){
+            //                 info("Warning ZCP - RB evicted before TX");
+            //             }
+            //             nicInfo->tx2ev[nicInfo->tx2ev_i] = respCycle - tx_ts;
+            //             nicInfo->tx2ev_i = nicInfo->tx2ev_i+1;
+
+            //         }
+            //         else{
+            //             info("Warning ZCP - @ RX buffer evict, no RB match");
+            //         }
+            //         futex_unlock(&(nicInfo->txts_lock));
+            //     }
+            // }
             return respCycle;
         }
 
