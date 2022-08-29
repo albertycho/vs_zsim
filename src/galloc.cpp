@@ -53,6 +53,8 @@
 struct gm_segment {
     volatile void* base_regp; //common data structure, accessible with glob_ptr; threads poll on gm_isready to determine when everything has been initialized
     volatile void* secondary_regp; //secondary data structure, used to exchange information between harness and initializing process
+	volatile void* nic_regp;
+    volatile void* lg_p;
     mspace mspace_ptr;
 
     PAD();
@@ -191,6 +193,30 @@ void* gm_get_secondary_ptr() {
     assert(GM);
     assert(GM->secondary_regp != nullptr);
     return const_cast<void*>(GM->secondary_regp);  // devolatilize
+}
+
+void gm_set_nic_ptr(void* ptr) {
+    assert(GM);
+    assert(GM->nic_regp == nullptr);
+    GM->nic_regp = ptr;
+}
+
+void* gm_get_nic_ptr() {
+    assert(GM);
+    assert(GM->nic_regp);
+    return const_cast<void*>(GM->nic_regp);  // devolatilize
+}
+
+void gm_set_lg_ptr(void* ptr) {
+    assert(GM);
+    assert(GM->lg_p == nullptr);
+    GM->lg_p = ptr;
+}
+
+void* gm_get_lg_ptr() {
+    assert(GM);
+    assert(GM->lg_p);
+    return const_cast<void*>(GM->lg_p);  // devolatilize
 }
 
 void gm_stats() {

@@ -107,6 +107,7 @@ class Scheduler : public GlobAlloc, public Callee {
             g_vector<bool> mask;
 
             FakeLeaveInfo* fakeLeave; // for accurate join-leaves, see below
+            volatile uint32_t flWord; // if non-zero, currently transiting fake leave to true leave
 
             FutexJoinInfo futexJoin;
 
@@ -124,6 +125,7 @@ class Scheduler : public GlobAlloc, public Callee {
                 for (auto b : mask) if (b) count++;
                 if (count == 0) panic("Empty mask on gid %d!", gid);
                 fakeLeave = nullptr;
+                flWord = 0;
                 futexJoin.action = FJA_NONE;
             }
         };
@@ -146,6 +148,12 @@ class Scheduler : public GlobAlloc, public Callee {
         PAD();
         lock_t schedLock;
         PAD();
+
+        PAD();
+        lock_t gidMapLock;
+        PAD();
+
+
 
         uint64_t curPhase;
         //uint32_t nextVictim;
@@ -179,6 +187,10 @@ class Scheduler : public GlobAlloc, public Callee {
                 freeList.push_back(&contexts[i]);
             }
             schedLock = 0;
+
+            gidMapLock = 0;
+
+
             //nextVictim = 0; //only used when freeList is empty.
             curPhase = 0;
             scheduledThreads = 0;
@@ -222,7 +234,9 @@ class Scheduler : public GlobAlloc, public Callee {
             // - SYS_getpid because after a fork (where zsim calls ThreadStart),
             //   getpid() returns the parent's pid (getpid() caches, and I'm
             //   guessing it hasn't flushed its cached pid at this point)
+            futex_lock(&gidMapLock);
             gidMap[gid] = new ThreadInfo(gid, syscall(SYS_getpid), syscall(SYS_gettid), mask);
+            futex_unlock(&gidMapLock);
             threadsCreated.inc();
             futex_unlock(&schedLock);
         }
@@ -233,7 +247,9 @@ class Scheduler : public GlobAlloc, public Callee {
             //info("[G %d] Finish", gid);
             assert((gidMap.find(gid) != gidMap.end()));
             ThreadInfo* th = gidMap[gid];
+            futex_lock(&gidMapLock);
             gidMap.erase(gid);
+            futex_unlock(&gidMapLock);
 
             // Check for suppressed syscall leave(), execute it
             if (th->fakeLeave) {
@@ -243,6 +259,13 @@ class Scheduler : public GlobAlloc, public Callee {
                 futex_lock(&schedLock);
             }
 
+
+            if (th->state == SLEEPING) {
+				sleepQueue.remove(th);
+				th->state = BLOCKED;
+			}
+            
+            
             //dsm: Added this check; the normal sequence is leave, finish, but with fastFwd you never know
             if (th->state == RUNNING) {
                 warn("RUNNING thread %d (cid %d) called finish(), trying leave() first", tid, th->cid);
@@ -294,6 +317,14 @@ class Scheduler : public GlobAlloc, public Callee {
                 uint32_t cid = th->cid;
                 futex_unlock(&schedLock);
                 return cid;
+            } else if (th->flWord) {
+                // We are just finishing fake leave and transiting into true leave. Wait until done.
+                futex_unlock(&schedLock);
+                while (true) {
+                    int futex_res = syscall(SYS_futex, &th->flWord, FUTEX_WAIT, 1, nullptr, nullptr, 0);
+                    if (futex_res == 0 || th->futexWord != 1) break;
+                }
+                futex_lock(&schedLock);
             }
 
             assert(!th->markedForSleep);
@@ -372,6 +403,10 @@ class Scheduler : public GlobAlloc, public Callee {
                     schedule(inTh, ctx);
                     zinfo->cores[ctx->cid]->join(); //inTh does not do a sched->join, so we need to notify the core since we just called leave() on it
                     wakeup(inTh, false /*no join, we did not leave*/);
+                } else if (th->mask[th->cid] == false) {
+                    deschedule(th, ctx, BLOCKED);
+                    freeList.push_back(ctx);
+                    bar.leave(cid); //may trigger end of phase
                 } else { //lazily transition to OUT, where we retain our context
                     th->state = OUT;
                     outQueue.push_back(th);
@@ -474,15 +509,18 @@ class Scheduler : public GlobAlloc, public Callee {
         }
 
         bool isSleeping(uint32_t pid, uint32_t tid) {
-            futex_lock(&schedLock);
+            //futex_lock(&schedLock);
             uint32_t gid = getGid(pid, tid);
+            futex_lock(&gidMapLock);    
             ThreadInfo* th = gidMap[gid];
+            futex_lock(&gidMapLock);
             bool res = th->state == SLEEPING;
-            futex_unlock(&schedLock);
+            //futex_unlock(&schedLock);
             return res;
         }
 
-        void notifySleepEnd(uint32_t pid, uint32_t tid) {
+        //void notifySleepEnd(uint32_t pid, uint32_t tid) {
+            uint64_t notifySleepEnd(uint32_t pid, uint32_t tid) {
             futex_lock(&schedLock);
             uint32_t gid = getGid(pid, tid);
             ThreadInfo* th = gidMap[gid];
@@ -496,6 +534,7 @@ class Scheduler : public GlobAlloc, public Callee {
                 th->state = BLOCKED;
             }
             futex_unlock(&schedLock);
+            return th->wakeupPhase - zinfo->numPhases;
         }
 
         void printThreadState(uint32_t pid, uint32_t tid) {
@@ -551,6 +590,51 @@ class Scheduler : public GlobAlloc, public Callee {
 
         uint32_t getScheduledPid(uint32_t cid) const { return (contexts[cid].state == USED)? getPid(contexts[cid].curThread->gid) : (uint32_t)-1; }
 
+        const g_vector<bool> getMask(uint32_t pid, uint32_t tid) {
+            g_vector<bool> mask;
+            futex_lock(&schedLock);
+            uint32_t gid = getGid(pid, tid);
+            if(gidMap.find(gid) == gidMap.end()) {
+                futex_unlock(&schedLock);
+                warn("Scheduler::getMask(): can't find thread info pid=%d, tid=%d", pid, tid);
+                mask.resize(zinfo->numCores, true);
+                return mask;
+            }
+            ThreadInfo* th = gidMap[gid];
+            mask = th->mask;
+            futex_unlock(&schedLock);
+            return mask;
+        }
+
+        void updateMask(uint32_t pid, uint32_t tid, const g_vector<bool>& mask) {
+            futex_lock(&schedLock);
+            uint32_t gid = getGid(pid, tid);
+            if(gidMap.find(gid) == gidMap.end()) {
+                futex_unlock(&schedLock);
+                warn("Scheduler::updateMask(): can't find thread info pid=%d, tid=%d", pid, tid);
+                return;
+            }
+            ThreadInfo* th = gidMap[gid];
+            //info("Scheduler::updateMask(): update thread mask pid=%d, tid=%d", pid, tid);
+            assert(mask.size() == zinfo->numCores);
+            uint32_t count = 0;
+            for (auto b : mask) if (b) count++;
+            if (count == 0) panic("Empty mask on gid %d!", gid);
+            th->mask = mask;
+            futex_unlock(&schedLock);
+            // Do leave and join outside to clear and set cid in zsim.cpp
+        }
+
+        uint32_t getTidFromLinuxTid(uint32_t linuxTid) {
+            for (const auto& kv : gidMap) {
+                if (kv.second->linuxTid == linuxTid) {
+                    return getTid(kv.first);
+                }
+            }
+            std::cout << "In getTidFromLinuxTid, no mapping found, returning -1" << std::endl;
+            return -1;
+        }
+
     private:
         void schedule(ThreadInfo* th, ContextInfo* ctx) {
             assert(th->state == STARTED || th->state == BLOCKED || th->state == QUEUED);
@@ -595,13 +679,16 @@ class Scheduler : public GlobAlloc, public Callee {
                 if (futex_res == 0 || th->futexWord != 1) break;
             }
             //info("%d out of sched wait, got cid = %d, needsJoin = %d", th->gid, th->cid, th->needsJoin);
+            // NOTE(mgao): After wakeup, waker assumes the wakee will wait on schedLock to join. See waitUntilQueued().
+            // So we should get the lock regardless of needsJoin.
+            futex_lock(&schedLock);
             if (th->needsJoin) {
-                futex_lock(&schedLock);
-                assert(th->needsJoin); //re-check after the lock
+                //assert(th->needsJoin); //re-check after the lock
                 zinfo->cores[th->cid]->join();
                 bar.join(th->cid, &schedLock);
                 //info("%d join done", th->gid);
             }
+            futex_unlock(&schedLock);
         }
 
         void wakeup(ThreadInfo* th, bool needsJoin) {

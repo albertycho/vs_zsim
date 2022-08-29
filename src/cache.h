@@ -55,13 +55,20 @@ class Cache : public BaseCache {
 
         g_string name;
 
+        int level;
+
     public:
-        Cache(uint32_t _numLines, CC* _cc, CacheArray* _array, ReplPolicy* _rp, uint32_t _accLat, uint32_t _invLat, const g_string& _name);
+        Cache(uint32_t _numLines, CC* _cc, CacheArray* _array, ReplPolicy* _rp, uint32_t _accLat, uint32_t _invLat, const g_string& _name, int _level);
 
         const char* getName();
         void setParents(uint32_t _childId, const g_vector<MemObject*>& parents, Network* network);
         void setChildren(const g_vector<BaseCache*>& children, Network* network);
         void initStats(AggregateStat* parentStat);
+
+        MemObject* getParent(Address lineaddr) {
+            return cc->getParent(lineaddr);
+
+        }
 
         virtual uint64_t access(MemReq& req);
 

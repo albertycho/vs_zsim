@@ -108,12 +108,13 @@ class TimeBreakdownStat : public VectorCounter {
             assert(newState < size());
 
             uint64_t curNs = getNs();
-			//assert(curNs >= startNs);
+            //assert(curNs >= startNs);
+
 			if(!(curNs >= startNs)){
 				info("(previous) assertion curNs>=startNs failed! curNs: %ld, startNs: %ld, diff: %ld\n", curNs, startNs, startNs-curNs);
-				startNs = curNs;
-			}
-
+				startNs = curNs; 
+			}                                                                   
+					                         
             inc(curState, curNs - startNs);
             //info("%d: %ld / %ld", curState, curNs - startNs, VectorCounter::count(curState));
             curState = newState;

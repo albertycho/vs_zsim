@@ -32,6 +32,7 @@
 #include "memory_hierarchy.h"
 #include "pad.h"
 #include "stats.h"
+#include "zsim.h"
 
 namespace DRAMSim {
     class MultiChannelMemorySystem;
@@ -57,6 +58,8 @@ class DRAMSimMemory : public MemObject { //one DRAMSim controller
         Counter profWrites;
         Counter profTotalRdLat;
         Counter profTotalWrLat;
+        Counter profAccs;
+        Counter total_access_count, dirty_evict_ing, dirty_evict_egr, dirty_evict_app, nic_ingr_get;
         PAD();
 
     public:
@@ -79,6 +82,23 @@ class DRAMSimMemory : public MemObject { //one DRAMSim controller
         void DRAM_write_return_cb(uint32_t id, uint64_t addr, uint64_t returnCycle);
 };
 
+//in this func, RB is in line addr, unlike the same func in core_nic_api
+//int get_rb_cid_clid_line(uint64_t line_addr, uint64_t &core_i, uint64_t &clid){
+//    uint64_t rb_addr = line_addr << lineBits;
+//	for(int i=0; i<zinfo->numCores;i++){
+//		uint64_t rb_base = (uint64_t) nicInfo->nic_elem[i].recv_buf;
+//		uint64_t rb_top =rb_base+nicInfo->recv_buf_pool_size;
+//		if(rb_addr >= rb_base && rb_addr <= rb_top){
+//			core_i=i;
+//			uint64_t offset = rb_addr - rb_base;
+//			clid = offset >> lineBits;
+//			return 0;
+//		}
+//	}
+//
+//	return -1;
+//}
+
 //DRAMSIM does not support non-pow2 channels, so:
 // - Encapsulate multiple DRAMSim controllers
 // - Fan out addresses interleaved across banks, and change the address to a "memory address"
@@ -96,6 +116,43 @@ class SplitAddrMemory : public MemObject {
             req.lineAddr = ctrlAddr;
             uint64_t respCycle = mems[mem]->access(req);
             req.lineAddr = addr;
+            glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+            if(nicInfo->zeroCopy){
+                if(req.is(MemReq::INGR_EVCT)){
+                    futex_lock(&(nicInfo->txts_lock));
+                    uint64_t c_id=0;
+                    uint64_t clid=0;
+                    //int get_rb_ind = get_rb_cid_clid_line(addr,c_id, clid);
+                    //function call giving me some errors. inline it instead..
+                    bool get_rb_ind=false;
+                    uint64_t rb_addr = addr << lineBits;
+	                for(int i=0; i<zinfo->numCores;i++){
+                        uint64_t rb_base = (uint64_t) nicInfo->nic_elem[i].recv_buf;
+                        uint64_t rb_top =rb_base+nicInfo->recv_buf_pool_size;
+                        if(rb_addr >= rb_base && rb_addr <= rb_top){
+                            c_id=i;
+                            uint64_t offset = rb_addr - rb_base;
+                            clid = offset >> lineBits;
+                            get_rb_ind=true;
+                            break;;
+                        }
+                    }
+    ///////////////////////////////////////////
+                    if(get_rb_ind){
+                        uint64_t tx_ts = nicInfo->txts_map[c_id][clid];
+                        if(tx_ts==0){
+                            info("Warning ZCP - RB evicted before TX");
+                        }
+                        nicInfo->tx2ev[nicInfo->tx2ev_i] = respCycle - tx_ts;
+                        nicInfo->tx2ev_i = nicInfo->tx2ev_i+1;
+
+                    }
+                    else{
+                        info("Warning ZCP - @ RX buffer evict, no RB match");
+                    }
+                    futex_unlock(&(nicInfo->txts_lock));
+                }
+            }
             return respCycle;
         }
 

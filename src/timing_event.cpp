@@ -29,6 +29,8 @@
 #include "contention_sim.h"
 #include "zsim.h"
 
+#include <iostream>
+
 /* TimingEvent */
 
 void TimingEvent::parentDone(uint64_t startCycle) {

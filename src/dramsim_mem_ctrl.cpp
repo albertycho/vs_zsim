@@ -89,27 +89,64 @@ void DRAMSimMemory::initStats(AggregateStat* parentStat) {
     profWrites.init("wr", "Write requests"); memStats->append(&profWrites);
     profTotalRdLat.init("rdlat", "Total latency experienced by read requests"); memStats->append(&profTotalRdLat);
     profTotalWrLat.init("wrlat", "Total latency experienced by write requests"); memStats->append(&profTotalWrLat);
+    
+    dirty_evict_ing.init("recv_dirty_evict", "dirty evicted recv lines"); memStats->append(&dirty_evict_ing);
+    dirty_evict_egr.init("lbuf_dirty_evict", "dirty evicted lbuf lines"); memStats->append(&dirty_evict_egr);
+    dirty_evict_app.init("app_dirty_evict", "dirty evicted app data lines"); memStats->append(&dirty_evict_app);
+    nic_ingr_get.init("nic_ingr_get", "dma nic writes"); memStats->append(&nic_ingr_get);
+    total_access_count.init("total_accesses", "count all requests at access method"); memStats->append(&total_access_count);
+    profAccs.init("accs", "Getx+Gets reaching mem in bound"); memStats->append(&profAccs);
+ 
+
     parentStat->append(memStats);
 }
 
 uint64_t DRAMSimMemory::access(MemReq& req) {
+
+    bool no_record = ((req.flags) & (MemReq::NORECORD)) != 0;
+
+	
+
     switch (req.type) {
+		case CLEAN:
+		case CLEAN_S:
+			return req.cycle;
         case PUTS:
         case PUTX:
             *req.state = I;
+            if (req.is(MemReq::INGR_EVCT)) {
+                dirty_evict_ing.inc();
+            }
+            else if (req.is(MemReq::EGR_EVCT)) {
+                dirty_evict_egr.inc();
+            }
+            else { //everything else
+                dirty_evict_app.inc();
+            }
+            total_access_count.inc();
             break;
         case GETS:
             *req.state = req.is(MemReq::NOEXCL)? S : E;
+            total_access_count.inc();
             break;
         case GETX:
             *req.state = M;
+            total_access_count.inc();
             break;
 
         default: panic("!?");
     }
+    
+    if (req.is(MemReq::PKTIN)) {
+        nic_ingr_get.inc();
+    }
 
     uint64_t respCycle = req.cycle + minLatency;
     assert(respCycle > req.cycle);
+
+    if (no_record) {
+        return respCycle;
+    }
 
     if ((req.type != PUTS /*discard clean writebacks*/) && zinfo->eventRecorders[req.srcId]) {
         Address addr = req.lineAddr << lineBits;

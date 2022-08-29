@@ -184,7 +184,7 @@ class ScalarStat : public Stat {
         virtual void init(const char* name, const char* desc) {
             initStat(name, desc);
         }
-
+        //virtual void clear();
         virtual uint64_t get() const = 0;
 };
 
@@ -209,6 +209,7 @@ class VectorStat : public Stat {
         virtual void init(const char* name, const char* desc) {
             initStat(name, desc);
         }
+        //virtual void clear();
 };
 
 
@@ -247,6 +248,11 @@ class Counter : public ScalarStat {
         inline void set(uint64_t data) {
             _count = data;
         }
+/*
+        void clear() {
+            _count = 0;
+        }
+*/
 };
 
 class VectorCounter : public VectorStat {
@@ -295,6 +301,11 @@ class VectorCounter : public VectorStat {
         inline uint32_t size() const {
             return _counters.size();
         }
+
+        /*inline void clear () {
+            for (uint32_t i = 0; i < _counters.size(); i++) 
+                _counters[i] = 0;
+        }*/
 };
 
 /*
@@ -357,6 +368,7 @@ class LambdaStat : public ScalarStat {
     public:
         explicit LambdaStat(F _f) : f(_f) {} //copy the lambda
         uint64_t get() const {return f();}
+       // void clear();
 };
 
 template<typename F>
@@ -388,6 +400,7 @@ class StatsBackend : public GlobAlloc {
         StatsBackend() {}
         virtual ~StatsBackend() {}
         virtual void dump(bool buffered)=0;
+       // virtual void clear();
 };
 
 
@@ -400,6 +413,7 @@ class TextBackend : public StatsBackend {
     public:
         TextBackend(const char* filename, AggregateStat* rootStat);
         virtual void dump(bool buffered);
+        //virtual void clear();
 };
 
 
@@ -412,6 +426,7 @@ class HDF5Backend : public StatsBackend {
     public:
         HDF5Backend(const char* filename, AggregateStat* rootStat, size_t bytesPerWrite, bool skipVectors, bool sumRegularAggregates);
         virtual void dump(bool buffered);
+      //  virtual void clear();
 };
 
 #endif  // STATS_H_

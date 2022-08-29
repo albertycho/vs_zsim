@@ -33,6 +33,9 @@
 #include "event_recorder.h"
 #include "timing_event.h"
 #include "zsim.h"
+#include "network.h"
+#include <string>
+#include <queue>
 
 //#define DEBUG(args...) info(args)
 #define DEBUG(args...)
@@ -152,23 +155,23 @@ class SchedEvent : public TimingEvent, public GlobAlloc {
 
 DDRMemory::DDRMemory(uint32_t _lineSize, uint32_t _colSize, uint32_t _ranksPerChannel, uint32_t _banksPerRank,
         uint32_t _sysFreqMHz, const char* tech, const char* addrMapping, uint32_t _controllerSysLatency,
-        uint32_t _queueDepth, uint32_t _rowHitLimit, bool _deferredWrites, bool _closedPage,
+        uint32_t _queueDepth, uint32_t _rowHitLimit, bool _deferredWrites, bool _closedPage, bool _no_latency, bool _no_bw,
         uint32_t _domain, g_string& _name)
     : lineSize(_lineSize), ranksPerChannel(_ranksPerChannel), banksPerRank(_banksPerRank),
       controllerSysLatency(_controllerSysLatency), queueDepth(_queueDepth), rowHitLimit(_rowHitLimit),
-      deferredWrites(_deferredWrites), closedPage(_closedPage), domain(_domain), name(_name)
+      deferredWrites(_deferredWrites), closedPage(_closedPage), no_latency(_no_latency), no_bw(_no_bw), domain(_domain), name(_name)
 {
     sysFreqKHz = 1000 * _sysFreqMHz;
     initTech(tech);  // sets all tXX and memFreqKHz
-    if (memFreqKHz >= sysFreqKHz/2) {
-        panic("You may need to tweak the scheduling code, which works with system cycles." \
-            "With these frequencies, events (which run on system cycles) can't hit us every memory cycle.");
-    }
+    //if (memFreqKHz >= sysFreqKHz/2) {
+    //    panic("You may need to tweak the scheduling code, which works with system cycles." \
+    //        "With these frequencies, events (which run on system cycles) can't hit us every memory cycle.");
+    //}
 
-    minRdLatency = controllerSysLatency + memToSysCycle(tCL+tBL-1);
-    minWrLatency = controllerSysLatency;
-    preDelay = controllerSysLatency;
-    postDelayRd = minRdLatency - preDelay;
+    minRdLatency = no_latency? 0 : controllerSysLatency + memToSysCycle(tCL+tBL-1);
+    minWrLatency = no_latency? 0 : controllerSysLatency;
+    preDelay = no_latency? 0 : controllerSysLatency;
+    postDelayRd = no_latency? 0 : minRdLatency - preDelay;
     postDelayWr = 0;
 
     rdQueue.init(queueDepth);
@@ -223,6 +226,10 @@ DDRMemory::DDRMemory(uint32_t _lineSize, uint32_t _colSize, uint32_t _ranksPerCh
     nextSchedCycle = -1ul;
     nextSchedEvent = nullptr;
     eventFreelist = nullptr;
+
+    lastPhase = 0;
+    futex_init(&statsLock);
+
 }
 
 void DDRMemory::initStats(AggregateStat* parentStat) {
@@ -232,25 +239,168 @@ void DDRMemory::initStats(AggregateStat* parentStat) {
     profWrites.init("wr", "Write requests"); memStats->append(&profWrites);
     profTotalRdLat.init("rdlat", "Total latency experienced by read requests"); memStats->append(&profTotalRdLat);
     profTotalWrLat.init("wrlat", "Total latency experienced by write requests"); memStats->append(&profTotalWrLat);
+    dirty_evict_ing.init("recv_dirty_evict", "dirty evicted recv lines"); memStats->append(&dirty_evict_ing);
+    dirty_evict_egr.init("lbuf_dirty_evict", "dirty evicted lbuf lines"); memStats->append(&dirty_evict_egr);
+    dirty_evict_app.init("app_dirty_evict", "dirty evicted app data lines"); memStats->append(&dirty_evict_app);
+    nic_ingr_get.init("nic_ingr_get", "dma nic writes"); memStats->append(&nic_ingr_get);
+    total_access_count.init("total_accesses", "count all requests at access method"); memStats->append(&total_access_count);
     profReadHits.init("rdhits", "Read row hits"); memStats->append(&profReadHits);
     profWriteHits.init("wrhits", "Write row hits"); memStats->append(&profWriteHits);
+    profAccs.init("accs","Getx+Gets reaching mem in bound"); memStats->append(&profAccs);
+    rb_dirty_evic_count.init("rb_dirty_evic", "count recv buf dirty evictinos to mem"); memStats->append(&rb_dirty_evic_count);
     latencyHist.init("mlh", "latency histogram for memory requests", NUMBINS); memStats->append(&latencyHist);
+
+    /*
+    AggregateStat* bwStats = new AggregateStat();
+    bwStats->init("bw", "Bandwidth Report");
+    profBandwidth[0].init("all", "Cumulative Average bandwidth (MB/s)");
+    profBandwidth[1].init("cur", "Current Average bandwidth (MB/s)");
+    profBandwidth[2].init("max", "Maximum bandwidth (MB/s)");
+    profBandwidth[3].init("min", "Minimum bandwidth (MB/s)");
+    for(uint32_t i = 0; i < bwCounterNum; i++)
+        bwStats->append(&profBandwidth[i]);
+    memStats->append(bwStats);
+    */
+    //profBWHist.init("occHist", "Bandwidth utilization histogram", numMSHRs+1);
+    //memStats->append(&profBWHist);
+
     parentStat->append(memStats);
 }
 
 /* Bound phase interface */
+/*
+void DDRMemory::setChildrenMem(g_vector<BaseCache*>& children, Network* network) {
+    if (children.size() > MAX_CACHE_CHILDREN) {
+        panic("[%s] Children size (%d) > MAX_CACHE_CHILDREN (%d)", getName(), (uint32_t)children.size(), MAX_CACHE_CHILDREN);
+    }
+    children_caches.resize(children.size());
+    childrenRTTs.resize(children.size());
+    for (uint32_t c = 0; c < children_caches.size(); c++) {
+        children_caches[c] = children[c];
+        childrenRTTs[c] = (network)? network->getRTT(getName(), children_caches[c]->getName()) : 0;
+    }
+    return;
+}
+*/
+void DDRMemory::EstimateBandwidth() {
+    // Access Count
+    //uint64_t realTime = sysToMicroSec((zinfo->numPhases)*(zinfo->phaseLength));
+    //uint64_t lastTime = sysToMicroSec(lastPhase*(zinfo->phaseLength));
+    uint64_t totalAccesses = profReads.get() + profWrites.get();
+    float curBandwidth = ((totalAccesses - lastAccesses)*lineSize*sysFreqKHz*0.000001) / ((zinfo->numPhases-lastPhase)*(zinfo->phaseLength)); //((realTime-lastTime)*0.001);
+    //std::string delimiter = "-";
+    //std::string nm = getName();
+    //std::string token = nm.substr(nm.find(delimiter)+1,nm.length());
+    
+	if(midx<200000-1){
+		mem_bwdth[midx++] = curBandwidth;
+        mem_bwdth[midx] = 1000000.0;
+        if(mem_bwdth==zinfo->mem_bwdth[0]){
+            zinfo->mem_bw_len=midx;
+        }
+	}
+
+    lastAccesses = totalAccesses;
+
+    //info("zsim_phases since last mem BW sampling: %d, curBW:: %f",zinfo->numPhases - lastPhase, curBandwidth);
+    lastPhase = zinfo->numPhases;
+
+}
+
+
+bool is_rb_addr(Address lineaddr){
+    uint64_t num_cores = zinfo->numCores;
+    for(int i=0; i<num_cores;i++){
+        uint64_t rb_base=(uint64_t) nicInfo->nic_elem[i].recv_buf;
+        uint64_t rb_top =rb_base+nicInfo->recv_buf_pool_size;
+        uint64_t rb_base_line=rb_base>>lineBits;
+        uint64_t rb_top_line = rb_top>>lineBits;
+		//disabled splitter
+        //mem uses address splitter, so apply same to rb addresses
+        rb_base_line = rb_base_line / (nicInfo->num_controllers);               
+        rb_top_line = rb_top_line / (nicInfo->num_controllers); 
+        if (lineaddr >= rb_base_line && lineaddr <= rb_top_line) {
+            return true;
+        }
+    }
+    return false;
+}
 
 uint64_t DDRMemory::access(MemReq& req) {
+    
+    if(req.type == CLEAN) {
+        *req.state = I;
+        return req.cycle;
+    }
+
+    if(req.type == CLEAN_S) {
+        *req.state = S;
+        return req.cycle;
+    }   
+
+	bool call_eb=false;
+	if(nicInfo->expected_core_count>0){
+    	if (nicInfo->ready_for_inj==0xabcd && zinfo->numPhases > lastPhase) {
+			call_eb=true;
+		}
+	}
+	else{
+    	if (zinfo->numPhases > lastPhase) {
+			call_eb=true;
+		}
+	}
+    //if (nicInfo->ready_for_inj==0xabcd && zinfo->numPhases > lastPhase) {
+    if (call_eb) {
+        futex_lock(&statsLock);
+        //Recheck, someone may have updated already
+        if (zinfo->numPhases > lastPhase) {
+			//info("estimatebw");
+            EstimateBandwidth();
+        }
+        futex_unlock(&statsLock);
+    }
+    
+    bool no_record = ((req.flags) & (MemReq::NORECORD)) != 0;
+
     switch (req.type) {
         case PUTS:
+            //total_access_count.inc(); // no break, so it will be counted by PUTX case
         case PUTX:
             *req.state = I;
+            if(req.type == PUTX){ // PUTS case doesn't break, so add this if
+                total_access_count.inc();
+                if(is_rb_addr(req.lineAddr)){
+                    //increment rb dirty eviction count
+                    rb_dirty_evic_count.inc();
+                }
+            }
             break;
         case GETS:
-            *req.state = req.is(MemReq::NOEXCL)? S : E;
+            if(!(req.flags & MemReq::PKTOUT))
+                *req.state = req.is(MemReq::NOEXCL)? S : E;
+	        total_access_count.inc();
             break;
         case GETX:
-            *req.state = M;
+            total_access_count.inc();
+            if(req.flags & MemReq::PKTIN || req.flags & MemReq::PKTOUT) {
+                /*info("PKTIN request in memory");
+                uint32_t numChildren = children_caches.size();
+                uint32_t sentInvs = 0;
+                uint64_t maxCycle = req.cycle;
+                for (uint32_t c = 0; c < numChildren; c++) {
+                    info("Sending invalidation from mem");
+                    bool reqWriteback;
+                    InvReq req = {req.lineAddr, INV, &reqWriteback, req.cycle, 1742};
+                    uint64_t respCycle = children_caches[c]->invalidate(req);
+                    respCycle += childrenRTTs[c];
+                    maxCycle = MAX(respCycle, maxCycle);
+                    sentInvs++;
+                }
+                */
+            }
+            else {
+                *req.state = M;
+            }
             break;
 
         default: panic("!?");
@@ -259,17 +409,37 @@ uint64_t DDRMemory::access(MemReq& req) {
     if (req.type == PUTS) {
         return req.cycle; //must return an absolute value, 0 latency
     } else {
-        bool isWrite = (req.type == PUTX);
+        bool isWrite = (req.type == PUTX || req.flags & MemReq::PKTIN);
         uint64_t respCycle = req.cycle + (isWrite? minWrLatency : minRdLatency);
-        if (zinfo->eventRecorders[req.srcId]) {
+        if (no_record) {
+            return no_latency? req.cycle : respCycle;
+        }
+        
+        if(req.type == PUTX) {
+            if (req.is(MemReq::INGR_EVCT)) {
+                dirty_evict_ing.inc();
+            }
+            else if (req.is(MemReq::EGR_EVCT)) {
+                dirty_evict_egr.inc();
+            }
+            else{ //everything else
+                dirty_evict_app.inc();
+            }
+        }
+
+        if(req.is(MemReq::PKTIN)){
+            nic_ingr_get.inc();
+        }
+
+        if (!no_bw && zinfo->eventRecorders[req.srcId]) {
             DDRMemoryAccEvent* memEv = new (zinfo->eventRecorders[req.srcId]) DDRMemoryAccEvent(this,
                     isWrite, req.lineAddr, domain, preDelay, isWrite? postDelayWr : postDelayRd);
             memEv->setMinStartCycle(req.cycle);
             TimingRecord tr = {req.lineAddr, req.cycle, respCycle, req.type, memEv, memEv};
             zinfo->eventRecorders[req.srcId]->pushRecord(tr);
-        }
+        }   
         //info("Access to %lx at %ld, %ld latency", req.lineAddr, req.cycle, minLatency);
-        return respCycle;
+        return no_latency? req.cycle+1 : respCycle;
     }
 }
 
@@ -425,6 +595,10 @@ void DDRMemory::queue(Request* req, uint64_t memCycle) {
 // For external ticks
 uint64_t DDRMemory::tick(uint64_t sysCycle) {
     uint64_t memCycle = sysToMemCycle(sysCycle);
+	//info("memCycle: %ld, nextSchedCycle: %ld", memCycle, nextSchedCycle);
+	if(memCycle!=nextSchedCycle){
+		memCycle++;
+	}
     assert_msg(memCycle == nextSchedCycle, "%ld != %ld", memCycle, nextSchedCycle);
 
     uint64_t minSchedCycle = trySchedule(memCycle, sysCycle);
@@ -665,7 +839,7 @@ void DDRMemory::initTech(const char* techName) {
     // tBL's below are for 64-byte lines; we adjust as needed
 
     // Please keep this orderly; go from faster to slower technologies
-	if(tech == "DDR4-3200"){
+    if(tech == "DDR4-3200"){
         tCK = 0.625; // ns; all other in mem cycles
         tBL = 4;//8;
         tCL = 22; 
@@ -680,8 +854,22 @@ void DDRMemory::initTech(const char* techName) {
         tRFC = 256;
         tREFI = 12480; //3.9us according to spec. divided by ns
     }
-
-	else if (tech == "DDR3-1333-CL10") {
+    else if(tech == "DDR4-2400"){
+        tCK = 0.833; // ns; all other in mem cycles
+        tBL = 4;//8;
+        tCL = 18; 
+        tRCD = 18;
+        tRTP = 9;//4;
+        tRP = 18;//17;
+        tRRD = 4;
+        tRAS = 39;
+        tFAW = 16;
+        tWTR = 3;
+        tWR = 15;
+        tRFC = 193;
+        tREFI = 9363; //7.8us according to spec. divided by 0.75ns
+    }
+    else if (tech == "DDR3-1333-CL10") {
         // from DRAMSim2/ini/DDR3_micron_16M_8B_x4_sg15.ini (Micron)
         tCK = 1.5;  // ns; all other in mem cycles
         tBL = 4;
@@ -746,5 +934,6 @@ void DDRMemory::initTech(const char* techName) {
     }
 
     memFreqKHz = (uint64_t)(1e9/tCK/1e3);
+	info("memFreqKHz: %ld", memFreqKHz);
 }
 

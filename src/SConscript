@@ -27,15 +27,23 @@ syscallSrc = libEnv.Substfile("virt/syscall_name.cpp", "virt/syscall_name.cpp.in
         SUBST_DICT = {"SYSCALL_NAME_LIST" : getSyscalls()})
 
 # Build libzsim.so
-globSrcNodes = Glob("*.cpp") + Glob("virt/*.cpp")
+globSrcNodes = Glob("*.cpp") + Glob("virt/*.cpp") + Glob("libzsim/*.cpp")
 libSrcs = [str(x) for x in globSrcNodes if str(x) not in excludeSrcs]
+print(libSrcs)
 libSrcs += [str(x) for x in syscallSrc]
 libSrcs = list(set(libSrcs)) # ensure syscallSrc is not duplicated
 libEnv.SharedLibrary("zsim.so", libSrcs)
 
 # Build tracing utilities (need hdf5 & dynamic linking)
 traceEnv = env.Clone()
-traceEnv["LIBS"] += ["hdf5", "hdf5_hl"]
+#traceEnv["LIBS"] += ["hdf5", "hdf5_hl"]
+if "hdf5" in traceEnv["PINLIBS"]:
+    traceEnv["LIBS"] += ["hdf5", "hdf5_hl"]
+else:
+    assert "hdf5_serial" in traceEnv["PINLIBS"]
+    traceEnv["LIBS"] += ["hdf5_serial", "hdf5_serial_hl"]
+
+
 traceEnv["OBJSUFFIX"] += "t"
 traceEnv.Program("dumptrace", ["dumptrace.cpp", "access_tracing.cpp", "memory_hierarchy.cpp"] + commonSrcs)
 traceEnv.Program("sorttrace", ["sorttrace.cpp", "access_tracing.cpp"] + commonSrcs)

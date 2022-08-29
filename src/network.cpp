@@ -27,6 +27,7 @@
 #include <fstream>
 #include <string>
 #include "log.h"
+#include <iostream>
 
 using std::ifstream;
 using std::string;
@@ -50,6 +51,7 @@ Network::Network(const char* filename) {
         string s1 = src + " " + dst;
         string s2 = dst + " " + src;
 
+		//std::cout<<s1<<", "<<s2<<std::endl;
         assert((delayMap.find(s1) == delayMap.end()));
         assert((delayMap.find(s2) == delayMap.end()));
 

@@ -33,6 +33,9 @@
 #include "locks.h"
 #include "pad.h"
 
+#include "nic_defines.h"
+
+
 class Core;
 class Scheduler;
 class AggregateStat;
@@ -48,6 +51,7 @@ class PortVirtualizer;
 class VectorCounter;
 class AccessTraceWriter;
 class TraceDriver;
+class FilterCache;
 template <typename T> class g_vector;
 
 struct ClockDomainInfo {
@@ -72,13 +76,14 @@ enum ProcExitStatus {
     PROC_RESTARTME  = 2
 };
 
+
+
+
+
 struct GlobSimInfo {
     //System configuration values, all read-only, set at initialization
     uint32_t numCores;
     uint32_t lineSize;
-
-	// fields added during CXL DEV
-	uint64_t getParentId_policy=0;
 
     //Cores
     Core** cores;
@@ -184,7 +189,13 @@ struct GlobSimInfo {
     // Trace-driven simulation (no cores)
     bool traceDriven;
     TraceDriver* traceDriver;
+
+    //g_vector<float*> mem_bwdth;
+    float** mem_bwdth;
+    uint32_t mem_bw_len;
+
 };
+
 
 
 //Process-wide global variables, defined in zsim.cpp
@@ -194,6 +205,10 @@ extern uint32_t lineBits; //process-local for performance, but logically global
 extern uint64_t procMask;
 
 extern GlobSimInfo* zinfo;
+
+extern glob_nic_elements* nicInfo;
+
+extern FilterCache** l1d_caches;
 
 //Process-wide functions, defined in zsim.cpp
 uint32_t getCid(uint32_t tid);

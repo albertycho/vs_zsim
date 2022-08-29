@@ -31,6 +31,7 @@
 #include "event_recorder.h"
 #include "g_std/g_string.h"
 #include "g_std/g_vector.h"
+#include "timing_event.h"
 
 class OOOIssueEvent;
 class OOORespEvent;
@@ -94,6 +95,7 @@ class OOOCoreRecorder {
         //Methods called in the bound phase
         uint64_t notifyJoin(uint64_t curCycle); //returns th updated curCycle, if it needs updating
         void notifyLeave(uint64_t curCycle);
+
 
         //This better be inlined 100% of the time, it's called on EVERY access
         inline void record(uint64_t curCycle, uint64_t dispatchCycle, uint64_t respCycle) {
