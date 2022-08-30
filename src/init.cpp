@@ -845,6 +845,7 @@ static void InitSystem(Config& config) {
     cMap.clear();
 
 	string mem_type = config.get<const char*>("sys.mem.type", "Simple");
+    zinfo->getParentId_policy=config.get<uint32_t>("sim.getParentId_policy", 0);
 	/*
     if(mem_type=="Simple"){
 		nicInfo->memtype=0;

@@ -104,7 +104,7 @@ int get_target_core_id_from_lb_addr(Address lineaddr){
 uint32_t MESIBottomCC::getParentId(Address lineAddr) {
 	//for RB address, see if we can not hash
 	//int rb_cid = get_target_core_id_from_rb_addr(lineAddr);
-	uint32_t policy = nicInfo->getParentId_policy;
+	uint32_t policy = zinfo->getParentId_policy;
 	if(policy==0){
 		uint64_t bank_id = (lineAddr>>11) % parents.size(); //shifted by number of sets
 		return bank_id;
