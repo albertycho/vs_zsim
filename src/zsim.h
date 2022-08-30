@@ -33,7 +33,7 @@
 #include "locks.h"
 #include "pad.h"
 
-//#include "nic_defines.h"
+#include "nic_defines.h"
 #include <chrono>
 
 
@@ -210,7 +210,7 @@ extern uint64_t procMask;
 
 extern GlobSimInfo* zinfo;
 
-//extern glob_nic_elements* nicInfo;
+extern glob_nic_elements* nicInfo;
 
 extern FilterCache** l1d_caches;
 
