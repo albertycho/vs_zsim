@@ -938,19 +938,19 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 				futex_unlock(&nicInfo->nic_elem[core_id].packet_pending_lock);
 			}
 			break;
-		case 0x15:      //registering non-network cores
-			{
-				futex_lock(&nicInfo->nic_lock);
-				nicInfo->registered_non_net_core_count++;
-				futex_unlock(&nicInfo->nic_lock);
-				if ((nicInfo->registered_core_count == nicInfo->expected_core_count) && (nicInfo->registered_non_net_core_count == nicInfo->expected_non_net_core_count)) {
-					if (nicInfo->nic_ingress_proc_on) {
-						nicInfo->nic_init_done = true;
-					}
-				}
-				info("registered_non_net_core_count: %d, expected_non_net_core_count: %d\n", nicInfo->expected_non_net_core_count ,nicInfo->expected_core_count);
-				break;
-			}
+		// case 0x15:      //registering non-network cores
+		// 	{
+		// 		futex_lock(&nicInfo->nic_lock);
+		// 		nicInfo->registered_non_net_core_count++;
+		// 		futex_unlock(&nicInfo->nic_lock);
+		// 		if ((nicInfo->registered_core_count == nicInfo->expected_core_count) && (nicInfo->registered_non_net_core_count == nicInfo->expected_non_net_core_count)) {
+		// 			if (nicInfo->nic_ingress_proc_on) {
+		// 				nicInfo->nic_init_done = true;
+		// 			}
+		// 		}
+		// 		info("registered_non_net_core_count: %d, expected_non_net_core_count: %d\n", nicInfo->expected_non_net_core_count ,nicInfo->expected_core_count);
+		// 		break;
+		// 	}
 
 		case 0x17: //register all_packets_SENT for l3fwd. used to prevent hang when batching
 			*static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(lg_p->all_packets_sent));
