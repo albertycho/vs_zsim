@@ -158,51 +158,51 @@ class MESIBottomCC : public GlobAlloc {
             profFWD.init("FWD", "Forwards (from upper level)");
             profGETNextLevelLat.init("latGETnl", "GET request latency on next level");
             profGETNetLat.init("latGETnet", "GET request latency on network to next level");
-            netMiss_core_rb.init("netMiss_core_rb", "Ingress GET misses, app cores");
-            netHit_core_rb.init("netHit_core_rb", "Ingress GET hits, app cores");
-            netMiss_core_lb.init("netMiss_core_lb", "Egress GET misses, app cores");
-            netHit_core_lb.init("netHit_core_lb", "Egress GET hits, app cores");
-            netMiss_nic_rb.init("netMiss_nic_rb", "Ingress GET misses, NIC");
-            netHit_nic_rb.init("netHit_nic_rb", "Ingress GET hits, NIC");
-            netMiss_nic_lb.init("netMiss_nic_lb", "Egress GET misses, NIC");
-            netHit_nic_lb.init("netHit_nic_lb", "Egress GET hits, NIC");
-            appMiss.init("appMiss","App data-related GET misses");
-            appHit.init("appHit","App data-related GET hits");
-            //nicMiss.init("nicMiss","App data-related GET misses");
-            //nicHit.init("nicHit","App data-related GET hits");
-
-            profCleanHit.init("cleanHit", "Clean_S hits");
-            profCleanMiss.init("cleanMiss", "Clean_S misses");
-
-            appPutMiss.init("appPutMiss","App data-related PUT misses");
-            appPutHit.init("appPutHit","App data-related PUT hits");
             
-            netMiss_core_rb_grp1.init("netMiss_core_rb_grp1", "Ingress GET misses, app cores, loadgen1");
-            netHit_core_rb_grp1.init("netHit_core_rb_grp1", "Ingress GET hits, app cores");
-            netMiss_core_lb_grp1.init("netMiss_core_lb_grp1", "Egress GET misses, app cores");
-            netHit_core_lb_grp1.init("netHit_core_lb_grp1", "Egress GET hits, app cores");
-            netMiss_nic_rb_grp1.init("netMiss_nic_rb_grp1", "Ingress GET misses, NIC");
-            netHit_nic_rb_grp1.init("netHit_nic_rb_grp1", "Ingress GET hits, NIC");
-            netMiss_nic_lb_grp1.init("netMiss_nic_lb_grp1", "Egress GET misses, NIC");
-            netHit_nic_lb_grp1.init("netHit_nic_lb_grp1", "Egress GET hits, NIC");
-            appMiss_grp1.init("appMiss_grp1","App data-related GET misses");
-            appHit_grp1.init("appHit_grp1","App data-related GET hits");
-            appPutMiss_grp1.init("appPutMiss_grp1","App data-related PUT misses");
-            appPutHit_grp1.init("appPutHit_grp1","App data-related PUT hits");
+            // netMiss_core_rb.init("netMiss_core_rb", "Ingress GET misses, app cores");
+            // netHit_core_rb.init("netHit_core_rb", "Ingress GET hits, app cores");
+            // netMiss_core_lb.init("netMiss_core_lb", "Egress GET misses, app cores");
+            // netHit_core_lb.init("netHit_core_lb", "Egress GET hits, app cores");
+            // netMiss_nic_rb.init("netMiss_nic_rb", "Ingress GET misses, NIC");
+            // netHit_nic_rb.init("netHit_nic_rb", "Ingress GET hits, NIC");
+            // netMiss_nic_lb.init("netMiss_nic_lb", "Egress GET misses, NIC");
+            // netHit_nic_lb.init("netHit_nic_lb", "Egress GET hits, NIC");
+            // appMiss.init("appMiss","App data-related GET misses");
+            // appHit.init("appHit","App data-related GET hits");
 
 
-            netMiss_core_rb_NNF.init("netMiss_core_rb_NNF", "Ingress GET misses, app cores, non-network-function");
-            netHit_core_rb_NNF.init("netHit_core_rb_NNF", "Ingress GET hits, app cores");
-            netMiss_core_lb_NNF.init("netMiss_core_lb_NNF", "Egress GET misses, app cores");
-            netHit_core_lb_NNF.init("netHit_core_lb_NNF", "Egress GET hits, app cores");
-            netMiss_nic_rb_NNF.init("netMiss_nic_rb_NNF", "Ingress GET misses, NIC");
-            netHit_nic_rb_NNF.init("netHit_nic_rb_NNF", "Ingress GET hits, NIC");
-            netMiss_nic_lb_NNF.init("netMiss_nic_lb_NNF", "Egress GET misses, NIC");
-            netHit_nic_lb_NNF.init("netHit_nic_lb_NNF", "Egress GET hits, NIC");
-            appMiss_NNF.init("appMiss_NNF","App data-related GET misses");
-            appHit_NNF.init("appHit_NNF","App data-related GET hits");
-            appPutMiss_NNF.init("appPutMiss_NNF","App data-related PUT misses");
-            appPutHit_NNF.init("appPutHit_NNF","App data-related PUT hits");
+            // profCleanHit.init("cleanHit", "Clean_S hits");
+            // profCleanMiss.init("cleanMiss", "Clean_S misses");
+
+            // appPutMiss.init("appPutMiss","App data-related PUT misses");
+            // appPutHit.init("appPutHit","App data-related PUT hits");
+            
+            // netMiss_core_rb_grp1.init("netMiss_core_rb_grp1", "Ingress GET misses, app cores, loadgen1");
+            // netHit_core_rb_grp1.init("netHit_core_rb_grp1", "Ingress GET hits, app cores");
+            // netMiss_core_lb_grp1.init("netMiss_core_lb_grp1", "Egress GET misses, app cores");
+            // netHit_core_lb_grp1.init("netHit_core_lb_grp1", "Egress GET hits, app cores");
+            // netMiss_nic_rb_grp1.init("netMiss_nic_rb_grp1", "Ingress GET misses, NIC");
+            // netHit_nic_rb_grp1.init("netHit_nic_rb_grp1", "Ingress GET hits, NIC");
+            // netMiss_nic_lb_grp1.init("netMiss_nic_lb_grp1", "Egress GET misses, NIC");
+            // netHit_nic_lb_grp1.init("netHit_nic_lb_grp1", "Egress GET hits, NIC");
+            // appMiss_grp1.init("appMiss_grp1","App data-related GET misses");
+            // appHit_grp1.init("appHit_grp1","App data-related GET hits");
+            // appPutMiss_grp1.init("appPutMiss_grp1","App data-related PUT misses");
+            // appPutHit_grp1.init("appPutHit_grp1","App data-related PUT hits");
+
+
+            // netMiss_core_rb_NNF.init("netMiss_core_rb_NNF", "Ingress GET misses, app cores, non-network-function");
+            // netHit_core_rb_NNF.init("netHit_core_rb_NNF", "Ingress GET hits, app cores");
+            // netMiss_core_lb_NNF.init("netMiss_core_lb_NNF", "Egress GET misses, app cores");
+            // netHit_core_lb_NNF.init("netHit_core_lb_NNF", "Egress GET hits, app cores");
+            // netMiss_nic_rb_NNF.init("netMiss_nic_rb_NNF", "Ingress GET misses, NIC");
+            // netHit_nic_rb_NNF.init("netHit_nic_rb_NNF", "Ingress GET hits, NIC");
+            // netMiss_nic_lb_NNF.init("netMiss_nic_lb_NNF", "Egress GET misses, NIC");
+            // netHit_nic_lb_NNF.init("netHit_nic_lb_NNF", "Egress GET hits, NIC");
+            // appMiss_NNF.init("appMiss_NNF","App data-related GET misses");
+            // appHit_NNF.init("appHit_NNF","App data-related GET hits");
+            // appPutMiss_NNF.init("appPutMiss_NNF","App data-related PUT misses");
+            // appPutHit_NNF.init("appPutHit_NNF","App data-related PUT hits");
 
 
 
@@ -218,50 +218,51 @@ class MESIBottomCC : public GlobAlloc {
             parentStat->append(&profFWD);
             parentStat->append(&profGETNextLevelLat);
             parentStat->append(&profGETNetLat);
-            parentStat->append(&netMiss_core_lb);
-            parentStat->append(&netHit_core_lb);
-            parentStat->append(&netMiss_core_rb);
-            parentStat->append(&netHit_core_rb);
-            parentStat->append(&netMiss_nic_lb);
-            parentStat->append(&netHit_nic_lb);
-            parentStat->append(&netMiss_nic_rb);
-            parentStat->append(&netHit_nic_rb);
-            parentStat->append(&appMiss);
-            parentStat->append(&appHit);
-            parentStat->append(&appPutHit);
-            parentStat->append(&appPutMiss);
-            //parentStat->append(&nicMiss);
-            //parentStat->append(&nicHit);
             
-            parentStat->append(&profCleanHit);
-            parentStat->append(&profCleanMiss);
+            // parentStat->append(&netMiss_core_lb);
+            // parentStat->append(&netHit_core_lb);
+            // parentStat->append(&netMiss_core_rb);
+            // parentStat->append(&netHit_core_rb);
+            // parentStat->append(&netMiss_nic_lb);
+            // parentStat->append(&netHit_nic_lb);
+            // parentStat->append(&netMiss_nic_rb);
+            // parentStat->append(&netHit_nic_rb);
+            // parentStat->append(&appMiss);
+            // parentStat->append(&appHit);
+            // parentStat->append(&appPutHit);
+            // parentStat->append(&appPutMiss);
+            // //parentStat->append(&nicMiss);
+            // //parentStat->append(&nicHit);
+            
+            // parentStat->append(&profCleanHit);
+            // parentStat->append(&profCleanMiss);
 
-            parentStat->append(&netMiss_core_lb_grp1);
-            parentStat->append(&netHit_core_lb_grp1);
-            parentStat->append(&netMiss_core_rb_grp1);
-            parentStat->append(&netHit_core_rb_grp1);
-            parentStat->append(&netMiss_nic_lb_grp1);
-            parentStat->append(&netHit_nic_lb_grp1);
-            parentStat->append(&netMiss_nic_rb_grp1);
-            parentStat->append(&netHit_nic_rb_grp1);
-            parentStat->append(&appMiss_grp1);
-            parentStat->append(&appHit_grp1);
-            parentStat->append(&appPutHit_grp1);
-            parentStat->append(&appPutMiss_grp1);
+            // parentStat->append(&netMiss_core_lb_grp1);
+            // parentStat->append(&netHit_core_lb_grp1);
+            // parentStat->append(&netMiss_core_rb_grp1);
+            // parentStat->append(&netHit_core_rb_grp1);
+            // parentStat->append(&netMiss_nic_lb_grp1);
+            // parentStat->append(&netHit_nic_lb_grp1);
+            // parentStat->append(&netMiss_nic_rb_grp1);
+            // parentStat->append(&netHit_nic_rb_grp1);
+            // parentStat->append(&appMiss_grp1);
+            // parentStat->append(&appHit_grp1);
+            // parentStat->append(&appPutHit_grp1);
+            // parentStat->append(&appPutMiss_grp1);
 
 
-            parentStat->append(&netMiss_core_lb_NNF);
-            parentStat->append(&netHit_core_lb_NNF);
-            parentStat->append(&netMiss_core_rb_NNF);
-            parentStat->append(&netHit_core_rb_NNF);
-            parentStat->append(&netMiss_nic_lb_NNF);
-            parentStat->append(&netHit_nic_lb_NNF);
-            parentStat->append(&netMiss_nic_rb_NNF);
-            parentStat->append(&netHit_nic_rb_NNF);
-            parentStat->append(&appMiss_NNF);
-            parentStat->append(&appHit_NNF);
-            parentStat->append(&appPutHit_NNF);
-            parentStat->append(&appPutMiss_NNF);
+            // parentStat->append(&netMiss_core_lb_NNF);
+            // parentStat->append(&netHit_core_lb_NNF);
+            // parentStat->append(&netMiss_core_rb_NNF);
+            // parentStat->append(&netHit_core_rb_NNF);
+            // parentStat->append(&netMiss_nic_lb_NNF);
+            // parentStat->append(&netHit_nic_lb_NNF);
+            // parentStat->append(&netMiss_nic_rb_NNF);
+            // parentStat->append(&netHit_nic_rb_NNF);
+            // parentStat->append(&appMiss_NNF);
+            // parentStat->append(&appHit_NNF);
+            // parentStat->append(&appPutHit_NNF);
+            // parentStat->append(&appPutMiss_NNF);
 
 
         }
