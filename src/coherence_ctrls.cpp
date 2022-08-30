@@ -383,6 +383,7 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
         default: panic("!?");
     }
 
+    /*
     uint64_t stat_group=get_stat_group(srcId);
     
     if (type != PUTS && type != PUTX && type != CLEAN  && type != CLEAN_S) {
@@ -559,7 +560,7 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
             default: panic("appPut didn't belong to any grp?");
         }
     }
-    
+    */
     assert_msg(respCycle >= cycle, "XXX %ld %ld", respCycle, cycle);
     return respCycle;
 }

@@ -89,6 +89,7 @@ uint64_t Cache::access(MemReq& req) {
                 req.clear(MemReq::INGR_EVCT);
                 req.clear(MemReq::EGR_EVCT);
                 int i=3;
+                /* skip nicInfo check - only used for sweeper
                 glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
                 while (i < nicInfo->expected_core_count + 3){
                     Address base_ing = (Address)(nicInfo->nic_elem[i].recv_buf) >> lineBits;
@@ -108,6 +109,7 @@ uint64_t Cache::access(MemReq& req) {
                     }
                     i++;
                 }
+                */
                 //Evictions are not in the critical path in any sane implementation -- we do not include their delays
                 //NOTE: We might be "evicting" an invalid line for all we know. Coherence controllers will know what to do
                 

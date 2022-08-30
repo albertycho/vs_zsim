@@ -398,8 +398,8 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
 					OOOCore* m_core = magic_cores[magicOpIdx];
 					ADDRINT val = magic_vals[magicOpIdx];
 					ADDRINT field = magic_fields[magicOpIdx];
-					glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-
+					//glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+					glob_nic_elements* nicInfo=NULL;
 					if (field == 0x16) {
 						if ((nicInfo->clean_recv) && (!(nicInfo->zeroCopy))) {
 
@@ -682,43 +682,44 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
 	//uint64_t core_id = getCid(tid); // using processID to identify nicCore for now
 	core->bbl(bblAddr, bblInfo);
 
-	glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+	
+	// glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 
-	//TODO check which nic (ingress or egress) should handle this
-	//as of now we stick with one NIC core doing both ingress and egress work
-	if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) {
-		///////////////CALL DEQ_DPQ//////////////////////
-	}
-	// if ((nicInfo->nic_egress_pid == procIdx) && (nicInfo->nic_init_done) && nicInfo->ready_for_inj==0xabcd) {
-	//     uint32_t srcId = getCid(tid);
-	//     //assert(srcId == 0);
-	//     deq_dpq(srcId, core, &(core->cRec), core->l1d/*MemObject* dest*/, core->curCycle, core->egr_type);
+	// //TODO check which nic (ingress or egress) should handle this
+	// //as of now we stick with one NIC core doing both ingress and egress work
+	// if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) {
+	// 	///////////////CALL DEQ_DPQ//////////////////////
 	// }
+	// // if ((nicInfo->nic_egress_pid == procIdx) && (nicInfo->nic_init_done) && nicInfo->ready_for_inj==0xabcd) {
+	// //     uint32_t srcId = getCid(tid);
+	// //     //assert(srcId == 0);
+	// //     deq_dpq(srcId, core, &(core->cRec), core->l1d/*MemObject* dest*/, core->curCycle, core->egr_type);
+	// // }
 
-	// Simple synchronization mechanism for enforcing producer consumer order for NIC_Ingress and other cores
-	if ((nicInfo->nic_ingress_pid != procIdx) && (nicInfo->nic_init_done)) {
-		if (nicInfo->nic_egress_pid == procIdx) {
-			//don't need to adjust egress core clock here
-		}
-		else {
-			// Sometime this check gets stuck at the end of the phase, adding safety break
-			int safety_counter = 0;
+	// // Simple synchronization mechanism for enforcing producer consumer order for NIC_Ingress and other cores
+	// if ((nicInfo->nic_ingress_pid != procIdx) && (nicInfo->nic_init_done)) {
+	// 	if (nicInfo->nic_egress_pid == procIdx) {
+	// 		//don't need to adjust egress core clock here
+	// 	}
+	// 	else {
+	// 		// Sometime this check gets stuck at the end of the phase, adding safety break
+	// 		int safety_counter = 0;
 	
 			
-			while (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch())+100) {
-				struct timespec tim, tim2;
-   				tim.tv_sec = 0;
-   				tim.tv_nsec = 10;
-				nanosleep(&tim, &tim2); // short delay seems to work sufficient
-				safety_counter++;
-				if (safety_counter > 10) { // >2 seems to work in current env. May need to be adjusted when running on different machine
-					break;
-				}
-			}
+	// 		while (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch())+100) {
+	// 			struct timespec tim, tim2;
+   	// 			tim.tv_sec = 0;
+   	// 			tim.tv_nsec = 10;
+	// 			nanosleep(&tim, &tim2); // short delay seems to work sufficient
+	// 			safety_counter++;
+	// 			if (safety_counter > 10) { // >2 seems to work in current env. May need to be adjusted when running on different machine
+	// 				break;
+	// 			}
+	// 		}
 			
 
-		}
-	}
+	// 	}
+	// }
 
 
 	int temp = 0;
@@ -800,9 +801,11 @@ inline void OOOCore::NicMagicFunc_on_trigger(THREADID tid, ADDRINT val, ADDRINT 
 void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT field) {
 	info("for non sweeper, not expecting this function to be called. field:%lx, val:%lx",field, val);
 	//uint64_t core_id = getCid(tid);
-	glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-	void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
-	load_generator* lg_p = (load_generator*)lg_p_vp;
+	//glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+	//void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
+	//load_generator* lg_p = (load_generator*)lg_p_vp;
+	glob_nic_elements* nicInfo=NULL;
+	load_generator* lg_p = NULL;
 
 	uint64_t num_cline=0;
 	switch (field) {

@@ -143,6 +143,7 @@ class FilterCache : public Cache {
             uint32_t idx = vLineAddr & setMask;
             uint64_t availCycle = filterArray[idx].availCycle; //read before, careful with ordering to avoid timing races
             if ((lvl == 8) || (lvl == level)) {
+                /*
 				//if ideal case
 				//if vLineAddr in recv_buf range for this core
                 glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());	
@@ -157,6 +158,8 @@ class FilterCache : public Cache {
                 if((vAddr >= cq_base) && (vAddr<=cq_top)){
                     return curCycle;
                 }
+                */
+
                 if (vLineAddr == filterArray[idx].rdAddr) {
                     fGETSHit++;
                     return MAX(curCycle, availCycle);
@@ -191,6 +194,7 @@ class FilterCache : public Cache {
             uint32_t idx = vLineAddr & setMask;
             uint64_t availCycle = filterArray[idx].availCycle; //read before, careful with ordering to avoid timing races
             if ((lvl == 8) || (lvl == level)) {
+                /*
                 glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());	
                 //assume cq and wq return immediately
                 uint64_t wq_base = (uint64_t) (nicInfo->nic_elem[srcId].wq);
@@ -203,6 +207,7 @@ class FilterCache : public Cache {
                 if((vAddr >= cq_base) && (vAddr<=cq_top)){
                     return curCycle;
                 }
+                */
                 if (vLineAddr == filterArray[idx].wrAddr) {
                     fGETXHit++;
                     //NOTE: Stores don't modify availCycle; we'll catch matches in the core
@@ -263,6 +268,7 @@ class FilterCache : public Cache {
         uint64_t replace(Address vLineAddr, uint32_t idx, bool isLoad, uint64_t curCycle, uint32_t source, uint32_t childId, uint32_t flags, int lvl) {
             Address procMask_f = procMask;
             //Don't apply mask if it's a NIC related address
+            /*
             Address gm_base_addr = 0x00ABBA000000; // defined in galloc.cpp
             //Address gm_seg_size = 1<<30; //TODO: just use default? or wire it from init
             glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());	
@@ -307,6 +313,7 @@ class FilterCache : public Cache {
             if (is_MatAddr) {
                 procMask_f = procMask_f + ((uint64_t)source) << (64 - lineBits);
             }
+            */
             Address pLineAddr = procMask_f | vLineAddr;
             MESIState dummyState = MESIState::I;
             futex_lock(&filterLock);

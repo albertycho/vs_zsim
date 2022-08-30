@@ -691,7 +691,7 @@ int main(int argc, char *argv[]) {
             exit(42);
         }
 
-        nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
+        //nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
 	
 //		if(nicInfo->expected_core_count > 0){
 //			//info("expected_core_count: %d", nicInfo->expected_core_count);
