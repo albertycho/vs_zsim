@@ -239,15 +239,15 @@ void DDRMemory::initStats(AggregateStat* parentStat) {
     profWrites.init("wr", "Write requests"); memStats->append(&profWrites);
     profTotalRdLat.init("rdlat", "Total latency experienced by read requests"); memStats->append(&profTotalRdLat);
     profTotalWrLat.init("wrlat", "Total latency experienced by write requests"); memStats->append(&profTotalWrLat);
-    dirty_evict_ing.init("recv_dirty_evict", "dirty evicted recv lines"); memStats->append(&dirty_evict_ing);
-    dirty_evict_egr.init("lbuf_dirty_evict", "dirty evicted lbuf lines"); memStats->append(&dirty_evict_egr);
-    dirty_evict_app.init("app_dirty_evict", "dirty evicted app data lines"); memStats->append(&dirty_evict_app);
-    nic_ingr_get.init("nic_ingr_get", "dma nic writes"); memStats->append(&nic_ingr_get);
+    // dirty_evict_ing.init("recv_dirty_evict", "dirty evicted recv lines"); memStats->append(&dirty_evict_ing);
+    // dirty_evict_egr.init("lbuf_dirty_evict", "dirty evicted lbuf lines"); memStats->append(&dirty_evict_egr);
+    // dirty_evict_app.init("app_dirty_evict", "dirty evicted app data lines"); memStats->append(&dirty_evict_app);
+    // nic_ingr_get.init("nic_ingr_get", "dma nic writes"); memStats->append(&nic_ingr_get);
     total_access_count.init("total_accesses", "count all requests at access method"); memStats->append(&total_access_count);
     profReadHits.init("rdhits", "Read row hits"); memStats->append(&profReadHits);
     profWriteHits.init("wrhits", "Write row hits"); memStats->append(&profWriteHits);
     profAccs.init("accs","Getx+Gets reaching mem in bound"); memStats->append(&profAccs);
-    rb_dirty_evic_count.init("rb_dirty_evic", "count recv buf dirty evictinos to mem"); memStats->append(&rb_dirty_evic_count);
+    // rb_dirty_evic_count.init("rb_dirty_evic", "count recv buf dirty evictinos to mem"); memStats->append(&rb_dirty_evic_count);
     latencyHist.init("mlh", "latency histogram for memory requests", NUMBINS); memStats->append(&latencyHist);
 
     /*
