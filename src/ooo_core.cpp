@@ -640,9 +640,11 @@ void OOOCore::cSimEnd() {
 	//assert(cycle_adj_idx<100000);
 	if(start_cnt_phases)
 		cycle_adj_queue[cycle_adj_idx++] = curCycle;
+	/*
 	if(core_id == 0 && nicInfo->nic_init_done && nicInfo->ready_for_inj==nicInfo->registered_core_count) {
 		nicInfo->ready_for_inj = 0xabcd;
 	}
+	*/
 }
 
 void OOOCore::advance(uint64_t targetCycle) {
