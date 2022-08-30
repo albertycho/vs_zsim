@@ -733,8 +733,8 @@ int main(int argc, char *argv[]) {
     }
 
 
-    nicInfo->sim_end_time = std::chrono::system_clock::now();
-    std::chrono::duration<double> elapsed_seconds = (nicInfo->sim_end_time) - (nicInfo->sim_start_time);
+    zinfo->sim_end_time = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = (zinfo->sim_end_time) - (zinfo->sim_start_time);
     std::cout << "sim elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
 
 

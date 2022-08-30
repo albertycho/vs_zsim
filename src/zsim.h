@@ -33,7 +33,8 @@
 #include "locks.h"
 #include "pad.h"
 
-#include "nic_defines.h"
+//#include "nic_defines.h"
+#include <chrono>
 
 
 class Core;
@@ -193,6 +194,9 @@ struct GlobSimInfo {
     //g_vector<float*> mem_bwdth;
     float** mem_bwdth;
     uint32_t mem_bw_len;
+    	
+    std::chrono::system_clock::time_point sim_start_time;
+	std::chrono::system_clock::time_point sim_end_time;
 
 };
 
@@ -206,7 +210,7 @@ extern uint64_t procMask;
 
 extern GlobSimInfo* zinfo;
 
-extern glob_nic_elements* nicInfo;
+//extern glob_nic_elements* nicInfo;
 
 extern FilterCache** l1d_caches;
 

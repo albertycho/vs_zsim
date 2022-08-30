@@ -798,7 +798,7 @@ inline void OOOCore::NicMagicFunc_on_trigger(THREADID tid, ADDRINT val, ADDRINT 
 
 //void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
 void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT field) {
-
+	info("for non sweeper, not expecting this function to be called. field:%lx, val:%lx",field, val);
 	//uint64_t core_id = getCid(tid);
 	glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 	void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
@@ -970,12 +970,12 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 			*static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(nicInfo->matC);
 			info("matC registered");
 			break;
-		case 0x33: //0x33 informs init done for MM
-			futex_lock(&nicInfo->mm_core_lock);
-			nicInfo->registered_mm_cores++;
-			futex_unlock(&nicInfo->mm_core_lock);
-			info("MM init done");
-			break;
+		// case 0x33: //0x33 informs init done for MM
+		// 	futex_lock(&nicInfo->mm_core_lock);
+		// 	nicInfo->registered_mm_cores++;
+		// 	futex_unlock(&nicInfo->mm_core_lock);
+		// 	info("MM init done");
+		// 	break;
 
 		case 0xdead: //invalidate entries after test app terminates
 			nicInfo->registered_core_count = nicInfo->registered_core_count - 1;
@@ -1308,6 +1308,10 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 			 *       checks CEQ and RCP-EQ every cycle
 			 *       Process entries that are due (by creating CQ_entries)
 			 */
+
+			//This function is for when NIC is used (developed for sweeper)
+			//For CXL study, don't do anything
+			return;
 
 			glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 			if(nicInfo->nic_ingress_proc_on==false){ // don't do anything for non-nic simulation

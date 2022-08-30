@@ -1392,7 +1392,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 
 
     gm_set_nic_ptr(nicInfo);
-  
+    zinfo->sim_start_time = std::chrono::system_clock::now();
    
 
 
