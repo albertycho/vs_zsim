@@ -42,9 +42,9 @@ SetAssocArray::SetAssocArray(uint32_t _numLines, uint32_t _assoc, ReplPolicy* _r
     }
     numSets = numLines/assoc;
 
-	info("numSets = %d",numSets);
+	//info("numSets = %d",numSets);
     if(isPow2(numSets)){
-		info("numSets is pow2");
+		//info("numSets is pow2");
         setMask = numSets-1;
 	}
     else {
