@@ -574,8 +574,14 @@ class MESICC : public CC {
                         //At this point, the line is in a good state w.r.t. upper levels
                         bool lowerLevelWriteback = false;
                         //change directory info, invalidate other children if needed, tell requester about its state
-                        if(req.flags & MemReq::NLPF != 0){
-                            info("%s calling tcc->process access with NLPF",name.c_str());
+                        if((req.flags & MemReq::NLPF) != 0){
+                            //info("%s calling tcc->process access with NLPF",name.c_str());
+                            int tmplvl=flags>>16;
+                            // using NLPF to skip sharer update for L2. L3 still needs to manage its l2 children
+                            // so ignore flag if l3 (lvl==0 at this point of code)
+                            if(tmplvl==0){ 
+                                flas = flags & ~MemReq::NLPF;
+                            }
                         }
                         respCycle = tcc->processAccess(req.lineAddr, lineId, req.type, req.childId, bcc->isExclusive(lineId), req.state,
                                 &lowerLevelWriteback, respCycle, req.srcId, flags);

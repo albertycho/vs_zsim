@@ -748,6 +748,9 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
             assert(e->numSharers >= 0);
             break;
         case GETS:
+        if(flags & MemReq::NLPF){
+            break;
+        }
         assert(!(flags & MemReq::PKTIN));
             // should a GETS from the NIC modify any cache state? I think not (unless it finds an invalid line, which we deal with in bcc)
             // apparently it should, if it misses and the line is in a private cache
