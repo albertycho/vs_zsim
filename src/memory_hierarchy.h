@@ -120,7 +120,8 @@ struct MemReq {
         NETRELATED_ING    = (1<<9),
         NETRELATED_EGR = (1<<10),
         INGR_EVCT     = (1<<11),
-        EGR_EVCT      = (1<<12)
+        EGR_EVCT      = (1<<12),
+        NLPF          = (1<<13) //next line prefetcher. Ignoring "PREFETCH" as it doesn't work with OOO core
     };
     uint32_t flags;
 

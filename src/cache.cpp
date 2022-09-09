@@ -69,9 +69,6 @@ uint64_t Cache::access(MemReq& req) {
     }
     bool correct_level = (req_level == level);
 	
-	if(req_level==1 && level==1){
-		info("level 1 is l2? name:%s",name.c_str());
-	}
 
     int32_t lineId = -1;
     //info("In cache access, req type is %s, my level is %d, input level is %d",AccessTypeName(req.type),level,req_level);
