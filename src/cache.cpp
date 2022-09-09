@@ -42,7 +42,7 @@ void Cache::setParents(uint32_t childId, const g_vector<MemObject*>& parents, Ne
 }
 
 void Cache::setChildren(const g_vector<BaseCache*>& children, Network* network) {
-	info("%s setChildren, children.size()=%d",name.c_str(), children.size());
+	//info("%s setChildren, children.size()=%d",name.c_str(), children.size());
     cc->setChildren(children, network);
 }
 
