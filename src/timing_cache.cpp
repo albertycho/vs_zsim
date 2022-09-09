@@ -127,6 +127,10 @@ uint64_t TimingCache::access(MemReq& req) {
         is_llc=true;
     }
 
+    // if(level<=1){
+    //     flags & ~MemReq::NLPF;
+    // }
+
     int req_level = req.flags >> 16;
     if (req.type == PUTS || req.type == PUTX) {
         req_level = level;
