@@ -181,7 +181,9 @@ class FilterCache : public Cache {
                     lvl = level;
                 }
             }
-
+            if(lvl==2){ // pfrefetch req to l2
+                flags=flags | MemReq::NLPF;
+            }
             if (source == 1742)
                 return replace(vLineAddr, idx, true, curCycle, srcId, 0, flags, (lvl == 8) ? level : lvl);
             else {
@@ -228,9 +230,6 @@ class FilterCache : public Cache {
                 else {
                     lvl = level;
                 }
-            }
-            if(lvl==2){ // pfrefetch req to l2
-                flags=flags | MemReq::NLPF;
             }
             if (source == 1742)
                 return replace(vLineAddr, idx, false, curCycle, srcId, 0, flags, (lvl == 8) ? level : lvl);

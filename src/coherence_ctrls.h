@@ -575,7 +575,7 @@ class MESICC : public CC {
                         bool lowerLevelWriteback = false;
                         //change directory info, invalidate other children if needed, tell requester about its state
                         if(req.flags & MemReq::NLPF != 0){
-                            info("%s calling tcc->process access with NLPF",name.c_str);
+                            info("%s calling tcc->process access with NLPF",name.c_str());
                         }
                         respCycle = tcc->processAccess(req.lineAddr, lineId, req.type, req.childId, bcc->isExclusive(lineId), req.state,
                                 &lowerLevelWriteback, respCycle, req.srcId, flags);
