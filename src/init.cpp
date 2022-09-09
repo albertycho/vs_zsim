@@ -621,7 +621,7 @@ static void InitSystem(Config& config) {
         assert(children);
 
         uint32_t childrenPerParent = children/parents;
-		info("childrenperparent= %d", childrenPerParent);
+		//info("childrenperparent= %d", childrenPerParent);
         if (children % parents != 0) {
             panic("%s has %d caches and %d children, they are non-divisible. "
                   "Use multiple groups for non-homogeneous children per parent!", grp, parents, children);
