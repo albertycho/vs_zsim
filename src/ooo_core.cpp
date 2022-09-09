@@ -327,6 +327,11 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
 							//info("%lld",reqSatisfiedCycle-dispatchCycle);
 							cRec.record(curCycle, dispatchCycle, reqSatisfiedCycle);
 						}
+						//prefetch experiment
+						//uint64_t rsp2=l1d->load(addr+(1<<lineBits), dispatchCycle+1)+L1D_LAT;
+						uint64_t rsp2=l1d->load(addr+(1<<lineBits), dispatchCycle+1, 2)+L1D_LAT; //level=1, pass to l2
+						cRec.record(curCycle, dispatchCycle+1, rsp2);
+						//experiment ends here
 
 					}
 

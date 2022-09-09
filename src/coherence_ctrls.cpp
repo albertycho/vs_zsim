@@ -760,7 +760,12 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
                     *childState = E;
                 } else {
                     //Give in S state
-                    assert(e->sharers[childId] == false);
+                    //assert(e->sharers[childId] == false);
+                    if(!(e->sharers[childId] == false)){
+						info("e->sharers[childId] is not false, childId=%d", childId);
+						info("e->numSharers = %d", e->numSharers);	
+						if(e->isEmpty()) info("e->isEmpty()");
+					}
 
                     if (e->isExclusive()) {
                         //Downgrade the exclusive sharer

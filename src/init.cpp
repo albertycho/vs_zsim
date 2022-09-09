@@ -405,13 +405,14 @@ CacheGroup* BuildCacheGroup(Config& config, const string& name, bool isTerminal,
     bool isPrefetcher = config.get<bool>(prefix + "isPrefetcher", false);
     if (isPrefetcher) { //build a prefetcher group
         uint32_t prefetchers = config.get<uint32_t>(prefix + "prefetchers", 1);
+        uint32_t entrySize = config.get<uint32_t>(prefix + "entries", 16);
         cg.resize(prefetchers);
         for (vector<BaseCache*>& bg : cg) bg.resize(1);
         for (uint32_t i = 0; i < prefetchers; i++) {
             stringstream ss;
             ss << name << "-" << i;
             g_string pfName(ss.str().c_str());
-            cg[i][0] = new StreamPrefetcher(pfName);
+            cg[i][0] = new StreamPrefetcher(pfName, 1024, entrySize);
         }
         return cgp;
     }
@@ -620,6 +621,7 @@ static void InitSystem(Config& config) {
         assert(children);
 
         uint32_t childrenPerParent = children/parents;
+		info("childrenperparent= %d", childrenPerParent);
         if (children % parents != 0) {
             panic("%s has %d caches and %d children, they are non-divisible. "
                   "Use multiple groups for non-homogeneous children per parent!", grp, parents, children);
@@ -650,8 +652,9 @@ static void InitSystem(Config& config) {
                 }
                 info("Hierarchy: %s -> %s", Str(cacheNames).c_str(), parentName.c_str());
             }
-
+			//info("p=%d, parentCaches[p].size=%d",p,parentCaches[p].size());
             for (BaseCache* bank : parentCaches[p]) {
+				//info("%s, %d", bank->getName(), childrenVec.size());
                 bank->setChildren(childrenVec, network);
             }
         }

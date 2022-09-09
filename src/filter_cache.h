@@ -320,6 +320,12 @@ class FilterCache : public Cache {
             MemReq req = {pLineAddr, isLoad? GETS : GETX, childId, &dummyState, curCycle, &filterLock, dummyState, source, reqFlags | (lvl << 16) | flags};
             
             uint64_t respCycle  = access(req);
+           
+			// experimenting for custom prefetching
+            //MESIState dummyState2 = MESIState::I;
+			//MemReq req2 = {pLineAddr+1, isLoad? GETS : GETX, childId, &dummyState2, curCycle+1, &filterLock, dummyState2, source, reqFlags | (lvl << 16) | flags};
+			//uint64_t respCycle2 = access(req2);
+			//experiment ends here
 
             //Due to the way we do the locking, at this point the old address might be invalidated, but we have the new address guaranteed until we release the lock
 

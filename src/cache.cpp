@@ -42,6 +42,7 @@ void Cache::setParents(uint32_t childId, const g_vector<MemObject*>& parents, Ne
 }
 
 void Cache::setChildren(const g_vector<BaseCache*>& children, Network* network) {
+	info("%s setChildren, children.size()=%d",name.c_str(), children.size());
     cc->setChildren(children, network);
 }
 
@@ -67,6 +68,11 @@ uint64_t Cache::access(MemReq& req) {
         req_level = level;
     }
     bool correct_level = (req_level == level);
+	
+	if(req_level==1 && level==1){
+		info("level 1 is l2? name:%s",name.c_str());
+	}
+
     int32_t lineId = -1;
     //info("In cache access, req type is %s, my level is %d, input level is %d",AccessTypeName(req.type),level,req_level);
 
@@ -171,6 +177,7 @@ uint64_t Cache::access(MemReq& req) {
             }
         }
         else {
+			info("not correct level, should only see in l1, name: %s, level=%d", name.c_str(), level);
             respCycle = cc->processAccess(req, lineId, respCycle, correct_level);
         }
     }
