@@ -174,7 +174,7 @@ uint64_t Cache::access(MemReq& req) {
             }
         }
         else {
-			info("not correct level, should only see in l1, name: %s, level=%d", name.c_str(), level);
+			//info("not correct level, should only see in l1, name: %s, level=%d", name.c_str(), level);
             respCycle = cc->processAccess(req, lineId, respCycle, correct_level);
         }
     }

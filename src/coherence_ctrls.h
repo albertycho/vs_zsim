@@ -580,7 +580,7 @@ class MESICC : public CC {
                             // using NLPF to skip sharer update for L2. L3 still needs to manage its l2 children
                             // so ignore flag if l3 (lvl==0 at this point of code)
                             if(tmplvl==0){ 
-                                flas = flags & ~MemReq::NLPF;
+                                flags = flags & ~MemReq::NLPF;
                             }
                         }
                         respCycle = tcc->processAccess(req.lineAddr, lineId, req.type, req.childId, bcc->isExclusive(lineId), req.state,
