@@ -78,8 +78,8 @@ class Cache : public BaseCache {
             return finishInvalidate(req);
         }
 
-        bool LineInCache(Address next_addr) {
-            Address next_line_addr = next_addr >> lineBits;
+        bool LineInCache(Address next_line_addr) {
+            //Address next_line_addr = next_addr >> lineBits;
             int32_t next_line_id = array->lookup(next_line_addr, nullptr, false);
             return (next_line_id != -1);
         }
