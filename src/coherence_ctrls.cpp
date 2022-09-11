@@ -763,12 +763,12 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
                     *childState = E;
                 } else {
                     //Give in S state
-                    //assert(e->sharers[childId] == false);
-                    if(!(e->sharers[childId] == false)){
-						info("e->sharers[childId] is not false, childId=%d", childId);
-						info("e->numSharers = %d", e->numSharers);	
-						if(e->isEmpty()) info("e->isEmpty()");
-					}
+                    assert(e->sharers[childId] == false);
+                    //if(!(e->sharers[childId] == false)){
+					//	info("e->sharers[childId] is not false, childId=%d", childId);
+					//	info("e->numSharers = %d", e->numSharers);	
+					//	if(e->isEmpty()) info("e->isEmpty()");
+					//}
 
                     if (e->isExclusive()) {
                         //Downgrade the exclusive sharer
@@ -776,6 +776,15 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
                     }
 
                     assert_msg(!e->isExclusive(), "Can't have exclusivity here. isExcl=%d excl=%d numSharers=%d", e->isExclusive(), e->exclusive, e->numSharers);
+
+                    //dbg print
+                    info("Before setting childstate=S");
+                    if (flags & MemReq::NLPF) {
+                        info("nlpf request");
+                    }
+                    info("level = %d", flags >> 16);
+                    info("childId: %d, e->isEmpty: %d, haveExculsive: %d, "childId, e->isEmpty() ? 1 : 0, haveExclusive ? 1 : 0);
+                    info("numsharers: %d", e->numSharers);
 
                     e->sharers[childId] = true;
                     e->numSharers++;
