@@ -198,6 +198,7 @@ struct GlobSimInfo {
     std::chrono::system_clock::time_point sim_start_time;
 	std::chrono::system_clock::time_point sim_end_time;
     uint32_t getParentId_policy=0;
+    bool NLPF; // nextline prefetch
 
 };
 

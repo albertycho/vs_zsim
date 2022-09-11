@@ -329,8 +329,9 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
 						}
 						//prefetch experiment
 						//uint64_t rsp2=l1d->load(addr+(1<<lineBits), dispatchCycle+1)+L1D_LAT;
-						bool doNLPF = true;
-						if(doNLPF){
+						//bool doNLPF = true;
+						//if(doNLPF){
+						if(zinfo->NLPF){
 							uint64_t last_access_time=reqSatisfiedCycle - dispatchCycle;
 							//info("access took %d",(last_access_time));
 							if((reqSatisfiedCycle - dispatchCycle) > (L1D_LAT + 10)){ // l1 miss

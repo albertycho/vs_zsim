@@ -1044,6 +1044,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     PreInitStats();
 
     zinfo->traceDriven = config.get<bool>("sim.traceDriven", false);
+    zinfo->NLPF = config.get<bool>("sim.NLPF", false);
 
     if (zinfo->traceDriven) {
         zinfo->numCores = 0;
