@@ -223,8 +223,15 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
         // A PUTS/PUTX does nothing w.r.t. higher coherence levels --- it dies here
         case PUTS: //Clean writeback, nothing to do (except profiling)
             isMiss = (*state == I);
-            if (nonInclusiveHack) 
-                *state = S;
+            if (nonInclusiveHack){
+				if(*state !=S){
+					//if(*state==M){
+					//	info("current block state M, for PUTS req. don't think we should see this");
+					//}
+					*state = E;
+				}
+                //*state = S;
+			}
             else
                 assert(*state != I);
             profPUTS.inc();
@@ -778,13 +785,13 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
                     assert_msg(!e->isExclusive(), "Can't have exclusivity here. isExcl=%d excl=%d numSharers=%d", e->isExclusive(), e->exclusive, e->numSharers);
 
                     //dbg print
-                    info("Before setting childstate=S");
-                    if (flags & MemReq::NLPF) {
-                        info("nlpf request");
-                    }
-                    info("level = %d", flags >> 16);
-                    info("childId: %d, e->isEmpty: %d, haveExculsive: %d, "childId, e->isEmpty() ? 1 : 0, haveExclusive ? 1 : 0);
-                    info("numsharers: %d", e->numSharers);
+                    //info("Before setting childstate=S");
+                    //if (flags & MemReq::NLPF) {
+                    //    info("nlpf request");
+                    //}
+                    //info("level = %d", flags >> 16);
+                    //info("childId: %d, e->isEmpty: %d, haveExculsive: %d",childId, e->isEmpty() ? 1 : 0, haveExclusive ? 1 : 0);
+                    //info("numsharers: %d", e->numSharers);
 
                     e->sharers[childId] = true;
                     e->numSharers++;
