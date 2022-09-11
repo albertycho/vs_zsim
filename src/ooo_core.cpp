@@ -332,7 +332,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
 						bool doNLPF = true;
 						if(doNLPF){
 							uint64_t last_access_time=reqSatisfiedCycle - dispatchCycle;
-							info("access took %d",(last_access_time));
+							//info("access took %d",(last_access_time));
 							if((reqSatisfiedCycle - dispatchCycle) > (L1D_LAT + 10)){ // l1 miss
 								uint64_t rsp2=l1d->load(addr+(1<<lineBits), dispatchCycle+1, 2)+L1D_LAT; //level=1, pass to l2
 								cRec.record(curCycle, dispatchCycle+1, rsp2);
