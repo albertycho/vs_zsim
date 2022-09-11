@@ -42,9 +42,9 @@ SetAssocArray::SetAssocArray(uint32_t _numLines, uint32_t _assoc, ReplPolicy* _r
     }
     numSets = numLines/assoc;
 
-	//info("numSets = %d",numSets);
+	info("numSets = %d",numSets);
     if(isPow2(numSets)){
-		//info("numSets is pow2");
+		info("numSets is pow2");
         setMask = numSets-1;
 	}
     else {
@@ -197,7 +197,6 @@ uint32_t SetAssocArray::preinsert(const Address lineAddr, const MemReq* req, Add
 
     uint32_t candidate = rp->rankCands(req, SetAssocCands(first, first+assoc));
     way_misses.inc(candidate-first);
-    /*
     //info("eviction candidate is %lld, with index %ld", array[candidate], candidate);
     if(req->flags & MemReq::PKTIN){
         nic_rb_way_misses.inc(candidate-first);
@@ -206,7 +205,6 @@ uint32_t SetAssocArray::preinsert(const Address lineAddr, const MemReq* req, Add
         nic_rb_way_misses.inc(candidate-first);
         rb_insert_server.atomicInc();
     }
-    */
     *wbLineAddr = array[candidate].addr;
     return candidate;
 }

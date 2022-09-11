@@ -355,12 +355,10 @@ VOID FFIAdvance() {
 
 VOID FFIBasicBlock(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     ffiInstrsDone += bblInfo->instrs;
-    /*
 	if( ffiInstrsDone > (nicInfo->ffinst_flag)){
 		nicInfo->ffinst_flag+=100000000;
 		info("ffiInstrsDone: %ld", ffiInstrsDone);
 	}
-    */
     if (unlikely(ffiInstrsDone >= ffiInstrsLimit)) {
         FFIAdvance();
         assert(procTreeNode->isInFastForward());
@@ -1501,7 +1499,7 @@ int main(int argc, char *argv[]) {
     } else {
         while (!gm_isready()) usleep(1000);  // wait till proc idx 0 initializes everything
         zinfo = static_cast<GlobSimInfo*>(gm_get_glob_ptr());
-		//nicInfo= static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+		nicInfo= static_cast<glob_nic_elements*>(gm_get_nic_ptr());
     }
 
     //If assertion below fails, use this to print maps

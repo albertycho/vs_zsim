@@ -691,50 +691,50 @@ int main(int argc, char *argv[]) {
             exit(42);
         }
 
-        //nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
+        nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
 	
-//		if(nicInfo->expected_core_count > 0){
-//			//info("expected_core_count: %d", nicInfo->expected_core_count);
-//        if (!nicInfo->nic_egress_proc_on) {
-//            assert(nicInfo->registered_core_count == 0);
-//            int temp=0;
-//            for (int i = 0; i < MAX_CHILDREN; i++) {
-//                if (childInfo[i].status == PS_RUNNING) {
-//                    temp++;
-//                    std::cout << i << " " << childInfo[i].pid << std::endl;
-//                }
-//            }
-//            if (temp >1 && temp == nicInfo->expected_non_net_core_count + 1) {
-//                info("Attempting graceful termination");
-//                for (int i = 1; i < MAX_CHILDREN; i++) {
-//                    int cpid = childInfo[i].pid;
-//                    if (childInfo[i].status == PS_RUNNING) {
-//                        info("Killing process %d", cpid);
-//                        kill(-cpid, SIGKILL);
-//                        usleep(100000);
-//                        kill(cpid, SIGKILL);
-//                    }
-//                }
-//            }
-//            else if (temp == 1) {
-//                info("Killing main thread");
-//                for (int i = 0; i < MAX_CHILDREN; i++) {
-//                    int cpid = childInfo[i].pid;
-//                    if (childInfo[i].status == PS_RUNNING) {
-//                        info("Killing process %d", cpid);
-//                        kill(-cpid, SIGKILL);
-//                        usleep(100000);
-//                        kill(cpid, SIGKILL);
-//                    }
-//                }
-//            }
-//        }
-//		}
+		if(nicInfo->expected_core_count > 0){
+			//info("expected_core_count: %d", nicInfo->expected_core_count);
+        if (!nicInfo->nic_egress_proc_on) {
+            assert(nicInfo->registered_core_count == 0);
+            int temp=0;
+            for (int i = 0; i < MAX_CHILDREN; i++) {
+                if (childInfo[i].status == PS_RUNNING) {
+                    temp++;
+                    std::cout << i << " " << childInfo[i].pid << std::endl;
+                }
+            }
+            if (temp >1 && temp == nicInfo->expected_non_net_core_count + 1) {
+                info("Attempting graceful termination");
+                for (int i = 1; i < MAX_CHILDREN; i++) {
+                    int cpid = childInfo[i].pid;
+                    if (childInfo[i].status == PS_RUNNING) {
+                        info("Killing process %d", cpid);
+                        kill(-cpid, SIGKILL);
+                        usleep(100000);
+                        kill(cpid, SIGKILL);
+                    }
+                }
+            }
+            else if (temp == 1) {
+                info("Killing main thread");
+                for (int i = 0; i < MAX_CHILDREN; i++) {
+                    int cpid = childInfo[i].pid;
+                    if (childInfo[i].status == PS_RUNNING) {
+                        info("Killing process %d", cpid);
+                        kill(-cpid, SIGKILL);
+                        usleep(100000);
+                        kill(cpid, SIGKILL);
+                    }
+                }
+            }
+        }
+		}
     }
 
 
-    zinfo->sim_end_time = std::chrono::system_clock::now();
-    std::chrono::duration<double> elapsed_seconds = (zinfo->sim_end_time) - (zinfo->sim_start_time);
+    nicInfo->sim_end_time = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = (nicInfo->sim_end_time) - (nicInfo->sim_start_time);
     std::cout << "sim elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
 
 

@@ -104,7 +104,7 @@ int get_target_core_id_from_lb_addr(Address lineaddr){
 uint32_t MESIBottomCC::getParentId(Address lineAddr) {
 	//for RB address, see if we can not hash
 	//int rb_cid = get_target_core_id_from_rb_addr(lineAddr);
-	uint32_t policy = zinfo->getParentId_policy;
+	uint32_t policy = nicInfo->getParentId_policy;
 	if(policy==0){
 		uint64_t bank_id = (lineAddr>>11) % parents.size(); //shifted by number of sets
 		return bank_id;
@@ -223,16 +223,8 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
         // A PUTS/PUTX does nothing w.r.t. higher coherence levels --- it dies here
         case PUTS: //Clean writeback, nothing to do (except profiling)
             isMiss = (*state == I);
-            if (nonInclusiveHack){
-				//if(*state !=S){
-                if(*state ==I){
-					//if(*state==M){
-					//	info("current block state M, for PUTS req. don't think we should see this");
-					//}
-					*state = E;
-				}
-                //*state = S;
-			}
+            if (nonInclusiveHack) 
+                *state = S;
             else
                 assert(*state != I);
             profPUTS.inc();
@@ -391,7 +383,6 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
         default: panic("!?");
     }
 
-    /*
     uint64_t stat_group=get_stat_group(srcId);
     
     if (type != PUTS && type != PUTX && type != CLEAN  && type != CLEAN_S) {
@@ -568,7 +559,7 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
             default: panic("appPut didn't belong to any grp?");
         }
     }
-    */
+    
     assert_msg(respCycle >= cycle, "XXX %ld %ld", respCycle, cycle);
     return respCycle;
 }
@@ -756,9 +747,6 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
             assert(e->numSharers >= 0);
             break;
         case GETS:
-        if(flags & MemReq::NLPF){
-            break;
-        }
         assert(!(flags & MemReq::PKTIN));
             // should a GETS from the NIC modify any cache state? I think not (unless it finds an invalid line, which we deal with in bcc)
             // apparently it should, if it misses and the line is in a private cache
@@ -772,11 +760,6 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
                 } else {
                     //Give in S state
                     assert(e->sharers[childId] == false);
-                    //if(!(e->sharers[childId] == false)){
-					//	info("e->sharers[childId] is not false, childId=%d", childId);
-					//	info("e->numSharers = %d", e->numSharers);	
-					//	if(e->isEmpty()) info("e->isEmpty()");
-					//}
 
                     if (e->isExclusive()) {
                         //Downgrade the exclusive sharer
@@ -784,15 +767,6 @@ uint64_t MESITopCC::processAccess(Address lineAddr, int32_t lineId, AccessType t
                     }
 
                     assert_msg(!e->isExclusive(), "Can't have exclusivity here. isExcl=%d excl=%d numSharers=%d", e->isExclusive(), e->exclusive, e->numSharers);
-
-                    //dbg print
-                    //info("Before setting childstate=S");
-                    //if (flags & MemReq::NLPF) {
-                    //    info("nlpf request");
-                    //}
-                    //info("level = %d", flags >> 16);
-                    //info("childId: %d, e->isEmpty: %d, haveExculsive: %d",childId, e->isEmpty() ? 1 : 0, haveExclusive ? 1 : 0);
-                    //info("numsharers: %d", e->numSharers);
 
                     e->sharers[childId] = true;
                     e->numSharers++;
