@@ -224,7 +224,8 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
         case PUTS: //Clean writeback, nothing to do (except profiling)
             isMiss = (*state == I);
             if (nonInclusiveHack){
-				if(*state !=S){
+				//if(*state !=S){
+                if(*state ==I){
 					//if(*state==M){
 					//	info("current block state M, for PUTS req. don't think we should see this");
 					//}
