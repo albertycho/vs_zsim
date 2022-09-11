@@ -1069,6 +1069,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     PreInitStats();
 
     zinfo->traceDriven = config.get<bool>("sim.traceDriven", false);
+	zinfo->NLPF = config.get<bool>("sim.NLPF", false);
 
     if (zinfo->traceDriven) {
         zinfo->numCores = 0;
@@ -1150,9 +1151,9 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
         nicInfo->nic_elem[i].rb_dir =   gm_memalign<recv_buf_dir_t>(CACHE_LINE_BYTES, recv_buf_pool_size);
         //for each core, entries match number of cachelines in RB pool
 		uint64_t numCLinRBPool = recv_buf_pool_size / CACHE_LINE_BYTES;
-		info("sancheck print before gm memaligning txts map, numCLinRBPool = %d",numCLinRBPool);
+		//info("sancheck print before gm memaligning txts map, numCLinRBPool = %d",numCLinRBPool);
         nicInfo->txts_map[i] = gm_memalign<uint64_t>(CACHE_LINE_BYTES, (recv_buf_pool_size/CACHE_LINE_BYTES));
-		info("sancheck print AFTER gm memaligning txts map");
+		//info("sancheck print AFTER gm memaligning txts map");
 	}
 
 
