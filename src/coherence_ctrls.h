@@ -583,7 +583,6 @@ class MESICC : public CC {
                                 flags = flags & ~MemReq::NLPF;
                             }
                         }
-
                         respCycle = tcc->processAccess(req.lineAddr, lineId, req.type, req.childId, bcc->isExclusive(lineId), req.state,
                                 &lowerLevelWriteback, respCycle, req.srcId, flags);
                         if (lowerLevelWriteback) {

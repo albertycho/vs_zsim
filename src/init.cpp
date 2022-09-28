@@ -405,13 +405,14 @@ CacheGroup* BuildCacheGroup(Config& config, const string& name, bool isTerminal,
     bool isPrefetcher = config.get<bool>(prefix + "isPrefetcher", false);
     if (isPrefetcher) { //build a prefetcher group
         uint32_t prefetchers = config.get<uint32_t>(prefix + "prefetchers", 1);
+        uint32_t entrySize = config.get<uint32_t>(prefix + "entries", 16);
         cg.resize(prefetchers);
         for (vector<BaseCache*>& bg : cg) bg.resize(1);
         for (uint32_t i = 0; i < prefetchers; i++) {
             stringstream ss;
             ss << name << "-" << i;
             g_string pfName(ss.str().c_str());
-            cg[i][0] = new StreamPrefetcher(pfName);
+            cg[i][0] = new StreamPrefetcher(pfName, 1024, entrySize);
         }
         return cgp;
     }
@@ -620,6 +621,7 @@ static void InitSystem(Config& config) {
         assert(children);
 
         uint32_t childrenPerParent = children/parents;
+		//info("childrenperparent= %d", childrenPerParent);
         if (children % parents != 0) {
             panic("%s has %d caches and %d children, they are non-divisible. "
                   "Use multiple groups for non-homogeneous children per parent!", grp, parents, children);
@@ -650,8 +652,9 @@ static void InitSystem(Config& config) {
                 }
                 info("Hierarchy: %s -> %s", Str(cacheNames).c_str(), parentName.c_str());
             }
-
+			//info("p=%d, parentCaches[p].size=%d",p,parentCaches[p].size());
             for (BaseCache* bank : parentCaches[p]) {
+				//info("%s, %d", bank->getName(), childrenVec.size());
                 bank->setChildren(childrenVec, network);
             }
         }
@@ -845,7 +848,9 @@ static void InitSystem(Config& config) {
     cMap.clear();
 
 	string mem_type = config.get<const char*>("sys.mem.type", "Simple");
-	if(mem_type=="Simple"){
+    zinfo->getParentId_policy=config.get<uint32_t>("sim.getParentId_policy", 0);
+	/*
+    if(mem_type=="Simple"){
 		nicInfo->memtype=0;
 	}
 	else{
@@ -919,44 +924,14 @@ static void InitSystem(Config& config) {
     //uint32_t memControllers = config.get<uint32_t>("sys.mem.controllers", 1);
 	nicInfo->num_controllers=memControllers;
 
-    uint32_t gmSize = config.get<uint32_t>("sim.gmMBytes", (1<<14) /*default 1024MB*/);
-    //int shmid = gm_init(((size_t)gmSize) << 20 /*MB to Bytes*/);
+    uint32_t gmSize = config.get<uint32_t>("sim.gmMBytes", (1<<14)); //(default 1024MB)
+    //int shmid = gm_init(((size_t)gmSize) << 20 ); //MB to Bytes
 	nicInfo->gm_size = (uint64_t)gmSize << 20;
 	info("init: gmSize: %d gm_size: %d",gmSize, nicInfo->gm_size);
 
 	nicInfo->sim_start_time = std::chrono::system_clock::now();
+    */
 
-    //load_generator* lgp;
-    //lgp=(load_generator*)gm_get_lg_ptr();
-
- //   uint32_t dist_type = config.get<uint32_t>("sim.load_dist", 0);
- //   lgp->RPCGen->set_load_dist(dist_type);
-
- //   //uint32_t num_keys = config.get<uint32_t>("sim.num_keys", 100);
- //   //lgp->RPCGen->set_num_keys(num_keys);
- //   
- //   //uint32_t update_fraction = config.get<uint32_t>("sim.update_fraction", 10);
- //   //lgp->RPCGen->set_update_fraction(update_fraction);
- //   //lgp->interval = (zinfo->phaseLength) / (nicInfo->packet_injection_rate);
- //   uint32_t target_pacekt_count = config.get<uint32_t>("sim.packet_count", 10000);
- //   lgp->target_packet_count = (uint64_t) target_pacekt_count;
- //   uint32_t arrival_dist = config.get<uint32_t>("sim.arrival_dist", 0);
- //   lgp->arrival_dist = arrival_dist;
-
- //   lgp->last_core = 0;
-	//lgp->sum_interval=0;
-
-
- //   // Build the load generators
- //   vector<const char*> loadGenNames;
- //   config.subgroups("sim.load_gen", loadGenNames);
- //   string lg_prefix = "sim.load_gen.";
- //   for (const char* lgi : loadGenNames) {
- //       info("loadGenName: %s", lgi);
- //       uint32_t lg_type = config.get<uint32_t>(lg_prefix+lgi+".type", 0);
- //       uint32_t lg_num_keys = config.get<uint32_t>(lg_prefix+lgi+".num_keys", 1024);
-
- //   }
     info("Initialized system");
 }
 
@@ -1069,7 +1044,9 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     PreInitStats();
 
     zinfo->traceDriven = config.get<bool>("sim.traceDriven", false);
-	zinfo->NLPF = config.get<bool>("sim.NLPF", false);
+    zinfo->NLPF = config.get<bool>("sim.NLPF", false);
+    zinfo->NLPF_n = config.get<uint32_t>("sim.NLPF_n", 1);
+    zinfo->cxl_delay = config.get<uint32_t>("sim.cxl_delay", 0);
 
     if (zinfo->traceDriven) {
         zinfo->numCores = 0;
@@ -1090,7 +1067,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     }
 
 
-
+    /*
     //init nic_elements ptr
     //glob_nic_elements* nicInfo= gm_calloc<glob_nic_elements>();
     //nicInfo = gm_calloc<glob_nic_elements>();
@@ -1151,9 +1128,9 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
         nicInfo->nic_elem[i].rb_dir =   gm_memalign<recv_buf_dir_t>(CACHE_LINE_BYTES, recv_buf_pool_size);
         //for each core, entries match number of cachelines in RB pool
 		uint64_t numCLinRBPool = recv_buf_pool_size / CACHE_LINE_BYTES;
-		//info("sancheck print before gm memaligning txts map, numCLinRBPool = %d",numCLinRBPool);
+		info("sancheck print before gm memaligning txts map, numCLinRBPool = %d",numCLinRBPool);
         nicInfo->txts_map[i] = gm_memalign<uint64_t>(CACHE_LINE_BYTES, (recv_buf_pool_size/CACHE_LINE_BYTES));
-		//info("sancheck print AFTER gm memaligning txts map");
+		info("sancheck print AFTER gm memaligning txts map");
 	}
 
 
@@ -1179,6 +1156,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
         futex_init(&(nicInfo->mm_core_lock));
         info("matrix A,B,C allocated");
     }
+    */
 
 
     zinfo->numDomains = config.get<uint32_t>("sim.domains", 1);
@@ -1260,6 +1238,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 
     zinfo->pinCmd = new PinCmd(&config, nullptr /*don't pass config file to children --- can go either way, it's optional*/, outputDir, shmid);
 
+    /*
     /// init Load Generator //
     void* lgp_void;
     //lgp_void = gm_calloc<load_generator>();
@@ -1276,7 +1255,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 
     futex_init(&(((load_generator*)lgp)->ptc_lock));
     gm_set_lg_ptr(lgp_void);
-
+    
 
     uint32_t dist_type = config.get<uint32_t>("sim.load_dist", 0);
     //lgp->RPCGen->set_load_dist(dist_type);
@@ -1286,7 +1265,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 
     //uint32_t update_fraction = config.get<uint32_t>("sim.update_fraction", 10);
     //lgp->RPCGen->set_update_fraction(update_fraction);
-    //lgp->interval = (zinfo->phaseLength) / (nicInfo->packet_injection_rate);
+
     uint32_t target_pacekt_count = config.get<uint32_t>("sim.packet_count", 10000);
     lgp->target_packet_count = (uint64_t)target_pacekt_count;
     uint32_t arrival_dist = config.get<uint32_t>("sim.arrival_dist", 0);
@@ -1344,6 +1323,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
         //start_core += assoc_cores;
         tmp++;
     }
+    */
 
 
 
@@ -1392,8 +1372,8 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
 
 
 
-    gm_set_nic_ptr(nicInfo);
-  
+    //gm_set_nic_ptr(nicInfo);
+    zinfo->sim_start_time = std::chrono::system_clock::now();
    
 
 

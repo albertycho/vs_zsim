@@ -34,6 +34,7 @@
 #include "pad.h"
 
 #include "nic_defines.h"
+#include <chrono>
 
 
 class Core;
@@ -193,7 +194,13 @@ struct GlobSimInfo {
     //g_vector<float*> mem_bwdth;
     float** mem_bwdth;
     uint32_t mem_bw_len;
-	bool NLPF;
+    	
+    std::chrono::system_clock::time_point sim_start_time;
+	std::chrono::system_clock::time_point sim_end_time;
+    uint32_t getParentId_policy=0;
+    bool NLPF; // nextline prefetch
+	uint32_t NLPF_n=1;
+	uint32_t cxl_delay=0;
 
 };
 

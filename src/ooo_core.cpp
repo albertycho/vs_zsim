@@ -327,19 +327,24 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
 							//info("%lld",reqSatisfiedCycle-dispatchCycle);
 							cRec.record(curCycle, dispatchCycle, reqSatisfiedCycle);
 						}
-
+						//prefetch experiment
+						//uint64_t rsp2=l1d->load(addr+(1<<lineBits), dispatchCycle+1)+L1D_LAT;
+						//bool doNLPF = true;
+						//if(doNLPF){
 						if(zinfo->NLPF){
 							uint64_t last_access_time=reqSatisfiedCycle - dispatchCycle;
 							//info("access took %d",(last_access_time));
 							if((reqSatisfiedCycle - dispatchCycle) > (L1D_LAT + 10)){ // l1 miss
-								Address nl_addr = addr + (1 << lineBits);
-								if (!(l1d->LineInCache((nl_addr>>lineBits)))) {
-									uint64_t rsp2 = l1d->load(nl_addr, dispatchCycle + 1, 2) + L1D_LAT; //level=1, pass to l2
-									cRec.record(curCycle, dispatchCycle + 1, rsp2);
+								uint64_t pf_n = zinfo->NLPF_n;
+								for(int i=0; i<pf_n; i++){
+									Address nl_addr = addr + ((i+1) << lineBits);
+									if (!(l1d->LineInCache((nl_addr>>lineBits)))) {
+										uint64_t rsp2 = l1d->load(nl_addr, dispatchCycle +1+ i, 2) + L1D_LAT; //level=1, pass to l2
+										cRec.record(curCycle, dispatchCycle +1+ i, rsp2);
+									}
 								}
 							}
 						}
-
 
 					}
 
@@ -411,8 +416,8 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
 					OOOCore* m_core = magic_cores[magicOpIdx];
 					ADDRINT val = magic_vals[magicOpIdx];
 					ADDRINT field = magic_fields[magicOpIdx];
-					glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-
+					//glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+					glob_nic_elements* nicInfo=NULL;
 					if (field == 0x16) {
 						if ((nicInfo->clean_recv) && (!(nicInfo->zeroCopy))) {
 
@@ -653,9 +658,11 @@ void OOOCore::cSimEnd() {
 	//assert(cycle_adj_idx<100000);
 	if(start_cnt_phases)
 		cycle_adj_queue[cycle_adj_idx++] = curCycle;
+	/*
 	if(core_id == 0 && nicInfo->nic_init_done && nicInfo->ready_for_inj==nicInfo->registered_core_count) {
 		nicInfo->ready_for_inj = 0xabcd;
 	}
+	*/
 }
 
 void OOOCore::advance(uint64_t targetCycle) {
@@ -695,43 +702,44 @@ void OOOCore::BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
 	//uint64_t core_id = getCid(tid); // using processID to identify nicCore for now
 	core->bbl(bblAddr, bblInfo);
 
-	glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+	
+	// glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 
-	//TODO check which nic (ingress or egress) should handle this
-	//as of now we stick with one NIC core doing both ingress and egress work
-	if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) {
-		///////////////CALL DEQ_DPQ//////////////////////
-	}
-	// if ((nicInfo->nic_egress_pid == procIdx) && (nicInfo->nic_init_done) && nicInfo->ready_for_inj==0xabcd) {
-	//     uint32_t srcId = getCid(tid);
-	//     //assert(srcId == 0);
-	//     deq_dpq(srcId, core, &(core->cRec), core->l1d/*MemObject* dest*/, core->curCycle, core->egr_type);
+	// //TODO check which nic (ingress or egress) should handle this
+	// //as of now we stick with one NIC core doing both ingress and egress work
+	// if ((nicInfo->nic_ingress_pid == procIdx) && (nicInfo->nic_init_done)) {
+	// 	///////////////CALL DEQ_DPQ//////////////////////
 	// }
+	// // if ((nicInfo->nic_egress_pid == procIdx) && (nicInfo->nic_init_done) && nicInfo->ready_for_inj==0xabcd) {
+	// //     uint32_t srcId = getCid(tid);
+	// //     //assert(srcId == 0);
+	// //     deq_dpq(srcId, core, &(core->cRec), core->l1d/*MemObject* dest*/, core->curCycle, core->egr_type);
+	// // }
 
-	// Simple synchronization mechanism for enforcing producer consumer order for NIC_Ingress and other cores
-	if ((nicInfo->nic_ingress_pid != procIdx) && (nicInfo->nic_init_done)) {
-		if (nicInfo->nic_egress_pid == procIdx) {
-			//don't need to adjust egress core clock here
-		}
-		else {
-			// Sometime this check gets stuck at the end of the phase, adding safety break
-			int safety_counter = 0;
+	// // Simple synchronization mechanism for enforcing producer consumer order for NIC_Ingress and other cores
+	// if ((nicInfo->nic_ingress_pid != procIdx) && (nicInfo->nic_init_done)) {
+	// 	if (nicInfo->nic_egress_pid == procIdx) {
+	// 		//don't need to adjust egress core clock here
+	// 	}
+	// 	else {
+	// 		// Sometime this check gets stuck at the end of the phase, adding safety break
+	// 		int safety_counter = 0;
 	
 			
-			while (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch())+100) {
-				struct timespec tim, tim2;
-   				tim.tv_sec = 0;
-   				tim.tv_nsec = 10;
-				nanosleep(&tim, &tim2); // short delay seems to work sufficient
-				safety_counter++;
-				if (safety_counter > 10) { // >2 seems to work in current env. May need to be adjusted when running on different machine
-					break;
-				}
-			}
+	// 		while (core->curCycle > (((OOOCore*)(nicInfo->nicCore_ingress))->getCycles_forSynch())+100) {
+	// 			struct timespec tim, tim2;
+   	// 			tim.tv_sec = 0;
+   	// 			tim.tv_nsec = 10;
+	// 			nanosleep(&tim, &tim2); // short delay seems to work sufficient
+	// 			safety_counter++;
+	// 			if (safety_counter > 10) { // >2 seems to work in current env. May need to be adjusted when running on different machine
+	// 				break;
+	// 			}
+	// 		}
 			
 
-		}
-	}
+	// 	}
+	// }
 
 
 	int temp = 0;
@@ -811,11 +819,13 @@ inline void OOOCore::NicMagicFunc_on_trigger(THREADID tid, ADDRINT val, ADDRINT 
 
 //void OOOCore::NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field) {
 void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT field) {
-
+	info("for non sweeper, not expecting this function to be called. field:%lx, val:%lx",field, val);
 	//uint64_t core_id = getCid(tid);
-	glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
-	void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
-	load_generator* lg_p = (load_generator*)lg_p_vp;
+	//glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+	//void* lg_p_vp = static_cast<void*>(gm_get_lg_ptr());
+	//load_generator* lg_p = (load_generator*)lg_p_vp;
+	glob_nic_elements* nicInfo=NULL;
+	load_generator* lg_p = NULL;
 
 	uint64_t num_cline=0;
 	switch (field) {
@@ -946,19 +956,19 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 				futex_unlock(&nicInfo->nic_elem[core_id].packet_pending_lock);
 			}
 			break;
-		case 0x15:      //registering non-network cores
-			{
-				futex_lock(&nicInfo->nic_lock);
-				nicInfo->registered_non_net_core_count++;
-				futex_unlock(&nicInfo->nic_lock);
-				if ((nicInfo->registered_core_count == nicInfo->expected_core_count) && (nicInfo->registered_non_net_core_count == nicInfo->expected_non_net_core_count)) {
-					if (nicInfo->nic_ingress_proc_on) {
-						nicInfo->nic_init_done = true;
-					}
-				}
-				info("registered_non_net_core_count: %d, expected_non_net_core_count: %d\n", nicInfo->expected_non_net_core_count ,nicInfo->expected_core_count);
-				break;
-			}
+		// case 0x15:      //registering non-network cores
+		// 	{
+		// 		futex_lock(&nicInfo->nic_lock);
+		// 		nicInfo->registered_non_net_core_count++;
+		// 		futex_unlock(&nicInfo->nic_lock);
+		// 		if ((nicInfo->registered_core_count == nicInfo->expected_core_count) && (nicInfo->registered_non_net_core_count == nicInfo->expected_non_net_core_count)) {
+		// 			if (nicInfo->nic_ingress_proc_on) {
+		// 				nicInfo->nic_init_done = true;
+		// 			}
+		// 		}
+		// 		info("registered_non_net_core_count: %d, expected_non_net_core_count: %d\n", nicInfo->expected_non_net_core_count ,nicInfo->expected_core_count);
+		// 		break;
+		// 	}
 
 		case 0x17: //register all_packets_SENT for l3fwd. used to prevent hang when batching
 			*static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(&(lg_p->all_packets_sent));
@@ -983,12 +993,12 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 			*static_cast<UINT64*>((UINT64*)(val)) = (UINT64)(nicInfo->matC);
 			info("matC registered");
 			break;
-		case 0x33: //0x33 informs init done for MM
-			futex_lock(&nicInfo->mm_core_lock);
-			nicInfo->registered_mm_cores++;
-			futex_unlock(&nicInfo->mm_core_lock);
-			info("MM init done");
-			break;
+		// case 0x33: //0x33 informs init done for MM
+		// 	futex_lock(&nicInfo->mm_core_lock);
+		// 	nicInfo->registered_mm_cores++;
+		// 	futex_unlock(&nicInfo->mm_core_lock);
+		// 	info("MM init done");
+		// 	break;
 
 		case 0xdead: //invalidate entries after test app terminates
 			nicInfo->registered_core_count = nicInfo->registered_core_count - 1;
@@ -1321,6 +1331,10 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 			 *       checks CEQ and RCP-EQ every cycle
 			 *       Process entries that are due (by creating CQ_entries)
 			 */
+
+			//This function is for when NIC is used (developed for sweeper)
+			//For CXL study, don't do anything
+			return;
 
 			glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
 			if(nicInfo->nic_ingress_proc_on==false){ // don't do anything for non-nic simulation

@@ -89,7 +89,7 @@ void DRAMSimMemory::initStats(AggregateStat* parentStat) {
     profWrites.init("wr", "Write requests"); memStats->append(&profWrites);
     profTotalRdLat.init("rdlat", "Total latency experienced by read requests"); memStats->append(&profTotalRdLat);
     profTotalWrLat.init("wrlat", "Total latency experienced by write requests"); memStats->append(&profTotalWrLat);
-    
+    latHist.init("latHist","latency histogram. capped at 1000cycles", 200); memStats->append(&latHist);
     //dirty_evict_ing.init("recv_dirty_evict", "dirty evicted recv lines"); memStats->append(&dirty_evict_ing);
     //dirty_evict_egr.init("lbuf_dirty_evict", "dirty evicted lbuf lines"); memStats->append(&dirty_evict_egr);
     //dirty_evict_app.init("app_dirty_evict", "dirty evicted app data lines"); memStats->append(&dirty_evict_app);
@@ -159,7 +159,7 @@ uint64_t DRAMSimMemory::access(MemReq& req) {
         zinfo->eventRecorders[req.srcId]->pushRecord(tr);
     }
 
-    return respCycle;
+    return respCycle+(zinfo->cxl_delay);
 }
 
 uint32_t DRAMSimMemory::tick(uint64_t cycle) {
@@ -188,6 +188,11 @@ void DRAMSimMemory::DRAM_read_return_cb(uint32_t id, uint64_t addr, uint64_t mem
         profReads.inc();
         profTotalRdLat.inc(lat);
     }
+	uint32_t hist_index=lat/10;
+	if(hist_index > 199){
+		hist_index=199;
+	}
+	latHist.inc(hist_index);
 
     ev->release();
     ev->done(curCycle+1);
