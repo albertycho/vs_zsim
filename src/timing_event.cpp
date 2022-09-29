@@ -139,6 +139,7 @@ void CrossingEvent::parentDone(uint64_t startCycle) {
         }
         //assert_msg(doneCycle >= cycle, "Crossing enqueued too late, doneCycle %ld startCycle %ld minStartCycle %ld cycle %ld", doneCycle, startCycle, minStartCycle, cycle);
     }
+    info("(CrossingEvent::simulate) Crossing %d->%d done %ld", srcDomain, domain, dCycle);
     TimingEvent::parentDone(cycle);
 }
 
