@@ -338,6 +338,7 @@ class CrossingEvent : public TimingEvent {
                     ce->markSrcEventDone(startCycle);
                     assert(state == EV_NONE);
                     state = EV_RUNNING;
+                    info("(CrossingEvent::parentDone) Crossing %d->%d startcycle %ld", srcDomain, domain, startCycle);
                     done(startCycle);  // does RUNNING -> DONE and frees event
                 }
 
