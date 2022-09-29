@@ -136,7 +136,7 @@ class SlabAlloc {
 
         void freeSlab(Slab* s) {
             scoped_mutex sm(freeLock);
-            //info("freeing slab %p, %d live, %ld in freeList", s, liveSlabs, freeList.size());
+            info("freeing slab %p, %d live, %ld in freeList", s, liveSlabs, freeList.size());
             s->clear();
 #ifdef DEBUG_SLAB_ALLOC
             memset(s->buf, -1, sizeof(s->buf));
