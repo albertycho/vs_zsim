@@ -267,7 +267,7 @@ class TimingEvent {
                 children = nullptr;
                 numChildren = 0;
             }
-            info("freeElem(timing_even.h line 269), domain=%d, phase=%d", this->getDomain(), zinfo->numPhases());
+            info("freeElem(timing_even.h line 269), domain=%d, phase=%d", this->getDomain(), zinfo->numPhases);
             slab::freeElem((void*)this, sizeof(TimingEvent));
         }
 
