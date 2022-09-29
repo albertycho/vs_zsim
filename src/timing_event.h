@@ -184,6 +184,7 @@ class TimingEvent {
                 (*childPtr)->parentDone(doneCycle+postDelay);
             };
             visitChildren< decltype(vLambda) >(vLambda);
+            info("in done, domain=%d (timing_event.h line 187)", domain);
             freeEvent();  // NOTE: immediately reclaimed!
         }
 
@@ -259,12 +260,14 @@ class TimingEvent {
                 TimingEventBlock* teb = children;
                 while (teb) {
                     TimingEventBlock* next = teb->next;
+                    info("freeElem(timing_even.h line 262)");
                     slab::freeElem((void*)teb, sizeof(teb));
                     teb = next;
                 }
                 children = nullptr;
                 numChildren = 0;
             }
+            info("freeElem(timing_even.h line 269)");
             slab::freeElem((void*)this, sizeof(TimingEvent));
         }
 
