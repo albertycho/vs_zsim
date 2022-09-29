@@ -32,6 +32,7 @@
 #include "bithacks.h"
 #include "event_recorder.h"
 #include "galloc.h"
+#include "zsim.h"
 
 #define TIMING_BLOCK_EVENTS 3
 struct TimingEventBlock {

@@ -35,7 +35,6 @@
 
 #include "nic_defines.h"
 #include <chrono>
-#include "zsim.h"
 
 
 class Core;
