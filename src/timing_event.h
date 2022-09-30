@@ -261,7 +261,7 @@ class TimingEvent {
                 TimingEventBlock* teb = children;
                 while (teb) {
                     TimingEventBlock* next = teb->next;
-                    info("freeElem(timing_even.h line 262)");
+                    info("freeElem(timing_even.h line 262), domain=%d", this->getDomain());
                     slab::freeElem((void*)teb, sizeof(teb));
                     teb = next;
                 }

@@ -154,6 +154,7 @@ class SlabAlloc {
 inline void Slab::freeElem() {
     uint32_t prevLiveElems = __sync_fetch_and_sub(&liveElems, 1);
     info("%p Slab - prevLiveElems: %d, usedBytes: %d",this,prevLiveElems, usedBytes);
+    if(usedBytes==0) return;
     assert(prevLiveElems && prevLiveElems < usedBytes /* >= 1 bytes/obj*/);
     //info("[%p] Slab::freeElem %d prevLiveElems", this, prevLiveElems);
     if (prevLiveElems == 1) {
