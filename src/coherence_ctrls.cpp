@@ -104,7 +104,7 @@ int get_target_core_id_from_lb_addr(Address lineaddr){
 uint32_t MESIBottomCC::getParentId(Address lineAddr) {
 	
     ////temporary for BW_vs_LAT motivation peace                                  
-	return selfId % parents.size();   
+	//return selfId % parents.size();   
 	
 	uint32_t policy = zinfo->getParentId_policy;
 	if(policy==0){
