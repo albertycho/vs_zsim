@@ -69,6 +69,7 @@ void TimingEvent::produceCrossings(EventRecorder* evRec) {
 }
 
 TimingEvent* TimingEvent::handleCrossing(TimingEvent* childEv, EventRecorder* evRec, bool unlinkChild) {
+    info("handleCrossing: parent:%p, child:%p", this, childEv);
     if (unlinkChild) {
         assert_msg(childEv->numParents, "child has %d parents, nonzero expected", childEv->numParents);
         childEv->numParents--;
@@ -115,7 +116,10 @@ CrossingEvent::CrossingEvent(TimingEvent* parent, TimingEvent* child, uint64_t _
     origStartCycle = minStartCycle - evRec->getGapCycles();
     //queue(MAX(zinfo->contentionSim->getLastLimit(), minStartCycle)); //this initial queue always works --- 0 parents
     //childCrossing = nullptr;
-    zinfo->contentionSim->enqueueCrossing(this, MAX(zinfo->contentionSim->getLastLimit(), minStartCycle), evRec->getSourceId(), srcDomain, child->domain, evRec);
+
+    //zinfo->contentionSim->enqueueCrossing(this, MAX(zinfo->contentionSim->getLastLimit(), minStartCycle), evRec->getSourceId(), srcDomain, child->domain, evRec);
+    //does dependency among corssing events matter..?
+    zinfo->contentionSim->enqueueSynced(this, minStartCycle);
 }
 
 void CrossingEvent::markSrcEventDone(uint64_t cycle) {
