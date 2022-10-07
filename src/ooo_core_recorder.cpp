@@ -268,6 +268,7 @@ void OOOCoreRecorder::recordAccess(uint64_t curCycle, uint64_t dispatchCycle, ui
     }
 
     // For multi-domain
+    info("lastEvProduced: %p, Before Calling produceCrossings",lastEvProduced);
     lastEvProduced->produceCrossings(&eventRecorder);
     eventRecorder.getCrossingStack().clear();
 }
