@@ -65,6 +65,7 @@ class OOOCoreRecorder {
 
         //Recording phase
         OOOIssueEvent* lastEvProduced;
+        OOOIssueEvent* lastEvProduced_last;
 
         // Future response tracking
         struct FutureResponse {
