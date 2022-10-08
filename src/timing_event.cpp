@@ -77,6 +77,7 @@ TimingEvent* TimingEvent::handleCrossing(TimingEvent* childEv, EventRecorder* ev
     assert_msg(minStartCycle != ((uint64_t)-1L), "Crossing domain (%d -> %d), but parent's minStartCycle is not set (my class: %s)",
             domain, childEv->domain, typeid(*this).name()); //we can only handle a crossing if this has been set
     CrossingEvent* xe = new (evRec) CrossingEvent(this, childEv, minStartCycle+postDelay, evRec);
+    info("sizeof CrossingEvent: %d, ",sizeof(CrossingEvent));
     return xe->getSrcDomainEvent();
 }
 

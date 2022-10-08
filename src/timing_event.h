@@ -329,6 +329,7 @@ class CrossingEvent : public TimingEvent {
                     //numParents incremented, but we set it to 1 to maintain semantics in case we have a walk
                     assert(numParents == 0);
                     numParents = 1;
+                    info("sizeof crossingSRCEvent: %d", sizeof(CrossingSrcEvent));
                 }
 
                 virtual void parentDone(uint64_t startCycle) {
