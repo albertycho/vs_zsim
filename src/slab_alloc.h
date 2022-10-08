@@ -112,6 +112,7 @@ class SlabAlloc {
                 assert(ptr);
             }
             assert((((uintptr_t)ptr) & SLAB_MASK) == (uintptr_t)curSlab)
+            info("ALLOC: %p",ptr);
             return ptr;
         }
 
@@ -159,11 +160,13 @@ inline void Slab::freeElem() {
     assert(prevLiveElems && prevLiveElems < usedBytes /* >= 1 bytes/obj*/);
     //info("[%p] Slab::freeElem %d prevLiveElems", this, prevLiveElems);
     if (prevLiveElems == 1) {
-        allocator->freeSlab(this);
+        //for experimenting - temporarily don't free slabs
+        //allocator->freeSlab(this);
     }
 }
 
 inline void freeElem(void* elem, size_t minSz) {
+    info("FREE: %p", elem);
 #ifdef DEBUG_SLAB_ALLOC
     memset(elem, 0, minSz);
 #endif
