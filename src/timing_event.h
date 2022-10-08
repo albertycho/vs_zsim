@@ -339,10 +339,24 @@ class CrossingEvent : public TimingEvent {
                     ce->markSrcEventDone(startCycle);
                     assert(state == EV_NONE);
                     state = EV_RUNNING;
-                    info("(CrossingSRCEvent::parentDone) startcycle %ld, addr: %p", startCycle, this);
+                    //info("(CrossingSRCEvent::parentDone) startcycle %ld, addr: %p", startCycle, this);
                     //should only free itself in done - no child
-                    done(startCycle);  // does RUNNING -> DONE and frees event
-                    info("(CrossingSRCEvent::parentDone) returned from done, addr: %p", this);
+                    //info("(CrossingSRCEvent::parentDone) returned from done, addr: %p", this);
+                    
+                    //calling done calls FREEELEM. However, crssingSrcEvent is alloc'd as part of 
+                    // crossingEvent (cpe is member of crossingEvent, and not pointer).
+                    // so CrossingSrcEvent is freed with crossingEvent, and calling free in done is redundant
+                    //done(startCycle);  // does RUNNING -> DONE and frees event
+                    //do everytying in done except free elem
+                    assert(state == EV_RUNNING); //ContentionSim sets it when calling simulate()
+                    state = EV_DONE;
+                    auto vLambda = [this, doneCycle](TimingEvent** childPtr) {
+                        checkDomain(*childPtr);
+                        (*childPtr)->parentDone(doneCycle+postDelay);
+                    };
+                    visitChildren< decltype(vLambda) >(vLambda);
+
+
                 }
 
                 virtual void simulate(uint64_t simCycle) {
