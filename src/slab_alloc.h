@@ -162,7 +162,7 @@ inline void Slab::freeElem() {
     //info("[%p] Slab::freeElem %d prevLiveElems", this, prevLiveElems);
     if (prevLiveElems == 1) {
         //for experimenting - temporarily don't free slabs
-        //allocator->freeSlab(this);
+        allocator->freeSlab(this);
     }
 }
 
