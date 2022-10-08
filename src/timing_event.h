@@ -347,15 +347,9 @@ class CrossingEvent : public TimingEvent {
                     // crossingEvent (cpe is member of crossingEvent, and not pointer).
                     // so CrossingSrcEvent is freed with crossingEvent, and calling free in done is redundant
                     //done(startCycle);  // does RUNNING -> DONE and frees event
-                    //do everytying in done except free elem
+                    //just set state to EV_DONE. No free elem, no children to visit
                     assert(state == EV_RUNNING); //ContentionSim sets it when calling simulate()
                     state = EV_DONE;
-                    auto vLambda = [this, doneCycle](TimingEvent** childPtr) {
-                        checkDomain(*childPtr);
-                        (*childPtr)->parentDone(doneCycle+postDelay);
-                    };
-                    visitChildren< decltype(vLambda) >(vLambda);
-
 
                 }
 
