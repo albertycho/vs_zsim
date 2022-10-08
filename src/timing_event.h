@@ -323,17 +323,13 @@ class CrossingEvent : public TimingEvent {
         class CrossingSrcEvent : public TimingEvent {
             private:
                 CrossingEvent* ce;
-                //experiment size
-                uint64_t a1=0;
-                uint64_t a2=1;
-                uint64_t a3=2;
             public:
                 CrossingSrcEvent(CrossingEvent* _ce, uint32_t dom) : TimingEvent(0, 0, dom), ce(_ce) {
                     //These are never connected to anything, but substitute an existing event; so, this never gets
                     //numParents incremented, but we set it to 1 to maintain semantics in case we have a walk
                     assert(numParents == 0);
                     numParents = 1;
-                    info("sizeof crossingSRCEvent: %d", sizeof(CrossingSrcEvent));
+                    //info("sizeof crossingSRCEvent: %d", sizeof(CrossingSrcEvent));
                 }
 
                 virtual void parentDone(uint64_t startCycle) {

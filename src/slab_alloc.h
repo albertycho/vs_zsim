@@ -113,6 +113,7 @@ class SlabAlloc {
             }
             assert((((uintptr_t)ptr) & SLAB_MASK) == (uintptr_t)curSlab)
             info("ALLOC: %p",ptr);
+            info("size: %d",sz);
             return ptr;
         }
 
