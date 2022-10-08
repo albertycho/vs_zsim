@@ -130,6 +130,7 @@ class SlabAlloc {
                 assert((((uintptr_t)curSlab) & SLAB_MASK) == (uintptr_t)curSlab);
                 curSlab->init(this);  // NOTE: Slab is POD
             }
+            info("NEW SLAB Allocated: %p", curSlab);
             liveSlabs++;
             //info("allocated slab %p, %d live, %ld in freeList", curSlab, liveSlabs, freeList.size());
         }
