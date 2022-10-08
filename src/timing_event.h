@@ -186,7 +186,8 @@ class TimingEvent {
             };
             visitChildren< decltype(vLambda) >(vLambda);
             info("in done, domain=%d (timing_event.h line 187)", domain);
-            freeEvent();  // NOTE: immediately reclaimed!
+            //what if I don't free?
+            //freeEvent();  // NOTE: immediately reclaimed!
         }
 
         void produceCrossings(EventRecorder* evRec);
