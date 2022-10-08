@@ -186,8 +186,7 @@ class TimingEvent {
             };
             visitChildren< decltype(vLambda) >(vLambda);
             info("in done, domain=%d (timing_event.h line 187)", domain);
-            //what if I don't free?
-            //freeEvent();  // NOTE: immediately reclaimed!
+            freeEvent();  // NOTE: immediately reclaimed!
         }
 
         void produceCrossings(EventRecorder* evRec);
@@ -339,8 +338,10 @@ class CrossingEvent : public TimingEvent {
                     ce->markSrcEventDone(startCycle);
                     assert(state == EV_NONE);
                     state = EV_RUNNING;
-                    info("(CrossingSRCEvent::parentDone) startcycle %ld", startCycle);
+                    info("(CrossingSRCEvent::parentDone) startcycle %ld, addr: %p", startCycle, this);
+                    //should only free itself in done - no child
                     done(startCycle);  // does RUNNING -> DONE and frees event
+                    info("(CrossingSRCEvent::parentDone) returned from done, addr: %p", this);
                 }
 
                 virtual void simulate(uint64_t simCycle) {
