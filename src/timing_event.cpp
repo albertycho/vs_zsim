@@ -176,7 +176,8 @@ void CrossingEvent::simulate(uint64_t simCycle) {
 #endif
 
     uint64_t dCycle = MAX(simCycle, doneCycle);
-    info("(CrossingEvent::simulate) Crossing %d->%d done %ld", srcDomain, domain, dCycle);
+    info("(CrossingEvent::simulate) Crossing %d->%d slabaddr: %p, before calling done", srcDomain, domain, this);
     done(dCycle);
+    info("(CrossingEvent::simulate) Crossing %d->%d slabaddr: %p, done returned", srcDomain, domain, this);
 }
 
