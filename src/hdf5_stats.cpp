@@ -195,7 +195,7 @@ class HDF5BackendImpl : public GlobAlloc {
             filename(_filename), rootStat(_rootStat), skipVectors(_skipVectors), sumRegularAggregates(_sumRegularAggregates)
         {
             // Create stats file
-            //info("HDF5 backend: Opening %s", filename);
+            info("HDF5 backend: Opening %s", filename);
             hid_t fileID = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
             hid_t rootType = getH5Type(rootStat);
@@ -222,7 +222,7 @@ class HDF5BackendImpl : public GlobAlloc {
 
             bufferedRecords = 0;
 
-            //info("HDF5 backend: Created table, %ld bytes/record, %d records/write", recordSize, recordsPerWrite);
+            info("HDF5 backend: Created table, %ld bytes/record, %d records/write", recordSize, recordsPerWrite);
             H5Fclose(fileID);
         }
 

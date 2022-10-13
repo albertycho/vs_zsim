@@ -112,8 +112,6 @@ class SlabAlloc {
                 assert(ptr);
             }
             assert((((uintptr_t)ptr) & SLAB_MASK) == (uintptr_t)curSlab)
-            info("ALLOC: %p",ptr);
-            info("size: %d",sz);
             return ptr;
         }
 
@@ -132,14 +130,13 @@ class SlabAlloc {
                 assert((((uintptr_t)curSlab) & SLAB_MASK) == (uintptr_t)curSlab);
                 curSlab->init(this);  // NOTE: Slab is POD
             }
-            info("NEW SLAB Allocated: %p", curSlab);
             liveSlabs++;
             //info("allocated slab %p, %d live, %ld in freeList", curSlab, liveSlabs, freeList.size());
         }
 
         void freeSlab(Slab* s) {
             scoped_mutex sm(freeLock);
-            info("freeing slab %p, %d live, %ld in freeList", s, liveSlabs, freeList.size());
+            //info("freeing slab %p, %d live, %ld in freeList", s, liveSlabs, freeList.size());
             s->clear();
 #ifdef DEBUG_SLAB_ALLOC
             memset(s->buf, -1, sizeof(s->buf));
@@ -156,18 +153,14 @@ class SlabAlloc {
 
 inline void Slab::freeElem() {
     uint32_t prevLiveElems = __sync_fetch_and_sub(&liveElems, 1);
-    info("%p Slab - prevLiveElems: %d, usedBytes: %d",this,prevLiveElems, usedBytes);
-    if(usedBytes==0) return;
     assert(prevLiveElems && prevLiveElems < usedBytes /* >= 1 bytes/obj*/);
     //info("[%p] Slab::freeElem %d prevLiveElems", this, prevLiveElems);
     if (prevLiveElems == 1) {
-        //for experimenting - temporarily don't free slabs
         allocator->freeSlab(this);
     }
 }
 
 inline void freeElem(void* elem, size_t minSz) {
-    info("FREE: %p", elem);
 #ifdef DEBUG_SLAB_ALLOC
     memset(elem, 0, minSz);
 #endif

@@ -26,10 +26,10 @@ bool cq_wr_event_ready(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint64_t 
 	}
 	uint64_t q_cycle = CQ_WR_EV_Q->q_cycle;
 	if (q_cycle <= cur_cycle) {
-		if(CQ_WR_EV_Q->cqe.success == 0x7f) {
-			//nicInfo->nic_elem[core_id].ts_queue[nicInfo->nic_elem[core_id].ts_idx++] = cur_cycle;
-			nicInfo->nic_elem[core_id].phase_queue[nicInfo->nic_elem[core_id].phase_idx++] = zinfo->numPhases;
-		}
+		//if(CQ_WR_EV_Q->cqe.success == 0x7f) {
+		//	//nicInfo->nic_elem[core_id].ts_queue[nicInfo->nic_elem[core_id].ts_idx++] = cur_cycle;
+		//	nicInfo->nic_elem[core_id].phase_queue[nicInfo->nic_elem[core_id].phase_idx++] = zinfo->numPhases;
+		//}
 		return true;
 	}
 	return false;
@@ -1171,10 +1171,10 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 
 			auto coreinfo = nicInfo->nic_elem[core_id];
 
-			nicInfo->nic_elem[core_id].phase_nic_queue[nicInfo->nic_elem[core_id].phase_nic_idx++] = start_phase;//span_phase;
-			nicInfo->nic_elem[core_id].phase_nic_queue[nicInfo->nic_elem[core_id].phase_nic_idx++] = ending_phase;
-			nicInfo->nic_elem[core_id].ts_nic_queue[nicInfo->nic_elem[core_id].ts_nic_idx++] = start_cycle;
-			nicInfo->nic_elem[core_id].ts_nic_queue[nicInfo->nic_elem[core_id].ts_nic_idx++] = end_cycle;
+			//nicInfo->nic_elem[core_id].phase_nic_queue[nicInfo->nic_elem[core_id].phase_nic_idx++] = start_phase;//span_phase;
+			//nicInfo->nic_elem[core_id].phase_nic_queue[nicInfo->nic_elem[core_id].phase_nic_idx++] = ending_phase;
+			//nicInfo->nic_elem[core_id].ts_nic_queue[nicInfo->nic_elem[core_id].ts_nic_idx++] = start_cycle;
+			//nicInfo->nic_elem[core_id].ts_nic_queue[nicInfo->nic_elem[core_id].ts_nic_idx++] = end_cycle;
 			//nicInfo->nic_elem[core_id].bbl_queue[nicInfo->nic_elem[core_id].bbl_idx++] = start_bbl;
 			//nicInfo->nic_elem[core_id].bbl_queue[nicInfo->nic_elem[core_id].bbl_idx++] = end_bbl;
 

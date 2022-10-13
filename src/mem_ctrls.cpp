@@ -27,7 +27,9 @@
 //#include "event_recorder.h"
 #include "mem_ctrls.h"
 #include "zsim.h"
+#include <random>
 
+std::mt19937 mt(100);
 uint64_t SimpleMemory::access(MemReq& req) {
     switch (req.type) {
         case PUTS:
@@ -43,8 +45,26 @@ uint64_t SimpleMemory::access(MemReq& req) {
 
         default: panic("!?");
     }
+	//tmp WA for random latency
+	/*
+	uint64_t randval = (mt() % 2);
+	assert(randval==1 || randval==0);
+	uint64_t randlat = 0;
 
+	access_count++;
+	if(randval==1){
+		randlat=400;
+		rand1_count++;
+	}
+	else{
+		rand0_count++;
+	}
+	if(access_count==1000000){
+		info("rand0 count: %d, rand1 count: %d",rand0_count, rand1_count);
+	}
+	*/
     uint64_t respCycle = req.cycle + latency;
+    //uint64_t respCycle = req.cycle + latency+randlat;
     assert(respCycle > req.cycle);
 /*
     if ((req.type == GETS || req.type == GETX) && eventRecorders[req.srcId]) {

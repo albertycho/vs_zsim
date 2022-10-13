@@ -268,13 +268,8 @@ void OOOCoreRecorder::recordAccess(uint64_t curCycle, uint64_t dispatchCycle, ui
     }
 
     // For multi-domain
-    if((uint64_t)lastEvProduced == (uint64_t)lastEvProduced_last){
-        info("lastEvProduced: %p, same lastEvProduced as last produceCrossingsCall",lastEvProduced);
-    }
     lastEvProduced->produceCrossings(&eventRecorder);
     eventRecorder.getCrossingStack().clear();
-
-    lastEvProduced_last = lastEvProduced;
 }
 
 

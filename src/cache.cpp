@@ -42,7 +42,6 @@ void Cache::setParents(uint32_t childId, const g_vector<MemObject*>& parents, Ne
 }
 
 void Cache::setChildren(const g_vector<BaseCache*>& children, Network* network) {
-	//info("%s setChildren, children.size()=%d",name.c_str(), children.size());
     cc->setChildren(children, network);
 }
 
@@ -68,8 +67,6 @@ uint64_t Cache::access(MemReq& req) {
         req_level = level;
     }
     bool correct_level = (req_level == level);
-	
-
     int32_t lineId = -1;
     //info("In cache access, req type is %s, my level is %d, input level is %d",AccessTypeName(req.type),level,req_level);
 
@@ -92,7 +89,6 @@ uint64_t Cache::access(MemReq& req) {
                 req.clear(MemReq::INGR_EVCT);
                 req.clear(MemReq::EGR_EVCT);
                 int i=3;
-                /* skip nicInfo check - only used for sweeper
                 glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
                 while (i < nicInfo->expected_core_count + 3){
                     Address base_ing = (Address)(nicInfo->nic_elem[i].recv_buf) >> lineBits;
@@ -112,7 +108,6 @@ uint64_t Cache::access(MemReq& req) {
                     }
                     i++;
                 }
-                */
                 //Evictions are not in the critical path in any sane implementation -- we do not include their delays
                 //NOTE: We might be "evicting" an invalid line for all we know. Coherence controllers will know what to do
                 
@@ -174,7 +169,6 @@ uint64_t Cache::access(MemReq& req) {
             }
         }
         else {
-			//info("not correct level, should only see in l1, name: %s, level=%d", name.c_str(), level);
             respCycle = cc->processAccess(req, lineId, respCycle, correct_level);
         }
     }

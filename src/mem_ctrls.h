@@ -36,6 +36,10 @@ class SimpleMemory : public MemObject {
     private:
         g_string name;
         uint32_t latency;
+		uint64_t access_count=0;
+		uint64_t rand0_count=0;
+		uint64_t rand1_count=0;
+
 
     public:
         uint64_t access(MemReq& req);

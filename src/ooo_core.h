@@ -42,7 +42,7 @@
 //#include "core_nic_api.h"
 
 // Uncomment to enable stall stats
-// #define OOO_STALL_STATS
+#define OOO_STALL_STATS
 
 void cycle_increment_routine(uint64_t& curCycle, int core_id);
 
@@ -305,13 +305,17 @@ template<uint32_t SZ, uint32_t W>
 class ReorderBuffer {
     private:
         uint64_t buf[SZ];
+        uint64_t buf_last_iter[SZ];
         uint64_t curRetireCycle;
         uint32_t curCycleRetires;
         uint32_t idx;
 
     public:
         ReorderBuffer() {
-            for (uint32_t i = 0; i < SZ; i++) buf[i] = 0;
+            for (uint32_t i = 0; i < SZ; i++){
+				buf[i] = 0;
+				buf_last_iter[i] = 0;
+			}
             idx = 0;
             curRetireCycle = 0;
             curCycleRetires = 1;
@@ -342,6 +346,42 @@ class ReorderBuffer {
 
             buf[idx++] = curRetireCycle;
             if (idx == SZ) idx = 0;
+        }
+
+        inline uint64_t markRetire_returnStall(uint64_t minRetireCycle) {
+			//kept the name for when it returned stall. 
+			// Now this actually returns interval from this retire and last retire
+			uint64_t retval=0;
+            if (minRetireCycle <= curRetireCycle) {  // retire with bundle
+                if (curCycleRetires == W) {
+                    curRetireCycle++;
+                    curCycleRetires = 0;
+                } else {
+                    curCycleRetires++;
+                }
+
+                /* No branches version (careful, width should be power of 2...)
+                 * curRetireCycle += curCycleRetires/W;
+                 * curCycleRetires = (curCycleRetires + 1) % W;
+                 *  NOTE: After profiling, version with branch seems faster
+                 */
+            } else {  // advance
+				//uint64_t stall = minRetireCycle - curRetireCycle;
+				//if(stall>1){
+				//	retval = stall;
+				//}
+                curRetireCycle = minRetireCycle;
+                curCycleRetires = 1;
+            }
+			
+			retval = curRetireCycle - buf[idx];
+			if(buf[idx]!=0){
+				assert(retval > 50); //256 entries 4 wide, should take at least 64 cycles
+			}
+            buf[idx++] = curRetireCycle;
+            if (idx == SZ) idx = 0;
+
+			return retval;
         }
 };
 
@@ -460,7 +500,7 @@ class OOOCore : public Core {
 #ifdef OOO_STALL_STATS
         Counter profFetchStalls, profDecodeStalls, profIssueStalls;
 #endif
-
+		Counter robStalls, robStallCycles;
         // Load-store forwarding
         // Just a direct-mapped array of last store cycles to 4B-wide blocks
         // (i.e., indexed by (addr >> 2) & (FWD_ENTRIES-1))

@@ -355,12 +355,10 @@ VOID FFIAdvance() {
 
 VOID FFIBasicBlock(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     ffiInstrsDone += bblInfo->instrs;
-    /*
 	if( ffiInstrsDone > (nicInfo->ffinst_flag)){
 		nicInfo->ffinst_flag+=100000000;
 		info("ffiInstrsDone: %ld", ffiInstrsDone);
 	}
-    */
     if (unlikely(ffiInstrsDone >= ffiInstrsLimit)) {
         FFIAdvance();
         assert(procTreeNode->isInFastForward());
@@ -1079,7 +1077,8 @@ VOID AfterForkInChild(THREADID tid, const CONTEXT* ctxt, VOID * arg) {
     procIdx = procTreeNode->getProcIdx();
     bool wasNotStarted = procTreeNode->notifyStart();
     assert(wasNotStarted); //it's a fork, should be new
-    procMask = ((uint64_t)procIdx) << (64-lineBits);
+    //procMask = ((uint64_t)procIdx) << (64-lineBits);
+    procMask = ((uint64_t)procIdx) << (64-8);
 
     char header[64];
     snprintf(header, sizeof(header), "[S %dF] ", procIdx); //append an F to distinguish forked from fork/exec'd
@@ -1501,7 +1500,7 @@ int main(int argc, char *argv[]) {
     } else {
         while (!gm_isready()) usleep(1000);  // wait till proc idx 0 initializes everything
         zinfo = static_cast<GlobSimInfo*>(gm_get_glob_ptr());
-		//nicInfo= static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+		nicInfo= static_cast<glob_nic_elements*>(gm_get_nic_ptr());
     }
 
     //If assertion below fails, use this to print maps
@@ -1540,7 +1539,8 @@ int main(int argc, char *argv[]) {
     perProcessEndFlag = 0;
 
     lineBits = ilog2(zinfo->lineSize);
-    procMask = ((uint64_t)procIdx) << (64-lineBits);
+    //procMask = ((uint64_t)procIdx) << (64-lineBits);
+    procMask = ((uint64_t)procIdx) << (64-8);
 
     //Initialize process-local per-thread state, even if ThreadStart does so later
     for (uint32_t i = 0; i < MAX_THREADS; i++) {

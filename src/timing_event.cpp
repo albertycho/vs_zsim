@@ -69,7 +69,6 @@ void TimingEvent::produceCrossings(EventRecorder* evRec) {
 }
 
 TimingEvent* TimingEvent::handleCrossing(TimingEvent* childEv, EventRecorder* evRec, bool unlinkChild) {
-    info("handleCrossing: parent:%p, child:%p", this, childEv);
     if (unlinkChild) {
         assert_msg(childEv->numParents, "child has %d parents, nonzero expected", childEv->numParents);
         childEv->numParents--;
@@ -77,7 +76,6 @@ TimingEvent* TimingEvent::handleCrossing(TimingEvent* childEv, EventRecorder* ev
     assert_msg(minStartCycle != ((uint64_t)-1L), "Crossing domain (%d -> %d), but parent's minStartCycle is not set (my class: %s)",
             domain, childEv->domain, typeid(*this).name()); //we can only handle a crossing if this has been set
     CrossingEvent* xe = new (evRec) CrossingEvent(this, childEv, minStartCycle+postDelay, evRec);
-    //info("sizeof CrossingEvent: %d, ",sizeof(CrossingEvent));
     return xe->getSrcDomainEvent();
 }
 
@@ -117,10 +115,7 @@ CrossingEvent::CrossingEvent(TimingEvent* parent, TimingEvent* child, uint64_t _
     origStartCycle = minStartCycle - evRec->getGapCycles();
     //queue(MAX(zinfo->contentionSim->getLastLimit(), minStartCycle)); //this initial queue always works --- 0 parents
     //childCrossing = nullptr;
-
-    //zinfo->contentionSim->enqueueCrossing(this, MAX(zinfo->contentionSim->getLastLimit(), minStartCycle), evRec->getSourceId(), srcDomain, child->domain, evRec);
-    //does dependency among corssing events matter..?
-    zinfo->contentionSim->enqueueSynced(this, minStartCycle);
+    zinfo->contentionSim->enqueueCrossing(this, MAX(zinfo->contentionSim->getLastLimit(), minStartCycle), evRec->getSourceId(), srcDomain, child->domain, evRec);
 }
 
 void CrossingEvent::markSrcEventDone(uint64_t cycle) {
@@ -144,7 +139,6 @@ void CrossingEvent::parentDone(uint64_t startCycle) {
         }
         //assert_msg(doneCycle >= cycle, "Crossing enqueued too late, doneCycle %ld startCycle %ld minStartCycle %ld cycle %ld", doneCycle, startCycle, minStartCycle, cycle);
     }
-    info("(CrossingEvent::parentdone) Crossing %d->%d cycle %ld", srcDomain, domain, cycle);
     TimingEvent::parentDone(cycle);
 }
 
@@ -177,8 +171,7 @@ void CrossingEvent::simulate(uint64_t simCycle) {
 #endif
 
     uint64_t dCycle = MAX(simCycle, doneCycle);
-    info("(CrossingEvent::simulate) Crossing %d->%d slabaddr: %p, before calling done", srcDomain, domain, this);
+    //info("Crossing %d->%d done %ld", srcDomain, domain, dCycle);
     done(dCycle);
-    info("(CrossingEvent::simulate) Crossing %d->%d slabaddr: %p, done returned", srcDomain, domain, this);
 }
 

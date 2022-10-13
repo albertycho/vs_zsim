@@ -71,17 +71,17 @@ class Cache : public BaseCache {
         }
 
         virtual uint64_t access(MemReq& req);
+        bool LineInCache(Address next_line_addr) {
+            //Address next_line_addr = next_addr >> lineBits;
+            int32_t next_line_id = array->lookup(next_line_addr, nullptr, false);
+            return (next_line_id != -1);
+        }
+
 
         //NOTE: reqWriteback is pulled up to true, but not pulled down to false.
         virtual uint64_t invalidate(const InvReq& req) {
             startInvalidate();
             return finishInvalidate(req);
-        }
-
-        bool LineInCache(Address next_line_addr) {
-            //Address next_line_addr = next_addr >> lineBits;
-            int32_t next_line_id = array->lookup(next_line_addr, nullptr, false);
-            return (next_line_id != -1);
         }
 
     protected:

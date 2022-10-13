@@ -241,15 +241,18 @@ void CreateProcessTree(Config& config) {
 
     PopulateLevel(config, std::string(""), globProcVector, rootNode, procIdx, groupIdx);
 
-    if (procIdx > (uint32_t)zinfo->lineSize) panic("Cannot simulate more than sys.lineSize=%d processes (address spaces will get aliased), %d specified", zinfo->lineSize, procIdx);
+    //if (procIdx > (uint32_t)zinfo->lineSize) panic("Cannot simulate more than sys.lineSize=%d processes (address spaces will get aliased), %d specified", zinfo->lineSize, procIdx);
+    if (procIdx > 256) panic("Cannot simulate more than 256 processes (address spaces will get aliased), %d specified", procIdx);
 
     zinfo->procTree = rootNode;
     zinfo->numProcs = procIdx;
     zinfo->numProcGroups = groupIdx;
 
-    zinfo->procArray = gm_calloc<ProcessTreeNode*>(zinfo->lineSize /*max procs*/); //note we can add processes later, so we size it to the maximum
+    //zinfo->procArray = gm_calloc<ProcessTreeNode*>(zinfo->lineSize /*max procs*/); //note we can add processes later, so we size it to the maximum
+    zinfo->procArray = gm_calloc<ProcessTreeNode*>(256 /*max procs*/); //note we can add processes later, so we size it to the maximum
     for (uint32_t i = 0; i < procIdx; i++) zinfo->procArray[i] = globProcVector[i];
 
-    zinfo->procExited = gm_calloc<ProcExitStatus>(zinfo->lineSize /*max procs*/);
+    //zinfo->procExited = gm_calloc<ProcExitStatus>(zinfo->lineSize /*max procs*/);
+    zinfo->procExited = gm_calloc<ProcExitStatus>(256 /*max procs*/);
 }
 

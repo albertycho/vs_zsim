@@ -32,7 +32,6 @@
 #include "bithacks.h"
 #include "event_recorder.h"
 #include "galloc.h"
-#include "zsim.h"
 
 #define TIMING_BLOCK_EVENTS 3
 struct TimingEventBlock {
@@ -185,7 +184,6 @@ class TimingEvent {
                 (*childPtr)->parentDone(doneCycle+postDelay);
             };
             visitChildren< decltype(vLambda) >(vLambda);
-            info("in done, domain=%d (timing_event.h line 187)", domain);
             freeEvent();  // NOTE: immediately reclaimed!
         }
 
@@ -261,14 +259,12 @@ class TimingEvent {
                 TimingEventBlock* teb = children;
                 while (teb) {
                     TimingEventBlock* next = teb->next;
-                    info("freeElem(timing_even.h line 262), domain=%d", this->getDomain());
                     slab::freeElem((void*)teb, sizeof(teb));
                     teb = next;
                 }
                 children = nullptr;
                 numChildren = 0;
             }
-            info("freeElem(timing_even.h line 269), domain=%d, phase=%d", this->getDomain(), zinfo->numPhases);
             slab::freeElem((void*)this, sizeof(TimingEvent));
         }
 
@@ -329,7 +325,6 @@ class CrossingEvent : public TimingEvent {
                     //numParents incremented, but we set it to 1 to maintain semantics in case we have a walk
                     assert(numParents == 0);
                     numParents = 1;
-                    //info("sizeof crossingSRCEvent: %d", sizeof(CrossingSrcEvent));
                 }
 
                 virtual void parentDone(uint64_t startCycle) {
@@ -339,18 +334,7 @@ class CrossingEvent : public TimingEvent {
                     ce->markSrcEventDone(startCycle);
                     assert(state == EV_NONE);
                     state = EV_RUNNING;
-                    //info("(CrossingSRCEvent::parentDone) startcycle %ld, addr: %p", startCycle, this);
-                    //should only free itself in done - no child
-                    //info("(CrossingSRCEvent::parentDone) returned from done, addr: %p", this);
-                    
-                    //calling done calls FREEELEM. However, crssingSrcEvent is alloc'd as part of 
-                    // crossingEvent (cpe is member of crossingEvent, and not pointer).
-                    // so CrossingSrcEvent is freed with crossingEvent, and calling free in done is redundant
-                    //done(startCycle);  // does RUNNING -> DONE and frees event
-                    //just set state to EV_DONE. No free elem, no children to visit
-                    assert(state == EV_RUNNING); //ContentionSim sets it when calling simulate()
-                    state = EV_DONE;
-
+                    done(startCycle);  // does RUNNING -> DONE and frees event
                 }
 
                 virtual void simulate(uint64_t simCycle) {
