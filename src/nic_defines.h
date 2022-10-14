@@ -19,8 +19,8 @@
 #ifndef _NIC_DEFINES_H_
 #define _NIC_DEFINES_H_
 
-//#define MAX_NUM_CORES 128 //probably will support more
-#define MAX_NUM_CORES 70 //probably will support more
+#define MAX_NUM_CORES 256 //probably will support more
+//#define MAX_NUM_CORES 70 //probably will support more
 
 //#define MAX_NUM_WQ 8
 
@@ -379,7 +379,7 @@ typedef struct load_gen_mod {
 	RPCGenerator* RPCGen;
 	uint64_t last_core;
 	uint32_t num_cores;
-	uint32_t core_ids[64]; //assume max core count 64
+	uint32_t core_ids[256]; //assume max core count 64
 }load_gen_mod;
 
 struct load_generator {

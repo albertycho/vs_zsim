@@ -929,14 +929,14 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 		case 0xE:
 			assert(nicInfo->nic_elem[core_id].service_in_progress==false);
 			nicInfo->nic_elem[core_id].service_in_progress=true;
-			nicInfo->nic_elem[core_id].cur_service_start_time=core->curCycle;
+			//nicInfo->nic_elem[core_id].cur_service_start_time=core->curCycle;
 			break;
 		case 0xF:
 			//assert(nicInfo->nic_elem[core_id].service_in_progress==true);
 			//nicInfo->nic_elem[core_id].service_times[(nicInfo->nic_elem[core_id].st_size)]=
 			//	(core->curCycle) - (nicInfo->nic_elem[core_id].cur_service_start_time);
 			//nicInfo->nic_elem[core_id].st_size = nicInfo->nic_elem[core_id].st_size + 1;
-			//nicInfo->nic_elem[core_id].service_in_progress=false;
+			nicInfo->nic_elem[core_id].service_in_progress=false;
 			break;
 		case 0x10:
 			nicInfo->nic_elem[core_id].cq_check_inner_loop_count+=(uint64_t)val;

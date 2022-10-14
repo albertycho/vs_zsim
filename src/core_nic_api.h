@@ -120,6 +120,9 @@ int tc_map_insert(uint32_t &in_ptag, uint64_t issue_cycle, uint64_t core_id) {
 
 	timestamp ts;
 	ts.core_id = core_id;
+        if(core_id==0){
+            info("tc_map_insert: core_id==0");
+        }
 	ts.phase = zinfo->numPhases;
 	ts.nic_enq_cycle = issue_cycle;
 	//ts.bbl = bbl;
