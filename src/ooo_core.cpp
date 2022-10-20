@@ -1010,9 +1010,7 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 		// 	futex_unlock(&nicInfo->mm_core_lock);
 		// 	info("MM init done");
 		// 	break;
-
 		/// HANDLERS FOR TAILBENCH
-
 		case 0x40: //log start time and return time stamp
 			uint64_t tbreqs = zinfo->tb_reqs[core_id];
 			if (tbreqs < 500) {
@@ -1034,8 +1032,6 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 		case 0x42: //just return time stamp
 			*static_cast<UINT64*>((UINT64*)(val)) = curCycle;
 			break;
-
-
 		case 0xdead: //invalidate entries after test app terminates
 			nicInfo->registered_core_count = nicInfo->registered_core_count - 1;
 
