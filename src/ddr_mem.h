@@ -33,7 +33,9 @@
 #include "memory_hierarchy.h"
 #include "pad.h"
 #include "stats.h"
-
+#include "coherence_ctrls.h"
+#include "breakdown_stats.h"
+#include <fstream>
 
 /* Helper data structures */
 
@@ -194,6 +196,17 @@ class DDRMemory : public MemObject {
         const bool closedPage;
         const uint32_t domain;
 
+        static const uint32_t bwCounterNum = 4;
+        Counter profBandwidth[bwCounterNum];
+        uint64_t lastAccesses;
+        uint64_t maxBandwidth;
+        uint64_t minBandwidth;
+        uint64_t lastPhase;
+        lock_t statsLock;
+        CycleBreakdownStat profBWHist;
+
+
+
         // DRAM timing parameters -- initialized in initTech()
         // All parameters are in memory clocks (multiples of tCK)
         uint32_t tBL;    // burst length (== tTrans)
@@ -234,8 +247,8 @@ class DDRMemory : public MemObject {
 
         // R/W stats
         PAD();
-        Counter profReads, profWrites;
-        Counter profTotalRdLat, profTotalWrLat;
+        Counter profReads, profWrites, profAccs;
+        Counter profTotalRdLat, profTotalWrLat, total_access_count, dirty_evict_ing, dirty_evict_egr,dirty_evict_app, nic_ingr_get,rb_dirty_evic_count;
         Counter profReadHits, profWriteHits;  // row buffer hits
         VectorCounter latencyHist;
         static const uint32_t BINSIZE = 10, NUMBINS = 100;
@@ -244,6 +257,8 @@ class DDRMemory : public MemObject {
         //In KHz, though it does not matter so long as they are consistent and fine-grain enough (not Hz because we multiply
         //uint64_t cycles by this; as it is, KHzs are 20 bits, so we can simulate ~40+ bits (a few trillion system cycles, around an hour))
         uint64_t sysFreqKHz, memFreqKHz;
+
+        bool no_latency, no_bw;
 
         // sys<->mem cycle xlat functions. We get and must return system cycles, but all internal logic is in memory cycles
         // will do the right thing so long as you multiply first
@@ -260,7 +275,7 @@ class DDRMemory : public MemObject {
     public:
         DDRMemory(uint32_t _lineSize, uint32_t _colSize, uint32_t _ranksPerChannel, uint32_t _banksPerRank,
             uint32_t _sysFreqMHz, const char* tech, const char* addrMapping, uint32_t _controllerSysLatency,
-            uint32_t _queueDepth, uint32_t _rowHitLimit, bool _deferredWrites, bool _closedPage,
+            uint32_t _queueDepth, uint32_t _rowHitLimit, bool _deferredWrites, bool _closedPage, bool _no_latency, bool _no_bw,
             uint32_t _domain, g_string& _name);
 
         void initStats(AggregateStat* parentStat);
@@ -276,6 +291,17 @@ class DDRMemory : public MemObject {
         // Scheduling event interface
         uint64_t tick(uint64_t sysCycle);
         void recycleEvent(SchedEvent* ev);
+
+        inline uint64_t sysToMicroSec(uint64_t sysCycle) { return sysCycle*1000/sysFreqKHz; }
+        virtual void EstimateBandwidth();
+
+        //void setChildrenMem(g_vector<BaseCache*>& children, Network* network);
+
+        //g_vector<BaseCache*> children_caches;
+        //g_vector<uint32_t> childrenRTTs;
+
+        float mem_bwdth[200000];
+        int midx = 0;
 
     private:
         AddrLoc mapLineAddr(Address lineAddr);

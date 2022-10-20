@@ -32,9 +32,9 @@
 #include "debug.h"
 #include "locks.h"
 #include "pad.h"
-
+#include "page_randomizer.h"
 #include "nic_defines.h"
-
+#include <chrono>
 
 
 class Core;
@@ -191,6 +191,19 @@ struct GlobSimInfo {
     bool traceDriven;
     TraceDriver* traceDriver;
 
+    //g_vector<float*> mem_bwdth;
+    float** mem_bwdth;
+    uint32_t mem_bw_len;
+    	
+    std::chrono::system_clock::time_point sim_start_time;
+	std::chrono::system_clock::time_point sim_end_time;
+    uint32_t getParentId_policy=0;
+    bool NLPF; // nextline prefetch
+	uint32_t NLPF_n=1;
+	uint32_t cxl_delay=0;
+    // Anish: randomized page mapping structures, defined in page_randomizer.h
+    // Can be disabled using sim.pageRandomization = false
+    class Page_Randomizer *page_randomizer;
 };
 
 
@@ -211,5 +224,6 @@ extern FilterCache** l1d_caches;
 uint32_t getCid(uint32_t tid);
 uint32_t TakeBarrier(uint32_t tid, uint32_t cid);
 void SimEnd(); //only call point out of zsim.cpp should be watchdog threads
+
 
 #endif  // ZSIM_H_

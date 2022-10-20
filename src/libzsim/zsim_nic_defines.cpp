@@ -12,22 +12,15 @@
 #include <limits.h>
 #include <errno.h>
 
-
-int register_buffer(void * val, void* field)
+[[gnu::noinline]] void register_buffer(void * val, void* field)
 {
 //variables: start addr of WQ/CQ
 //			 size of WQ/CQ
 //can distinguish the type of variable depending on value of rbx?
-	int dummy;
-	asm(
-		"movq %1, %%rbx;"
-		"movq %2, %%rcx;"
+	__asm__ __volatile__(
 		"xchg %%rbx, %%rbx;"
-		:"=r" (dummy)
-		:"r"(val), "r"(field)
-		:"%rbx","%rcx" //clobbered registers
+		::"b"((uint64_t)val),"c"((uint64_t)field) //clobbered registers
 	);
-	return 0;
 }
 
 
@@ -53,7 +46,15 @@ successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
 	ret.op=RMC_INVAL;
 	//std::cout << "inside rmc_check_cq, before any while loop" << std::endl;
 	wq_entry_t raw_wqe;
+
+	int outer_loop_count=0;
 	do{
+		//outer_loop_count++;
+		//if(outer_loop_count>1){
+			//increment outterloop count for zsim stat
+		//	register_buffer((void*)1, (void*)0x12);
+		//}
+
 		//dbgprint
 		//std::cout << "inside rmc_check_cq, first while loop" << std::endl;
 		raw_wqe=wq->q[wq->head];
@@ -61,8 +62,14 @@ successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
 		cq_entry_t raw_cqe_entry = cq->q[cq_tail];
 		bool tail_SR=raw_cqe_entry.SR;
 
+		//int inner_loop_count=0;
 		while((tail_SR==cq->SR) && (ret.success!=0))
 		{
+			//inner_loop_count++;
+			//if(inner_loop_count>1){
+				//increment innerloop count for zsim stat
+			//	register_buffer((void*)1, (void*)0x11);
+			//}
 			//dbgprint
 			//std::cout << "inside rmc_check_cq, second while loop" << std::endl;
 			//FIXME: okay to unset cq valid here?
@@ -122,12 +129,13 @@ successStruct rmc_check_cq(rmc_wq_t *wq, rmc_cq_t *cq){
 
 	//std::cout<<"rmc_check_cq - ret.op:"<<std::hex<<ret.op<<std::endl;
 
+	register_buffer((void*)1, (void*)0x11);
 
 	return ret;
 }
 
 //FIXME check data address datatype
-int rmc_hw_send(rmc_wq_t *wq, uint32_t ctx_id, void *data_address, uint64_t length, int nid)
+int rmc_hw_send(rmc_wq_t *wq, uint32_t ctx_id, void *data_address, uint64_t length, uint64_t nid)
 {
 	uint32_t wq_head = wq->head;
 
@@ -141,7 +149,7 @@ int rmc_hw_send(rmc_wq_t *wq, uint32_t ctx_id, void *data_address, uint64_t leng
 	length += CACHE_BLOCK_SIZE - 1;
 	length >>= CACHE_BLOCK_BITS;  //number of cache lines
 
-	 create_wq_entry(RMC_SEND, wq->SR, (uint32_t)ctx_id, (uint32_t)nid, (uint64_t)data_address, 0, length, (uint64_t)&(wq->q[wq_head]));
+	create_wq_entry(RMC_SEND, wq->SR, (uint32_t)ctx_id, nid, (uint64_t)data_address, 0, length, (uint64_t)&(wq->q[wq_head]));
 
 	wq->head =  wq->head + 1;
   	// check if WQ reached its end
@@ -153,7 +161,7 @@ int rmc_hw_send(rmc_wq_t *wq, uint32_t ctx_id, void *data_address, uint64_t leng
 	return 0;
 }
 
-void create_wq_entry(uint32_t op, bool SR, uint32_t cid, uint32_t nid,
+void create_wq_entry(uint32_t op, bool SR, uint32_t cid, uint64_t nid,
             uint64_t buf_addr, uint64_t offset, uint64_t length,
             uint64_t wq_entry_addr) {
 	
@@ -178,6 +186,9 @@ int rmc_hw_recv(rmc_wq_t *wq, uint32_t ctx_id, void *recv_buf, uint64_t length){
 	if(wq->q[wq_head].valid!=0){
 		return -1;
 	}
+
+	register_buffer((void*)(recv_buf), (void*)0x16);
+	
 	create_wq_entry(RMC_RECV, wq->SR, ctx_id, 0, (uint64_t)recv_buf, 0, length, (uint64_t)&(wq->q[wq_head])); // node id and ctx offset don't care
 
 	wq->head =  wq->head + 1;
@@ -188,6 +199,11 @@ int rmc_hw_recv(rmc_wq_t *wq, uint32_t ctx_id, void *recv_buf, uint64_t length){
 		wq->SR ^= 1;	
 		//std::cout<<"APP - flips wq SR"<<std::endl;
 	}
+
+	// clean recvb
+	
+	
+	//register_buffer((void*)(NULL), (void*)0x14);
 
 	return 0;
 }

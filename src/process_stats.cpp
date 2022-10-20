@@ -29,7 +29,8 @@
 #include "zsim.h"
 
 ProcessStats::ProcessStats(AggregateStat* parentStat) {
-    uint32_t maxProcs = zinfo->lineSize;
+    //uint32_t maxProcs = zinfo->lineSize;
+    uint32_t maxProcs = 256;
     processCycles.resize(maxProcs, 0);
     processInstrs.resize(maxProcs, 0);
     lastCoreCycles.resize(zinfo->numCores, 0);

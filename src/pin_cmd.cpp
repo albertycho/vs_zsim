@@ -73,8 +73,8 @@ PinCmd::PinCmd(Config* conf, const char* configFile, const char* outputDir, uint
         // FIXME(mgao): hack to bypass kernel version check in Pin 2.x.
         // Parent injection.
         args.push_back("-injection");
-        args.push_back("child");
-        //args.push_back("parent");
+        args.push_back("child"); //FIXME - comment out?
+		//args.push_back("parent");
 		args.push_back("-ifeellucky");
     }
 

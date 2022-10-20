@@ -334,7 +334,11 @@ class CrossingEvent : public TimingEvent {
                     ce->markSrcEventDone(startCycle);
                     assert(state == EV_NONE);
                     state = EV_RUNNING;
-                    done(startCycle);  // does RUNNING -> DONE and frees event
+                    //done(startCycle);  // does RUNNING -> DONE and frees event
+					//srcEvent is allocated as part of crossingEvent, so can't call freeElem (called in done)
+					//no child, just set the state to done
+					assert(state == EV_RUNNING); //ContentionSim sets it when calling simulate()
+                    state = EV_DONE;
                 }
 
                 virtual void simulate(uint64_t simCycle) {

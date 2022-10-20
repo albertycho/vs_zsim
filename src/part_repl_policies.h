@@ -642,4 +642,265 @@ class VantageReplPolicy : public PartReplPolicy, public LegacyReplPolicy {
         }
 };
 
+class DDIOPartReplPolicy : public PartReplPolicy, public LegacyReplPolicy {
+    private:
+        PartInfo* partInfo;
+        uint32_t partitions;
+
+        uint32_t totalSize;
+        uint32_t waySize;
+        uint32_t ways;
+        uint32_t ddio_ways, policy;
+
+        struct DDIOPartInfo {
+            Address addr; //FIXME: This is redundant due to the replacement policy interface
+            uint64_t ts; //timestamp, >0 if in the cache, == 0 if line is empty
+            uint32_t p;
+        };
+
+        DDIOPartInfo* array;
+
+        bool** wayPartIndex; //stores partition of each way
+
+        bool testMode;
+
+        PAD();
+
+        //Replacement process state (RW)
+        int32_t bestId;
+        uint32_t candIdx;
+        uint32_t incomingLinePart; //to what partition does the incoming line belong?
+        Address incomingLineAddr;
+
+        //Globally incremented, but bears little significance per se
+        uint64_t timestamp;
+
+    public:
+        DDIOPartReplPolicy(PartitionMonitor* _monitor, PartMapper* _mapper, uint64_t _lines, uint32_t _ways, bool _testMode, uint32_t _ddio_ways, uint32_t _policy)
+                : PartReplPolicy(_monitor, _mapper), totalSize(_lines), ways(_ways), testMode(_testMode)
+        {
+            partitions = mapper->getNumPartitions();
+            waySize = totalSize/ways;
+            assert(waySize*ways == totalSize); //no partial ways...
+
+            partInfo = gm_calloc<PartInfo>(partitions);
+            for (uint32_t i = 0; i < partitions; i++) {
+
+                //Need placement new, these object have vptr
+                new (&partInfo[i].profHits) Counter;
+                new (&partInfo[i].profMisses) Counter;
+                new (&partInfo[i].profSelfEvictions) Counter;
+                new (&partInfo[i].profExtEvictions) Counter;
+            }
+
+            array = gm_calloc<DDIOPartInfo>(totalSize); //all have ts, p == 0...
+            for (int i=0; i<totalSize; i++) {
+                array[i].p = 100;
+            }
+
+            ddio_ways = _ddio_ways;
+                        
+            wayPartIndex = gm_calloc<bool*>(ways);
+
+            for (uint32_t w=0; w<ways; w++){
+                wayPartIndex[w] = gm_calloc<bool>(partitions);
+            }
+            
+            for (uint32_t w = ways; w > ways - ddio_ways; w--) {
+                (wayPartIndex[w-1])[0] = true;
+            }
+
+            DDIOPartMapper* mymapper = (DDIOPartMapper*)mapper;
+            for (uint32_t i=0; i<zinfo->numProcs; i++) {
+                std::vector<std::string> part_ways = mymapper->getMapping(i);
+                if (part_ways[0] == "all") {
+                    for (uint32_t j=0; j<ways; j++) {
+                        (wayPartIndex[j])[i+1] = true;
+                    }
+                }
+                else {
+                    for (uint32_t j=0; j<part_ways.size(); j++) {
+                        int way = stoi(part_ways[j]);
+                        (wayPartIndex[way])[i+1] = true;
+                    }
+                }
+            }
+
+            candIdx = 0;
+            bestId = -1;
+            timestamp = 1;
+
+            policy = _policy;
+        }
+
+        void initStats(AggregateStat* parentStat) {
+            //AggregateStat* partsStat = new AggregateStat(true /*this is a regular aggregate, ONLY PARTITION STATS GO IN HERE*/);
+            AggregateStat* partsStat = new AggregateStat(false); //don't make it a regular aggregate... it gets compacted in periodic stats and becomes useless!
+            partsStat->init("part", "Partition stats");
+            for (uint32_t p = 0; p < partitions; p++) {
+                std::stringstream pss;
+                pss << "part-" << p;
+                AggregateStat* partStat = new AggregateStat();
+                partStat->init(gm_strdup(pss.str().c_str()), "Partition stats");
+                ProxyStat* pStat;
+                pStat = new ProxyStat(); pStat->init("sz", "Actual size", &partInfo[p].size); partStat->append(pStat);
+                pStat = new ProxyStat(); pStat->init("tgtSz", "Target size", &partInfo[p].targetSize); partStat->append(pStat);
+                partInfo[p].profHits.init("hits", "Hits"); partStat->append(&partInfo[p].profHits);
+                partInfo[p].profMisses.init("misses", "Misses"); partStat->append(&partInfo[p].profMisses);
+                partInfo[p].profSelfEvictions.init("selfEvs", "Evictions caused by us"); partStat->append(&partInfo[p].profSelfEvictions);
+                partInfo[p].profExtEvictions.init("extEvs", "Evictions caused by others"); partStat->append(&partInfo[p].profExtEvictions);
+
+                partsStat->append(partStat);
+            }
+            parentStat->append(partsStat);
+        }
+
+        void update(uint32_t id, const MemReq* req) {
+            DDIOPartInfo* e = &array[id];
+            if (req->type == CLEAN_S) {
+                //e->ts = 1; //set to LRU  
+                return;  
+            }
+            if (e->ts > 0) { //this is a hit update
+                partInfo[e->p].profHits.inc();
+            } else { //post-miss update, old line has been removed, this is empty
+                uint32_t oldPart = e->p;
+                uint32_t newPart = incomingLinePart;
+                if (oldPart != newPart) {
+                    //partInfo[oldPart].size--;
+                    partInfo[oldPart].profExtEvictions.inc();
+                    //partInfo[newPart].size++;
+                } else {
+                    partInfo[oldPart].profSelfEvictions.inc();
+                }
+                partInfo[newPart].profMisses.inc();
+                e->p = newPart;
+            }
+            e->ts = timestamp++;
+        }
+
+        void startReplacement(const MemReq* req) {
+            assert(candIdx == 0);
+            assert(bestId == -1);
+            incomingLinePart = mapper->getPartition(*req); // should return partition 0 for pktin, procIdx+1 for everything else
+            incomingLineAddr = req->lineAddr;
+        }
+
+        void recordCandidate(uint32_t id) {
+            assert(candIdx < ways);
+            DDIOPartInfo* c = &array[id]; //candidate info
+            DDIOPartInfo* best = (bestId >= 0)? &array[bestId] : nullptr;
+            uint32_t way = candIdx++;
+            //In test mode, this works as LRU
+            if (testMode || incomingLinePart == 1 || incomingLinePart == 2) {    /* if process 0,1 do lru on all ways*/
+                if (best == nullptr) {
+                    bestId = id;
+                } else if (!cc->isValid(id)) {
+                    if (cc->isValid(bestId)) {
+                        bestId = id;
+                    }
+                }
+                else if (c->ts < best->ts) {
+                    assert(cc->isValid(id));
+                    if (cc->isValid(bestId)) {
+                      bestId = id;  
+                    }
+                }
+            } else  {
+                if ((wayPartIndex[way])[incomingLinePart]) {
+                    if (best == nullptr) {
+                        bestId = id;
+                    } else if (!cc->isValid(id)) {
+                        if (cc->isValid(bestId)) {
+                            bestId = id;
+                        }
+                    }
+                    else {
+                        switch (policy) {
+                            case 0:   // lru
+                                if (c->ts < best->ts) {
+                                    assert(cc->isValid(id));
+                                    if (cc->isValid(bestId)) {
+                                        bestId = id;  
+                                    }
+                                }
+                                break;
+                            case 1: // prioritize opposite partition
+                                if (c->p == incomingLinePart && best->p == incomingLinePart) {
+                                    if (c->ts < best->ts) bestId = id;
+                                } else if (c->p == incomingLinePart && best->p != incomingLinePart) {
+                                    //c wins
+                                } else if (c->p != incomingLinePart && best->p == incomingLinePart) {
+                                    //c loses
+                                    bestId = id;
+                                } else { //none in our partition, this should be transient but at least enforce LRU
+                                    if (c->ts < best->ts) bestId = id;
+                                }
+                                break;
+                            case 2:     // ddio lines evicted first
+                                if (c->p == 0 && best->p == 0) {
+                                    // both candidates are ddio lines
+                                    if (c->ts < best->ts) bestId = id;
+                                }
+                                else if (c->p == 0) {
+                                    // new candidate is ddio line, use it
+                                    bestId = id;
+                                }
+                                else if (c->p != 0) {
+                                    // new candidate is app line
+                                    if (best->p == 0) {
+                                        // current best is ddio line, use it
+                                    }
+                                    else {
+                                        // current best us app line
+                                        if (c->ts < best->ts) bestId = id;
+                                    }
+                                }
+                                break;
+                            case 3:       // app lines evicted first 
+                                if (c->p != 0 && best->p != 0) {
+                                    // both candidates are app lines
+                                    if (c->ts < best->ts) bestId = id;
+                                }
+                                else if (c->p != 0) {
+                                    // new candidate is app line, use it
+                                    bestId = id;
+                                }
+                                else if (c->p == 0) {
+                                    // new candidate is ddio line
+                                    if (best->p != 0) {
+                                        // current best is app line, use it
+                                    }
+                                    else {
+                                        // current best us ddio line
+                                        if (c->ts < best->ts) bestId = id;
+                                    }
+                                }
+                                break;
+                        }
+
+                    }
+
+                }
+            }
+        }
+
+        uint32_t getBestCandidate() {
+            assert(bestId >= 0);
+            return bestId;
+        }
+
+        void replaced(uint32_t id) {
+            candIdx = 0;
+            bestId = -1;
+            array[id].ts = 0;
+            array[id].addr = incomingLineAddr;
+        }
+private:
+        void setPartitionSizes(const uint32_t* waysPart) {
+            panic("ddio part should never use this!");
+        }
+};
+
+
 #endif  // PART_REPL_POLICIES_H_

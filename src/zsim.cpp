@@ -28,7 +28,7 @@
 
 #include "zsim.h"
 #include <algorithm>
-#include <bits/signum.h>
+//#include <bits/signum.h>
 #include <dlfcn.h>
 #include <execinfo.h>
 #include <fstream>
@@ -98,7 +98,6 @@ GlobSimInfo* zinfo;
 glob_nic_elements* nicInfo;
 
 FilterCache** l1d_caches;
-
 
 /* Per-process variables */
 
@@ -355,6 +354,12 @@ VOID FFIAdvance() {
 
 VOID FFIBasicBlock(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     ffiInstrsDone += bblInfo->instrs;
+    /*
+	if( ffiInstrsDone > (nicInfo->ffinst_flag)){
+		nicInfo->ffinst_flag+=100000000;
+		info("ffiInstrsDone: %ld", ffiInstrsDone);
+	}
+    */
     if (unlikely(ffiInstrsDone >= ffiInstrsLimit)) {
         FFIAdvance();
         assert(procTreeNode->isInFastForward());
@@ -386,7 +391,6 @@ static const InstrFuncPtrs ffPtrs = {NOPLoadStoreSingle, NOPLoadStoreSingle, FFB
 
 static const InstrFuncPtrs ffiPtrs = {NOPLoadStoreSingle, NOPLoadStoreSingle, FFIBasicBlock, NOPRecordBranch, NOPPredLoadStoreSingle, NOPPredLoadStoreSingle, NOPNicMagicOp, FPTR_NOP};
 static const InstrFuncPtrs ffiEntryPtrs = {NOPLoadStoreSingle, NOPLoadStoreSingle, FFIEntryBasicBlock, NOPRecordBranch, NOPPredLoadStoreSingle, NOPPredLoadStoreSingle, NOPNicMagicOp, FPTR_NOP};
-
 static const InstrFuncPtrs& GetFFPtrs() {
     return ffiEnabled? (ffiNFF? ffiEntryPtrs : ffiPtrs) : ffPtrs;
 }
@@ -584,8 +588,8 @@ VOID Instruction(INS ins) {
         }
 
         // Instrument only conditional branches
-		//FIXME: commenting this out is a temporary WA
-        if (INS_Category(ins) == XED_CATEGORY_COND_BR) {
+		//FIXME: commenting this out is a temporary W
+        if (INS_Category(ins) == XED_CATEGORY_COND_BR && !INS_IsXend(ins)) {
             INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) IndirectRecordBranch, IARG_FAST_ANALYSIS_CALL, IARG_THREAD_ID,
                     IARG_INST_PTR, IARG_BRANCH_TAKEN, IARG_BRANCH_TARGET_ADDR, IARG_FALLTHROUGH_ADDR, IARG_END);
         }
@@ -1074,7 +1078,8 @@ VOID AfterForkInChild(THREADID tid, const CONTEXT* ctxt, VOID * arg) {
     procIdx = procTreeNode->getProcIdx();
     bool wasNotStarted = procTreeNode->notifyStart();
     assert(wasNotStarted); //it's a fork, should be new
-    procMask = ((uint64_t)procIdx) << (64-lineBits);
+    //procMask = ((uint64_t)procIdx) << (64-lineBits);
+    procMask = ((uint64_t)procIdx) << (64-8);
 
     char header[64];
     snprintf(header, sizeof(header), "[S %dF] ", procIdx); //append an F to distinguish forked from fork/exec'd
@@ -1223,6 +1228,10 @@ VOID HandleMagicOp(THREADID tid, ADDRINT op) {
         case 1029:
         case 1030:
         case 1031:
+			zinfo->trigger = 20000;
+			for (StatsBackend* backend : *(zinfo->statsBackends)) backend->dump(false /*unbuffered, write out*/);
+			for (AccessTraceWriter* t : *(zinfo->traceWriters)) t->dump(false); // flushes trace writer
+			return;
         case 1032:
         case 1033:
             return;
@@ -1405,15 +1414,15 @@ static EXCEPT_HANDLING_RESULT InternalExceptionHandler(THREADID tid, EXCEPTION_I
     fprintf(stderr, "%s[%d]  Description: %s\n", logHeader, tid, PIN_ExceptionToString(pExceptInfo).c_str());
 
     ADDRINT faultyAccessAddr;
-    if (PIN_GetFaultyAccessAddress(pExceptInfo, &faultyAccessAddr)) {
-        const char* faultyAccessStr = "";
-        FAULTY_ACCESS_TYPE fat = PIN_GetFaultyAccessType(pExceptInfo);
-        if (fat == FAULTY_ACCESS_READ) faultyAccessStr = "READ ";
-        else if (fat == FAULTY_ACCESS_WRITE) faultyAccessStr = "WRITE ";
-        else if (fat == FAULTY_ACCESS_EXECUTE) faultyAccessStr = "EXECUTE ";
+    //if (PIN_GetFaultyAccessAddress(pExceptInfo, &faultyAccessAddr)) {
+    //    const char* faultyAccessStr = "";
+    //    FAULTY_ACCESS_TYPE fat = PIN_GetFaultyAccessType(pExceptInfo);
+    //    if (fat == FAULTY_ACCESS_READ) faultyAccessStr = "READ ";
+    //    else if (fat == FAULTY_ACCESS_WRITE) faultyAccessStr = "WRITE ";
+    //    else if (fat == FAULTY_ACCESS_EXECUTE) faultyAccessStr = "EXECUTE ";
 
-        fprintf(stderr, "%s[%d]  Caused by invalid %saccess to address 0x%lx\n", logHeader, tid, faultyAccessStr, faultyAccessAddr);
-    }
+    //    fprintf(stderr, "%s[%d]  Caused by invalid %saccess to address 0x%lx\n", logHeader, tid, faultyAccessStr, faultyAccessAddr);
+    //}
 
     void* array[40];
     size_t size = backtrace(array, 40);
@@ -1492,7 +1501,7 @@ int main(int argc, char *argv[]) {
     } else {
         while (!gm_isready()) usleep(1000);  // wait till proc idx 0 initializes everything
         zinfo = static_cast<GlobSimInfo*>(gm_get_glob_ptr());
-		nicInfo= static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+		//nicInfo= static_cast<glob_nic_elements*>(gm_get_nic_ptr());
     }
 
     //If assertion below fails, use this to print maps
@@ -1531,7 +1540,8 @@ int main(int argc, char *argv[]) {
     perProcessEndFlag = 0;
 
     lineBits = ilog2(zinfo->lineSize);
-    procMask = ((uint64_t)procIdx) << (64-lineBits);
+    //procMask = ((uint64_t)procIdx) << (64-lineBits);
+    procMask = ((uint64_t)procIdx) << (64-8);
 
     //Initialize process-local per-thread state, even if ThreadStart does so later
     for (uint32_t i = 0; i < MAX_THREADS; i++) {

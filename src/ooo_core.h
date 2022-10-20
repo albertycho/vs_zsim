@@ -42,11 +42,11 @@
 //#include "core_nic_api.h"
 
 // Uncomment to enable stall stats
-// #define OOO_STALL_STATS
+#define OOO_STALL_STATS
 
-        void cycle_increment_routine(uint64_t& curCycle, int core_id);
+void cycle_increment_routine(uint64_t& curCycle, int core_id);
 
-
+#define L1D_LAT 4  // fixed, and FilterCache does not include L1 delay
 
 class FilterCache;
 
@@ -158,16 +158,14 @@ class WindowStructure {
             assert(occupancy <= WSZ);
         }
 
-        inline void advancePos(uint64_t& curCycle, int core_id) {
+        inline void advancePos(uint64_t& curCycle, int core_id, bool inj = true) {
             occupancy -= curWin[curPos].count;
             curWin[curPos].set(0, 0);
             curPos++;
             curCycle++;
             /*NIC logic triggers*/
-            cycle_increment_routine(curCycle, core_id);
-
-            
-
+            if(inj)
+                cycle_increment_routine(curCycle, core_id);
 
             if (curPos == H) {  // rebase
                 // info("[%ld] Rebasing, curCycle=%ld", curCycle/H, curCycle);
@@ -194,7 +192,7 @@ class WindowStructure {
 
             // Drain IW
             while (occupancy && curCycle < targetCycle) {
-                advancePos(curCycle, core_id);
+                advancePos(curCycle, core_id, false);
             }
 
             if (occupancy) {
@@ -345,6 +343,44 @@ class ReorderBuffer {
             buf[idx++] = curRetireCycle;
             if (idx == SZ) idx = 0;
         }
+
+        inline uint64_t markRetire_returnStall(uint64_t minRetireCycle) {
+			//kept the name for when it returned stall. 
+			// Now this actually returns interval from this retire and last retire
+			uint64_t retval=0;
+            if (minRetireCycle <= curRetireCycle) {  // retire with bundle
+                if (curCycleRetires == W) {
+                    curRetireCycle++;
+                    curCycleRetires = 0;
+                } else {
+                    curCycleRetires++;
+                }
+
+                /* No branches version (careful, width should be power of 2...)
+                 * curRetireCycle += curCycleRetires/W;
+                 * curCycleRetires = (curCycleRetires + 1) % W;
+                 *  NOTE: After profiling, version with branch seems faster
+                 */
+            } else {  // advance
+				//uint64_t stall = minRetireCycle - curRetireCycle;
+				//if(stall>1){
+				//	retval = stall;
+				//}
+                curRetireCycle = minRetireCycle;
+                curCycleRetires = 1;
+            }
+			
+			retval = curRetireCycle - buf[idx];
+			if(buf[idx]!=0){
+				assert(retval > 50); //256 entries 4 wide, should take at least 64 cycles
+			}
+            buf[idx++] = curRetireCycle;
+            if (idx == SZ) idx = 0;
+
+			return retval;
+        }
+
+
 };
 
 // Similar to ReorderBuffer, but must have in-order allocations and retires (--> faster)
@@ -378,17 +414,8 @@ typedef vector<vector<BaseCache*>> CacheGroup;
 class OOOCore : public Core {
     private:
         FilterCache* l1i;
-        FilterCache* l1d;
 
         int core_id;
-        /*
-            did i try to dynamically allocate these? yes
-            did c++ like it? not at all
-        */
-
-        Cache* l2_caches[256];
-        TimingCache* llc_cache[256];
-        SimpleMemory* memory;
 
         uint64_t phaseEndCycle; //next stopping point
 
@@ -396,6 +423,14 @@ class OOOCore : public Core {
         uint64_t regScoreboard[MAX_REGISTERS]; //contains timestamp of next issue cycles where each reg can be sourced
 
         BblInfo* prevBbl;
+
+		//record parameters for magic op
+		uint64_t magic_core_ids[256];
+		ADDRINT  magic_fields[256];
+		ADDRINT  magic_vals[256];
+		OOOCore * magic_cores[256];
+		uint32_t magic_ops;
+
 
         //Record load and store addresses
         Address loadAddrs[256];
@@ -411,8 +446,17 @@ class OOOCore : public Core {
         //buffers, but we split the associative component from the limited-size modeling.
         //NOTE: We do not model the 10-entry fill buffer here; the weave model should take care
         //to not overlap more than 10 misses.
-        ReorderBuffer<32, 4> loadQueue;
-        ReorderBuffer<32, 4> storeQueue;
+        // Cascade Lake
+        //ReorderBuffer<72, 4> loadQueue;
+        //ReorderBuffer<56, 4> storeQueue;
+        // Ice Lake
+        //ReorderBuffer<128, 4> loadQueue;
+        //ReorderBuffer<72, 4> storeQueue;
+
+		// EPYC7713
+        ReorderBuffer<72, 4> loadQueue;
+        ReorderBuffer<64, 4> storeQueue;
+
 
         uint32_t curCycleRFReads; //for RF read stalls
         uint32_t curCycleIssuedUops; //for uop issue limits
@@ -420,9 +464,14 @@ class OOOCore : public Core {
         //This would be something like the Atom... (but careful, the iw probably does not allow 2-wide when configured with 1 slot)
         //WindowStructure<1024, 1 /*size*/, 2 /*width*/> insWindow; //this would be something like an Atom, except all the instruction pairing business...
 
-        //Nehalem
-        WindowStructure<1024, 36 /*size*/> insWindow; //NOTE: IW width is implicitly determined by the decoder, which sets the port masks according to uop type
-        ReorderBuffer<128, 4> rob;
+        // Cascade Lake
+        //WindowStructure<1024, 97 /*size*/> insWindow; //NOTE: IW width is implicitly determined by the decoder, which sets the port masks according to uop type
+        //ReorderBuffer<224, 4> rob;
+        // Ice Lake
+        WindowStructure<1024, 160 /*size*/> insWindow; //NOTE: IW width is implicitly determined by the decoder, which sets the port masks according to uop type
+        //ReorderBuffer<352, 5> rob;
+		//EPYC7713
+        ReorderBuffer<256, 4> rob;
 
         // Agner's guide says it's a 2-level pred and BHSR is 18 bits, so this is the config that makes sense;
         // in practice, this is probably closer to the Pentium M's branch predictor, (see Uzelac and Milenkovic,
@@ -438,13 +487,18 @@ class OOOCore : public Core {
         Address branchNotTakenNpc;
 
         uint64_t decodeCycle;
-        CycleQueue<28> uopQueue;  // models issue queue
+        //CycleQueue<128> uopQueue;  // models issue queue
+        // Ice Lake
+        //CycleQueue<140> uopQueue;  // models issue queue
+        //EPYC7713
+		CycleQueue<72> uopQueue;  // models issue queue
 
         uint64_t instrs, uops, bbls, approxInstrs, mispredBranches;
 
 #ifdef OOO_STALL_STATS
         Counter profFetchStalls, profDecodeStalls, profIssueStalls;
 #endif
+		Counter robStalls, robStallCycles;
 
         // Load-store forwarding
         // Just a direct-mapped array of last store cycles to 4B-wide blocks
@@ -461,13 +515,20 @@ class OOOCore : public Core {
         OOOCoreRecorder cRec;
 
     public:
-        OOOCore(FilterCache* _l1i, FilterCache* _l1d, uint32_t _domain, g_string& _name, uint32_t _coreIdx);
+        OOOCore(FilterCache* _l1i, FilterCache* _l1d, uint32_t _domain, g_string& _name, uint32_t _coreIdx, string ingr, string egr);
 
+        FilterCache* l1d;
+
+        //int ts_idx = 0;
+        
         void initStats(AggregateStat* parentStat);
 
         uint64_t getInstrs() const;
         uint64_t getPhaseCycles() const;
         uint64_t getCycles() const {return cRec.getUnhaltedCycles(curCycle);}
+
+        OOOCoreRecorder * get_cRec_ptr(){return &cRec;}
+        
 
         //new getCycle for synching during bound
         uint64_t getCycles_forSynch() { return curCycle; }
@@ -485,10 +546,39 @@ class OOOCore : public Core {
         void cSimEnd();
         static int  nic_ingress_routine_per_cycle(uint32_t srcId);
 
+    	uint32_t cycle_adj_queue[100000];	// curCycle at start of cSimStart() and at end of cSimEnd()
+        uint32_t cycle_adj_idx=0;
+        uint32_t start_cnt_phases = 0;
+
+        uint16_t ingr_type, egr_type, egr_inval=0;
+
+        uint64_t get_sq_minAllocCycle(){
+            storeQueue.minAllocCycle();
+        }
+        void sq_markRetire(uint64_t minRetireCycle){
+            storeQueue.markRetire(minRetireCycle);
+        }
+
+        void iw_poisonRange(int64_t curCycle_t, uint64_t targetCycle_t, uint8_t portMask_t, int core_id_t){
+            insWindow.poisonRange(curCycle_t,targetCycle_t, portMask_t, core_id_t);
+        }
+        
+        uint64_t get_lastStoreCommitCycle(){
+            return lastStoreCommitCycle;
+        }
+        void set_lastStoreCommitCycle(uint64_t cycle_val){
+            lastStoreCommitCycle = cycle_val;
+        }
+        uint64_t get_lastStoreAddrCommitCycle(){
+            return lastStoreAddrCommitCycle;
+        }
+
+
     private:
         inline void load(Address addr);
         inline void store(Address addr);
 
+        inline void NicMagicFunc_on_trigger(THREADID tid, ADDRINT val, ADDRINT field);
         /* NOTE: Analysis routines cannot touch curCycle directly, must use
          * advance() for long jumps or insWindow.advancePos() for 1-cycle
          * jumps.
@@ -514,7 +604,8 @@ class OOOCore : public Core {
         static void BblFunc(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo);
         static void BranchFunc(THREADID tid, ADDRINT pc, BOOL taken, ADDRINT takenNpc, ADDRINT notTakenNpc);
         
-        static void NicMagicFunc(THREADID tid, ADDRINT val, ADDRINT field);
+        static void NicMagicFuncWrapper(THREADID tid, ADDRINT val, ADDRINT field);
+        void NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT field);
         
         static int  nic_ingress_routine(THREADID tid);
         static int  nic_egress_routine(THREADID tid);

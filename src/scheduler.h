@@ -149,6 +149,12 @@ class Scheduler : public GlobAlloc, public Callee {
         lock_t schedLock;
         PAD();
 
+        PAD();
+        lock_t gidMapLock;
+        PAD();
+
+
+
         uint64_t curPhase;
         //uint32_t nextVictim;
         MTRand rnd;
@@ -181,6 +187,10 @@ class Scheduler : public GlobAlloc, public Callee {
                 freeList.push_back(&contexts[i]);
             }
             schedLock = 0;
+
+            gidMapLock = 0;
+
+
             //nextVictim = 0; //only used when freeList is empty.
             curPhase = 0;
             scheduledThreads = 0;
@@ -224,7 +234,9 @@ class Scheduler : public GlobAlloc, public Callee {
             // - SYS_getpid because after a fork (where zsim calls ThreadStart),
             //   getpid() returns the parent's pid (getpid() caches, and I'm
             //   guessing it hasn't flushed its cached pid at this point)
+            futex_lock(&gidMapLock);
             gidMap[gid] = new ThreadInfo(gid, syscall(SYS_getpid), syscall(SYS_gettid), mask);
+            futex_unlock(&gidMapLock);
             threadsCreated.inc();
             futex_unlock(&schedLock);
         }
@@ -235,7 +247,9 @@ class Scheduler : public GlobAlloc, public Callee {
             //info("[G %d] Finish", gid);
             assert((gidMap.find(gid) != gidMap.end()));
             ThreadInfo* th = gidMap[gid];
+            futex_lock(&gidMapLock);
             gidMap.erase(gid);
+            futex_unlock(&gidMapLock);
 
             // Check for suppressed syscall leave(), execute it
             if (th->fakeLeave) {
@@ -245,6 +259,13 @@ class Scheduler : public GlobAlloc, public Callee {
                 futex_lock(&schedLock);
             }
 
+
+            if (th->state == SLEEPING) {
+				sleepQueue.remove(th);
+				th->state = BLOCKED;
+			}
+            
+            
             //dsm: Added this check; the normal sequence is leave, finish, but with fastFwd you never know
             if (th->state == RUNNING) {
                 warn("RUNNING thread %d (cid %d) called finish(), trying leave() first", tid, th->cid);
@@ -488,15 +509,18 @@ class Scheduler : public GlobAlloc, public Callee {
         }
 
         bool isSleeping(uint32_t pid, uint32_t tid) {
-            futex_lock(&schedLock);
+            //futex_lock(&schedLock);
             uint32_t gid = getGid(pid, tid);
+            futex_lock(&gidMapLock);    
             ThreadInfo* th = gidMap[gid];
+            futex_lock(&gidMapLock);
             bool res = th->state == SLEEPING;
-            futex_unlock(&schedLock);
+            //futex_unlock(&schedLock);
             return res;
         }
 
-        void notifySleepEnd(uint32_t pid, uint32_t tid) {
+        //void notifySleepEnd(uint32_t pid, uint32_t tid) {
+            uint64_t notifySleepEnd(uint32_t pid, uint32_t tid) {
             futex_lock(&schedLock);
             uint32_t gid = getGid(pid, tid);
             ThreadInfo* th = gidMap[gid];
@@ -510,6 +534,7 @@ class Scheduler : public GlobAlloc, public Callee {
                 th->state = BLOCKED;
             }
             futex_unlock(&schedLock);
+            return th->wakeupPhase - zinfo->numPhases;
         }
 
         void printThreadState(uint32_t pid, uint32_t tid) {

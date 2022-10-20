@@ -155,7 +155,7 @@ uint64_t OOOCoreRecorder::notifyJoin(uint64_t curCycle) {
 void OOOCoreRecorder::addIssueEvent(uint64_t evCycle) {
     assert(lastEvProduced);
     uint64_t zllCycle = evCycle - gapCycles;
-    assert_msg(zllCycle >= lastEvProduced->zllStartCycle, "zllCycle %ld last %ld", zllCycle, lastEvProduced->zllStartCycle);
+    assert_msg(zllCycle >= lastEvProduced->zllStartCycle, "zllCycle %ld last %ld, evCycle %ld, gapCycles %ld", zllCycle, lastEvProduced->zllStartCycle, evCycle, gapCycles);
     OOOIssueEvent* ev = new (eventRecorder) OOOIssueEvent(0, zllCycle, this, domain);
     ev->id = curId++;
     // 1. Link with prior (<) outstanding responses
@@ -257,7 +257,7 @@ void OOOCoreRecorder::recordAccess(uint64_t curCycle, uint64_t dispatchCycle, ui
         futureResponses.push({zllStartCycle, respEvent});
     } else {
         //info("Handling PUT: curCycle %ld", curCycle);
-        assert(IsPut(tr.type));
+        //assert(IsPut(tr.type));
 
         //Link request
         DelayEvent* putUp = new (eventRecorder) DelayEvent(tr.reqCycle-curCycle);
