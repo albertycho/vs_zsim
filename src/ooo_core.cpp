@@ -1014,9 +1014,21 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 		/// HANDLERS FOR TAILBENCH
 
 		case 0x40: //log start time and return time stamp
+			uint64_t tbreqs = zinfo->tb_reqs[core_id];
+			if (tbreqs < 500) {
+				zinfo->tb_start_cycles[core_id][tbreqs] = curCycle;
+			}
 			*static_cast<UINT64*>((UINT64*)(val)) = curCycle;
 			break;
 		case 0x41: //log end time and return time stamp
+			uint64_t tbreqs = zinfo->tb_reqs[core_id];
+			if (tbreqs < 500) {
+				zinfo->tb_start_cycles[core_id][tbreqs] = curCycle;
+				info("req %d took %d cycles", tbreqs, curCycle - (zinfo->tb_start_cycles[core_id][tbreqs]));
+				zinfo->tb_reqs[core_id]= zinfo->tb_reqs[core_id] + 1;
+				
+			}
+			zinfo->tb_end_cycles[core_id][tbreqs] = curCycle;
 			*static_cast<UINT64*>((UINT64*)(val)) = curCycle;
 			break;
 		case 0x42: //just return time stamp

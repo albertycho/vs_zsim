@@ -1055,6 +1055,7 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     zinfo->NLPF_n = config.get<uint32_t>("sim.NLPF_n", 1);
     zinfo->cxl_delay = config.get<uint32_t>("sim.cxl_delay", 0);
 
+
     if (zinfo->traceDriven) {
         zinfo->numCores = 0;
     } else {
@@ -1072,6 +1073,16 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
         zinfo->numCores = numCores;
         assert(numCores <= MAX_THREADS); //TODO: Is there any reason for this limit?
     }
+
+    //tailbench time trackers
+    zinfo->tb_start_cycles = gm_calloc<uint64_t*>(zinfo->numCores);
+    zinfo->tb_end_cycles = gm_calloc<uint64_t*>(zinfo->numCores);
+    zinfo->tb_reqs= gm_calloc<uint64_t>(zinfo->numCores);
+    for (int ii = 0; ii < zinfo->numCores; ii++) {
+        zinfo->tb_start_cycles[i] = gm_calloc<uint64_t>(500); //just count 500 reqs for now..
+        zinfo->tb_end_cycles[i] = gm_calloc<uint64_t>(500);
+    }
+
 
 
     /*
