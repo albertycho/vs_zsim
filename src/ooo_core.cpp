@@ -1026,7 +1026,6 @@ void OOOCore::NicMagicFunc(uint64_t core_id, OOOCore* core, ADDRINT val, ADDRINT
 				zinfo->tb_reqs[core_id]= zinfo->tb_reqs[core_id] + 1;
 				
 			}
-			
 			*static_cast<UINT64*>((UINT64*)(val)) = curCycle;
 			break;
 		case 0x42: //just return time stamp
