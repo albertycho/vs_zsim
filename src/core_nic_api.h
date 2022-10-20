@@ -26,10 +26,10 @@ bool cq_wr_event_ready(uint64_t cur_cycle, glob_nic_elements* nicInfo, uint64_t 
 	}
 	uint64_t q_cycle = CQ_WR_EV_Q->q_cycle;
 	if (q_cycle <= cur_cycle) {
-		//if(CQ_WR_EV_Q->cqe.success == 0x7f) {
-		//	//nicInfo->nic_elem[core_id].ts_queue[nicInfo->nic_elem[core_id].ts_idx++] = cur_cycle;
-		//	nicInfo->nic_elem[core_id].phase_queue[nicInfo->nic_elem[core_id].phase_idx++] = zinfo->numPhases;
-		//}
+		if(CQ_WR_EV_Q->cqe.success == 0x7f) {
+			//nicInfo->nic_elem[core_id].ts_queue[nicInfo->nic_elem[core_id].ts_idx++] = cur_cycle;
+			nicInfo->nic_elem[core_id].phase_queue[nicInfo->nic_elem[core_id].phase_idx++] = zinfo->numPhases;
+		}
 		return true;
 	}
 	return false;
@@ -120,9 +120,6 @@ int tc_map_insert(uint32_t &in_ptag, uint64_t issue_cycle, uint64_t core_id) {
 
 	timestamp ts;
 	ts.core_id = core_id;
-        if(core_id==0){
-            info("tc_map_insert: core_id==0");
-        }
 	ts.phase = zinfo->numPhases;
 	ts.nic_enq_cycle = issue_cycle;
 	//ts.bbl = bbl;
@@ -1174,10 +1171,10 @@ int deq_dpq(uint32_t srcId, OOOCore* core, OOOCoreRecorder* cRec, FilterCache* l
 
 			auto coreinfo = nicInfo->nic_elem[core_id];
 
-			//nicInfo->nic_elem[core_id].phase_nic_queue[nicInfo->nic_elem[core_id].phase_nic_idx++] = start_phase;//span_phase;
-			//nicInfo->nic_elem[core_id].phase_nic_queue[nicInfo->nic_elem[core_id].phase_nic_idx++] = ending_phase;
-			//nicInfo->nic_elem[core_id].ts_nic_queue[nicInfo->nic_elem[core_id].ts_nic_idx++] = start_cycle;
-			//nicInfo->nic_elem[core_id].ts_nic_queue[nicInfo->nic_elem[core_id].ts_nic_idx++] = end_cycle;
+			nicInfo->nic_elem[core_id].phase_nic_queue[nicInfo->nic_elem[core_id].phase_nic_idx++] = start_phase;//span_phase;
+			nicInfo->nic_elem[core_id].phase_nic_queue[nicInfo->nic_elem[core_id].phase_nic_idx++] = ending_phase;
+			nicInfo->nic_elem[core_id].ts_nic_queue[nicInfo->nic_elem[core_id].ts_nic_idx++] = start_cycle;
+			nicInfo->nic_elem[core_id].ts_nic_queue[nicInfo->nic_elem[core_id].ts_nic_idx++] = end_cycle;
 			//nicInfo->nic_elem[core_id].bbl_queue[nicInfo->nic_elem[core_id].bbl_idx++] = start_bbl;
 			//nicInfo->nic_elem[core_id].bbl_queue[nicInfo->nic_elem[core_id].bbl_idx++] = end_bbl;
 

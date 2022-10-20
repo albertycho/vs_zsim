@@ -127,6 +127,10 @@ uint64_t TimingCache::access(MemReq& req) {
         is_llc=true;
     }
 
+    // if(level<=1){
+    //     flags & ~MemReq::NLPF;
+    // }
+
     int req_level = req.flags >> 16;
     if (req.type == PUTS || req.type == PUTX) {
         req_level = level;
@@ -210,6 +214,7 @@ uint64_t TimingCache::access(MemReq& req) {
                 //info("[%s] Evicting 0x%lx", name.c_str(), wbLineAddr);
                 req.clear(MemReq::INGR_EVCT);
                 req.clear(MemReq::EGR_EVCT);
+                /*
                 int i=3;
                 glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
                 while (i < nicInfo->expected_core_count + 3){
@@ -230,6 +235,7 @@ uint64_t TimingCache::access(MemReq& req) {
                     }
                     i++;
                 }
+                */
 
                 
                 //Evictions are not in the critical path in any sane implementation -- we do not include their delays
