@@ -99,7 +99,6 @@ glob_nic_elements* nicInfo;
 
 FilterCache** l1d_caches;
 
-
 /* Per-process variables */
 
 uint32_t procIdx;
@@ -355,10 +354,12 @@ VOID FFIAdvance() {
 
 VOID FFIBasicBlock(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
     ffiInstrsDone += bblInfo->instrs;
+    /*
 	if( ffiInstrsDone > (nicInfo->ffinst_flag)){
 		nicInfo->ffinst_flag+=100000000;
 		info("ffiInstrsDone: %ld", ffiInstrsDone);
 	}
+    */
     if (unlikely(ffiInstrsDone >= ffiInstrsLimit)) {
         FFIAdvance();
         assert(procTreeNode->isInFastForward());
@@ -588,7 +589,7 @@ VOID Instruction(INS ins) {
 
         // Instrument only conditional branches
 		//FIXME: commenting this out is a temporary W
-        if (INS_Category(ins) == XED_CATEGORY_COND_BR) {
+        if (INS_Category(ins) == XED_CATEGORY_COND_BR && !INS_IsXend(ins)) {
             INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) IndirectRecordBranch, IARG_FAST_ANALYSIS_CALL, IARG_THREAD_ID,
                     IARG_INST_PTR, IARG_BRANCH_TAKEN, IARG_BRANCH_TARGET_ADDR, IARG_FALLTHROUGH_ADDR, IARG_END);
         }
@@ -1500,7 +1501,7 @@ int main(int argc, char *argv[]) {
     } else {
         while (!gm_isready()) usleep(1000);  // wait till proc idx 0 initializes everything
         zinfo = static_cast<GlobSimInfo*>(gm_get_glob_ptr());
-		nicInfo= static_cast<glob_nic_elements*>(gm_get_nic_ptr());
+		//nicInfo= static_cast<glob_nic_elements*>(gm_get_nic_ptr());
     }
 
     //If assertion below fails, use this to print maps

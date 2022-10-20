@@ -89,9 +89,7 @@ void DRAMSimMemory::initStats(AggregateStat* parentStat) {
     profWrites.init("wr", "Write requests"); memStats->append(&profWrites);
     profTotalRdLat.init("rdlat", "Total latency experienced by read requests"); memStats->append(&profTotalRdLat);
     profTotalWrLat.init("wrlat", "Total latency experienced by write requests"); memStats->append(&profTotalWrLat);
-
-	memLatHist.init("memLatHist","latency histogram. capped at 1000cycles", 100); memStats->append(&memLatHist);
-    
+    latHist.init("latHist","latency histogram. capped at 1000cycles", 200); memStats->append(&latHist);
     //dirty_evict_ing.init("recv_dirty_evict", "dirty evicted recv lines"); memStats->append(&dirty_evict_ing);
     //dirty_evict_egr.init("lbuf_dirty_evict", "dirty evicted lbuf lines"); memStats->append(&dirty_evict_egr);
     //dirty_evict_app.init("app_dirty_evict", "dirty evicted app data lines"); memStats->append(&dirty_evict_app);
@@ -145,7 +143,6 @@ uint64_t DRAMSimMemory::access(MemReq& req) {
         nic_ingr_get.inc();
     }
 
-    //uint64_t respCycle = req.cycle + minLatency + zinfo->cxl_delay;
     uint64_t respCycle = req.cycle + minLatency;
     assert(respCycle > req.cycle);
 
@@ -162,7 +159,6 @@ uint64_t DRAMSimMemory::access(MemReq& req) {
         zinfo->eventRecorders[req.srcId]->pushRecord(tr);
     }
 
-    //return respCycle;
     return respCycle+(zinfo->cxl_delay);
 }
 
@@ -192,20 +188,11 @@ void DRAMSimMemory::DRAM_read_return_cb(uint32_t id, uint64_t addr, uint64_t mem
         profReads.inc();
         profTotalRdLat.inc(lat);
     }
-	if(nicInfo->warmupdone){
-		uint32_t hist_index=lat/10;
-		if(hist_index > 99){
-			hist_index=99;
-		}
-		memLatHist.inc(hist_index);
-		
-		////////// worked for 3M accesses. Cannot handle billions..
-		//const char* sname=name.c_str();
-		//char index = sname[4];
-		//int index_int = (int) (index - '0');
-		////info("index_int: %d", index_int);
-		//zinfo->memlats[index_int][zinfo->memlat_i[index_int]++]=lat;
+	uint32_t hist_index=lat/10;
+	if(hist_index > 199){
+		hist_index=199;
 	}
+	latHist.inc(hist_index);
 
     ev->release();
     ev->done(curCycle+1);
