@@ -1079,8 +1079,8 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     zinfo->tb_end_cycles = gm_calloc<uint64_t*>(zinfo->numCores);
     zinfo->tb_reqs= gm_calloc<uint64_t>(zinfo->numCores);
     for (int ii = 0; ii < zinfo->numCores; ii++) {
-        zinfo->tb_start_cycles[i] = gm_calloc<uint64_t>(500); //just count 500 reqs for now..
-        zinfo->tb_end_cycles[i] = gm_calloc<uint64_t>(500);
+        zinfo->tb_start_cycles[ii] = gm_calloc<uint64_t>(500); //just count 500 reqs for now..
+        zinfo->tb_end_cycles[ii] = gm_calloc<uint64_t>(500);
     }
 
 
