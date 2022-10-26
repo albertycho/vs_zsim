@@ -50,6 +50,11 @@ void Cache::initStats(AggregateStat* parentStat) {
     AggregateStat* cacheStat = new AggregateStat();
     cacheStat->init(name.c_str(), "Cache stats");
     initCacheStats(cacheStat);
+    if(level==2){
+        MLP_hist.init("MLP Hist","for each mem access, count mem accesses issued in the last 100cycles", 200); 
+        cacheStat->append(&MLP_hist);
+    }
+
     parentStat->append(cacheStat);
 }
 
@@ -143,14 +148,20 @@ uint64_t Cache::access(MemReq& req) {
             uint64_t tmp_respCycle = respCycle;
             respCycle = cc->processAccess(req, lineId, respCycle, correct_level);
             uint64_t parent_resp_delay = respCycle - tmp_respCycle;
-            if((level==2) && missed && (true)){
-                info("parent_resp_delay: %d", parent_resp_delay);
+            bool went_to_mem = parent_resp_delay > 50; //l3 latency 46, mem latency at bound 20
+            if((level==2) && missed && (went_to_mem)){
+                //info("parent_resp_delay: %d", parent_resp_delay);
+                uint32_t mem_acc_count=0;
+                for(int ii=0; ii<MLP_ARR_SIZE; ii++){
+                    if(MLP_tracker[ii] > req.cycle){
+                        mem_acc_count++;
+                    }
+                }
+                MLP_hist.inc(mem_acc_count);
+                MLP_tracker[MLP_i]=req.cycl+100;
+                MLP_i++;
+                if(MLP_i==MLP_ARR_SIZE) MLP_i=0;
             }
-            if(missed){
-                
-
-            }
-
 
             if (no_record) {
                 assert(!evRec->hasRecord());
