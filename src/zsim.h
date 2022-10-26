@@ -201,9 +201,13 @@ struct GlobSimInfo {
     bool NLPF; // nextline prefetch
 	uint32_t NLPF_n=1;
 	uint32_t cxl_delay=0;
+    uint64_t** tb_start_cycles;
+    uint64_t** tb_end_cycles;
+    uint64_t* tb_reqs;
     // Anish: randomized page mapping structures, defined in page_randomizer.h
     // Can be disabled using sim.pageRandomization = false
     class Page_Randomizer *page_randomizer;
+
 };
 
 

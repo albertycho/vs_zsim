@@ -737,6 +737,18 @@ int main(int argc, char *argv[]) {
     std::chrono::duration<double> elapsed_seconds = (zinfo->sim_end_time) - (zinfo->sim_start_time);
     std::cout << "sim elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
 
+    std::ofstream f_tb_st("tailbench_st.txt");
+    for (int jjj = 0; jjj < zinfo->numCores; jjj++) {
+        f_tb_st << "core" << jjj <<"," << std::endl;
+        for (int iii = 0; iii < zinfo->tb_reqs[jjj]; iii++) {
+            if (iii > 490) { // just to be extra safe things crash last minute?
+                break;
+            }
+            f_tb_st << (zinfo->tb_end_cycles[jjj][iii] - zinfo->tb_start_cycles[jjj][iii]) << "," << std::endl;
+        }
+    }
+    f_tb_st.close();
+
 
     //Comment out Sweeper stat tracking stuff
     // load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
