@@ -73,6 +73,8 @@ uint64_t Cache::access(MemReq& req) {
     int32_t lineId = -1;
     //info("In cache access, req type is %s, my level is %d, input level is %d",AccessTypeName(req.type),level,req_level);
 
+    bool missed=false;
+
     uint64_t respCycle = req.cycle;
     bool skipAccess = cc->startAccess(req); //may need to skip access due to races (NOTE: may change req.type!)
     if (likely(!skipAccess)) {
@@ -84,6 +86,7 @@ uint64_t Cache::access(MemReq& req) {
             respCycle += accLat;
 
             if (lineId == -1 && cc->shouldAllocate(req)) {
+                missed=true;
                 //Make space for new line
                 Address wbLineAddr;
                 lineId = array->preinsert(req.lineAddr, &req, &wbLineAddr); //find the lineId to replace
@@ -137,7 +140,17 @@ uint64_t Cache::access(MemReq& req) {
                 wbAcc = evRec->popRecord();
             }
         
+            uint64_t tmp_respCycle = respCycle;
             respCycle = cc->processAccess(req, lineId, respCycle, correct_level);
+            uint64_t parent_resp_delay = respCycle - tmp_respCycle;
+            if((level==2) && missed && (true)){
+                info("parent_resp_delay: %d", parent_resp_delay);
+            }
+            if(missed){
+                
+
+            }
+
 
             if (no_record) {
                 assert(!evRec->hasRecord());
