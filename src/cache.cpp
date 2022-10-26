@@ -178,7 +178,6 @@ uint64_t Cache::access(MemReq& req) {
 				//info(name.c_str());
                 MLP_hist.inc(mem_acc_count);
                 MLP_tracker[MLP_i]=req.cycle+100;
-                //MLP_tracker[MLP_i]=req.cycle+60;
                 MLP_i++;
                 if(MLP_i==MLP_ARR_SIZE) MLP_i=0;
             }
