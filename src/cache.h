@@ -41,6 +41,8 @@ class Network;
  * too, but to avoid virtual function call overheads we work with MESI
  * controllers, since for now we only have MESI controllers
  */
+#define MLP_ARR_SIZE 200
+
 class Cache : public BaseCache {
     protected:
         CC* cc;
@@ -56,6 +58,10 @@ class Cache : public BaseCache {
         g_string name;
 
         int level;
+        VectorCounter MLP_hist; //for each inst, counts mem accesses that were issued in the past 100 cycles
+        uint64_t MLP_tracker[MLP_ARR_SIZE] = {0};
+        uint32_t MLP_i=0;
+
 
     public:
         Cache(uint32_t _numLines, CC* _cc, CacheArray* _array, ReplPolicy* _rp, uint32_t _accLat, uint32_t _invLat, const g_string& _name, int _level);
