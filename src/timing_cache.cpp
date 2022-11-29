@@ -252,10 +252,10 @@ uint64_t TimingCache::access(MemReq& req) {
             uint64_t invalOnAccCycle = 0;
             if(correct_level){
                 if(req.is(MemReq::PKTIN)){
-                    info("PKTIN - cache.cpp line 157");
+                    info("PKTIN - timingcache.cpp line 250");
                 }
                 if(req.is(MemReq::NETRELATED_ING)){
-                    info("NETRELATED_ING - cache.cpp line 157");
+                    info("NETRELATED_ING - timingcache.cpp line 250");
                 }
             }
 
