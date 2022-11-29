@@ -25,7 +25,7 @@ int* get_random_permutation(unsigned int n, unsigned int clt_gid, uint64_t* seed
 
 
 
-
+	info("allocating array for key, n=%d",n)
 	int* log = gm_calloc<int>(n);
 	assert(log != NULL);
 	for (i = 0; i < n; i++) {

@@ -30,6 +30,11 @@
 #include "timing_event.h"
 #include "zsim.h"
 
+
+#include <iostream>
+#include <cstring>
+#include <string>
+
 Cache::Cache(uint32_t _numLines, CC* _cc, CacheArray* _array, ReplPolicy* _rp, uint32_t _accLat, uint32_t _invLat, const g_string& _name, int _level)
     : cc(_cc), array(_array), rp(_rp), numLines(_numLines), accLat(_accLat), invLat(_invLat), name(_name), level(_level) {}
 
@@ -42,7 +47,6 @@ void Cache::setParents(uint32_t childId, const g_vector<MemObject*>& parents, Ne
 }
 
 void Cache::setChildren(const g_vector<BaseCache*>& children, Network* network) {
-	//info("%s setChildren, children.size()=%d",name.c_str(), children.size());
     cc->setChildren(children, network);
 }
 
@@ -50,10 +54,14 @@ void Cache::initStats(AggregateStat* parentStat) {
     AggregateStat* cacheStat = new AggregateStat();
     cacheStat->init(name.c_str(), "Cache stats");
     initCacheStats(cacheStat);
-    if(level==2){
-        MLP_hist.init("MLP Hist","for each mem access, count mem accesses issued in the last 100cycles", 200); 
+
+
+	if(level==2){
+		info("MLP_hist init");
+        MLP_hist.init("MLP Hist","for each mem access, count mem accesses issued in the last 100cycles", 100);
         cacheStat->append(&MLP_hist);
     }
+
 
     parentStat->append(cacheStat);
 }
@@ -73,13 +81,10 @@ uint64_t Cache::access(MemReq& req) {
         req_level = level;
     }
     bool correct_level = (req_level == level);
-	
-
     int32_t lineId = -1;
     //info("In cache access, req type is %s, my level is %d, input level is %d",AccessTypeName(req.type),level,req_level);
 
-    bool missed=false;
-
+	bool missed = false;
     uint64_t respCycle = req.cycle;
     bool skipAccess = cc->startAccess(req); //may need to skip access due to races (NOTE: may change req.type!)
     if (likely(!skipAccess)) {
@@ -91,7 +96,7 @@ uint64_t Cache::access(MemReq& req) {
             respCycle += accLat;
 
             if (lineId == -1 && cc->shouldAllocate(req)) {
-                missed=true;
+				missed=true;
                 //Make space for new line
                 Address wbLineAddr;
                 lineId = array->preinsert(req.lineAddr, &req, &wbLineAddr); //find the lineId to replace
@@ -100,7 +105,6 @@ uint64_t Cache::access(MemReq& req) {
                 req.clear(MemReq::INGR_EVCT);
                 req.clear(MemReq::EGR_EVCT);
                 int i=3;
-                /* skip nicInfo check - only used for sweeper
                 glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
                 while (i < nicInfo->expected_core_count + 3){
                     Address base_ing = (Address)(nicInfo->nic_elem[i].recv_buf) >> lineBits;
@@ -120,7 +124,6 @@ uint64_t Cache::access(MemReq& req) {
                     }
                     i++;
                 }
-                */
                 //Evictions are not in the critical path in any sane implementation -- we do not include their delays
                 //NOTE: We might be "evicting" an invalid line for all we know. Coherence controllers will know what to do
                 
@@ -144,12 +147,25 @@ uint64_t Cache::access(MemReq& req) {
             if (unlikely(evRec && evRec->hasRecord())) {
                 wbAcc = evRec->popRecord();
             }
-        
-            uint64_t tmp_respCycle = respCycle;
+       
+			uint64_t tmp_respCycle = respCycle;
             respCycle = cc->processAccess(req, lineId, respCycle, correct_level);
-            uint64_t parent_resp_delay = respCycle - tmp_respCycle;
+
+
+			uint64_t parent_resp_delay = respCycle - tmp_respCycle;
             bool went_to_mem = parent_resp_delay > 50; //l3 latency 46, mem latency at bound 20
-            if((level==2) && missed && (went_to_mem)){
+
+			bool isL2=false;
+			char * namebuf = new char[100];
+			std::strcpy (namebuf, name.c_str());
+			if(namebuf[0]=='l' && namebuf[1]=='2'){
+				//info("is this l2? %s", namebuf);
+				isL2=true;
+			}
+
+			if(zinfo->numPhases>100){
+			//if((level==2) && missed && (went_to_mem)){
+			if((isL2) && missed && (went_to_mem)){
                 //info("parent_resp_delay: %d", parent_resp_delay);
                 uint32_t mem_acc_count=0;
                 for(int ii=0; ii<MLP_ARR_SIZE; ii++){
@@ -157,11 +173,17 @@ uint64_t Cache::access(MemReq& req) {
                         mem_acc_count++;
                     }
                 }
+                if(mem_acc_count > 99) info("WARNING: count for MLP_hist larger than 99!");
+				//info("level: %d, mem_acc_count: %d", level, mem_acc_count);
+				//info(name.c_str());
                 MLP_hist.inc(mem_acc_count);
-                MLP_tracker[MLP_i]=req.cycl+100;
+                MLP_tracker[MLP_i]=req.cycle+100;
+                //MLP_tracker[MLP_i]=req.cycle+60;
                 MLP_i++;
                 if(MLP_i==MLP_ARR_SIZE) MLP_i=0;
             }
+			}
+
 
             if (no_record) {
                 assert(!evRec->hasRecord());
@@ -198,7 +220,6 @@ uint64_t Cache::access(MemReq& req) {
             }
         }
         else {
-			//info("not correct level, should only see in l1, name: %s, level=%d", name.c_str(), level);
             respCycle = cc->processAccess(req, lineId, respCycle, correct_level);
         }
     }

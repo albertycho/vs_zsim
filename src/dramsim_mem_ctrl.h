@@ -59,7 +59,7 @@ class DRAMSimMemory : public MemObject { //one DRAMSim controller
         Counter profTotalRdLat;
         Counter profTotalWrLat;
         Counter profAccs;
-		VectorCounter latHist;
+		VectorCounter memLatHist; 
         Counter total_access_count, dirty_evict_ing, dirty_evict_egr, dirty_evict_app, nic_ingr_get;
         PAD();
 
@@ -112,9 +112,17 @@ class SplitAddrMemory : public MemObject {
 
         uint64_t access(MemReq& req) {
             Address addr = req.lineAddr;
-            uint32_t mem = addr % mems.size();
-            Address ctrlAddr = addr/mems.size();
+			Address maddr=  zinfo->page_randomizer->get_addr(addr, procIdx);
+ 
+			//uint32_t mem = addr % mems.size();
+            //Address ctrlAddr = addr/mems.size();
+            //req.lineAddr = ctrlAddr;
+
+			uint32_t mem = maddr % mems.size();
+            Address ctrlAddr = maddr/mems.size();
             req.lineAddr = ctrlAddr;
+
+
             uint64_t respCycle = mems[mem]->access(req);
             req.lineAddr = addr;
             //glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());

@@ -56,10 +56,21 @@ class CycleBreakdownStat : public VectorCounter {
         void transition(uint32_t newState, uint64_t cycle) {
             assert(curState < size());
             assert(newState < size());
-            assert(lastCycle <= cycle);
-            inc(curState, cycle - lastCycle);
+            //assert(lastCycle <= cycle);
+			uint64_t cycle_buf = cycle;
+			if(cycle < lastCycle){
+                info("breakdown_stats.h: cycle (%d) < lastCycle (%d)", cycle, lastCycle);
+                cycle_buf = lastCycle;
+            }
+            //inc(curState, cycle - lastCycle);
+            inc(curState, cycle_buf - lastCycle);
             curState = newState;
-            lastCycle = cycle;
+            //lastCycle = cycle;
+            lastCycle = cycle_buf;
+
+            //inc(curState, cycle - lastCycle);
+            //curState = newState;
+            //lastCycle = cycle;
         }
 
         // Accounts for time in current state, even if the last transition happened long ago

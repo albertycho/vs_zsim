@@ -159,16 +159,16 @@ class MESIBottomCC : public GlobAlloc {
             profGETNextLevelLat.init("latGETnl", "GET request latency on next level");
             profGETNetLat.init("latGETnet", "GET request latency on network to next level");
             
-            // netMiss_core_rb.init("netMiss_core_rb", "Ingress GET misses, app cores");
-            // netHit_core_rb.init("netHit_core_rb", "Ingress GET hits, app cores");
-            // netMiss_core_lb.init("netMiss_core_lb", "Egress GET misses, app cores");
-            // netHit_core_lb.init("netHit_core_lb", "Egress GET hits, app cores");
-            // netMiss_nic_rb.init("netMiss_nic_rb", "Ingress GET misses, NIC");
-            // netHit_nic_rb.init("netHit_nic_rb", "Ingress GET hits, NIC");
-            // netMiss_nic_lb.init("netMiss_nic_lb", "Egress GET misses, NIC");
-            // netHit_nic_lb.init("netHit_nic_lb", "Egress GET hits, NIC");
-            // appMiss.init("appMiss","App data-related GET misses");
-            // appHit.init("appHit","App data-related GET hits");
+            netMiss_core_rb.init("netMiss_core_rb", "Ingress GET misses, app cores");
+            netHit_core_rb.init("netHit_core_rb", "Ingress GET hits, app cores");
+            netMiss_core_lb.init("netMiss_core_lb", "Egress GET misses, app cores");
+            netHit_core_lb.init("netHit_core_lb", "Egress GET hits, app cores");
+            netMiss_nic_rb.init("netMiss_nic_rb", "Ingress GET misses, NIC");
+            netHit_nic_rb.init("netHit_nic_rb", "Ingress GET hits, NIC");
+            netMiss_nic_lb.init("netMiss_nic_lb", "Egress GET misses, NIC");
+            netHit_nic_lb.init("netHit_nic_lb", "Egress GET hits, NIC");
+            appMiss.init("appMiss","App data-related GET misses");
+            appHit.init("appHit","App data-related GET hits");
 
 
             // profCleanHit.init("cleanHit", "Clean_S hits");
@@ -219,16 +219,16 @@ class MESIBottomCC : public GlobAlloc {
             parentStat->append(&profGETNextLevelLat);
             parentStat->append(&profGETNetLat);
             
-            // parentStat->append(&netMiss_core_lb);
-            // parentStat->append(&netHit_core_lb);
-            // parentStat->append(&netMiss_core_rb);
-            // parentStat->append(&netHit_core_rb);
-            // parentStat->append(&netMiss_nic_lb);
-            // parentStat->append(&netHit_nic_lb);
-            // parentStat->append(&netMiss_nic_rb);
-            // parentStat->append(&netHit_nic_rb);
-            // parentStat->append(&appMiss);
-            // parentStat->append(&appHit);
+             parentStat->append(&netMiss_core_lb);
+             parentStat->append(&netHit_core_lb);
+             parentStat->append(&netMiss_core_rb);
+             parentStat->append(&netHit_core_rb);
+             parentStat->append(&netMiss_nic_lb);
+             parentStat->append(&netHit_nic_lb);
+             parentStat->append(&netMiss_nic_rb);
+             parentStat->append(&netHit_nic_rb);
+             parentStat->append(&appMiss);
+             parentStat->append(&appHit);
             // parentStat->append(&appPutHit);
             // parentStat->append(&appPutMiss);
             // //parentStat->append(&nicMiss);
@@ -583,6 +583,7 @@ class MESICC : public CC {
                                 flags = flags & ~MemReq::NLPF;
                             }
                         }
+
                         respCycle = tcc->processAccess(req.lineAddr, lineId, req.type, req.childId, bcc->isExclusive(lineId), req.state,
                                 &lowerLevelWriteback, respCycle, req.srcId, flags);
                         if (lowerLevelWriteback) {

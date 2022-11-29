@@ -157,10 +157,21 @@ class TimingEvent {
             assert(this);
             assert_msg(state == EV_NONE || state == EV_QUEUED, "state %d expected %d (%s)", state, EV_QUEUED, typeid(*this).name());
             state = EV_RUNNING;
-            assert_msg(startCycle >= minStartCycle, "startCycle %ld < minStartCycle %ld (%s), preDelay %d postDelay %d numChildren %d str %s",
+            //assert_msg(startCycle >= minStartCycle, "startCycle %ld < minStartCycle %ld (%s), preDelay %d postDelay %d numChildren %d str %s",
+            //        startCycle, minStartCycle, typeid(*this).name(), preDelay, postDelay, numChildren, str().c_str());
+            //simulate(startCycle);
+            
+			if(startCycle >= minStartCycle){
+                simulate(startCycle);
+            }
+            else{
+                info("WARNING: startCycle %ld < minStartCycle %ld (%s), preDelay %d postDelay %d numChildren %d str %s",
                     startCycle, minStartCycle, typeid(*this).name(), preDelay, postDelay, numChildren, str().c_str());
-            simulate(startCycle);
-            // NOTE: This assertion is invalid now, because a call to done() may destroy the event.
+                simulate(minStartCycle);
+
+            }
+
+			// NOTE: This assertion is invalid now, because a call to done() may destroy the event.
             // However, since we check other transitions, this should not be a problem.
             //assert_msg(state == EV_DONE || state == EV_QUEUED || state == EV_HELD, "post-sim state %d (%s)", state, typeid(*this).name());
         }
@@ -334,11 +345,7 @@ class CrossingEvent : public TimingEvent {
                     ce->markSrcEventDone(startCycle);
                     assert(state == EV_NONE);
                     state = EV_RUNNING;
-                    //done(startCycle);  // does RUNNING -> DONE and frees event
-					//srcEvent is allocated as part of crossingEvent, so can't call freeElem (called in done)
-					//no child, just set the state to done
-					assert(state == EV_RUNNING); //ContentionSim sets it when calling simulate()
-                    state = EV_DONE;
+                    done(startCycle);  // does RUNNING -> DONE and frees event
                 }
 
                 virtual void simulate(uint64_t simCycle) {

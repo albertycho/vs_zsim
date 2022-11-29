@@ -12,7 +12,10 @@
 #define HERD_OP_GET (MICA_OP_GET + HERD_MICA_OFFSET)
 #define HERD_VALUE_SIZE 32
 #define MICA_MAX_VALUE \
-	(1024 - (sizeof(struct mica_key) + sizeof(uint16_t) + sizeof(uint16_t)))
+	(512 - (sizeof(struct mica_key) + sizeof(uint16_t) + sizeof(uint16_t)))
+	//(256 - (sizeof(struct mica_key) + sizeof(uint16_t) + sizeof(uint16_t)))
+	//(1024 - (sizeof(struct mica_key) + sizeof(uint16_t) + sizeof(uint16_t)))
+	//(1536 - (sizeof(struct mica_key) + sizeof(uint16_t) + sizeof(uint16_t)))
 	//(512 - (sizeof(struct mica_key) + sizeof(uint16_t) + sizeof(uint16_t)))
 
 
