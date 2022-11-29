@@ -133,7 +133,9 @@ uint64_t TimingCache::access(MemReq& req) {
     }
     bool correct_level = (req_level == level);
     int32_t lineId = -1;
-    //info("In cache access, req type is %s, my level is %d, input level is %d, childId is %d",AccessTypeName(req.type),level,req_level, req.childId);
+    if(correct_level){
+        info("in %s, req type is %s, my level is %d, input level is %d, childId is %d", this->getName,AccessTypeName(req.type),level,req_level, req.childId);
+    }
     bool no_record = 0;//((req.flags) & (MemReq::NORECORD)) != 0;
 
     EventRecorder* evRec = zinfo->eventRecorders[req.srcId];

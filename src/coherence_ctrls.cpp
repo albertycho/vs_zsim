@@ -398,8 +398,10 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
                     case NF0: 
                         if(isMiss)
                             netMiss_core_rb.inc();
-                        else 
+                        else{ 
+                            info("netHit_core_rb incrementing");
                             netHit_core_rb.inc();
+                        }
                         break;
                     case NF1:
                         if(isMiss)
