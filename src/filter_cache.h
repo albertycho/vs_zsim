@@ -327,7 +327,7 @@ class FilterCache : public Cache {
             if(req.is(MemReq::PKTIN)){
                 info("PKTIN - filter_cache.h line328");
             }
-            if(req.is(MemqReq::NETRELATED_ING)){
+            if(req.is(MemReq::NETRELATED_ING)){
                 info("NETRELATED_ING - filter_cache.h line328");
             }
             uint64_t respCycle  = access(req);

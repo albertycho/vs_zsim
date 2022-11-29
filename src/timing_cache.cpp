@@ -248,6 +248,14 @@ uint64_t TimingCache::access(MemReq& req) {
 
             uint64_t getDoneCycle = respCycle;  // latency from next level (if any), before invalidations are sent
             uint64_t invalOnAccCycle = 0;
+
+            if(req.is(MemReq::PKTIN)){
+                info("PKTIN - cache.cpp line 157");
+            }
+            if(req.is(MemReq::NETRELATED_ING)){
+                info("NETRELATED_ING - cache.cpp line 157");
+            }
+
             respCycle = cc->processAccess(req, lineId, respCycle, correct_level, &getDoneCycle, &invalOnAccCycle);
 
             if (no_record || req.type == CLEAN || req.type == CLEAN_S) {
