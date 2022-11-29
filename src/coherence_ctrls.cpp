@@ -391,6 +391,7 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
     
     if (type != PUTS && type != PUTX && type != CLEAN  && type != CLEAN_S) {
         if (flags & MemReq::NETRELATED_ING) {
+            info("NETRELATED_ING, coherence_ctrls.cpp line 394");
             if (srcId > 1) {
                 switch (stat_group) {
                     case NF0: 
