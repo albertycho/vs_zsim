@@ -386,10 +386,11 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
             break;
         default: panic("!?");
     }
-    info(parents[0]->getName());
+    //info(parents[0]->getName());
+    
     bool isL3=false;
-    if((parents[0]->getName())[1]=='2'){
-        info("l3 coherence_ctrls");
+    if((parents[0]->getName())[0]=='m'){
+        //info("l3 coherence_ctrls");
         isL3=true;
     }
     uint64_t stat_group=get_stat_group(srcId);
