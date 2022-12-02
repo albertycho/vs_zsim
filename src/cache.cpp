@@ -150,12 +150,12 @@ uint64_t Cache::access(MemReq& req) {
        
 			uint64_t tmp_respCycle = respCycle;
             
-            if(req.is(MemReq::PKTIN)){
-                info("PKTIN - cache.cpp line 157");
-            }
-            if(req.is(MemReq::NETRELATED_ING)){
-                info("NETRELATED_ING - cache.cpp line 157");
-            }
+            //if(req.is(MemReq::PKTIN)){
+            //    info("PKTIN - cache.cpp line 157");
+            //}
+            //if(req.is(MemReq::NETRELATED_ING)){
+            //    info("NETRELATED_ING - cache.cpp line 157");
+            //}
             respCycle = cc->processAccess(req, lineId, respCycle, correct_level);
 
 
@@ -226,12 +226,12 @@ uint64_t Cache::access(MemReq& req) {
             }
         }
         else {
-            if(req.is(MemReq::PKTIN)){
-                info("PKTIN - cache.cpp line 230");
-            }
-            if(req.is(MemReq::NETRELATED_ING)){
-                info("NETRELATED_ING - cache.cpp line 230");
-            }
+            //if(req.is(MemReq::PKTIN)){
+            //    info("PKTIN - cache.cpp line 230");
+            //}
+            //if(req.is(MemReq::NETRELATED_ING)){
+            //    info("NETRELATED_ING - cache.cpp line 230");
+            //}
             respCycle = cc->processAccess(req, lineId, respCycle, correct_level);
         }
     }

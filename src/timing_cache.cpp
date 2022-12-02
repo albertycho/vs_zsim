@@ -134,7 +134,7 @@ uint64_t TimingCache::access(MemReq& req) {
     bool correct_level = (req_level == level);
     int32_t lineId = -1;
     if(correct_level &&(req.is(MemReq::NETRELATED_ING))){
-        info("in %s, req type is %s, my level is %d, input level is %d, childId is %d", this->getName(),AccessTypeName(req.type),level,req_level, req.childId);
+        //info("in %s, req type is %s, my level is %d, input level is %d, childId is %d", this->getName(),AccessTypeName(req.type),level,req_level, req.childId);
     }
     bool no_record = 0;//((req.flags) & (MemReq::NORECORD)) != 0;
 
@@ -250,14 +250,14 @@ uint64_t TimingCache::access(MemReq& req) {
 
             uint64_t getDoneCycle = respCycle;  // latency from next level (if any), before invalidations are sent
             uint64_t invalOnAccCycle = 0;
-            if(correct_level){
-                if(req.is(MemReq::PKTIN)){
-                    info("PKTIN - timingcache.cpp line 250");
-                }
-                if(req.is(MemReq::NETRELATED_ING)){
-                    info("NETRELATED_ING - timingcache.cpp line 250");
-                }
-            }
+            //if(correct_level){
+            //    if(req.is(MemReq::PKTIN)){
+            //        info("PKTIN - timingcache.cpp line 250");
+            //    }
+            //    if(req.is(MemReq::NETRELATED_ING)){
+            //        info("NETRELATED_ING - timingcache.cpp line 250");
+            //    }
+            //}
 
             respCycle = cc->processAccess(req, lineId, respCycle, correct_level, &getDoneCycle, &invalOnAccCycle);
 

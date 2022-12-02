@@ -397,10 +397,10 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
 
     if (type != PUTS && type != PUTX && type != CLEAN  && type != CLEAN_S) {
         if (flags & MemReq::NETRELATED_ING) {
-            if(isL3){
-            info("NETRELATED_ING, coherence_ctrls.cpp line 394");
-            info("  srcId: %d, stat_group: %d",srcId, stat_group);
-            }
+            //if(isL3){
+            //info("NETRELATED_ING, coherence_ctrls.cpp line 394");
+            //info("  srcId: %d, stat_group: %d",srcId, stat_group);
+            //}
             if (srcId > 1) {
                 switch (stat_group) {
                     case NF0: 
@@ -408,7 +408,7 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
                             netMiss_core_rb.inc();
                         else{
                             if(isL3){
-                            info("netHit_core_rb incrementing");
+                            //info("netHit_core_rb incrementing");
                             }
                             netHit_core_rb.inc();
                         }
