@@ -357,16 +357,7 @@ class FilterCache : public Cache {
             MESIState dummyState = MESIState::I;
             futex_lock(&filterLock);
             MemReq req = {pLineAddr, isLoad? GETS : GETX, childId, &dummyState, curCycle, &filterLock, dummyState, source, reqFlags | (lvl << 16) | flags};
-<<<<<<< HEAD
             
-=======
-            //if(req.is(MemReq::PKTIN)){
-            //    info("PKTIN - filter_cache.h line328");
-            //}
-            //if(req.is(MemReq::NETRELATED_ING)){
-            //    info("NETRELATED_ING - filter_cache.h line328");
-            //}
->>>>>>> 1edb4e8e55e74335199a99b4cf70941976dfd283
             uint64_t respCycle  = access(req);
            
 			// experimenting for custom prefetching

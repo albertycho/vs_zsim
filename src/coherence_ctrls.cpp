@@ -397,26 +397,12 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, int32_t lineId, AccessTyp
     
     if (type != PUTS && type != PUTX && type != CLEAN  && type != CLEAN_S) {
         if (flags & MemReq::NETRELATED_ING) {
-<<<<<<< HEAD
-=======
-            //if(isL3){
-            //info("NETRELATED_ING, coherence_ctrls.cpp line 394");
-            //info("  srcId: %d, stat_group: %d",srcId, stat_group);
-            //}
->>>>>>> 1edb4e8e55e74335199a99b4cf70941976dfd283
             if (srcId > 1) {
                 switch (stat_group) {
                     case NF0: 
                         if(isMiss)
                             netMiss_core_rb.inc();
-<<<<<<< HEAD
                         else 
-=======
-                        else{
-                            if(isL3){
-                            //info("netHit_core_rb incrementing");
-                            }
->>>>>>> 1edb4e8e55e74335199a99b4cf70941976dfd283
                             netHit_core_rb.inc();
                         break;
                     case NF1:

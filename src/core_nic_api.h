@@ -611,7 +611,7 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 
 	uint32_t core_i = lg_p->lgs[lg_i].last_core;
 	uint32_t cq_size = get_cq_size(core_i);
-	if(nicInfo->sampling_phase_index < (100000-10) ){ 
+	if(nicInfo->sampling_phase_index < 100000 ){ 
 		get_IRSR_stat(cur_cycle, lg_p, nicInfo, core_i, cq_size);
 	}
 
@@ -695,10 +695,6 @@ int inject_incoming_packet(uint64_t& cur_cycle, glob_nic_elements* nicInfo, void
 			uint32_t set = (addr>>lineBits) & setMask;
 			nicInfo->rb_set_hist[set]++;
 			//
-<<<<<<< HEAD
-=======
-			//info("PKTIN injected from core_nic_api.h");
->>>>>>> 1edb4e8e55e74335199a99b4cf70941976dfd283
 			temp = l1d->store(addr, cur_cycle+i, level, srcId, MemReq::PKTIN) + (level == 3 ? 1 : 0) * L1D_LAT;
 			//TODO check what cycles need to be passed to recrod
 			cRec->record(cur_cycle+i, cur_cycle+i, temp);
