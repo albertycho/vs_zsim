@@ -124,7 +124,7 @@ public:
 		page_offset = page_offset >> lineBits;
 		uint64_t input_tag = miss_pc ^ addr;
 		uint64_t index = (miss_pc>>3) ^ page_offset; //for indexing, discard lsbs of pc that might just be 0
-		index = index / PF_SETS;
+		index = index % PF_SETS;
 
 		//bool tag_match = false;
 		bool match_found = false;
