@@ -137,7 +137,13 @@ uint64_t TimingCache::access(MemReq& req) {
     }
     bool correct_level = (req_level == level);
     int32_t lineId = -1;
+<<<<<<< HEAD
     //info("In cache access, req type is %s, my level is %d, input level is %d, childId is %d",AccessTypeName(req.type),level,req_level, req.childId);
+=======
+    if(correct_level &&(req.is(MemReq::NETRELATED_ING))){
+        //info("in %s, req type is %s, my level is %d, input level is %d, childId is %d", this->getName(),AccessTypeName(req.type),level,req_level, req.childId);
+    }
+>>>>>>> 1edb4e8e55e74335199a99b4cf70941976dfd283
     bool no_record = 0;//((req.flags) & (MemReq::NORECORD)) != 0;
 
     EventRecorder* evRec = zinfo->eventRecorders[req.srcId];
@@ -254,6 +260,18 @@ uint64_t TimingCache::access(MemReq& req) {
 
             uint64_t getDoneCycle = respCycle;  // latency from next level (if any), before invalidations are sent
             uint64_t invalOnAccCycle = 0;
+<<<<<<< HEAD
+=======
+            //if(correct_level){
+            //    if(req.is(MemReq::PKTIN)){
+            //        info("PKTIN - timingcache.cpp line 250");
+            //    }
+            //    if(req.is(MemReq::NETRELATED_ING)){
+            //        info("NETRELATED_ING - timingcache.cpp line 250");
+            //    }
+            //}
+
+>>>>>>> 1edb4e8e55e74335199a99b4cf70941976dfd283
             respCycle = cc->processAccess(req, lineId, respCycle, correct_level, &getDoneCycle, &invalOnAccCycle);
 
             if (no_record || req.type == CLEAN || req.type == CLEAN_S) {

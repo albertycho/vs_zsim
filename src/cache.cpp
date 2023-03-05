@@ -144,8 +144,20 @@ uint64_t Cache::access(MemReq& req) {
             if (unlikely(evRec && evRec->hasRecord())) {
                 wbAcc = evRec->popRecord();
             }
+<<<<<<< HEAD
         
             uint64_t tmp_respCycle = respCycle;
+=======
+       
+			uint64_t tmp_respCycle = respCycle;
+            
+            //if(req.is(MemReq::PKTIN)){
+            //    info("PKTIN - cache.cpp line 157");
+            //}
+            //if(req.is(MemReq::NETRELATED_ING)){
+            //    info("NETRELATED_ING - cache.cpp line 157");
+            //}
+>>>>>>> 1edb4e8e55e74335199a99b4cf70941976dfd283
             respCycle = cc->processAccess(req, lineId, respCycle, correct_level);
             uint64_t parent_resp_delay = respCycle - tmp_respCycle;
             bool went_to_mem = parent_resp_delay > 50; //l3 latency 46, mem latency at bound 20
@@ -200,7 +212,16 @@ uint64_t Cache::access(MemReq& req) {
             }
         }
         else {
+<<<<<<< HEAD
 			//info("not correct level, should only see in l1, name: %s, level=%d", name.c_str(), level);
+=======
+            //if(req.is(MemReq::PKTIN)){
+            //    info("PKTIN - cache.cpp line 230");
+            //}
+            //if(req.is(MemReq::NETRELATED_ING)){
+            //    info("NETRELATED_ING - cache.cpp line 230");
+            //}
+>>>>>>> 1edb4e8e55e74335199a99b4cf70941976dfd283
             respCycle = cc->processAccess(req, lineId, respCycle, correct_level);
         }
     }
