@@ -362,6 +362,7 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
 						//uint64_t rsp2=l1d->load(addr+(1<<lineBits), dispatchCycle+1)+L1D_LAT;
 						//bool doNLPF = true;
 						//if(doNLPF){
+						/*
 						if(zinfo->NLPF){
 							uint64_t last_access_time=reqSatisfiedCycle - dispatchCycle;
 							//info("access took %d",(last_access_time));
@@ -376,6 +377,44 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
 								}
 							}
 						}
+						*/
+						if (zinfo->NLPF) { //TODO change field name
+							//update outstanding PF entries
+							b_pf.update_ose(addr);
+
+							uint64_t last_access_time = reqSatisfiedCycle - dispatchCycle;
+							//info("access took %d",(last_access_time));
+							if ((reqSatisfiedCycle - dispatchCycle) > (L1D_LAT + 10)) { // l1 miss
+								uint64_t pagebits = 12; uint64_t pagesize = 4096;
+								uint32_t lineSize = 1 << lineBits;
+								Address miss_pc = bblAddr + (i * linesize);
+								//Address page_offset = addr & 0xFFF;
+								//Address page_base = addr & (~0xFFF);
+								//assert(page_base + page_offset == addr);
+								//page_offset = page_offset / lineSize;
+								uint64_t page_bitvector = 0;
+								bool pf_found = b_pf.lookup_pf(miss_pc, addr, page_bitvector, curCycle);
+								if (pf_found) {
+									uint64_t pf_count = 0;
+									for (uint64_t ii = 0; ii < 64; ii++) {
+										if ((page_bitvector >> ii) & 1) {
+											pf_count++;
+											Address pf_addr = page_base + ii*lineSize;
+											if (!(l1d->LineInCache((pf_addr >> lineBits)))) {
+												uint64_t rsp2 = l1d->load(pf_addr, dispatchCycle + 1 + pf_count, 2) + L1D_LAT; //level=1, pass to l2
+												cRec.record(curCycle, dispatchCycle + 1 + pf_count, rsp2);
+											}
+										}
+									}
+									//assert(pf_count <= pf_depth);
+								}
+								else {
+									//lookup_pf starts new entry upon failure
+								}
+								
+							}
+						}
+
 
 					}
 

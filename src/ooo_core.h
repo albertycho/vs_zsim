@@ -39,6 +39,7 @@
 #include "timing_cache.h"
 
 #include "zsim.h"
+#include "b_prefetcher.h"
 //#include "core_nic_api.h"
 
 // Uncomment to enable stall stats
@@ -519,6 +520,7 @@ class OOOCore : public Core {
         OOOCore(FilterCache* _l1i, FilterCache* _l1d, uint32_t _domain, g_string& _name, uint32_t _coreIdx, string ingr, string egr);
 
         FilterCache* l1d;
+        b_prefetcher b_pf;
 
         //int ts_idx = 0;
         
