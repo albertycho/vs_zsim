@@ -387,9 +387,9 @@ inline void OOOCore::bbl(Address bblAddr, BblInfo* bblInfo) {
 							if ((reqSatisfiedCycle - dispatchCycle) > (L1D_LAT + 10)) { // l1 miss
 								uint64_t pagebits = 12; uint64_t pagesize = 4096;
 								uint32_t lineSize = 1 << lineBits;
-								Address miss_pc = bblAddr + (i * linesize);
+								Address miss_pc = bblAddr + (i * lineSize);
 								//Address page_offset = addr & 0xFFF;
-								//Address page_base = addr & (~0xFFF);
+								Address page_base = addr & (~0xFFF);
 								//assert(page_base + page_offset == addr);
 								//page_offset = page_offset / lineSize;
 								uint64_t page_bitvector = 0;
