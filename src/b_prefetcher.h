@@ -26,9 +26,13 @@ public:
 	bpf_entry pf_lut[PF_SETS][PF_WAYS];
 	pending_entry outstanding_entries[MAX_DEPTH]; 
 	uint64_t ose_head, ose_tail;
+
+	//for stat
+	uint64_t pf_lookup_count=0;
+	uint64_t pf_lookup_hit=0;
 	
 	b_prefetcher() {
-		std::cout << "b_prefetcher init" << std::endl;
+		//std::cout << "b_prefetcher init" << std::endl;
 		for (uint64_t i = 0; i < PF_SETS; i++) {
 			for (uint64_t j = 0; j < PF_WAYS; j++) {
 				pf_lut[i][j].tag = 0; //invalid tag
@@ -114,6 +118,13 @@ public:
 
 	bool lookup_pf(uint64_t miss_pc, uint64_t addr, uint64_t &page_bitvcector, uint64_t cur_t) {
 
+		//std::cout<<"sancheck to see lookup_pf is called!"<<std::endl;
+
+		pf_lookup_count++;
+		//if(pf_lookup_count % 1000){
+		//	std::cout<<"lookupcount: "<<pf_lookup_count<<", hit perc: "<<(100*pf_lookup_hit / pf_lookup_count)<<"%"<<std::endl;
+		//}
+
 		uint64_t lineBits = 6;
 		uint64_t pagebits = 12; uint64_t pagesize = 4096;
 		uint32_t lineSize = 1 << lineBits;
@@ -134,6 +145,8 @@ public:
 			if (input_tag == pf_lut[index][i].tag) {
 				page_bitvcector = pf_lut[index][i].page_bitvector;
 				pf_lut[index][i].recent_access_t = cur_t;
+				pf_lookup_hit++;
+				//std::cout<<"sancheck to see lookup_pf hits tag match!"<<std::endl;
 				return true;
 			}
 			if (pf_lut[index][i].tag != 0) {
@@ -145,7 +158,10 @@ public:
 				}
 			}
 		}
-		
+		if(match_found){
+			pf_lookup_hit++;
+			//std::cout<<"sancheck to see lookup_pf hits at all!"<<std::endl;
+		}
 		// don't update lru if not exact match
 		//if (match_found) {pf_lut[index][match_way].recent_access_t = cur_t;}
 
