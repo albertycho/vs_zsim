@@ -139,10 +139,20 @@ class FilterCache : public Cache {
         // source: the id of the core issuing the request, used to signify which recorder is used
 
         inline uint64_t load(Address vAddr, uint64_t curCycle, uint16_t lvl = 8, uint32_t source = 1742, uint32_t flags = 0) {
+	    //info("load: ADDR: %llx", vAddr);
             Address vLineAddr = vAddr >> lineBits;
-            uint32_t idx = vLineAddr & setMask;
+		    Address vLA_mask_overlap_bits = vLineAddr >> (64-8);
+		    assert(vLA_mask_overlap_bits==0);
+            Address procMask_f = procMask;
+
+            Address pLineAddr = zinfo->page_randomizer->get_addr(procMask_f | vLineAddr, procIdx);
+
+
+            //uint32_t idx = vLineAddr & setMask;
+            uint32_t idx = pLineAddr & setMask;
             uint64_t availCycle = filterArray[idx].availCycle; //read before, careful with ordering to avoid timing races
             if ((lvl == 8) || (lvl == level)) {
+                /*
 				//if ideal case
 				//if vLineAddr in recv_buf range for this core
                 glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());	
@@ -157,43 +167,55 @@ class FilterCache : public Cache {
                 if((vAddr >= cq_base) && (vAddr<=cq_top)){
                     return curCycle;
                 }
-                if (vLineAddr == filterArray[idx].rdAddr) {
+                */
+
+                //if (vLineAddr == filterArray[idx].rdAddr) {
+                if (pLineAddr == filterArray[idx].rdAddr) {
                     fGETSHit++;
                     return MAX(curCycle, availCycle);
                 } 
             }
 
-            if (lvl == 42) {       // ideal ingress coming from app core, if the data is nic-related return 0 latency
-                Address gm_base_addr = 0x00ABBA000000; // defined in galloc.cpp
-				//Address gm_seg_size = 1<<30; //TODO: just use default? or wire it from init
-            	glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());	
-            	Address gm_seg_size = nicInfo->gm_size;
-                Address nicLineAddr_bot = gm_base_addr >> lineBits;
-                Address nicLineAddr_top = (gm_base_addr + gm_seg_size) >> lineBits;
-                bool is_MatAddr = is_mat_addr(vLineAddr);
-                if ((vLineAddr >= nicLineAddr_bot && vLineAddr <= nicLineAddr_top) && (!is_MatAddr)) {
-                    return curCycle + extra_latency;
-                }
-                else {
-                    lvl = level;
-                }
+            //if (lvl == 42) {       // ideal ingress coming from app core, if the data is nic-related return 0 latency
+            //    Address gm_base_addr = 0x00ABBA000000; // defined in galloc.cpp
+			//	//Address gm_seg_size = 1<<30; //TODO: just use default? or wire it from init
+            //	glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());	
+            //	Address gm_seg_size = nicInfo->gm_size;
+            //    Address nicLineAddr_bot = gm_base_addr >> lineBits;
+            //    Address nicLineAddr_top = (gm_base_addr + gm_seg_size) >> lineBits;
+            //    bool is_MatAddr = is_mat_addr(vLineAddr);
+            //    if ((vLineAddr >= nicLineAddr_bot && vLineAddr <= nicLineAddr_top) && (!is_MatAddr)) {
+            //        return curCycle + extra_latency;
+            //    }
+            //    else {
+            //        lvl = level;
+            //    }
+            //}
+            if(lvl==2){ // pfrefetch req to l2
+                flags=flags | MemReq::NLPF;
             }
-			if(lvl==2){
-				flags=flags | MemReq::NLPF;
-			}
-
             if (source == 1742)
-                return replace(vLineAddr, idx, true, curCycle, srcId, 0, flags, (lvl == 8) ? level : lvl);
+                //return replace(vLineAddr, idx, true, curCycle, srcId, 0, flags, (lvl == 8) ? level : lvl);
+                return replace(pLineAddr, idx, true, curCycle, srcId, 0, flags, (lvl == 8) ? level : lvl);
             else {
-                return replace(vLineAddr, idx, true, curCycle, source, MAX_CACHE_CHILDREN+1, flags, (lvl == 8) ? level : lvl); 
+                //return replace(vLineAddr, idx, true, curCycle, source, MAX_CACHE_CHILDREN+1, flags, (lvl == 8) ? level : lvl); 
+                return replace(pLineAddr, idx, true, curCycle, source, MAX_CACHE_CHILDREN+1, flags, (lvl == 8) ? level : lvl); 
             }
         }
 
         inline uint64_t store(Address vAddr, uint64_t curCycle, uint16_t lvl = 8, uint32_t source = 1742, uint32_t flags = 0) {
             Address vLineAddr = vAddr >> lineBits;
-            uint32_t idx = vLineAddr & setMask;
+		    Address vLA_mask_overlap_bits = vLineAddr >> (64-8);
+		    assert(vLA_mask_overlap_bits==0);
+
+            Address procMask_f = procMask;
+            Address pLineAddr = zinfo->page_randomizer->get_addr(procMask_f | vLineAddr, procIdx);
+
+            //uint32_t idx = vLineAddr & setMask;
+            uint32_t idx = pLineAddr & setMask;
             uint64_t availCycle = filterArray[idx].availCycle; //read before, careful with ordering to avoid timing races
             if ((lvl == 8) || (lvl == level)) {
+                /*
                 glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());	
                 //assume cq and wq return immediately
                 uint64_t wq_base = (uint64_t) (nicInfo->nic_elem[srcId].wq);
@@ -206,71 +228,80 @@ class FilterCache : public Cache {
                 if((vAddr >= cq_base) && (vAddr<=cq_top)){
                     return curCycle;
                 }
-                if (vLineAddr == filterArray[idx].wrAddr) {
+                */
+                //if (vLineAddr == filterArray[idx].wrAddr) {
+                if (pLineAddr == filterArray[idx].wrAddr) {
                     fGETXHit++;
                     //NOTE: Stores don't modify availCycle; we'll catch matches in the core
                     //filterArray[idx].availCycle = curCycle; //do optimistic store-load forwarding
                     return MAX(curCycle, availCycle);
                 } 
             }
-            if (lvl == 42) {       // ideal ingress coming from app core, if the data is nic-related return 0 latency
-                Address gm_base_addr = 0x00ABBA000000; // defined in galloc.cpp
-                //Address gm_seg_size = 1<<30; //TODO: just use default? or wire it from init
-            	glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());	
-            	Address gm_seg_size = nicInfo->gm_size;
-                Address nicLineAddr_bot = gm_base_addr >> lineBits;
-                Address nicLineAddr_top = (gm_base_addr + gm_seg_size) >> lineBits;
-                if (vLineAddr >= nicLineAddr_bot && vLineAddr <= nicLineAddr_top) {
-                    return curCycle + extra_latency;
-                }
-                else {
-                    lvl = level;
-                }
-            }
+            //if (lvl == 42) {       // ideal ingress coming from app core, if the data is nic-related return 0 latency
+            //    Address gm_base_addr = 0x00ABBA000000; // defined in galloc.cpp
+            //    //Address gm_seg_size = 1<<30; //TODO: just use default? or wire it from init
+            //	glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());	
+            //	Address gm_seg_size = nicInfo->gm_size;
+            //    Address nicLineAddr_bot = gm_base_addr >> lineBits;
+            //    Address nicLineAddr_top = (gm_base_addr + gm_seg_size) >> lineBits;
+            //    if (vLineAddr >= nicLineAddr_bot && vLineAddr <= nicLineAddr_top) {
+            //        return curCycle + extra_latency;
+            //    }
+            //    else {
+            //        lvl = level;
+            //    }
+            //}
             if (source == 1742)
-                return replace(vLineAddr, idx, false, curCycle, srcId, 0, flags, (lvl == 8) ? level : lvl);
+                //return replace(vLineAddr, idx, false, curCycle, srcId, 0, flags, (lvl == 8) ? level : lvl);
+                return replace(pLineAddr, idx, false, curCycle, srcId, 0, flags, (lvl == 8) ? level : lvl);
             else {
-                return replace(vLineAddr, idx, false, curCycle, source, MAX_CACHE_CHILDREN+1, flags, (lvl == 8) ? level : lvl);
+                //return replace(vLineAddr, idx, false, curCycle, source, MAX_CACHE_CHILDREN+1, flags, (lvl == 8) ? level : lvl);
+                return replace(pLineAddr, idx, false, curCycle, source, MAX_CACHE_CHILDREN+1, flags, (lvl == 8) ? level : lvl);
             }
         }
 
         inline uint64_t clean(Address vAddr, uint64_t curCycle, uint32_t clean_type, uint32_t flags = 0) {
-            Address vLineAddr = vAddr >> lineBits;
-            uint32_t idx = vLineAddr & setMask;
+			info("CLEAN not supported for this project");
+			return 0;
+		}
+        //inline uint64_t clean(Address vAddr, uint64_t curCycle, uint32_t clean_type, uint32_t flags = 0) {
+        //    Address vLineAddr = vAddr >> lineBits;
+        //    uint32_t idx = vLineAddr & setMask;
 
-            if (vLineAddr == filterArray[idx].rdAddr) {
-                filterArray[idx].rdAddr = -1L;
-            } 
-            if (vLineAddr == filterArray[idx].wrAddr) {
-                filterArray[idx].wrAddr = -1L;
-            } 
+        //    if (vLineAddr == filterArray[idx].rdAddr) {
+        //        filterArray[idx].rdAddr = -1L;
+        //    } 
+        //    if (vLineAddr == filterArray[idx].wrAddr) {
+        //        filterArray[idx].wrAddr = -1L;
+        //    } 
 
-            Address procMask_f = 0;
+        //    Address procMask_f = 0;
 
-            // make sure procmask does not overlap with non-zero vaddr
-	    Address vLA_mask_overlap_bits = vLineAddr >> (64-8);
-	    assert(vLA_mask_overlap_bits==0);
+	    //// make sure procmask does not overlap with non-zero vaddr
+	    //Address vLA_mask_overlap_bits = vLineAddr >> (64-8);
+	    //assert(vLA_mask_overlap_bits==0);
+        //    Address pLineAddr = zinfo->page_randomizer->get_addr(procMask_f | vLineAddr, procIdx);
+        //    MESIState dummyState = MESIState::I;
+        //    futex_lock(&filterLock);
+        //    
+        //    MemReq req;
+        //    if (clean_type == 1) {      // turn to I
+        //        req = {pLineAddr, CLEAN, 0, &dummyState, curCycle, &filterLock, dummyState, srcId, flags | (level<<16)};
+        //    }
+        //    else if (clean_type == 2) { // turn to S
+        //        req = {pLineAddr, CLEAN_S, 0, &dummyState, curCycle, &filterLock, dummyState, srcId, flags | (level<<16)};
+        //    }
+        //    
+        //    uint64_t respCycle  = access(req);
+        //    futex_unlock(&filterLock);
+        //    return respCycle;
+        //}
 
-            Address pLineAddr = procMask_f | vLineAddr;
-            MESIState dummyState = MESIState::I;
-            futex_lock(&filterLock);
-            
-            MemReq req;
-            if (clean_type == 1) {      // turn to I
-                req = {pLineAddr, CLEAN, 0, &dummyState, curCycle, &filterLock, dummyState, srcId, flags | (level<<16)};
-            }
-            else if (clean_type == 2) { // turn to S
-                req = {pLineAddr, CLEAN_S, 0, &dummyState, curCycle, &filterLock, dummyState, srcId, flags | (level<<16)};
-            }
-            
-            uint64_t respCycle  = access(req);
-            futex_unlock(&filterLock);
-            return respCycle;
-        }
-
-        uint64_t replace(Address vLineAddr, uint32_t idx, bool isLoad, uint64_t curCycle, uint32_t source, uint32_t childId, uint32_t flags, int lvl) {
-            Address procMask_f = procMask;
+        //uint64_t replace(Address vLineAddr, uint32_t idx, bool isLoad, uint64_t curCycle, uint32_t source, uint32_t childId, uint32_t flags, int lvl) {
+        uint64_t replace(Address pLineAddr, uint32_t idx, bool isLoad, uint64_t curCycle, uint32_t source, uint32_t childId, uint32_t flags, int lvl) {
+            //Address procMask_f = procMask;
             //Don't apply mask if it's a NIC related address
+            /*
             Address gm_base_addr = 0x00ABBA000000; // defined in galloc.cpp
             //Address gm_seg_size = 1<<30; //TODO: just use default? or wire it from init
             glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());	
@@ -315,92 +346,99 @@ class FilterCache : public Cache {
             if (is_MatAddr) {
                 procMask_f = procMask_f + ((uint64_t)source) << (64 - lineBits);
             }
+            */
 
-            // make sure procmask does not overlap with non-zero vaddr
-	    Address vLA_mask_overlap_bits = vLineAddr >> (64-8);
-	    assert(vLA_mask_overlap_bits==0);
+	    // make sure procmask does not overlap with non-zero vaddr
+	    //Address vLA_mask_overlap_bits = vLineAddr >> (64-8);
+	    //assert(vLA_mask_overlap_bits==0);
 
-            Address pLineAddr = procMask_f | vLineAddr;
+        //    Address pLineAddr = zinfo->page_randomizer->get_addr(procMask_f | vLineAddr, procIdx);
+
             MESIState dummyState = MESIState::I;
             futex_lock(&filterLock);
             MemReq req = {pLineAddr, isLoad? GETS : GETX, childId, &dummyState, curCycle, &filterLock, dummyState, source, reqFlags | (lvl << 16) | flags};
-            if(req.is(MemReq::PKTIN)){
-                info("PKTIN - filter_cache.h line328");
-            }
-            if(req.is(MemReq::NETRELATED_ING)){
-                info("NETRELATED_ING - filter_cache.h line328");
-            }
+            
             uint64_t respCycle  = access(req);
+           
+			// experimenting for custom prefetching
+            //MESIState dummyState2 = MESIState::I;
+			//MemReq req2 = {pLineAddr+1, isLoad? GETS : GETX, childId, &dummyState2, curCycle+1, &filterLock, dummyState2, source, reqFlags | (lvl << 16) | flags};
+			//uint64_t respCycle2 = access(req2);
+			//experiment ends here
 
             //Due to the way we do the locking, at this point the old address might be invalidated, but we have the new address guaranteed until we release the lock
 
             if (lvl == level) {
                 //Careful with this order
                 Address oldAddr = filterArray[idx].rdAddr;
-                filterArray[idx].wrAddr = isLoad? -1L : vLineAddr;
-                filterArray[idx].rdAddr = vLineAddr;
+                //filterArray[idx].wrAddr = isLoad? -1L : vLineAddr;
+                //filterArray[idx].rdAddr = vLineAddr;
+                filterArray[idx].wrAddr = isLoad? -1L : pLineAddr;
+                filterArray[idx].rdAddr = pLineAddr;
+
 
                 //For LSU simulation purposes, loads bypass stores even to the same line if there is no conflict,
                 //(e.g., st to x, ld from x+8) and we implement store-load forwarding at the core.
                 //So if this is a load, it always sets availCycle; if it is a store hit, it doesn't
-                if (oldAddr != vLineAddr) filterArray[idx].availCycle = respCycle;
+                //if (oldAddr != vLineAddr) filterArray[idx].availCycle = respCycle;
+                if (oldAddr != pLineAddr) filterArray[idx].availCycle = respCycle;
             }
             futex_unlock(&filterLock);
             return respCycle;
         }
 
         // NO_RECORD versions of load/store/replace
-        uint64_t replace_norecord(Address vLineAddr, uint32_t idx, bool isLoad, uint64_t curCycle) {
-            Address pLineAddr = procMask | vLineAddr;
-            MESIState dummyState = MESIState::I;
-            futex_lock(&filterLock);
-            uint32_t nr_flags = reqFlags | 1; //NORECORD
-            MemReq req = { pLineAddr, isLoad ? GETS : GETX, 0, &dummyState, curCycle, &filterLock, dummyState, srcId, nr_flags};
-            uint64_t respCycle = access(req);
+        //uint64_t replace_norecord(Address vLineAddr, uint32_t idx, bool isLoad, uint64_t curCycle) {
+        //    Address pLineAddr = zinfo->page_randomizer->get_addr(procMask | vLineAddr, procIdx);
+        //    MESIState dummyState = MESIState::I;
+        //    futex_lock(&filterLock);
+        //    uint32_t nr_flags = reqFlags | 1; //NORECORD
+        //    MemReq req = { pLineAddr, isLoad ? GETS : GETX, 0, &dummyState, curCycle, &filterLock, dummyState, srcId, nr_flags};
+        //    uint64_t respCycle = access(req);
 
-            //Due to the way we do the locking, at this point the old address might be invalidated, but we have the new address guaranteed until we release the lock
+        //    //Due to the way we do the locking, at this point the old address might be invalidated, but we have the new address guaranteed until we release the lock
 
-            //Careful with this order
-            Address oldAddr = filterArray[idx].rdAddr;
-            filterArray[idx].wrAddr = isLoad ? -1L : vLineAddr;
-            filterArray[idx].rdAddr = vLineAddr;
+        //    //Careful with this order
+        //    Address oldAddr = filterArray[idx].rdAddr;
+        //    filterArray[idx].wrAddr = isLoad ? -1L : vLineAddr;
+        //    filterArray[idx].rdAddr = vLineAddr;
 
-            //For LSU simulation purposes, loads bypass stores even to the same line if there is no conflict,
-            //(e.g., st to x, ld from x+8) and we implement store-load forwarding at the core.
-            //So if this is a load, it always sets availCycle; if it is a store hit, it doesn't
-            if (oldAddr != vLineAddr) filterArray[idx].availCycle = respCycle;
+        //    //For LSU simulation purposes, loads bypass stores even to the same line if there is no conflict,
+        //    //(e.g., st to x, ld from x+8) and we implement store-load forwarding at the core.
+        //    //So if this is a load, it always sets availCycle; if it is a store hit, it doesn't
+        //    if (oldAddr != vLineAddr) filterArray[idx].availCycle = respCycle;
 
-            futex_unlock(&filterLock);
-            return respCycle;
-        }
+        //    futex_unlock(&filterLock);
+        //    return respCycle;
+        //}
 
-        inline uint64_t load_norecord(Address vAddr, uint64_t curCycle) {
-            Address vLineAddr = vAddr >> lineBits;
-            uint32_t idx = vLineAddr & setMask;
-            uint64_t availCycle = filterArray[idx].availCycle; //read before, careful with ordering to avoid timing races
-            if (vLineAddr == filterArray[idx].rdAddr) {
-                fGETSHit++;
-                return MAX(curCycle, availCycle);
-            }
-            else {
-                return replace_norecord(vLineAddr, idx, true, curCycle);
-            }
-        }
+        //inline uint64_t load_norecord(Address vAddr, uint64_t curCycle) {
+        //    Address vLineAddr = vAddr >> lineBits;
+        //    uint32_t idx = vLineAddr & setMask;
+        //    uint64_t availCycle = filterArray[idx].availCycle; //read before, careful with ordering to avoid timing races
+        //    if (vLineAddr == filterArray[idx].rdAddr) {
+        //        fGETSHit++;
+        //        return MAX(curCycle, availCycle);
+        //    }
+        //    else {
+        //        return replace_norecord(vLineAddr, idx, true, curCycle);
+        //    }
+        //}
 
-        inline uint64_t store_norecord(Address vAddr, uint64_t curCycle) {
-            Address vLineAddr = vAddr >> lineBits;
-            uint32_t idx = vLineAddr & setMask;
-            uint64_t availCycle = filterArray[idx].availCycle; //read before, careful with ordering to avoid timing races
-            if (vLineAddr == filterArray[idx].wrAddr) {
-                fGETXHit++;
-                //NOTE: Stores don't modify availCycle; we'll catch matches in the core
-                //filterArray[idx].availCycle = curCycle; //do optimistic store-load forwarding
-                return MAX(curCycle, availCycle);
-            }
-            else {
-                return replace_norecord(vLineAddr, idx, false, curCycle);
-            }
-        }
+        //inline uint64_t store_norecord(Address vAddr, uint64_t curCycle) {
+        //    Address vLineAddr = vAddr >> lineBits;
+        //    uint32_t idx = vLineAddr & setMask;
+        //    uint64_t availCycle = filterArray[idx].availCycle; //read before, careful with ordering to avoid timing races
+        //    if (vLineAddr == filterArray[idx].wrAddr) {
+        //        fGETXHit++;
+        //        //NOTE: Stores don't modify availCycle; we'll catch matches in the core
+        //        //filterArray[idx].availCycle = curCycle; //do optimistic store-load forwarding
+        //        return MAX(curCycle, availCycle);
+        //    }
+        //    else {
+        //        return replace_norecord(vLineAddr, idx, false, curCycle);
+        //    }
+        //}
 
         ///////////////////////////
 

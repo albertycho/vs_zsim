@@ -127,15 +127,17 @@ uint64_t TimingCache::access(MemReq& req) {
         is_llc=true;
     }
 
+    // if(level<=1){
+    //     flags & ~MemReq::NLPF;
+    // }
+
     int req_level = req.flags >> 16;
     if (req.type == PUTS || req.type == PUTX) {
         req_level = level;
     }
     bool correct_level = (req_level == level);
     int32_t lineId = -1;
-    if(correct_level &&(req.is(MemReq::NETRELATED_ING))){
-        info("in %s, req type is %s, my level is %d, input level is %d, childId is %d", this->getName(),AccessTypeName(req.type),level,req_level, req.childId);
-    }
+    //info("In cache access, req type is %s, my level is %d, input level is %d, childId is %d",AccessTypeName(req.type),level,req_level, req.childId);
     bool no_record = 0;//((req.flags) & (MemReq::NORECORD)) != 0;
 
     EventRecorder* evRec = zinfo->eventRecorders[req.srcId];
@@ -212,6 +214,7 @@ uint64_t TimingCache::access(MemReq& req) {
                 //info("[%s] Evicting 0x%lx", name.c_str(), wbLineAddr);
                 req.clear(MemReq::INGR_EVCT);
                 req.clear(MemReq::EGR_EVCT);
+                /*
                 int i=3;
                 glob_nic_elements* nicInfo = static_cast<glob_nic_elements*>(gm_get_nic_ptr());
                 while (i < nicInfo->expected_core_count + 3){
@@ -232,6 +235,7 @@ uint64_t TimingCache::access(MemReq& req) {
                     }
                     i++;
                 }
+                */
 
                 
                 //Evictions are not in the critical path in any sane implementation -- we do not include their delays
@@ -250,15 +254,6 @@ uint64_t TimingCache::access(MemReq& req) {
 
             uint64_t getDoneCycle = respCycle;  // latency from next level (if any), before invalidations are sent
             uint64_t invalOnAccCycle = 0;
-            if(correct_level){
-                if(req.is(MemReq::PKTIN)){
-                    info("PKTIN - timingcache.cpp line 250");
-                }
-                if(req.is(MemReq::NETRELATED_ING)){
-                    info("NETRELATED_ING - timingcache.cpp line 250");
-                }
-            }
-
             respCycle = cc->processAccess(req, lineId, respCycle, correct_level, &getDoneCycle, &invalOnAccCycle);
 
             if (no_record || req.type == CLEAN || req.type == CLEAN_S) {

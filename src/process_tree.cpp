@@ -242,7 +242,9 @@ void CreateProcessTree(Config& config) {
     PopulateLevel(config, std::string(""), globProcVector, rootNode, procIdx, groupIdx);
 
     //if (procIdx > (uint32_t)zinfo->lineSize) panic("Cannot simulate more than sys.lineSize=%d processes (address spaces will get aliased), %d specified", zinfo->lineSize, procIdx);
-    if (procIdx > 256) panic("Cannot simulate more than 256 processes (address spaces will get aliased), %d specified", procIdx);
+    //making this change, assuming we'll have spare 8 bits.
+    //check with assertion at filter cache when applying the mask
+    if (procIdx > 256) panic("Cannot simulate more than 256 processes (address spaces will get aliased), %d specified",  procIdx);
 
     zinfo->procTree = rootNode;
     zinfo->numProcs = procIdx;

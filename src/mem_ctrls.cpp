@@ -30,6 +30,7 @@
 #include <random>
 
 std::mt19937 mt(100);
+uint32_t tmp=0;
 uint64_t SimpleMemory::access(MemReq& req) {
     switch (req.type) {
         case PUTS:
@@ -46,26 +47,83 @@ uint64_t SimpleMemory::access(MemReq& req) {
         default: panic("!?");
     }
 	//tmp WA for random latency
-	/*
-	uint64_t randval = (mt() % 2);
-	assert(randval==1 || randval==0);
-	uint64_t randlat = 0;
+	
+	uint64_t randlat = latency;
+	if(tail_var){
+		if(latency<101){
+			panic("avg lat must be larger than 101 for this tail latency experiment");
+		}
+		uint64_t randval = (mt() % (tail_var+1));
+		if(randval==tail_var){
+			randlat = latency+(tail_var*100);
+			rand1_count++;
+		}
+		else{
+			randlat = latency-100;
+			rand0_count++;
+		}
+		if(access_count==1000000){ //sancheck that we get equal dist
+			info("rand0 count: %d, rand1 count: %d",rand0_count, rand1_count);
+		}
 
-	access_count++;
-	if(randval==1){
-		randlat=400;
-		rand1_count++;
+
 	}
+	else if(var_lat_radius){
+		
+		if(var_lat_radius > latency){
+			panic("var_lat_raidus is larger than latency, min latency can't go negative");
+		}
+	
+		uint64_t randval = (mt() % 2);
+		assert(randval==1 || randval==0);
+
+		access_count++;
+
+		if(randval==1){
+			randlat+=var_lat_radius;
+			rand1_count++;
+		}
+		else{
+			randlat-=var_lat_radius;
+			rand0_count++;
+		}
+		if(access_count==1000000){ //sancheck that we get equal dist
+			info("rand0 count: %d, rand1 count: %d",rand0_count, rand1_count);
+		}
+	
+	}
+        else if(var_8020){
+		
+		if(var_8020 > latency){
+			panic("var_lat_raidus is larger than latency, min latency can't go negative");
+		}
+	        if(tmp==0){
+                 tmp=1;
+                 info("low_lat_sub_val= %d, high_lat_add_val= %d\n low_lat= %d, high_lat = %d",var_8020, var_8020*4,randlat-var_8020,randlat+(var_8020*4));
+                }
+		uint64_t randval = (mt() % 5);
+		//assert(randval==1 || randval==0);
+
+		access_count++;
+
+		if(randval==0){
+			randlat+=(var_8020*4);
+			rand1_count++;
+		}
+		else{
+			randlat-=var_8020;
+			rand0_count++;
+		}
+                latsum+=randlat;
+		if(access_count==1000000){ //sancheck that we get equal dist
+			info("rand0 count: %d, rand1 count: %d",rand0_count, rand1_count);
+                        info("avglat so far: %d",latsum/access_count);
+		}
+	
+	}
+
 	else{
-		rand0_count++;
 	}
-	if(access_count==1000000){
-		info("rand0 count: %d, rand1 count: %d",rand0_count, rand1_count);
-	}
-	*/
-    uint64_t respCycle = req.cycle + latency;
-    //uint64_t respCycle = req.cycle + latency+randlat;
-    assert(respCycle > req.cycle);
 /*
     if ((req.type == GETS || req.type == GETX) && eventRecorders[req.srcId]) {
         Address addr = req.lineAddr<<lineBits;
@@ -74,6 +132,10 @@ uint64_t SimpleMemory::access(MemReq& req) {
         eventRecorders[req.srcId]->pushRecord(tr);
     }
 */
+   	//uint64_t respCycle = req.cycle + latency;
+   	uint64_t respCycle = req.cycle + randlat;
+   	assert(respCycle > req.cycle);
+
     return respCycle;
 }
 

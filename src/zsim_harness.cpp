@@ -427,47 +427,47 @@ void generate_raw_timestamp_files(bool run_success){
 				}
 
 			}
-            //std::ofstream f("timestamps_core_"+std::to_string(i)+".txt");
-            //int temp=0;
+            std::ofstream f("timestamps_core_"+std::to_string(i)+".txt");
+            int temp=0;
 
-            ////int jstart = (nicInfo->warmup_packets)*4;
-	    //int jstart=0;
-            //for (int j=jstart; j<nicInfo->nic_elem[i].ts_idx; j++) {
-            //    if(j%4==0){
-            //        f << "\nrequest " << temp << ": ";
-            //        temp++;
-            //    }
-            //    f << nicInfo->nic_elem[i].ts_queue[j] << " ";
-            //}
-            //f.close();
+            //int jstart = (nicInfo->warmup_packets)*4;
+	    int jstart=0;
+            for (int j=jstart; j<nicInfo->nic_elem[i].ts_idx; j++) {
+                if(j%4==0){
+                    f << "\nrequest " << temp << ": ";
+                    temp++;
+                }
+                f << nicInfo->nic_elem[i].ts_queue[j] << " ";
+            }
+            f.close();
 
 
 
-            //f.open("timestamps_nic_core_"+std::to_string(i)+".txt");
-            //int temp1=0;
-            ////jstart = (nicInfo->warmup_packets)*2;
-	    //jstart=0;
-            //for (int j=jstart; j<nicInfo->nic_elem[i].ts_nic_idx; j++) {
-            //    if(j%2==0){
-            //        /*
-            //        if (j >= 2) {//add phases
-            //            f<< nicInfo->nic_elem[i].phase_queue[(j - 2) / 2] << " ";
-            //        }
-            //        */
-            //        f << "\nrequest " << temp1 << ": ";
-            //        temp1++;
-            //    }
-            //    f << nicInfo->nic_elem[i].ts_nic_queue[j] << " ";
-            //    if (j % 2 == 1) {
-            //        int jtmp = (j - 1);
-            //        //uint32_t start_phase = (nicInfo->nic_elem[i].phase_nic_queue[jtmp]));
-            //        //uint32_t done_phase = (nicInfo->nic_elem[i].phase_nic_queue[jtmp+1]));
-            //        uint32_t phases = ((nicInfo->nic_elem[i].phase_nic_queue[jtmp + 1]) - (nicInfo->nic_elem[i].phase_nic_queue[jtmp])) + 1;
-            //        f << phases << " ";
-            //    }
-            //}
-            ////f << nicInfo->nic_elem[i].phase_queue[((nicInfo->nic_elem[i].ts_nic_idx) - 2) / 2] << " ";
-            //f.close();
+            f.open("timestamps_nic_core_"+std::to_string(i)+".txt");
+            int temp1=0;
+            //jstart = (nicInfo->warmup_packets)*2;
+	    jstart=0;
+            for (int j=jstart; j<nicInfo->nic_elem[i].ts_nic_idx; j++) {
+                if(j%2==0){
+                    /*
+                    if (j >= 2) {//add phases
+                        f<< nicInfo->nic_elem[i].phase_queue[(j - 2) / 2] << " ";
+                    }
+                    */
+                    f << "\nrequest " << temp1 << ": ";
+                    temp1++;
+                }
+                f << nicInfo->nic_elem[i].ts_nic_queue[j] << " ";
+                if (j % 2 == 1) {
+                    int jtmp = (j - 1);
+                    //uint32_t start_phase = (nicInfo->nic_elem[i].phase_nic_queue[jtmp]));
+                    //uint32_t done_phase = (nicInfo->nic_elem[i].phase_nic_queue[jtmp+1]));
+                    uint32_t phases = ((nicInfo->nic_elem[i].phase_nic_queue[jtmp + 1]) - (nicInfo->nic_elem[i].phase_nic_queue[jtmp])) + 1;
+                    f << phases << " ";
+                }
+            }
+            //f << nicInfo->nic_elem[i].phase_queue[((nicInfo->nic_elem[i].ts_nic_idx) - 2) / 2] << " ";
+            f.close();
             /*
             f.open("bound_phase_core_"+std::to_string(i)+".txt");
             temp=0;
@@ -685,82 +685,70 @@ int main(int argc, char *argv[]) {
             info("Child %d done (in-loop catch)", cpid);
         }
 
-        if (secsStalled > 120) {
+        if (secsStalled > 7200) {
             warn("Deadlock detected, killing children");
             sigHandler(SIGINT);
             exit(42);
         }
 
-        nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
+        //nicInfo = (glob_nic_elements*)gm_get_nic_ptr();
 	
-		if(nicInfo->expected_core_count > 0){
-			//info("expected_core_count: %d", nicInfo->expected_core_count);
-        if (!nicInfo->nic_egress_proc_on) {
-            assert(nicInfo->registered_core_count == 0);
-            int temp=0;
-            for (int i = 0; i < MAX_CHILDREN; i++) {
-                if (childInfo[i].status == PS_RUNNING) {
-                    temp++;
-                    std::cout << i << " " << childInfo[i].pid << std::endl;
-                }
-            }
-            if (temp >1 && temp == nicInfo->expected_non_net_core_count + 1) {
-                info("Attempting graceful termination");
-                for (int i = 1; i < MAX_CHILDREN; i++) {
-                    int cpid = childInfo[i].pid;
-                    if (childInfo[i].status == PS_RUNNING) {
-                        info("Killing process %d", cpid);
-                        kill(-cpid, SIGKILL);
-                        usleep(100000);
-                        kill(cpid, SIGKILL);
-                    }
-                }
-            }
-            else if (temp == 1) {
-                info("Killing main thread");
-                for (int i = 0; i < MAX_CHILDREN; i++) {
-                    int cpid = childInfo[i].pid;
-                    if (childInfo[i].status == PS_RUNNING) {
-                        info("Killing process %d", cpid);
-                        kill(-cpid, SIGKILL);
-                        usleep(100000);
-                        kill(cpid, SIGKILL);
-                    }
-                }
-            }
-        }
-		}
+//		if(nicInfo->expected_core_count > 0){
+//			//info("expected_core_count: %d", nicInfo->expected_core_count);
+//        if (!nicInfo->nic_egress_proc_on) {
+//            assert(nicInfo->registered_core_count == 0);
+//            int temp=0;
+//            for (int i = 0; i < MAX_CHILDREN; i++) {
+//                if (childInfo[i].status == PS_RUNNING) {
+//                    temp++;
+//                    std::cout << i << " " << childInfo[i].pid << std::endl;
+//                }
+//            }
+//            if (temp >1 && temp == nicInfo->expected_non_net_core_count + 1) {
+//                info("Attempting graceful termination");
+//                for (int i = 1; i < MAX_CHILDREN; i++) {
+//                    int cpid = childInfo[i].pid;
+//                    if (childInfo[i].status == PS_RUNNING) {
+//                        info("Killing process %d", cpid);
+//                        kill(-cpid, SIGKILL);
+//                        usleep(100000);
+//                        kill(cpid, SIGKILL);
+//                    }
+//                }
+//            }
+//            else if (temp == 1) {
+//                info("Killing main thread");
+//                for (int i = 0; i < MAX_CHILDREN; i++) {
+//                    int cpid = childInfo[i].pid;
+//                    if (childInfo[i].status == PS_RUNNING) {
+//                        info("Killing process %d", cpid);
+//                        kill(-cpid, SIGKILL);
+//                        usleep(100000);
+//                        kill(cpid, SIGKILL);
+//                    }
+//                }
+//            }
+//        }
+//		}
     }
 
 
-    nicInfo->sim_end_time = std::chrono::system_clock::now();
-    std::chrono::duration<double> elapsed_seconds = (nicInfo->sim_end_time) - (nicInfo->sim_start_time);
+    zinfo->sim_end_time = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = (zinfo->sim_end_time) - (zinfo->sim_start_time);
     std::cout << "sim elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
 
+    std::ofstream f_tb_st("tailbench_st.txt");
+    for (int jjj = 0; jjj < zinfo->numCores; jjj++) {
+        f_tb_st << "core" << jjj <<"," << std::endl;
+        for (int iii = 0; iii < zinfo->tb_reqs[jjj]; iii++) {
+            if (iii > 490) { // just to be extra safe things crash last minute?
+                break;
+            }
+            f_tb_st << (zinfo->tb_end_cycles[jjj][iii] - zinfo->tb_start_cycles[jjj][iii]) << "," << std::endl;
+        }
+    }
+    f_tb_st.close();
 
-    std::ofstream latency_hist_file("latency_hist.txt");
-	load_generator* lg_p = (load_generator*)gm_get_lg_ptr();
-	uint64_t average_interval = (lg_p->sum_interval) / (nicInfo->latencies_size);
-	std::cout<<"average interval: "<<average_interval<<std::endl;
-	std::cout<<"lgp->sum_interval: "<<lg_p->sum_interval<<", latencies_size: "<<nicInfo->latencies_size<<std::endl;
-
-	latency_hist_file <<"average interval: "<<average_interval<<std::endl;
-
-	latency_hist_file.close();
-
-	////print memlats
-	//for (int i=0; i<zinfo->mem_controllers;i++){
-	//	//std::ofstream memlatfile("memlats_"+i+".csv");
-
-	//	if(zinfo->memlat_i[i] > 0){
-    //    	std::ofstream flat;
-    //    	flat.open("memlats_"+std::to_string(i)+".csv");
-	//		for(int j=0; j<zinfo->memlat_i[i];j++){
-	//			flat<<zinfo->memlats[i][j]<<","<<std::endl;
-	//		}
-	//		flat.close();
-	//	}
-	//}
 
     //Comment out Sweeper stat tracking stuff
     // load_generator* lg_p = (load_generator*)gm_get_lg_ptr();

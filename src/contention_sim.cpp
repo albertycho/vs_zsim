@@ -360,7 +360,7 @@ void ContentionSim::simulatePhaseThread(uint32_t thid) {
         std::vector<DomainData*>& nextStalledQueue = sq2;
 
         while (numFinished < thDomains) {
-            info("in while(numfinished < thdomains), tid %ld",thid);
+            info("in while(numfinished < thdomains), numfinished:%d, tid %ld",numFinished,thid);
             while (domPq.size()) {
                 DomainData* domain = domPq.top();
                 domPq.pop();

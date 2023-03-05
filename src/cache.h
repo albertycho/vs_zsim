@@ -34,8 +34,6 @@
 #include "repl_policies.h"
 #include "stats.h"
 
-#define MLP_ARR_SIZE 100
-
 class Network;
 
 /* General coherent modular cache. The replacement policy and cache array are
@@ -43,6 +41,8 @@ class Network;
  * too, but to avoid virtual function call overheads we work with MESI
  * controllers, since for now we only have MESI controllers
  */
+#define MLP_ARR_SIZE 200
+
 class Cache : public BaseCache {
     protected:
         CC* cc;
@@ -62,6 +62,7 @@ class Cache : public BaseCache {
         uint64_t MLP_tracker[MLP_ARR_SIZE] = {0};
         uint32_t MLP_i=0;
 
+
     public:
         Cache(uint32_t _numLines, CC* _cc, CacheArray* _array, ReplPolicy* _rp, uint32_t _accLat, uint32_t _invLat, const g_string& _name, int _level);
 
@@ -76,17 +77,17 @@ class Cache : public BaseCache {
         }
 
         virtual uint64_t access(MemReq& req);
-        bool LineInCache(Address next_line_addr) {
-            //Address next_line_addr = next_addr >> lineBits;
-            int32_t next_line_id = array->lookup(next_line_addr, nullptr, false);
-            return (next_line_id != -1);
-        }
-
 
         //NOTE: reqWriteback is pulled up to true, but not pulled down to false.
         virtual uint64_t invalidate(const InvReq& req) {
             startInvalidate();
             return finishInvalidate(req);
+        }
+
+        bool LineInCache(Address next_line_addr) {
+            //Address next_line_addr = next_addr >> lineBits;
+            int32_t next_line_id = array->lookup(next_line_addr, nullptr, false);
+            return (next_line_id != -1);
         }
 
     protected:

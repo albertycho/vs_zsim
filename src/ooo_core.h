@@ -305,17 +305,13 @@ template<uint32_t SZ, uint32_t W>
 class ReorderBuffer {
     private:
         uint64_t buf[SZ];
-        uint64_t buf_last_iter[SZ];
         uint64_t curRetireCycle;
         uint32_t curCycleRetires;
         uint32_t idx;
 
     public:
         ReorderBuffer() {
-            for (uint32_t i = 0; i < SZ; i++){
-				buf[i] = 0;
-				buf_last_iter[i] = 0;
-			}
+            for (uint32_t i = 0; i < SZ; i++) buf[i] = 0;
             idx = 0;
             curRetireCycle = 0;
             curCycleRetires = 1;
@@ -383,6 +379,8 @@ class ReorderBuffer {
 
 			return retval;
         }
+
+
 };
 
 // Similar to ReorderBuffer, but must have in-order allocations and retires (--> faster)
@@ -501,6 +499,8 @@ class OOOCore : public Core {
         Counter profFetchStalls, profDecodeStalls, profIssueStalls;
 #endif
 		Counter robStalls, robStallCycles;
+        Counter RATStallCycles, ROBStallCycles;
+
         // Load-store forwarding
         // Just a direct-mapped array of last store cycles to 4B-wide blocks
         // (i.e., indexed by (addr >> 2) & (FWD_ENTRIES-1))

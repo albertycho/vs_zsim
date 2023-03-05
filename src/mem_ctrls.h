@@ -39,16 +39,20 @@ class SimpleMemory : public MemObject {
 		uint64_t access_count=0;
 		uint64_t rand0_count=0;
 		uint64_t rand1_count=0;
+		uint64_t latsum=0;
 		uint32_t var_lat_radius;
-
+                uint32_t var_8020;
+		uint32_t tail_var;
 
     public:
         uint64_t access(MemReq& req);
 
         const char* getName() {return name.c_str();}
 
-        SimpleMemory(uint32_t _latency, g_string& _name) : name(_name), latency(_latency), var_lat_radius(0) {}
-        SimpleMemory(uint32_t _latency, g_string& _name, uint32_t _var_lat_radius) : name(_name), latency(_latency), var_lat_radius(_var_lat_radius) {}
+        SimpleMemory(uint32_t _latency, g_string& _name) : name(_name), latency(_latency), var_lat_radius(0), tail_var(0), var_8020(0) {}
+        SimpleMemory(uint32_t _latency, g_string& _name, uint32_t _var_lat_radius) : name(_name), latency(_latency), var_lat_radius(_var_lat_radius), tail_var(0) {}
+        SimpleMemory(uint32_t _latency, g_string& _name, uint32_t _var_lat_radius, uint32_t _tail_var) : name(_name), latency(_latency), var_lat_radius(_var_lat_radius), tail_var(_tail_var) {}
+        SimpleMemory(uint32_t _latency, g_string& _name, uint32_t _var_lat_radius, uint32_t _tail_var, uint32_t _var_8020) : name(_name), latency(_latency), var_lat_radius(_var_lat_radius), tail_var(_tail_var),var_8020(_var_8020) {}
 };
 
 
